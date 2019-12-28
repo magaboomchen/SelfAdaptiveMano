@@ -1,0 +1,6 @@
+*.log
+*.temp
+*.mp4
+*.docx
+*.pptx
+/vendor
