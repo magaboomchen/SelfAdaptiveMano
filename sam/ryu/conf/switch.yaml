@@ -1,0 +1,24 @@
+1: !SwitchConf
+  dcnGatewayPeerIP: 2.2.2.123
+  switchID: 1
+  lANNet: 192.168.0.32/27
+  switchType: DCNGateway
+  dpid: 1
+  dcnGatewaySelfIP: 1.1.1.123
+  gatewayIP: 192.168.0.33
+2: !SwitchConf
+  dcnGatewayPeerIP:
+  switchID: 2
+  lANNet: 192.168.0.64/27
+  switchType: ToR
+  dpid: 2
+  dcnGatewaySelfIP:
+  gatewayIP: 192.168.0.65
+3: !SwitchConf
+  dcnGatewayPeerIP:
+  switchID: 3
+  lANNet: 192.168.0.96/27
+  switchType: ToR
+  dpid: 3
+  dcnGatewaySelfIP:
+  gatewayIP: 192.168.0.97

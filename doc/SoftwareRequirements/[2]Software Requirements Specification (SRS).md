@@ -1,4 +1,4 @@
-# 软件需求规格说明
+# 软件需求规格说明（TODO）
 
 ## 一、概要
 
@@ -177,7 +177,11 @@ Linux服务器，openflow交换机
 
 ### 2.6 设计和实现上的限制
 
-暂无
+SFC的入口ingress为classifier，egress负责decap。
+
+逻辑上，只有用户的egress数量为1时，才能够计算最短路径。
+
+因此我们限定用户的egress数量为1，可以将classifier承担ingress和egress的功能。
 
 ## 三、功能需求的描述
 
