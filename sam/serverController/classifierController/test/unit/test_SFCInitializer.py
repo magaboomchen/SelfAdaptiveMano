@@ -6,8 +6,8 @@ from sam.serverAgent.serverAgent import ServerAgent
 from sam.base.command import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
-from sam.serverController.classifierController.test.unit.fixtures.orchestrationStub import *
-from sam.serverController.classifierController.test.unit.testBase import *
+from sam.test.fixtures.mediatorStub import *
+from sam.test.testBase import *
 import uuid
 import subprocess
 import psutil
@@ -45,7 +45,7 @@ class TestSFCinitializerClass(TestBase):
         for index in range(SFCLength):
             server = Server("ens3",VNFI1_IP,SERVER_TYPE_NORMAL)
             vnfi = VNFI(uuid.uuid1(),VNFType=VNF_TYPE_FW,VNFIID=VNF_TYPE_FW,
-                server=server)
+                node=server)
             VNFISequence.append(vnfi)
         return VNFISequence
 

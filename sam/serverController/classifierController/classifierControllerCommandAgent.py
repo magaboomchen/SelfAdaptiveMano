@@ -40,25 +40,25 @@ from sam.serverController.classifierController.sFCIDeleter import *
 class ClassifierControllerCommandAgent(object):
     def __init__(self):
         logging.info("Initialize classifier controller command agent.")
-        self._commands = {}
+        self._commandsInfo = {}
         self._messageAgent = MessageAgent()
-        self._messageAgent.startRecvMsg(CLASSIFIER_CONTROLLER_QUEUE)
+        self._messageAgent.startRecvMsg(SERVER_CLASSIFIER_CONTROLLER_QUEUE)
 
     def startClassifierControllerCommandAgent(self,sfcInitializer,sfcAdder,
         sfcDeleter,sfciAdder,sfciDeleter):
         while True:
-            msg = self._messageAgent.getMsg(CLASSIFIER_CONTROLLER_QUEUE)
-            if msg.getMessageType() == MSG_TYPE_CLASSIFIERCMD:
+            msg = self._messageAgent.getMsg(SERVER_CLASSIFIER_CONTROLLER_QUEUE)
+            if msg.getMessageType() == MSG_TYPE_CLASSIFIER_CONTROLLER_CMD:
                 logging.info("Classifier controller get a command.")
                 try:
                     cmd = msg.getbody()
-                    self._commands[cmd.cmdID] = {"cmd":cmd,
+                    self._commandsInfo[cmd.cmdID] = {"cmd":cmd,
                         "state":CMD_STATE_PROCESSING}
-                    if cmd.cmdType == CMD_TYPE_INIT_CLASSIFIER:
+                    if cmd.cmdType == CMD_TYPE_INIT_CLASSIFIER: TODO# TODO： 删除这一项
                         sfcInitializer.initClassifier(cmd)
-                    elif cmd.cmdType == CMD_TYPE_ADD_CLASSIFIER_SFC:
+                    elif cmd.cmdType == CMD_TYPE_ADD_CLASSIFIER_SFC: # TODO： 删除这一项
                         sfcAdder.addSFC(cmd)
-                    elif cmd.cmdType == CMD_TYPE_DEL_CLASSIFIER_SFC:
+                    elif cmd.cmdType == CMD_TYPE_DEL_CLASSIFIER_SFC: # TODO： 删除这一项
                         sfcDeleter.delSFC(cmd)
                     elif cmd.cmdType == CMD_TYPE_ADD_SFCI:
                         sfciAdder.addSFCI(cmd)
@@ -66,15 +66,15 @@ class ClassifierControllerCommandAgent(object):
                         sfciDeleter.delSFCI(cmd)
                     else:
                         logging.error("Unkonwn classifier command type.")
-                    self._commands[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL
+                    self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL
                 except ValueError as err:
                     logging.error('classifier command processing error: ' +
                         repr(err))
-                    self._commands[cmd.cmdID]["state"] = CMD_STATE_FAIL
+                    self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 finally:
-                    rplyMsg = SAMMessage(MSG_TYPE_CLASSIFIERCMD_REPLY, 
-                        CommandReply(cmd.cmdID,self._commands[cmd.cmdID]["state"]))
-                    self._messageAgent.sendMsg(ORCHESTRATION_MODULE_QUEUE,rplyMsg)
+                    rplyMsg = SAMMessage(MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY, 
+                        CommandReply(cmd.cmdID,self._commandsInfo[cmd.cmdID]["state"]))
+                    self._messageAgent.sendMsg(ORCHESTRATION_QUEUE,rplyMsg)
             elif msg.getMessageType() == None:
                 pass
             else:
@@ -82,7 +82,6 @@ class ClassifierControllerCommandAgent(object):
 
 if __name__=="__main__":
     logging.basicConfig(level=logging.INFO)
-    logging.info("Init classifier controller command agent.")
 
     clsMaintainer = ClassifierIBMaintainer()
     sfcInitializer = ClassifierInitializer(clsMaintainer)

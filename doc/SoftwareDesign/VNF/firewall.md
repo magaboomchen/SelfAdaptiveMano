@@ -3,7 +3,7 @@
 
 可以根据dockerController下发的config配置防火墙规则
 
-支持单节点故障保护
+支持单节点故障保护（Optional）
 
 支持双向的SFC
 
@@ -33,3 +33,5 @@
 两个端口（连接bess pmdport）负责datapath的输入输出，从不同端口进入表示方向
 
 第三个端口（连接control nic interfaces）负责stateManager之间的同步。
+
+需要支持IPv4 Tunnel的SFC路由，即忽略最外层的IP header。

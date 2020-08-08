@@ -123,6 +123,13 @@ class L2(BaseApp):
                                              actions)]
         self._add_flow(datapath, match, inst, table_id = L2_TABLE, priority=0)
 
+        match = parser.OFPMatch()
+        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
+                                          ofproto.OFPCML_NO_BUFFER)]
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
+                                             actions)]
+        self._add_flow(datapath, match, inst, table_id = CLASSIFIER_TABLE, priority=0)
+
         match = parser.OFPMatch(
                 eth_type=ether_types.ETH_TYPE_ARP
             )

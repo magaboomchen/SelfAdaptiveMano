@@ -13,7 +13,7 @@ import threading
 from sam.base.messageAgent import *
 from sam.serverAgent.serverAgent import ServerAgent
 from sam.base.server import Server
-
+# TODO: refactor, pytest
 class ServerAgentTester(object):
     def __init__(self,controlNICName):
         serverAgent = ServerAgent(controlNICName)

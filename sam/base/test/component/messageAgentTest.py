@@ -11,7 +11,7 @@ import base64
 import pickle
 import sys
 from sam.base.messageAgent import *
-
+# TODO: refactor, pytest
 class SAMMessageTester(object):
     def __init__(self):
         samMsg = SAMMessage(MSG_TYPE_STRING,"apple")

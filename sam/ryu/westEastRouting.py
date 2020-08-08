@@ -199,11 +199,11 @@ class WestEastRouting(BaseApp):
 
         # Initialize switch
         match = parser.OFPMatch(
-            eth_type=ether_types.ETH_TYPE_IP,ipv4_dst="192.168.0.0/16"
+            eth_type=ether_types.ETH_TYPE_IP,ipv4_dst="2.2.0.0/16"
         )
         instructions = [parser.OFPInstructionGotoTable(table_id=WEST_EAST_TABLE)]
         self.logger.debug("_switch_features_handler: Add_flow")
-        self._add_flow(datapath,match,instructions,table_id=CLASSIFIER_TABLE, priority=1)
+        self._add_flow(datapath,match,instructions,table_id=CLASSIFIER_TABLE, priority=2)
         self._westEastRIB[datapath.id] = {}
         self._switchesLANArpTable[datapath.id] = {}
 

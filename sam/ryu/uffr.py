@@ -37,22 +37,18 @@ class UFFR(BaseApp):
         self.topoCollector = kwargs['TopoCollector']
         self.switch2Classifier = {} # {dpid:classifierMac}
         self._messageAgent = MessageAgent()
-        self._messageAgent.startRecvMsg(RYU_CONTROLLER_QUEUE)
-        self._commands = {}  # store all ryu commands
+        self._messageAgent.startRecvMsg(NETWORK_CONTROLLER_QUEUE)
+        self._commandsInfo = {}  # store all ryu commands
         self.logger.setLevel(logging.DEBUG)
 
         while True:
-            msg = self._messageAgent.getMsg(RYU_CONTROLLER_QUEUE)
-            if msg.getMessageType() == MSG_TYPE_RYUCMD:
+            msg = self._messageAgent.getMsg(NETWORK_CONTROLLER_QUEUE)
+            if msg.getMessageType() == MSG_TYPE_NETWORK_CONTROLLER_CMD:
                 logging.info("Ryu controller get a ryu cmd.")
                 try:
                     cmd = msg.getbody()
-                    self._commands[cmd.cmdID] = {"cmd":cmd,"state":CMD_STATE_PROCESSING}
-                    if cmd.cmdType == CMD_TYPE_ADD_ROUTE2INGRESS:
-                        pass
-                    elif cmd.cmdType == CMD_TYPE_DEL_ROUTE2INGRESS:
-                        pass
-                    elif cmd.cmdType == CMD_TYPE_ADD_SFCI:
+                    self._commandsInfo[cmd.cmdID] = {"cmd":cmd,"state":CMD_STATE_PROCESSING}
+                    if cmd.cmdType == CMD_TYPE_ADD_SFCI:
                         pass
                     elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
                         pass
@@ -60,16 +56,16 @@ class UFFR(BaseApp):
                         pass
                     else:
                         logging.error("Unkonwn cmd type.")
-                    self._commands[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL
+                    self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL
                 except ValueError as err:
                     logging.error('ryu cmd processing error: ' + repr(err))
-                    self._commands[cmd.cmdID]["state"] = CMD_STATE_FAIL
+                    self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 finally:
-                    rplyMsg = SAMMessage(MSG_TYPE_RYUCMD_REPLY, CommandReply(cmd.cmdID,self._commands[cmd.cmdID]["state"]) )
+                    rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY, CommandReply(cmd.cmdID,self._commandsInfo[cmd.cmdID]["state"]) )
                     if cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
-                        queue = MEASUREMENT_MODULE_QUEUE
+                        queue = MEASUREMENT_QUEUE
                     else:
-                        queue = ORCHESTRATION_MODULE_QUEUE
+                        queue = ORCHESTRATION_QUEUE
                     self._messageAgent.sendMsg(queue,rplyMsg)
             elif msg.getMessageType() == None:
                 pass
@@ -102,7 +98,7 @@ class UFFR(BaseApp):
             eth_type=ether_types.ETH_TYPE_IP,ipv4_dst="10.0.0.0/8"
         )
         inst = [parser.OFPInstructionGotoTable(table_id = UFFR_TABLE)]
-        self._add_flow(datapath, match, inst, table_id = CLASSIFIER_TABLE, priority=0)
+        self._add_flow(datapath, match, inst, table_id = CLASSIFIER_TABLE, priority=2)
 
     def _setSwitch2Classifier(self, inPortNum, datapath, classifierMAC):
         dpid = datapath.id

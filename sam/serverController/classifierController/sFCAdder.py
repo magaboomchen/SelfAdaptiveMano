@@ -1,6 +1,6 @@
 from sam.serverController.bessGRPC import *
 
-class SFCAdder(BessGRPC):
+class SFCAdder(BessGRPC):   # TODO: 将此接口改在内部
     def __init__(self,clsMaintainer):
         self.clsMaintainer = clsMaintainer
         # TODO : replace self._classifierSet

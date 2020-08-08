@@ -6,7 +6,7 @@ from sam.serverAgent.serverAgent import ServerAgent
 from sam.base.command import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
-from sam.serverController.classifierController.test.unit.fixtures.orchestrationStub import *
+from sam.test.fixtures.mediatorStub import *
 import uuid
 import subprocess
 import psutil
@@ -14,9 +14,11 @@ import pytest
 import time
 from scapy.all import *
 from sam.serverController.classifierController.classifierIBMaintainer import *
-from sam.serverController.classifierController.test.unit.testBase import *
+from sam.test.testBase import *
 
 MANUAL_TEST = True
+
+# TODO need refactor
 
 class TestClassifierIBMaintainerClass(TestBase):
     def setup_method(self, method):
@@ -24,17 +26,6 @@ class TestClassifierIBMaintainerClass(TestBase):
         class.  setup_method is invoked for every test method of a class.
         """
         self.cM = ClassifierIBMaintainer()
-        self.classifier = None
-        self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = None
-        self.genSFC4test()
-
-    def teardown_method(self, method):
-        """ teardown any state that was previously setup with a setup_method
-        call.
-        """
-        self.cM = None
-        self.classifier = None
 
     def test_initClassifier(self):
         ingress = self.classifier

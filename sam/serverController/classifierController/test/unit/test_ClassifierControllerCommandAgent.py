@@ -6,8 +6,8 @@ from sam.serverAgent.serverAgent import ServerAgent
 from sam.base.command import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
-from sam.serverController.classifierController.test.unit.fixtures.orchestrationStub import *
-from sam.serverController.classifierController.test.unit.testBase import *
+from sam.test.fixtures.mediatorStub import *
+from sam.test.testBase import *
 import uuid
 import subprocess
 import psutil
@@ -20,3 +20,13 @@ MANUAL_TEST = True
 class TestClassifierControllerCommandAgentClass(TestBase):
     # use mock to test whether methods has been called
     pass
+
+    @pytest.fixture(scope="function")
+    def setup_orchestrationSendADDSFCI(self):
+        # setup
+        self.sp = ShellProcessor()
+        self.sp.runPythonScript("~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/classifierControllerCommandAgent.py")
+        yield
+        # teardown
+        self.sp.killPythonScript("classifierControllerCommandAgent.py")
+        self.sp = None

@@ -12,14 +12,20 @@ class SwitchConf(object):
         self.dcnGatewayPeerIP = dcnGatewayPeerIP
         self.dcnGatewaySelfIP = dcnGatewaySelfIP
 
+    def setLANNet(self,lanNet):
+        self.lANNet = lanNet
+
+    def setGatewayIP(self,gatewayIP):
+        self.gatewayIP = gatewayIP
+
     def _genLANNet(self,dpid):
         switchID = self.switchID & 0x7FF
-        net = (192<<24) + (168<<16) + (switchID<<5)
+        net = (2<<24) + (2<<16) + (switchID<<5)
         return SocketConverter().int2ip(net) + "/27"
 
     def _genSwitchGatewayIP(self,dpid):
         switchID = self.switchID & 0x3FF
-        gatewayIP = (192<<24) + (168<<16) + (switchID<<5) + 1
+        gatewayIP = (2<<24) + (2<<16) + (switchID<<5) + 1
         return SocketConverter().int2ip(gatewayIP)
 
     def __str__(self):
@@ -44,7 +50,7 @@ class SwitchConfGenerator(object):
             self.yaml.dump(self.switches, nf)
 
 if __name__ == '__main__':
-    s1 = SwitchConf(0x0000000000000001, "DCNGateway", 1, "1.1.1.123", "2.2.2.123")
+    s1 = SwitchConf(0x0000000000000001, "DCNGateway", 1, "1.1.1.1", "1.1.1.2")
     s2 = SwitchConf(0x0000000000000002, "ToR", 2)
     s3 = SwitchConf(0x0000000000000003, "ToR", 3)
 

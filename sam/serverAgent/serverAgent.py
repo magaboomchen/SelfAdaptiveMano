@@ -36,7 +36,7 @@ class ServerAgent(object):
             time.sleep(HEAT_BEAT_TIME)
 
     def _sendServerInfo(self):
-        msg = SAMMessage(MSG_TYPE_SERVER_REPORT, self._server)
+        msg = SAMMessage(MSG_TYPE_SERVER_REPLY, self._server)
         logging.debug(msg.getMessageID())
         self._messageAgent.sendMsg(SERVER_MANAGER_QUEUE,msg)
 
@@ -47,7 +47,7 @@ if __name__=="__main__":
     NICPCIAddress = argParser.getArgs()['nicPciAddress']   # example: 0000:00:08.0
     controllNICName = argParser.getArgs()['controllNicName']   # example: ens3
     serverType = argParser.getArgs()['serverType']   # example: vnfi, classifier
-    datapathNICIP = argParser.getArgs()['datapathNicIP']   # example: 192.168.0.38
+    datapathNICIP = argParser.getArgs()['datapathNicIP']   # example: 2.2.0.38
 
     SystemChecker()
     DPDKConfigurator(NICPCIAddress)

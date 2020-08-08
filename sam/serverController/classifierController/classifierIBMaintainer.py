@@ -30,10 +30,11 @@ from sam.base.path import *
 # 1: active classifier
 # 2: classifier - sfc mapping
 # 3: sfc - sfci mapping
+# 4: active sfc sets
 
 class Classifier(object):
-    def __init__(self,server):
-        self.server = server
+    def __init__(self,host):
+        self.host = host    # The server hosting this classifier
         self.wm2Gate = {}   # {HashLBName: gateNum}
         self.hlbGate = {}   # {HashLBName: {GenricDecapNAME: gateNum}}
 

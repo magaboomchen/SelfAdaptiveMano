@@ -23,7 +23,7 @@ class TestServerClass(object):
         usually contains tests).
         """
         controlIfName = "eno1"
-        datapathIfIP = "192.168.0.36"
+        datapathIfIP = "2.2.0.36"
         cls.server = Server(controlIfName, datapathIfIP, SERVER_TYPE_NORMAL)
 
     @classmethod
@@ -46,7 +46,7 @@ class TestServerClass(object):
     def test_updateIfSet(self):
         self.server.updateIfSet()
         assert self.server._ifSet["eno1"]["MAC"] == "18:66:da:86:4c:15"
-        assert self.server._ifSet["eno1"]["IP"] == "192.168.0.163"
+        assert self.server._ifSet["eno1"]["IP"] == "2.2.0.163"
 
     @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
     def test_getHwAddrInDPDK(self):

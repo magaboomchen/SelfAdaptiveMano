@@ -35,9 +35,9 @@ class SeverManager(object):
             msg = self._messageAgent.getMsg(SERVER_MANAGER_QUEUE)
             logging.debug(msg.getMessageType())
             time.sleep(1)
-            if msg.getMessageType() == MSG_TYPE_SERVER_REPORT:
+            if msg.getMessageType() == MSG_TYPE_SERVER_REPLY:
                 self._storeServerInfo(msg)
-            elif msg.getMessageType() == MSG_TYPE_GETSERVER:
+            elif msg.getMessageType() == MSG_TYPE_SERVER_MANAGER_CMD:
                 self._reportServerSet()
             elif msg.getMessageType() == None:
                 self._printServerSet()
@@ -66,7 +66,7 @@ class SeverManager(object):
     def _reportServerSet(self):
         logging.info("Get request from measurement module.")
         threadLock.acquire()
-        self._messageAgent.sendMsg(MEASUREMENT_MODULE_QUEUE,self.serverSet)
+        self._messageAgent.sendMsg(MEASUREMENT_QUEUE,self.serverSet)
         threadLock.release()
 
     def _timeoutCleaner(self):

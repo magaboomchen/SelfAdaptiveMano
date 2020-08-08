@@ -1,8 +1,9 @@
-VNF_TYPE_FW = 1
-VNF_TYPE_IDS = 2
-VNF_TYPE_MONITOR = 3
-VNF_TYPE_LB = 4
-VNF_TYPE_TRAFFICSHAPER = 5
+VNF_TYPE_FORWARD = 1
+VNF_TYPE_FW = 2
+VNF_TYPE_IDS = 3
+VNF_TYPE_MONITOR = 4
+VNF_TYPE_LB = 5
+VNF_TYPE_TRAFFICSHAPER = 6
 
 class VNFIStatus(object):
     def __init__(self):
@@ -12,12 +13,12 @@ class VNFIStatus(object):
         self.outputPacketAmount = None
 
 class VNFI(object):
-    def __init__(self, VNFID=None,VNFType=None,VNFIID=None,config=None,server=None,vnfiStatus=None):
+    def __init__(self, VNFID=None,VNFType=None,VNFIID=None,config=None,node=None,vnfiStatus=None):
         self.VNFID = VNFID
         self.VNFType = VNFType
         self.VNFIID = VNFIID
         self.config = config
-        self.server = server
+        self.node = node    # server or switch
         self.vnfiStatus = vnfiStatus
 
 class VNFIRequest(object):

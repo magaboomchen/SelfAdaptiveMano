@@ -11,11 +11,11 @@ APP_TYPE_NORTHSOUTH_WEBSITE = "APP_TYPE_NORTHSOUTH_WEBSITE"
 
 class SFCI(object):
     def __init__(self, SFCIID, VNFISequence, sloRealTimeValue=None,
-        pathSet=None):
+        ForwardingPathSet=None):
         self.SFCIID = SFCIID
         self.VNFISequence = VNFISequence    # only show the direction1
         self.sloRealTimeValue = sloRealTimeValue
-        self.pathSet = pathSet
+        self.ForwardingPathSet = ForwardingPathSet
 
 class SFC(object):
     def __init__(self, sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
@@ -32,19 +32,19 @@ class SFC(object):
         # [
         # {
         # 'ID': 0   # forwarding direction
-        # 'source' : Outside
-        # 'ingress': Any # SAM will find the nearest classifier and configure switch to direct traffic to this classifier
-        # 'match': {srcIP, dstIP, srcPort, dstPort, proto} # classifier's match
-        # 'egress' : Any # defualt is the classifier under the tor of destination
-        # 'destination': websiteIP
+        # 'source' : Outside    # {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or other routing addressing format
+        # 'ingress': Any # May be a P4 switch or a server
+        # 'match': {{},{},...} # classifier's match, generic match fields: {"offset":offset, "size":size, "value": value}
+        # 'egress' : Any # May be a P4 switch or a server
+        # 'destination': websiteIP  # {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or other routing addressing format
         # },
         # {
         # 'ID': 1   # reverse direction
-        # 'source' : WEBSITE
-        # 'ingress': Any # SAM will find the nearest classifier and configure switch to direct traffic to this classifier
-        # 'match': {srcIP, dstIP, srcPort, dstPort, proto} # classifier's match
-        # 'egress': Any # defualt is the classifier under the tor of destination
-        # 'destination': Any # defualt is DCNGATEAWAY
+        # 'source' : WEBSITE    # {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or other routing addressing format
+        # 'ingress': Any # May be a P4 switch or a server
+        # 'match': {{},{},...} # classifier's match, generic match fields: {"offset":offset, "size":size, "value": value}
+        # 'egress': Any # May be a P4 switch or a server
+        # 'destination': Outside    # {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or other routing addressing format
         # }
         # ]
 

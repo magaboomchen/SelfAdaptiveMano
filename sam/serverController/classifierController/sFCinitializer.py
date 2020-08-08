@@ -28,11 +28,11 @@ from sam.base.command import *
 from sam.base.path import *
 from sam.serverController.bessGRPC import *
 
-class ClassifierInitializer(BessGRPC):
+class ClassifierInitializer(BessGRPC): # TODO: 删除init命令，改为每次addSFC前检查内部状态，是否init过classifier。
     def __init__(self,clsMaintainer):
         self.clsMaintainer = clsMaintainer
         self._classifierSet = {} # TODO replace
-        self._commands = {} # TODO replace
+        self._commandsInfo = {} # TODO replace
         self._sc = SocketConverter() # TODO replace
 
     def initClassifier(self,cmd):

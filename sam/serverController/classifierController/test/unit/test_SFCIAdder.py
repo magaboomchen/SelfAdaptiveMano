@@ -6,8 +6,8 @@ from sam.serverAgent.serverAgent import ServerAgent
 from sam.base.command import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
-from sam.serverController.classifierController.test.unit.fixtures.orchestrationStub import *
-from sam.serverController.classifierController.test.unit.testBase import *
+from sam.test.fixtures.mediatorStub import *
+from sam.test.testBase import *
 import uuid
 import subprocess
 import psutil
@@ -21,12 +21,13 @@ class TestSFCIAdderClass(TestBase):
     @pytest.mark.skip(reason='Skip temporarily')
     def test_addSFCI(self, setup_addSFCI):
         # exercise
-        self.oS.sendCMDAddSFC(self.sfc)
-        self.oS.sendCMDAddSFCI(self.sfc, self.sfci)
+        self.mediator = MediatorStub()
+        addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
+        self.sendCmd(addSFCICmd)
         # verify
         self.verifyInboundTraffic()
         self.verifyOutSFCDomainTraffic()
-        TODO: bi-direction test
+        # TODO: bi-direction test
 
     def verifyInboundTraffic(self):
         self._sendInboundTraffic2Classifier()
@@ -58,7 +59,7 @@ class TestSFCIAdderClass(TestBase):
     def _sendOutSFCDomainTraffic2Classifier(self):
         filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/test/unit/fixtures/sendOutSFCDomainTraffic.py"
         self.sp.runPythonScript(filePath)
-    
+
     def _checkDecapsulatedTraffic(self):
         print("_checkDecapsulatedTraffic: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
@@ -68,6 +69,7 @@ class TestSFCIAdderClass(TestBase):
         frame.show()
         condition = (frame[IP].src == VNFI1_IP and frame[IP].dst == WEBSITE_VIRTUAL_IP)
         assert condition == True
+
     @pytest.fixture(scope="function")
     def setup_cC(self):
         # setup

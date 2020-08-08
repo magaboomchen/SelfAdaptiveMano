@@ -26,42 +26,32 @@ INT_TO_VNF1 = 'eth2'
 INTTOVNF1BACKUP = 'eth3'
 
 # # Classifier
-# CLASSIFIER1_CONTROL_IP = "192.168.0.34"
+# CLASSIFIER1_CONTROL_IP = "2.2.0.34"
 # CLASSIFIER1_CONTROL_MAC = "01:92:16:81:21:01"
 
-# CLASSIFIER2_CONTROL_IP = "192.168.1.34"
+# CLASSIFIER2_CONTROL_IP = "2.2.1.34"
 # CLASSIFIER2_CONTROL_MAC = "01:92:16:81:21:02"
 
 # # BESS Server
-# VNF1_CONTROL_IP = "192.168.0.66"
+# VNF1_CONTROL_IP = "2.2.0.66"
 # VNF1_CONTROL_MAC = "01:92:16:81:21:06"
 
-# VNF1_BACKUP_CONTROL_IP = "192.168.0.130"
+# VNF1_BACKUP_CONTROL_IP = "2.2.0.130"
 # VNF1_BACKUP_CONTROL_MAC = "01:92:16:81:21:07"
 
 # Websites server
-WEBSITE1_IP = "192.168.0.36"
+WEBSITE1_IP = "2.2.0.34"
 WEBSITE1_IP_PREFIX = 27
 WEBSITE1_MAC = None
-WEBSITE1_GATEWAY_IP = "192.168.0.33"
-
-WEBSITE2_IP = "192.168.0.37"
-WEBSITE2_IP_PREFIX = 27
-WEBSITE2_MAC = "01:92:16:81:21:05"
-WEBSITE2_GATEWAY_IP = "192.168.0.33"
-
-WEBSITE3_IP = "192.168.0.100"
-WEBSITE3_IP_PREFIX = 27
-WEBSITE3_MAC = "01:92:16:81:21:06"
-WEBSITE3_GATEWAY_IP = "192.168.0.97"
+WEBSITE1_GATEWAY_IP = "2.2.0.33"
 
 # Traffic generator
-INGRESS_IP1 = "1.1.1.223"
+INGRESS_IP1 = "1.1.1.2"
 INGRESS_IP1_PREFIX = 8
 INGRESS_MAC1 = None
 
 # Gateway
-GATEWAY1_OUTBOUND_IP = "1.1.1.123"
+GATEWAY1_OUTBOUND_IP = "1.1.1.1"
 GATEWAY1_OUTBOUND_IP_prefix = 8
 GATEWAY1_OUTBOUND_MAC =  None
 
@@ -70,7 +60,7 @@ class TriangleTopo( Topo ):
         switchNum = 3
 
         # Create hosts
-        hosts = [ self.addHost('h1'), self.addHost('h2'), self.addHost('h3'), self.addHost('h4') ]
+        hosts = [ self.addHost('h1'), self.addHost('h2'), self.addHost('h3'), self.addHost('h4')]
 
         # Create switches
         s1 = self.addSwitch('s1', dpid="0000000000000001", protocols=["OpenFlow13"])
@@ -80,7 +70,7 @@ class TriangleTopo( Topo ):
         switches = [s1,s2,s3]
 
         # Wire up gateway peer nodes
-        self.addLink( hosts[0],switches[0] )
+        self.addLink( hosts[0],switches[0] )    # make sure the DCN gateway port 1 link to peer
 
         # Wire up switches
         for i in range(switchNum):
@@ -161,21 +151,21 @@ class NetConfigurator(object):
         # configure h3
         h3 = self._net.get('h3')
         # ip and mac address
-        h3.setIP( WEBSITE2_IP, prefixLen=WEBSITE2_IP_PREFIX )
-        WEBSITE1_MAC = h3.MAC()
+        h3.setIP( "2.2.0.37", prefixLen=27 )
+        HOST3_MAC = h3.MAC()
         # default route
         defInt = h3.defaultIntf()
-        defRoute = "dev " + str(defInt.name) + " via " + WEBSITE2_GATEWAY_IP
+        defRoute = "dev " + str(defInt.name) + " via " + WEBSITE1_GATEWAY_IP
         h3.setDefaultRoute( defRoute )
 
         # configure h4
         h4 = self._net.get('h4')
         # ip and mac address
-        h4.setIP( WEBSITE3_IP, prefixLen=WEBSITE3_IP_PREFIX )
-        WEBSITE3_MAC = h4.MAC()
+        h4.setIP( "2.2.0.100", prefixLen=27 )
+        HOST3_MAC = h4.MAC()
         # default route
         defInt = h4.defaultIntf()
-        defRoute = "dev " + str(defInt.name) + " via " + WEBSITE3_GATEWAY_IP
+        defRoute = "dev " + str(defInt.name) + " via " + "2.2.0.97"
         h4.setDefaultRoute( defRoute )
 
     def _checkIntf(self, intf ):

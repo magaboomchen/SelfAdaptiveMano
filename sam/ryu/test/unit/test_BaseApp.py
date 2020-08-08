@@ -18,7 +18,7 @@ class TestBaseAppClass(object):
         """
 
     def test_isLANIP(self):
-        result = self.baseAppApp._isLANIP("192.168.1.1","192.168.1.0/24")
+        result = self.baseAppApp._isLANIP("2.2.1.1","2.2.1.0/24")
         assert result == True
 
         result = self.baseAppApp._isLANIP("10.2.3.4","11.0.0.0/8")
@@ -26,7 +26,7 @@ class TestBaseAppClass(object):
 
     def test_getLANNet(self):
         result = self.baseAppApp._getLANNet(1)
-        assert result == "192.168.0.32/27"
+        assert result == "2.2.0.32/27"
 
     def test_isLANIP(self):
         result = self.baseAppApp._isLANIP("10.0.0.1","10.0.0.0/8")
@@ -34,4 +34,4 @@ class TestBaseAppClass(object):
 
     def test_getSwitchGatewayIP(self):
         result = self.baseAppApp._getSwitchGatewayIP(1)
-        assert result == "192.168.0.33"
+        assert result == "2.2.0.33"

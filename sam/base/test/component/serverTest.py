@@ -12,10 +12,10 @@ import Queue
 import threading
 from sam.base.messageAgent import *
 from sam.base.server import *
-
+# TODO: refactor, pytest
 class ServerTester(object):
     def __init__(self,controlIfName):
-        server = Server(controlIfName, "192.168.122.222", SERVER_TYPE_NORMAL)
+        server = Server(controlIfName, "2.2.122.222", SERVER_TYPE_NORMAL)
 
         server.updateIfSet()
 
