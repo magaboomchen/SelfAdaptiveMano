@@ -62,6 +62,7 @@ class UFFR(BaseApp):
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 finally:
                     rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY, CommandReply(cmd.cmdID,self._commandsInfo[cmd.cmdID]["state"]) )
+                    TODO: MEDIATOR_QUEUE
                     if cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
                         queue = MEASUREMENT_QUEUE
                     else:

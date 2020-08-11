@@ -12,7 +12,6 @@ from sam.base.server import Server
 from sam.base.messageAgent import *
 from sam.base.switch import *
 from sam.base.sfc import *
-from sam.base.socketConverter import SocketConverter as SC
 from sam.base.command import *
 
 class Mediator(object):
@@ -31,20 +30,15 @@ class Mediator(object):
                 pass
             else:
                 body = msg.getbody()
-                if self._isCommand(body):
+                if self._messageAgent.isCommand(body):
                     self._commandHandler(body)
-                elif self._isCommandReply(body):
+                elif self._messageAgent.isCommandReply(body):
                     self._commandReplyHandler(body)
                 else:
                     loggind.error("Unknown massage body")
 
-    def _isCommand(self,body):
-        return isinstance(body, Command)
-
-    def _isCommandReply(self,body):
-        return isinstance(body, CommandReply)
-
     def _commandHandler(self,cmd):
+        print("Get command ________________")
         self._cm.addCmd(cmd)
         if cmd.cmdType == CMD_TYPE_ADD_SFCI:
             if self._mode['classifierType'] == 'Server':
@@ -62,19 +56,15 @@ class Mediator(object):
             self._delSFCI4NetworkController(cmd)
             self._delSFCIs4Server(cmd)
         elif cmd.cmdType == CMD_TYPE_GET_SERVER_SET:
+            print("Get CMD_TYPE_GET_SERVER_SET ________________")
             self._getServerSet4ServerManager(cmd)
         elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
             self._getTopo4NetworkController(cmd)
-        elif cmd.cmdType == CMD_TYPE_GET_SFCI_STATUE:
+        elif cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
             self._getSFCIStatus4ServerP4(cmd)
         else:
+            self._cm.delCmdwithChildCmd(cmd.cmdID)
             logging.error("Unkonwn command type.")
-
-    # def _updateCmdIDThenForwardCmd(self,cmd,cCmdName,msgType,queue):
-    #     cCmd = self._prepareChildCmd(cmd,cCmdName)
-    #     rMsg = SAMMessage(msgType, cCmd)
-    #     self._messageAgent.sendMsg(queue,rMsg)
-    #     self._cm.changeCmdState(cCmd.cmdID,CMD_STATE_PROCESSING)
 
     def _prepareChildCmd(self,cmd,cCmdName):
         cmdID = cmd.cmdID
@@ -89,116 +79,79 @@ class Mediator(object):
         return cCmd
 
     def forwardCmd(self,cmd,msgType,queue):
-        rMsg = SAMMessage(msgType, cmd)
-        self._messageAgent.sendMsg(queue,rMsg)
-        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
+        msg = SAMMessage(msgType, cmd)
+        self._messageAgent.sendMsg(queue,msg)
 
     def _addSFCI2ClassifierController(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
             SERVER_CLASSIFIER_CONTROLLER_QUEUE)
-
-        # self._updateCmdIDThenForwardCmd(cmd,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
-        #     MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
-        #     SERVER_CLASSIFIER_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _addSFCI2NetworkController(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_NETWORK_CONTROLLER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_NETWORK_CONTROLLER_CMD,
             NETWORK_CONTROLLER_QUEUE)
-
-        # self._updateCmdIDThenForwardCmd(cmd,MSG_TYPE_NETWORK_CONTROLLER_CMD,
-        #     MSG_TYPE_NETWORK_CONTROLLER_CMD,
-        #     NETWORK_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _addSFCI2BessController(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_SSF_CONTROLLER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_SSF_CONTROLLER_CMD,
             SFF_CONTROLLER_QUEUE)
-
-        # self._updateCmdIDThenForwardCmd(cmd,MSG_TYPE_SSF_CONTROLLER_CMD,
-        #     MSG_TYPE_SSF_CONTROLLER_CMD,
-        #     SFF_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _addSFCIs2Server(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_SERVER_MANAGER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_SERVER_MANAGER_CMD,
-            SERVER_MANAGER_QUEUE)
-
-        # self._updateCmdIDThenForwardCmd(cmd,MSG_TYPE_SERVER_MANAGER_CMD,
-        #     MSG_TYPE_SERVER_MANAGER_CMD,
-        #     SERVER_MANAGER_QUEUE)
+            VNF_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _delSFCIs4Server(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_SERVER_MANAGER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_SERVER_MANAGER_CMD,
             SERVER_MANAGER_QUEUE)
-
-        # self._updateCmdIDThenForwardCmd(cmd,MSG_TYPE_SERVER_MANAGER_CMD,
-        #     MSG_TYPE_SERVER_MANAGER_CMD,
-        #     SERVER_MANAGER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _delSFCI4NetworkController(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_NETWORK_CONTROLLER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_NETWORK_CONTROLLER_CMD,
             NETWORK_CONTROLLER_QUEUE)
-
-        # self._updateCmdIDThenForwardCmd(cmd,MSG_TYPE_NETWORK_CONTROLLER_CMD,
-        #     MSG_TYPE_NETWORK_CONTROLLER_CMD,
-        #     NETWORK_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _delSFCI4ClassifierController(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
             SERVER_CLASSIFIER_CONTROLLER_QUEUE)
-
-        # self._updateCmdIDThenForwardCmd(cmd,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
-        #     MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
-        #     SERVER_CLASSIFIER_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _delSFCI4BessController(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_SSF_CONTROLLER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_SSF_CONTROLLER_CMD,
             SFF_CONTROLLER_QUEUE)
-
-        # self._updateCmdIDThenForwardCmd(cmd,MSG_TYPE_SSF_CONTROLLER_CMD,
-        #     MSG_TYPE_SSF_CONTROLLER_CMD,
-        #     SFF_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _getServerSet4ServerManager(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_SERVER_MANAGER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_SERVER_MANAGER_CMD,
             SERVER_MANAGER_QUEUE)
-
-        # self._updateCmdIDThenForwardCmd(cmd,MSG_TYPE_SERVER_MANAGER_CMD,
-        #     MSG_TYPE_SERVER_MANAGER_CMD,
-        #     SERVER_MANAGER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _getTopo4NetworkController(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_NETWORK_CONTROLLER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_NETWORK_CONTROLLER_CMD,
             NETWORK_CONTROLLER_QUEUE)
-
-        # self._updateCmdIDThenForwardCmd(cmd,MSG_TYPE_NETWORK_CONTROLLER_CMD,
-        #     MSG_TYPE_NETWORK_CONTROLLER_CMD,
-        #     NETWORK_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _getSFCIStatus4ServerP4(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_SERVER_MANAGER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_SERVER_MANAGER_CMD,
             SERVER_MANAGER_QUEUE)
-
-        # self._updateCmdIDThenForwardCmd(cmd,MSG_TYPE_SERVER_MANAGER_CMD,
-        #     MSG_TYPE_SERVER_MANAGER_CMD,
-        #     SERVER_MANAGER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_NETWORK_CONTROLLER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_NETWORK_CONTROLLER_CMD,
             NETWORK_CONTROLLER_QUEUE)
-
-        # self._updateCmdIDThenForwardCmd(cmd,MSG_TYPE_NETWORK_CONTROLLER_CMD,
-        #     MSG_TYPE_NETWORK_CONTROLLER_CMD,
-        #     NETWORK_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _commandReplyHandler(self,cmdRply):
         # update cmd state
@@ -235,12 +188,13 @@ class Mediator(object):
     def _getMixedAttributes(self,cCmdRplyList):
         attributes = {}
         for cmdRply in cCmdRplyList:
-            attr = cmdRply.attributes
-            for key in attr.iterkeys():
-                if not key in attributes.iterkeys():
-                    attributes[key] = attr[key]
-                else:
-                    self._MergeDict(attr[key],attributes[key])
+            if self._messageAgent.isCommandReply(cmdRply):
+                attr = cmdRply.attributes
+                for key in attr.iterkeys():
+                    if not key in attributes.iterkeys():
+                        attributes[key] = attr[key]
+                    else:
+                        self._MergeDict(attr[key],attributes[key])
         return attributes
 
     def _MergeDict(self,dict1,dict2):
@@ -254,7 +208,7 @@ class Mediator(object):
             queue = ORCHESTRATION_QUEUE
         elif cmdRplyType == CMD_TYPE_GET_SERVER_SET or\
             cmdRplyType == CMD_TYPE_GET_TOPOLOGY or\
-            cmdRplyType == CMD_TYPE_GET_SFCI_STATUE:
+            cmdRplyType == CMD_TYPE_GET_SFCI_STATE:
             queue = MEASUREMENT_QUEUE
         else:
             logging.error("Command reply error.")
@@ -267,7 +221,9 @@ class Mediator(object):
         if self._cm.getCmdType(parentCmdID) == CMD_TYPE_ADD_SFCI:
             bessState = self._cm.getChildCmdState(parentCmdID,
                 MSG_TYPE_SSF_CONTROLLER_CMD)
-            if bessState == CMD_STATE_SUCCESSFU:
+            print("wating check______")
+            if bessState == CMD_STATE_SUCCESSFUL:
+                print("hope!!!!!!!!!!!!!!!")
                 cmd = self._cm.getCmd(parentCmdID)
                 self._addSFCIs2Server(cmd)
 

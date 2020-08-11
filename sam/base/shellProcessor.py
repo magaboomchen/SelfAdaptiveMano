@@ -56,3 +56,6 @@ class ShellProcessor(object):
                         pid = int(p.info['pid'])
                         out_bytes = subprocess.check_output(
                             ["sudo kill " + str(pid)], shell=True)
+    
+    def runShellCommand(self,shellCmd):
+        return subprocess.check_output([shellCmd], shell=True)

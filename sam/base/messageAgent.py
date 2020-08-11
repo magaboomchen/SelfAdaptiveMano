@@ -9,6 +9,7 @@ import inspect
 import uuid
 import base64
 import pickle
+from sam.base.command import *
 
 RABBITMQSERVERIP = '192.168.122.1'
 RABBITMQSERVERUSER = 'mq'
@@ -153,6 +154,12 @@ class MessageAgent(object):
     def _disConnectRabbiMQServer(self):
         self._publisherConnection.close()
         self._consumerConnection.close()
+
+    def isCommand(self,body):
+        return isinstance(body, Command)
+
+    def isCommandReply(self,body):
+        return isinstance(body, CommandReply)
 
 class QueueReciever(threading.Thread):
     def __init__(self, threadID, channel, srcQueueName, msgQueue):

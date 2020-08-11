@@ -1,0 +1,196 @@
+#!/usr/bin/env python
+from __future__ import print_function
+import grpc
+import os
+from google.protobuf.any_pb2 import Any
+import pika
+import base64
+import pickle
+import time
+import uuid
+import subprocess
+import logging
+import Queue
+import struct
+
+import sam.serverController.builtin_pb.service_pb2 as service_pb2
+import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
+import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
+import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
+import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
+
+from sam.serverController.bessControlPlane import *
+from sam.serverController.bessInfoBaseMaintainer import *
+from sam.serverController.classifierController.classifierInitializer import *
+from sam.serverController.classifierController.classifierSFCAdder import *
+from sam.base.socketConverter import SocketConverter
+
+class ClassifierSFCIAdder(BessControlPlane):
+    def __init__(self,cibms):
+        super(ClassifierSFCIAdder,self).__init__()
+        self.cibms = cibms
+        self.clsfSFCInitializer = ClassifierInitializer(self.cibms)
+        self.clsfSFCAdder = ClassifierSFCAdder(self.cibms)
+
+    def addSFCIHandler(self,cmd):
+        sfc = cmd.attributes['sfc']
+        sfci = cmd.attributes['sfci']
+        sfcUUID = sfc.sfcUUID
+        SFCIID = sfci.SFCIID
+        for direction in sfc.directions:
+            classifier = direction['ingress']
+            serverID = classifier.getServerID()
+            if not self.cibms.hasCibm(serverID):
+                self.clsfSFCInitializer.initClassifier(direction)
+            cibm = self.cibms.getCibm(serverID)
+            if not cibm.hasSFCDirection(sfcUUID,direction["ID"]):
+                self.clsfSFCAdder.addSFC(sfcUUID,direction)
+            self._addModules(sfcUUID,sfci,direction)
+            self._addRules(sfcUUID,sfci,direction)
+            self._addLinks(sfcUUID,sfci,direction)
+            cibm.addSFCIDirection(sfcUUID,direction['ID'],SFCIID)
+
+    def _addModules(self,sfcUUID,sfci,direction):
+        classifier = direction['ingress']
+        serverID = classifier.getServerID()
+        cibm = self.cibms.getCibm(serverID)
+        SFCIID = sfci.SFCIID
+
+        bessServerUrl = classifier.getControlNICIP() + ":10514"
+        logging.info(bessServerUrl)
+        with grpc.insecure_channel(bessServerUrl) as channel:
+            stub = service_pb2_grpc.BESSControlStub(channel)
+            stub.PauseAll(bess_msg_pb2.EmptyRequest())
+
+            moduleNameSuffix = '_' + str(SFCIID) + '_' + str(direction['ID'])
+
+            # GenericDecap()
+            argument = Any()
+            arg = module_msg_pb2.GenericDecapArg(bytes=14)
+            argument.Pack(arg)
+            mclass = "GenericDecap"
+            moduleName = mclass + moduleNameSuffix
+            response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
+                name=moduleName, mclass=mclass, arg=argument))
+            self._checkResponse(response)
+
+            # SetMetaData()
+            argument = Any()
+            tunnelSrcIP = self._sc.aton(classifier.getDatapathNICIP())
+            if direction['ID'] == 0:
+                VNFID = sfci.VNFISequence[0].VNFType
+                PathID = DIRECTION1_PATHID_OFFSET
+            else:
+                VNFID = sfci.VNFISequence[-1].VNFType
+                PathID = DIRECTION2_PATHID_OFFSET
+            tunnelDstIP = self._sc.aton(self._genIP4SVPIDs(SFCIID,VNFID,PathID))
+            arg = module_msg_pb2.SetMetadataArg(attrs=[
+                {'name':"ip_src", 'size':4, 'value_bin':tunnelSrcIP},
+                {'name':"ip_dst", 'size':4, 'value_bin':tunnelDstIP},
+                {'name':"ip_proto", 'size':1, 'value_bin':b'\x04'},
+                {'name':"ether_type", 'size':2, 'value_bin': b'\x08\x00'}
+            ])
+            argument.Pack(arg)
+            mclass = "SetMetadata"
+            moduleName = mclass + moduleNameSuffix
+            response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
+                name=moduleName,mclass=mclass,arg=argument))
+            self._checkResponse(response)
+
+            # IPEncap()
+            argument = Any()
+            arg = module_msg_pb2.IPEncapArg()
+            argument.Pack(arg)
+            mclass = "IPEncap"
+            moduleName = mclass + moduleNameSuffix
+            response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
+                name=moduleName,mclass=mclass,arg=argument))
+            self._checkResponse(response)
+
+            stub.ResumeAll(bess_msg_pb2.EmptyRequest())
+
+    def _genIP4SVPIDs(self,sfcID,vnfID,pathID):
+        ipNum = (10<<24) + ((sfcID & 0xFFF) << 12) + ((vnfID & 0xF) << 8) \
+            + (pathID & 0xFF)
+        return self._sc.int2ip(ipNum)
+
+    def _addRules(self,sfcUUID,sfci,direction):
+        classifier = direction['ingress']
+        serverID = classifier.getServerID()
+        cibm = self.cibms.getCibm(serverID)
+        SFCIID = sfci.SFCIID
+
+        bessServerUrl = classifier.getControlNICIP() + ":10514"
+        with grpc.insecure_channel(bessServerUrl) as channel:
+            stub = service_pb2_grpc.BESSControlStub(channel)
+            stub.PauseAll(bess_msg_pb2.EmptyRequest())
+
+            hashLBName = cibm.getHashLBName(sfcUUID,direction)
+
+            # add hash LB gate
+            argument = Any()
+            gateNumList = self._assignHashLBOGatesList(serverID,sfcUUID,
+                direction, SFCIID)
+            arg = module_msg_pb2.HashLBCommandSetGatesArg(gates=gateNumList)
+            argument.Pack(arg)
+            response = stub.ModuleCommand(bess_msg_pb2.CommandRequest(
+                name=hashLBName,cmd="add",arg=argument))
+
+            stub.ResumeAll(bess_msg_pb2.EmptyRequest())
+
+    def _assignHashLBOGatesList(self,serverID,sfcUUID,direction,SFCIID):
+        cibm = self.cibms.getCibm(serverID)
+        hashLBName = cibm.getHashLBName(sfcUUID,direction)
+        OGateList = cibm.getModuleOGateNumList(hashLBName)
+        oGateNum = cibm.genAvailableMiniNum4List(OGateList)
+        cibm.addOGate2Module(hashLBName,SFCIID,oGateNum)
+        OGateList.append(oGateNum)
+        return OGateList
+
+    def _addLinks(self,sfcUUID,sfci,direction):
+        classifier = direction['ingress']
+        serverID = classifier.getServerID()
+        cibm = self.cibms.getCibm(serverID)
+        SFCIID = sfci.SFCIID
+
+        bessServerUrl = classifier.getControlNICIP() + ":10514"
+        logging.info(bessServerUrl)
+        with grpc.insecure_channel(bessServerUrl) as channel:
+            stub = service_pb2_grpc.BESSControlStub(channel)
+            stub.PauseAll(bess_msg_pb2.EmptyRequest())
+
+            hashLBName = cibm.getHashLBName(sfcUUID,direction)
+
+            moduleNameSuffix = '_' + str(SFCIID) + '_' + str(direction['ID'])
+            mclass = "GenericDecap"
+            genericDecapName = mclass + moduleNameSuffix
+
+            mclass = "SetMetadata"
+            SetMetaDataName = mclass + moduleNameSuffix
+
+            mclass = "IPEncap"
+            IPEncapName = mclass + moduleNameSuffix
+
+            # Connection
+            # hlb: gate -> gd
+            ogate = cibm.getModuleOGate(hashLBName,SFCIID)
+            response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
+                m1=hashLBName,m2=genericDecapName,ogate=ogate,igate=0))
+            self._checkResponse(response)
+
+            # gd -> sma
+            response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
+                m1=genericDecapName,m2=SetMetaDataName,ogate=0,igate=0))
+            self._checkResponse(response)
+
+            # sma -> ipe
+            response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
+                m1=SetMetaDataName,m2=IPEncapName,ogate=0,igate=0))
+            self._checkResponse(response)
+
+            # ipe -> etherEncapMerge
+            response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
+                m1=IPEncapName,m2='etherEncapMerge',ogate=0,igate=0))
+            self._checkResponse(response)
+
+            stub.ResumeAll(bess_msg_pb2.EmptyRequest())

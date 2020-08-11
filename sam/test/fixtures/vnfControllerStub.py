@@ -6,7 +6,7 @@ from sam.base.vnf import *
 class VNFControllerStub(object):
     def __init__(self):
         self.mA = MessageAgent()
-        self.mA.startRecvMsg(VNF_CONTROLLER_QUEUE)
+        # self.mA.startRecvMsg(VNF_CONTROLLER_QUEUE)
     
     def sendCmdRply(self,cmdRply):
         msg = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, cmdRply)

@@ -3,16 +3,17 @@ from scapy.all import *
 import logging
 import time
 from sam.base.socketConverter import *
+from sam.test.testBase import *
 
 def sendArpRequest( outIntf, requestIP):
     arp = ARP(op=1,
-            psrc="2.2.123.1",
+            psrc=TESTER_SERVER_DATAPATH_IP,
             pdst=requestIP,
-            hwsrc="fe:54:00:05:4d:7d"
+            hwsrc=TESTER_SERVER_DATAPATH_MAC 
             )
-    frame = Ether(src="fe:54:00:05:4d:7d", dst=BCAST_MAC) / arp
+    frame = Ether(src=TESTER_SERVER_DATAPATH_MAC , dst=BCAST_MAC) / arp
     sendp(frame,iface=outIntf)
 
 if __name__=="__main__":
-    time.sleep(1)
-    sendArpRequest("toClassifier","2.2.0.35")
+    time.sleep(0.1)
+    sendArpRequest("toClassifier",CLASSIFIER_DATAPATH_IP)

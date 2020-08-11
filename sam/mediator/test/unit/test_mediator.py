@@ -29,18 +29,6 @@ class TestMediatorClass(TestBase):
         call.
         """
 
-    def test_isCommand(self):
-        body = Command(1,2)
-        assert self.mediator._isCommand(body) == True
-        body = 1
-        assert self.mediator._isCommand(body) == False
-    
-    def test_isCommandReply(self):
-        body = CommandReply(1,2)
-        assert self.mediator._isCommandReply(body) == True
-        body = 1
-        assert self.mediator._isCommandReply(body) == False
-    
     def test_commandHandler_CMD_TYPE_ADD_SFCI(self,mocker):
         # setup-cont
         mocker.patch.object(self.mediator,'_addSFCI2ClassifierController')
@@ -55,7 +43,7 @@ class TestMediatorClass(TestBase):
         self.mediator._addSFCI2NetworkController.assert_called_once()
         self.mediator._addSFCI2BessController.assert_called_once()
         self.mediator._prepareChildCmd.assert_called_once()
-    
+
     def test_commandHandler_CMD_TYPE_DEL_SFCI(self,mocker):
         # setup-cont
         mocker.patch.object(self.mediator,'_delSFCI4ClassifierController')
@@ -70,7 +58,7 @@ class TestMediatorClass(TestBase):
         self.mediator._delSFCI4NetworkController.assert_called_once()
         self.mediator._delSFCI4BessController.assert_called_once()
         self.mediator._delSFCIs4Server.assert_called_once()
-    
+
     def test_commandHandler_CMD_TYPE_GET_SERVER_SET(self,mocker):
         # setup-cont
         mocker.patch.object(self.mediator,'_getServerSet4ServerManager')
@@ -79,7 +67,7 @@ class TestMediatorClass(TestBase):
         # verify
         self.mediator._commandHandler(getServerCmd)
         self.mediator._getServerSet4ServerManager.assert_called_once()
-    
+
     def test_commandHandler_CMD_TYPE_GET_TOPOLOGY(self,mocker):
         # setup-cont
         mocker.patch.object(self.mediator,'_getTopo4NetworkController')
@@ -88,8 +76,8 @@ class TestMediatorClass(TestBase):
         # verify
         self.mediator._commandHandler(getTopoCmd)
         self.mediator._getTopo4NetworkController.assert_called_once()
-    
-    def test_commandHandler_CMD_TYPE_GET_SFCI_STATUE(self,mocker):
+
+    def test_commandHandler_CMD_TYPE_GET_SFCI_STATE(self,mocker):
         # setup-cont
         mocker.patch.object(self.mediator,'_getSFCIStatus4ServerP4')
         # exercise
@@ -97,6 +85,32 @@ class TestMediatorClass(TestBase):
         # verify
         self.mediator._commandHandler(getSFCICmd)
         self.mediator._getSFCIStatus4ServerP4.assert_called_once()
-    
+
     def test_prepareChildCmd(self):
-        pass
+        # setup
+        addSFCICmd = self.oS.genCMDAddSFCI(self.sfc,self.sfci)
+        self.mediator._cm.addCmd(addSFCICmd)
+        # exercise
+        cCmd = self.mediator._prepareChildCmd(addSFCICmd,
+            MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
+        # verify
+        cCmdinCM = self.mediator._cm.getCmd(cCmd.cmdID)
+        assert cCmd == cCmdinCM
+    
+    def test_MergeDict(self):
+        dict1 = {'vnfi':{'vnfid1':1,'vnfid2':2}}
+        dict2 = {'sfci':self.sfci}
+        self.mediator._MergeDict(dict1,dict2)
+        assert dict2 == {'vnfi':{'vnfid1':1,'vnfid2':2},'sfci':self.sfci}
+
+    @pytest.fixture(scope="function")
+    def setup_genCmdRplys(self):
+        self.cmdRply1 = CommandReply(uuid.uuid1(),CMD_STATE_SUCCESSFUL,
+            attributes = {'vnfi':{'vnfid1':1}})
+        self.cmdRply2 = CommandReply(uuid.uuid1(),CMD_STATE_SUCCESSFUL,
+            attributes = {'vnfi':{'vnfid2':2}})
+
+    def test_getMixedAttributes(self,setup_genCmdRplys):
+        cCmdRplyList = [self.cmdRply1,self.cmdRply2]
+        attributes = self.mediator._getMixedAttributes(cCmdRplyList)
+        assert attributes == {'vnfi':{'vnfid1':1,'vnfid2':2}}

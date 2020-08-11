@@ -23,28 +23,28 @@ from sam.base.server import Server
 from sam.base.messageAgent import *
 from sam.base.sfc import *
 from sam.base.socketConverter import SocketConverter
-from sam.base.socketConverter import SocketConverter as SC
 from sam.base.command import *
 from sam.base.path import *
-from sam.serverController.bessGRPC import *
+from sam.serverController.bessControlPlane import *
 
-class ClassifierInitializer(BessGRPC): # TODO: 删除init命令，改为每次addSFC前检查内部状态，是否init过classifier。
-    def __init__(self,clsMaintainer):
-        self.clsMaintainer = clsMaintainer
-        self._classifierSet = {} # TODO replace
-        self._commandsInfo = {} # TODO replace
-        self._sc = SocketConverter() # TODO replace
+class ClassifierInitializer(BessControlPlane):
+    def __init__(self,cibms):
+        super(ClassifierInitializer,self).__init__()
+        self.cibms = cibms
+        self._sc = SocketConverter()
 
-    def initClassifier(self,cmd):
-        classifier = cmd.attributes['classifier']
+    def initClassifier(self, direction):
+        classifier = direction['ingress']
         serverID = classifier.getServerID()
-        if not serverID in self._classifierSet.iterkeys():
-            self._classifierSet[serverID] = {"server":classifier,"sfcSet":{}}
-            self._initAddModules(classifier)
-            self._initAddRules(classifier)
-            self._initAddLinks(classifier)
+        self.cibms.addCibm(serverID)
+        self._addModules(classifier)
+        self._addRules(classifier)
+        self._addLinks(classifier)
 
-    def _initAddModules(self,classifier):
+    def _addModules(self,classifier):
+        serverID = classifier.getServerID()
+        cibm = self.cibms.getCibm(serverID)
+
         bessServerUrl = classifier.getControlNICIP() + ":10514"
         logging.info(bessServerUrl)
         with grpc.insecure_channel(bessServerUrl) as channel:
@@ -81,8 +81,9 @@ class ClassifierInitializer(BessGRPC): # TODO: 删除init命令，改为每次ad
             # Setmetadata()
             argument = Any()
             arg = module_msg_pb2.SetMetadataArg(attrs=[
-                {'name':"src_mac", 'size':6, 'offset':0},
-                {'name':"dst_mac", 'size':6, 'offset':6}
+                {'name':"ether_src", 'size':6, 'offset':0}, # "src_mac"
+                {'name':"ether_dst", 'size':6, 'offset':6},  # "dst_mac"
+                {'name':"ether_type", 'size':2, 'offset':12}
             ])
             argument.Pack(arg)
             response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
@@ -98,7 +99,13 @@ class ClassifierInitializer(BessGRPC): # TODO: 删除init命令，改为每次ad
                 name="wm1",mclass="WildcardMatch",arg=argument))
             self._checkResponse(response)
 
-            # TODO: MACSwap()
+            # MACSwap()
+            argument = Any()
+            arg = module_msg_pb2.MACSwapArg()
+            argument.Pack(arg)
+            response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
+                name="ms",mclass="MACSwap",arg=argument))
+            self._checkResponse(response)
 
             # WildcardMatch2()
             argument = Any()
@@ -113,6 +120,8 @@ class ClassifierInitializer(BessGRPC): # TODO: 删除init命令，改为每次ad
             response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
                 name="wm2",mclass="WildcardMatch",arg=argument))
             self._checkResponse(response)
+
+            cibm.addModule("wm2","WildcardMatch")
 
             # ArpResponder()
             argument = Any()
@@ -136,6 +145,14 @@ class ClassifierInitializer(BessGRPC): # TODO: 删除init命令，改为每次ad
             self._checkResponse(response)
 
             # Merge
+            # etherencapMerge
+            argument = Any()
+            arg = module_msg_pb2.MergeArg()
+            argument.Pack(arg)
+            response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
+                name="etherEncapMerge",mclass="Merge",arg=argument))
+            self._checkResponse(response)
+
             # outmerge::Merge() -> output0
             argument = Any()
             arg = module_msg_pb2.MergeArg()
@@ -160,7 +177,10 @@ class ClassifierInitializer(BessGRPC): # TODO: 删除init命令，改为每次ad
                 for m in response.modules:
                     logging.info(' {0},{1},{2}'.format(m.name,m.mclass,m.desc))
 
-    def _initAddRules(self,classifier):
+    def _addRules(self,classifier):
+        serverID = classifier.getServerID()
+        cibm = self.cibms.getCibm(serverID)
+
         bessServerUrl = classifier.getControlNICIP() + ":10514"
         with grpc.insecure_channel(bessServerUrl) as channel:
             stub = service_pb2_grpc.BESSControlStub(channel)
@@ -220,6 +240,9 @@ class ClassifierInitializer(BessGRPC): # TODO: 删除init命令，改为每次ad
             response = stub.ModuleCommand(bess_msg_pb2.CommandRequest(
                 name="wm2",cmd="set_default_gate",arg=argument))
             self._checkResponse(response)
+
+            cibm.addOGate2Module("wm2","default_gate",0)
+
             # rule 2
             # ipv4 traffic to gate 1
             argument = Any()
@@ -247,9 +270,11 @@ class ClassifierInitializer(BessGRPC): # TODO: 删除init命令，改为每次ad
                 name="wm2",cmd="add",arg=argument))
             self._checkResponse(response)
 
+            cibm.addOGate2Module("wm2","ipv4",1)
+
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
-    def _initAddLinks(self,classifier):
+    def _addLinks(self,classifier):
         bessServerUrl = classifier.getControlNICIP() + ":10514"
         with grpc.insecure_channel(bessServerUrl) as channel:
             stub = service_pb2_grpc.BESSControlStub(channel)
@@ -276,9 +301,14 @@ class ClassifierInitializer(BessGRPC): # TODO: 删除init命令，改为每次ad
                 m1="wm1",m2="wm2",ogate=1,igate=0))
             self._checkResponse(response)
 
-            #   wm2:0 -> Sink1
+            #   wm2:0 -> ms
             response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
-                m1="wm2",m2="Sink1",ogate=0,igate=0))
+                m1="wm2",m2="ms",ogate=0,igate=0))
+            self._checkResponse(response)
+
+            #       ms -> outmerge
+            response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
+                m1="ms",m2="outmerge",ogate=0,igate=0))
             self._checkResponse(response)
 
             #   wm2:1 -> gdInit
@@ -286,9 +316,14 @@ class ClassifierInitializer(BessGRPC): # TODO: 删除init命令，改为每次ad
                 m1="wm2",m2="gdInit",ogate=1,igate=0))
             self._checkResponse(response)
 
-            #       gdInit -> ee
+            #       gdInit -> etherEncapMerge
             response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
-                m1="gdInit",m2="ee",ogate=0,igate=0))
+                m1="gdInit",m2="etherEncapMerge",ogate=0,igate=0))
+            self._checkResponse(response)
+
+            #       etherEncapMerge -> ee
+            response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
+                m1="etherEncapMerge",m2="ee",ogate=0,igate=0))
             self._checkResponse(response)
 
             #       ee -> outmerge

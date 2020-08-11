@@ -18,16 +18,56 @@ from scapy.all import *
 MANUAL_TEST = True
 
 class TestSFCIAdderClass(TestBase):
-    @pytest.mark.skip(reason='Skip temporarily')
+    @pytest.fixture(scope="function")
+    def setup_addSFCI(self):
+        # setup
+        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
+        self.sfc = self.genSFC(classifier)
+        self.sfci = self.genSFCI()
+        self.mediator = MediatorStub()
+        self.sP = ShellProcessor()
+        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
+        self.sP.runShellCommand("sudo rabbitmqctl purge_queue SERVER_CLASSIFIER_CONTROLLER_QUEUE")
+        self.server = self.genTesterServer()
+        self.runClassifierController()
+        yield
+        # teardown
+        self.sP.killPythonScript("classifierControllerCommandAgent.py")
+
+    def runClassifierController(self):
+        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/classifierControllerCommandAgent.py"
+        self.sP.runPythonScript(filePath)
+
+    # @pytest.mark.skip(reason='Skip temporarily')
     def test_addSFCI(self, setup_addSFCI):
         # exercise
-        self.mediator = MediatorStub()
-        addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
-        self.sendCmd(addSFCICmd)
+        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
+        self.sendCmd(SERVER_CLASSIFIER_CONTROLLER_QUEUE,
+            MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, self.addSFCICmd)
         # verify
+        self.verifyArpResponder()
         self.verifyInboundTraffic()
         self.verifyOutSFCDomainTraffic()
-        # TODO: bi-direction test
+        self.verifyCmdRply()
+
+    def verifyArpResponder(self):
+        self._sendArpRequest(outIntf="toClassifier", requestIP=CLASSIFIER_DATAPATH_IP)
+        self._checkArpRespond(inIntf="toClassifier")
+
+    def _sendArpRequest(self, outIntf, requestIP):
+        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/test/unit/fixtures/sendArpRequest.py"
+        self.sP.runPythonScript(filePath)
+
+    def _checkArpRespond(self,inIntf):
+        print("_checkArpRespond: wait for packet")
+        sniff(filter="ether dst " + str(self.server.getDatapathNICMac()) +
+            " and arp",iface=inIntf, prn=self.frame_callback,count=1,store=0)
+
+    def frame_callback(self,frame):
+        frame.show()
+        if frame[ARP].op == 2 and frame[ARP].psrc == CLASSIFIER_DATAPATH_IP:
+            mac = frame[ARP].hwsrc
+            assert mac.upper() == CLASSIFIER_DATAPATH_MAC
 
     def verifyInboundTraffic(self):
         self._sendInboundTraffic2Classifier()
@@ -35,76 +75,43 @@ class TestSFCIAdderClass(TestBase):
 
     def _sendInboundTraffic2Classifier(self):
         filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/test/unit/fixtures/sendInboundTraffic.py"
-        self.sp.runPythonScript(filePath)
+        self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
         print("_checkEncapsulatedTraffic: wait for packet")
-        sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
+        filterRE = "ether dst " + str(self.server.getDatapathNICMac())
+        sniff(filter=filterRE,
             iface=inIntf, prn=self.encap_callback,count=1,store=0)
 
     def encap_callback(self,frame):
         frame.show()
-        frame[IP].summary()
         condition = (frame[IP].src == CLASSIFIER_DATAPATH_IP and frame[IP].dst == VNFI1_IP and frame[IP].proto == 0x04)
-        assert condition == True
-        print(frame.getlayer('IP'))
-        # TODO: check the usage of scapy
+        assert condition
+        outterPkt = frame.getlayer('IP')[0]
+        # outterPkt.show()
         innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].dst == WEBSITE_VIRTUAL_IP
+        # innerPkt.show()
+        assert innerPkt[IP].dst == WEBSITE_REAL_IP
 
     def verifyOutSFCDomainTraffic(self):
         self._sendOutSFCDomainTraffic2Classifier()
-        self._checkDecapsulatedTraffic()
+        self._checkDecapsulatedTraffic(inIntf="toClassifier")
 
     def _sendOutSFCDomainTraffic2Classifier(self):
         filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/test/unit/fixtures/sendOutSFCDomainTraffic.py"
-        self.sp.runPythonScript(filePath)
+        self.sP.runPythonScript(filePath)
 
-    def _checkDecapsulatedTraffic(self):
+    def _checkDecapsulatedTraffic(self,inIntf):
         print("_checkDecapsulatedTraffic: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback,count=1,store=0)
 
     def decap_callback(self,frame):
         frame.show()
-        condition = (frame[IP].src == VNFI1_IP and frame[IP].dst == WEBSITE_VIRTUAL_IP)
+        condition = (frame[IP].src == WEBSITE_REAL_IP and frame[IP].dst == OUTTER_CLIENT_IP)
         assert condition == True
 
-    @pytest.fixture(scope="function")
-    def setup_cC(self):
-        # setup
-        self.cC = ClassifierController()
-        self.serverID = uuid.uuid1()
-        self.sfcUUID = uuid.uuid1()
-        self.cC._classifierSet[self.serverID] = {"server":None,"sfcSet":{}}
-        self.cC._classifierSet[self.serverID]["sfcSet"][self.sfcUUID] = {}
-        yield
-        # teardown
-        self.cC = None
-
-    def test_getwm2Rule(self, setup_cC):
-        [values,masks] = self.cC._getwm2Rule(self.sfc.directions[0]['match'])
-        assert values == [
-            {'value_bin': '\x00'},
-            {'value_bin': '\x00\x00\x00\x00\x00\x00\x00\x00'},
-            {'value_bin': '\x02\x02\x02\x02'},
-            {'value_bin': '\x00\x00'},
-            {'value_bin': '\x00\x00'}
-        ]
-        assert masks == [
-            {'value_bin': '\x00'},
-            {'value_bin': '\x00\x00\x00\x00\x00\x00\x00\x00'},
-            {'value_bin': '\xff\xff\xff\xff\xff\xff\xff\xff'},
-            {'value_bin': '\x00\x00'},
-            {'value_bin': '\x00\x00'}
-        ]
-
-    @pytest.mark.skip(reason='Skip temporarily')
-    def test_genwm2GateNum(self, setup_cC):
-        num = self.cC._genwm2GateNum(self.serverID, self.sfcUUID)
-        assert num == 2
-
-    @pytest.mark.skip(reason='Skip temporarily')
-    def test_getewm2GateNum(self, setup_cC):
-        num = self.cC._genwm2GateNum(self.serverID, self.sfcUUID)
-        assert self.cC._getewm2GateNum(self.serverID, self.sfcUUID) == num
+    def verifyCmdRply(self):
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.addSFCICmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
