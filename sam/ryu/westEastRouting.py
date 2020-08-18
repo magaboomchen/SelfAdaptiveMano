@@ -14,8 +14,8 @@ from ryu.controller import dpset
 import logging
 import networkx as nx
 import copy
-from conf.ryuConf import *
-from conf.genSwitchConf import SwitchConf
+from sam.ryu.conf.ryuConf import *
+from sam.ryu.conf.genSwitchConf import SwitchConf
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
 from sam.ryu.baseApp import BaseApp
 
@@ -42,7 +42,14 @@ class WestEastRouting(BaseApp):
         self._cacheLinks = {}
         self._cacheHosts = {}
 
-        self.logger.setLevel(logging.WARNING)
+        self.logger.setLevel(logging.ERROR)
+
+    def getMacByIp(self,dpid,ipAddress):
+        if self._switchesLANArpTable.has_key(dpid) and \
+            self._switchesLANArpTable[dpid].has_key(ipAddress):
+            return self._switchesLANArpTable[dpid][ipAddress]
+        else:
+            return None
 
     def _STSP(self,dpid):
         self.logger.debug("calculate stsp for dpid: %d" %dpid)
@@ -177,7 +184,7 @@ class WestEastRouting(BaseApp):
                         self._del_flow(datapath, match, table_id=WEST_EAST_TABLE, priority=1)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
-    def _switch_features_handler(self, ev):
+    def _switchFeaturesHandler(self, ev):
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -203,7 +210,7 @@ class WestEastRouting(BaseApp):
         )
         instructions = [parser.OFPInstructionGotoTable(table_id=WEST_EAST_TABLE)]
         self.logger.debug("_switch_features_handler: Add_flow")
-        self._add_flow(datapath,match,instructions,table_id=CLASSIFIER_TABLE, priority=2)
+        self._add_flow(datapath,match,instructions,table_id=IPv4_CLASSIFIER_TABLE, priority=2)
         self._westEastRIB[datapath.id] = {}
         self._switchesLANArpTable[datapath.id] = {}
 

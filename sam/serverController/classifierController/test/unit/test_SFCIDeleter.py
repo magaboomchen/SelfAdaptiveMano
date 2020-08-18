@@ -17,18 +17,21 @@ from scapy.all import *
 
 MANUAL_TEST = True
 
+TESTER_SERVER_DATAPATH_IP = "192.168.123.1"
+TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"
+
 class TestSFCIDeleterClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addSFCI(self):
         # setup
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genSFC(classifier)
-        self.sfci = self.genSFCI()
+        self.sfc = self.genBiDirectionSFC(classifier)
+        self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
         self.sP = ShellProcessor()
         self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
         self.sP.runShellCommand("sudo rabbitmqctl purge_queue SERVER_CLASSIFIER_CONTROLLER_QUEUE")
-        self.server = self.genTesterServer()
+        self.server = self.genTesterServer("192.168.123.1","fe:54:00:05:4d:7d")
         self.runClassifierController()
         addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(SERVER_CLASSIFIER_CONTROLLER_QUEUE,

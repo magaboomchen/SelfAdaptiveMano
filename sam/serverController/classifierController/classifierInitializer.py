@@ -208,7 +208,7 @@ class ClassifierInitializer(BessControlPlane):
             self._checkResponse(response)
 
             # rule 3
-            # apr traffic to gate 2
+            # arp traffic to gate 2
             argument = Any()
             arg = module_msg_pb2.WildcardMatchCommandAddArg(gate=2,
                 values=[{"value_bin": b'\x08\x06'}],

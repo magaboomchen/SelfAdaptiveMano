@@ -11,9 +11,9 @@ from ryu.topology.api import get_switch, get_link
 from ryu.app.wsgi import ControllerBase
 from ryu.topology import event, switches 
 from ryu.controller import event as controllerEvent
+from sam.ryu.baseApp import BaseApp
 
 import logging
-from sam.ryu.baseApp import BaseApp
 
 class TopologyChangeEvent(controllerEvent.EventBase):
     def __init__(self):
@@ -29,7 +29,7 @@ class TopoCollector(BaseApp):
         self.switches = {}
         self.links = {}
         self.hosts = {}
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.ERROR)
         self.logger.warning("Please use'ryu-manager --observe-links topoCollector.py'")
 
     def _printSwitches(self):
@@ -108,3 +108,13 @@ class TopoCollector(BaseApp):
         # appropriate way to detect the disconnection of hosts. Just defined for
         # future use.
         pass
+
+    def _get_topology_handler(self, cmd):
+        print('*** TopoCollector App Received command= %s', cmd)
+        attr = {
+            "switches": self.switches,
+            "links": self.links,
+            "hosts": self.hosts
+        }
+        cmdRply = CommandReply(cmd.cmdID,CMD_STATE_SUCCESSFUL,attr)
+        # TODO: send command reply

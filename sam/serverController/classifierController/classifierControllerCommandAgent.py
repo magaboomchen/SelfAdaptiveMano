@@ -28,11 +28,6 @@ from sam.serverController.classifierController.cibMaintainer import *
 from sam.serverController.classifierController.classifierSFCIAdder import *
 from sam.serverController.classifierController.classifierSFCIDeleter import *
 
-# Classifier Controller command agent's Responsibilities
-# 1: recv/send commands
-# 2: 5 command processors
-# 3: classifier set maintainer
-
 class ClassifierControllerCommandAgent(object):
     def __init__(self):
         logging.info("Initialize classifier controller command agent.")
@@ -66,7 +61,10 @@ class ClassifierControllerCommandAgent(object):
                     logging.error('classifier command processing error: ' +
                         repr(err))
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
-                except:
+                except Exception as ex:
+                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    logging.error("Classifier Controller occure error: {0}".format(message))
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 finally:
                     rplyMsg = SAMMessage(MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY, 

@@ -4,11 +4,12 @@ import logging
 import time
 from sam.base.socketConverter import *
 from sam.test.testBase import *
+from sam.serverController.classifierController.test.unit.test_SFCIAdder import *
 
 def sendOutSFCDomainTraffic2Classifier():
     data = "Hello World"
     ether = Ether(src=TESTER_SERVER_DATAPATH_MAC, dst=CLASSIFIER_DATAPATH_MAC)
-    ip1 = IP(src=VNFI1_IP,dst=CLASSIFIER_DATAPATH_IP)
+    ip1 = IP(src=VNFI1_0_IP,dst=CLASSIFIER_DATAPATH_IP)
     ip2 = IP(src=WEBSITE_REAL_IP,dst=OUTTER_CLIENT_IP)
     tcp = TCP(sport=1234,dport=80)
     frame = ether / ip1 / ip2 / tcp /Raw(load=data)

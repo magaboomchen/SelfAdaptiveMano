@@ -14,8 +14,8 @@ from ryu.controller import dpset
 import logging
 import networkx as nx
 import copy
-from conf.ryuConf import *
-from conf.genSwitchConf import SwitchConf
+from sam.ryu.conf.ryuConf import *
+from sam.ryu.conf.genSwitchConf import SwitchConf
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
 from sam.ryu.baseApp import BaseApp
 
@@ -43,7 +43,7 @@ class NorthSouthRouting(BaseApp):
         self._defaultDCNGateway = None
         self._defaultDCNGatewayPeerSwitchMac = None
 
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.ERROR)
 
     def _STSP(self,dpid):
         self.logger.debug("calculate stsp for dpid: %d" %dpid)
@@ -187,7 +187,7 @@ class NorthSouthRouting(BaseApp):
             self._cacheNorthSouthRIB[srcDpid][self._dict2OrderJson(matchFields)] = inst
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
-    def _switch_features_handler(self, ev):
+    def _switchFeaturesHandler(self, ev):
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -203,7 +203,7 @@ class NorthSouthRouting(BaseApp):
             eth_type=ether_types.ETH_TYPE_IP
         )
         instructions = [parser.OFPInstructionGotoTable(table_id=NORTH_SOUTH_TABLE)]
-        self._add_flow(datapath,match,instructions,table_id=CLASSIFIER_TABLE, priority=1)
+        self._add_flow(datapath,match,instructions,table_id=IPv4_CLASSIFIER_TABLE, priority=1)
 
         match = parser.OFPMatch()
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
@@ -309,7 +309,7 @@ class NorthSouthRouting(BaseApp):
             if not self._cacheNorthSouthRIB.has_key(dpid):
                 self.logger.debug("old table set has this dpid && new table set dosen't hast this dpid")
                 del self._northSouthRIB[dpid]
- 
+
         for dpid in self._cacheNorthSouthRIB.iterkeys():
             datapath = self._cacheSwitches[dpid].dp
             ofproto = datapath.ofproto

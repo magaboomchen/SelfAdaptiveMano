@@ -1,9 +1,12 @@
+VNF_TYPE_CLASSIFIER = 0
 VNF_TYPE_FORWARD = 1
 VNF_TYPE_FW = 2
 VNF_TYPE_IDS = 3
 VNF_TYPE_MONITOR = 4
 VNF_TYPE_LB = 5
 VNF_TYPE_TRAFFICSHAPER = 6
+
+VNFID_LENGTH = 4    # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 
 class VNFIStatus(object):
     def __init__(self):

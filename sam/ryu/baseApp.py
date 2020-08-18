@@ -7,15 +7,17 @@ from ryu.lib.packet import ether_types
 
 from ruamel import yaml
 import json
-from conf.genSwitchConf import SwitchConf
-from conf.ryuConf import *
+from sam.ryu.conf.genSwitchConf import SwitchConf
+from sam.ryu.conf.ryuConf import *
 from sam.base.socketConverter import SocketConverter
+from sam.base.messageAgent import *
 
 class BaseApp(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(BaseApp, self).__init__(*args, **kwargs)
         self._switchConfs = {}
         self._initSwitchConf(SWITCH_CONF_FILEPATH)
+        self._messageAgent = MessageAgent()
 
     def _initSwitchConf(self,filepath):
         yamlObj = yaml.YAML()
@@ -81,7 +83,7 @@ class BaseApp(app_manager.RyuApp):
         p.add_protocol(e)
         p.add_protocol(a)
         p.serialize()
-        return p 
+        return p
 
     def _getSwitchGatewayIP(self,dpid):
         return self._switchConfs[dpid].gatewayIP

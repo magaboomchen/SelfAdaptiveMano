@@ -1,19 +1,21 @@
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
+from ryu.controller import dpset
+# from ryu.controller import event as controllerEvent
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import arp
 from ryu.lib.packet import ether_types
 from ryu.topology import event, switches 
-from ryu.controller import dpset
+
+from sam.ryu.topoCollector import TopoCollector
+from sam.ryu.conf.genSwitchConf import SwitchConf
+from sam.ryu.conf.ryuConf import *
+from sam.ryu.baseApp import BaseApp
 
 import logging
-from sam.ryu.topoCollector import TopoCollector
-from conf.genSwitchConf import SwitchConf
-from conf.ryuConf import *
-from sam.ryu.baseApp import BaseApp
 
 class L2(BaseApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -26,12 +28,19 @@ class L2(BaseApp):
         super(L2, self).__init__(*args, **kwargs)
         self.dpset = kwargs['dpset']
         self.topoCollector = kwargs['TopoCollector']
-        
+
         self._localPortTable = {}    # {switchid:{port1,port2}}
         self._peerPortTable = {}
         self._switchesLANMacTable = {}
 
-        self.logger.setLevel(logging.WARNING)
+        self.logger.setLevel(logging.ERROR)
+
+    def getPortByMac(self,dpid,mac):
+        if self._switchesLANMacTable.has_key(dpid) and\
+            self._switchesLANMacTable[dpid].has_key(mac):
+            return self._switchesLANMacTable[dpid][mac]
+        else:
+            return None
 
     def _addLocalPort(self, datapath, port):
         if self._localPortTable.has_key(datapath.id):
@@ -45,7 +54,7 @@ class L2(BaseApp):
 
         parser = datapath.ofproto_parser
         match = parser.OFPMatch(eth_dst=portMac,eth_type=ether_types.ETH_TYPE_IP)
-        inst = [parser.OFPInstructionGotoTable(table_id = CLASSIFIER_TABLE)]
+        inst = [parser.OFPInstructionGotoTable(table_id=IPv4_CLASSIFIER_TABLE)]
         self._add_flow(datapath, match, inst, table_id = MAIN_TABLE, priority = 1)
 
     def _delLocalPort(self, datapath, port):
@@ -100,7 +109,7 @@ class L2(BaseApp):
         self._del_flow(datapath, match, table_id = L2_TABLE, priority = 1)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
-    def _switch_features_handler(self, ev):
+    def _switchFeaturesHandler(self, ev):
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -128,7 +137,7 @@ class L2(BaseApp):
                                           ofproto.OFPCML_NO_BUFFER)]
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
-        self._add_flow(datapath, match, inst, table_id = CLASSIFIER_TABLE, priority=0)
+        self._add_flow(datapath, match, inst, table_id = IPv4_CLASSIFIER_TABLE, priority=0)
 
         match = parser.OFPMatch(
                 eth_type=ether_types.ETH_TYPE_ARP

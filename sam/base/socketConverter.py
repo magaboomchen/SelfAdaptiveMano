@@ -34,3 +34,18 @@ class SocketConverter(object):
     def ipPrefix2Mask(self,ipPrefix):
         num = (0xFFFFFFFF00000000 >> ipPrefix) & 0XFFFFFFFF
         return self.int2ip(int(num))
+
+    def bytes2Int(self,bYtes):
+        result = 0
+        for b in list(bYtes):
+            b = ord(b)
+            result = result * 256 + int(b)
+        return result
+
+    def int2Bytes(self,value, length):
+        result = []
+        for i in range(0, length):
+            result.append(value >> (i * 8) & 0xff)
+        result.reverse()
+        result = bytes(bytearray(result))
+        return result

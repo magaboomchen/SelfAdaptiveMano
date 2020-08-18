@@ -64,7 +64,7 @@ class ClassifierSFCIDeleter(BessControlPlane):
 
             hashLBName = cibm.getHashLBName(sfcUUID,direction)
 
-            moduleNameSuffix = '_' + str(SFCIID) + '_' + str(direction['ID'])
+            moduleNameSuffix = self.getSFCIModuleSuffix(SFCIID,direction)
             mclass = "GenericDecap"
             genericDecapName = mclass + moduleNameSuffix
 
@@ -143,7 +143,7 @@ class ClassifierSFCIDeleter(BessControlPlane):
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())
 
-            moduleNameSuffix = '_' + str(SFCIID) + '_' + str(direction['ID'])
+            moduleNameSuffix = self.getSFCIModuleSuffix(SFCIID,direction)
 
             # GenericDecap()
             mclass = "GenericDecap"

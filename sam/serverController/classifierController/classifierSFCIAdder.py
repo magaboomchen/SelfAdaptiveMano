@@ -23,7 +23,6 @@ from sam.serverController.bessControlPlane import *
 from sam.serverController.bessInfoBaseMaintainer import *
 from sam.serverController.classifierController.classifierInitializer import *
 from sam.serverController.classifierController.classifierSFCAdder import *
-from sam.base.socketConverter import SocketConverter
 
 class ClassifierSFCIAdder(BessControlPlane):
     def __init__(self,cibms):
@@ -45,12 +44,12 @@ class ClassifierSFCIAdder(BessControlPlane):
             cibm = self.cibms.getCibm(serverID)
             if not cibm.hasSFCDirection(sfcUUID,direction["ID"]):
                 self.clsfSFCAdder.addSFC(sfcUUID,direction)
-            self._addModules(sfcUUID,sfci,direction)
+            self._addModules(sfc,sfcUUID,sfci,direction)
             self._addRules(sfcUUID,sfci,direction)
             self._addLinks(sfcUUID,sfci,direction)
             cibm.addSFCIDirection(sfcUUID,direction['ID'],SFCIID)
 
-    def _addModules(self,sfcUUID,sfci,direction):
+    def _addModules(self,sfc,sfcUUID,sfci,direction):
         classifier = direction['ingress']
         serverID = classifier.getServerID()
         cibm = self.cibms.getCibm(serverID)
@@ -62,7 +61,7 @@ class ClassifierSFCIAdder(BessControlPlane):
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())
 
-            moduleNameSuffix = '_' + str(SFCIID) + '_' + str(direction['ID'])
+            moduleNameSuffix = self.getSFCIModuleSuffix(SFCIID,direction)
 
             # GenericDecap()
             argument = Any()
@@ -78,10 +77,10 @@ class ClassifierSFCIAdder(BessControlPlane):
             argument = Any()
             tunnelSrcIP = self._sc.aton(classifier.getDatapathNICIP())
             if direction['ID'] == 0:
-                VNFID = sfci.VNFISequence[0].VNFType
+                VNFID = sfc.vNFTypeSequence[0]
                 PathID = DIRECTION1_PATHID_OFFSET
             else:
-                VNFID = sfci.VNFISequence[-1].VNFType
+                VNFID = sfc.vNFTypeSequence[0]
                 PathID = DIRECTION2_PATHID_OFFSET
             tunnelDstIP = self._sc.aton(self._genIP4SVPIDs(SFCIID,VNFID,PathID))
             arg = module_msg_pb2.SetMetadataArg(attrs=[
@@ -109,11 +108,6 @@ class ClassifierSFCIAdder(BessControlPlane):
 
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
-    def _genIP4SVPIDs(self,sfcID,vnfID,pathID):
-        ipNum = (10<<24) + ((sfcID & 0xFFF) << 12) + ((vnfID & 0xF) << 8) \
-            + (pathID & 0xFF)
-        return self._sc.int2ip(ipNum)
-
     def _addRules(self,sfcUUID,sfci,direction):
         classifier = direction['ingress']
         serverID = classifier.getServerID()
@@ -129,7 +123,7 @@ class ClassifierSFCIAdder(BessControlPlane):
 
             # add hash LB gate
             argument = Any()
-            gateNumList = self._assignHashLBOGatesList(serverID,sfcUUID,
+            gateNumList = cibm.assignHashLBOGatesList(serverID,sfcUUID,
                 direction, SFCIID)
             arg = module_msg_pb2.HashLBCommandSetGatesArg(gates=gateNumList)
             argument.Pack(arg)
@@ -137,15 +131,6 @@ class ClassifierSFCIAdder(BessControlPlane):
                 name=hashLBName,cmd="add",arg=argument))
 
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
-
-    def _assignHashLBOGatesList(self,serverID,sfcUUID,direction,SFCIID):
-        cibm = self.cibms.getCibm(serverID)
-        hashLBName = cibm.getHashLBName(sfcUUID,direction)
-        OGateList = cibm.getModuleOGateNumList(hashLBName)
-        oGateNum = cibm.genAvailableMiniNum4List(OGateList)
-        cibm.addOGate2Module(hashLBName,SFCIID,oGateNum)
-        OGateList.append(oGateNum)
-        return OGateList
 
     def _addLinks(self,sfcUUID,sfci,direction):
         classifier = direction['ingress']
@@ -161,7 +146,7 @@ class ClassifierSFCIAdder(BessControlPlane):
 
             hashLBName = cibm.getHashLBName(sfcUUID,direction)
 
-            moduleNameSuffix = '_' + str(SFCIID) + '_' + str(direction['ID'])
+            moduleNameSuffix = self.getSFCIModuleSuffix(SFCIID,direction)
             mclass = "GenericDecap"
             genericDecapName = mclass + moduleNameSuffix
 

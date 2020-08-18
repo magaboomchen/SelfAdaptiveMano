@@ -5,7 +5,7 @@ MANUAL_TEST = True
 
 class TestServerClass(object):
     banList = """
-    updateServerID
+    setServerID
     getServerID
     getIfSet
     printIfSet

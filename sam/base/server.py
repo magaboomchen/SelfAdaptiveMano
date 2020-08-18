@@ -30,8 +30,19 @@ class Server(object):
         self._hugepagesFree = None
         self._hugepageSize = None
 
-    def updateServerID(self, id):
+    def setServerID(self, id):
         self._serverID = id
+
+    def setControlNICIP(self,controlNICIP):
+        ifName = self._controlIfName
+        self._ifSet[ifName] = {}
+        self._ifSet[ifName]["IP"] = controlNICIP
+
+    def setControlNICMAC(self,controlNICMAC):
+        self._serverControlNICMAC = controlNICMAC
+
+    def setDataPathNICMAC(self,datapathNICMAC):
+        self._serverDatapathNICMAC = datapathNICMAC
 
     def getServerID(self):
         return self._serverID

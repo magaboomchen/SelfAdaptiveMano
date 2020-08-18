@@ -21,9 +21,10 @@ class TestMediatorClass(TestBase):
         """
         self.oS = OrchestrationStub()
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genSFC(classifier)
-        self.sfci = self.genSFCI()
-        self.server = self.genTesterServer()
+        self.sfc = self.genBiDirectionSFC(classifier)
+        self.sfci = self.genBiDirection10BackupSFCI()
+        self.server = self.genTesterServer("192.168.123.1",
+            "fe:54:00:05:4d:7d")
         self.sP = ShellProcessor()
         self.mS = MeasurementStub()
         self.sMS = ServerManagerStub()

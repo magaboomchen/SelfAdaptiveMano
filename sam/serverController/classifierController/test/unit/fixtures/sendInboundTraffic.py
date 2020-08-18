@@ -4,6 +4,7 @@ import logging
 import time
 from sam.base.socketConverter import *
 from sam.test.testBase import *
+from sam.serverController.classifierController.test.unit.test_SFCIAdder import *
 
 def sendInboundTraffic2Classifier():
     data = "Hello World"

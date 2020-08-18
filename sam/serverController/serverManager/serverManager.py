@@ -53,7 +53,7 @@ class SeverManager(object):
             serverID = self.serverSet[serverControlNICMac]["server"].getServerID()
         else:
             serverID = self._assignServerID()
-        server.updateServerID(serverID)
+        server.setServerID(serverID)
         self.serverSet[serverControlNICMac] = {"server":server, "Active": True,"timestamp":self._getCurrentTime()}
         threadLock.release()
 

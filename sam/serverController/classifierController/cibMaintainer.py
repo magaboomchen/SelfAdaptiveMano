@@ -59,7 +59,15 @@ class CIBMaintainer(BessInfoBaseMaintainer):
     def hasSFCDirection(self,sfcUUID,direction):
         return self._sfcSet.has_key((sfcUUID,direction))
 
-    def getHashLBName(self,sfcUUID,directionID):
+    def assignHashLBOGatesList(self,serverID,sfcUUID,direction,SFCIID):
+        hashLBName = self.getHashLBName(sfcUUID,direction)
+        OGateList = self.getModuleOGateNumList(hashLBName)
+        oGateNum = self.genAvailableMiniNum4List(OGateList)
+        self.addOGate2Module(hashLBName,SFCIID,oGateNum)
+        OGateList.append(oGateNum)
+        return OGateList
+
+    def getHashLBName(self,sfcUUID,direction):
         mclass = "HashLB"
-        moduleNameSuffix = '_' + str(sfcUUID) + '_' + str(directionID['ID'])
+        moduleNameSuffix = '_' + str(sfcUUID) + '_' + str(direction['ID'])
         return mclass + moduleNameSuffix

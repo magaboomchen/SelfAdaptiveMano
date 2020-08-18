@@ -15,9 +15,9 @@ class TestMediatorClass(TestBase):
         """
         self.oS = OrchestrationStub()
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genSFC(classifier)
-        self.sfci = self.genSFCI()
-        self.genTesterServer()
+        self.sfc = self.genBiDirectionSFC(classifier)
+        self.sfci = self.genBiDirection10BackupSFCI()
+        self.genTesterServer("192.168.123.1","fe:54:00:05:4d:7d")
         mode = {
             'switchType': SWITCH_TYPE_OPENFLOW,    # SWITCH_TYPE_P4/SWITCH_TYPE_OPENFLOW
             'classifierType': 'Server'  # 'Switch'/'Server'

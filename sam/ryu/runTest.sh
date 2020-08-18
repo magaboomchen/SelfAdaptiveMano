@@ -4,7 +4,9 @@ ryuApps=(\
     $RYU_APP_PATH/ofctl_rest.py\
     L2.py\
     northSouthRouting.py\
-    westEastRouting.py
+    westEastRouting.py\
+    uffr.py\
+    ryuCommandAgent.py
     )
 
 for var in ${ryuApps[@]};
