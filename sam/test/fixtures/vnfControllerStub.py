@@ -3,13 +3,14 @@ from sam.base.command import *
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.shellProcessor import *
-from sam.base.sshProcessor import *
+from sam.base.sshAgent import *
 from sam.serverController.sffController.sibMaintainer import *
 
 class VNFControllerStub(object):
     def __init__(self):
         self.mA = MessageAgent()
         self.sibm = SIBMaintainer()
+        self.vnfBase = {}
         # self.mA.startRecvMsg(VNF_CONTROLLER_QUEUE)
 
     def sendCmdRply(self,cmdRply):
@@ -17,28 +18,54 @@ class VNFControllerStub(object):
         self.mA.sendMsg(MEDIATOR_QUEUE,msg)
 
     def installVNF(self,sshUsrname,sshPassword,remoteIP,VNFIID,directions):
-        command = self.genVNFInstallationCommand(VNFIID,directions)
-        print(command)
-        # self.rS = SSHProcessor()
-        # self.rS.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
-        # self.rS.runShellCommand(command)
+        self.vnfBase[remoteIP] = {}
+        self.vnfBase[remoteIP]["VNFAggCount"] = 0
+        command = self.genVNFInstallationCommand(remoteIP,VNFIID,directions)
+        self.sshA = SSHAgent()
+        self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
+        shellCmdRply = self.sshA.runShellCommandWithSudo(command,1)
+        return shellCmdRply
 
-    def genVNFInstallationCommand(self,VNFIID,directions):
-        vdevs0 = self.sibm.getVdev(VNFIID,directions[0]["ID"]).split(",")
-        vdevs1 = self.sibm.getVdev(VNFIID,directions[1]["ID"]).split(",")
+    def genVNFInstallationCommand(self,remoteIP,VNFIID,directions):
+        vdevs0 = self.sibm.getVdev(VNFIID,0).split(",")
+        vdevs1 = self.sibm.getVdev(VNFIID,1).split(",")
         vdev0 = vdevs0[0]
         path0 = vdevs0[1].split("iface=")[1]
         vdev1 = vdevs1[0]
         path1 = vdevs1[1].split("iface=")[1]
-        # "--vdev=" + vdev0 + ",path=" + path0 + " " + \
-        # "--vdev=" + vdev1 + ",path=" + path1 + " " + \
-        command = "sudo docker run -ti --rm --privileged  --name=test " + \
-            "-v /mnt/huge_1GB:/dev/hugepages " + \
-            "-v /tmp/:/tmp/ " + \
-            "dpdk-app-testpmd ./x86_64-native-linuxapp-gcc/app/testpmd -l 0-1 -n 1 -m 1024 --no-pci " + \
-            "-l 1-2 -n 1 -m 1024 --no-pci " + \
-            "--vdev=net_virtio_user0" + ",path=" + path0 + " " + \
-            "--vdev=net_virtio_user1" + ",path=" + path1 + " " + \
-            "--file-prefix=virtio --log-level=8 -- " + \
-            "--txqflags=0xf00 --disable-hw-vlan --forward-mode=io --port-topology=chained --total-num-mbufs=2048 -a"
+        name = self.genVNFName(remoteIP)
+        command = "sudo -S docker run -ti --rm --privileged  --name="+ str(name) + " " \
+            + "-v /mnt/huge_1GB:/dev/hugepages " \
+            + "-v /tmp/:/tmp/ " \
+            + "dpdk-app-testpmd ./x86_64-native-linuxapp-gcc/app/testpmd -l 0-1 -n 1 -m 1024 --no-pci " \
+            + "--vdev=net_virtio_user0" + ",path=" + path0 + " " \
+            + "--vdev=net_virtio_user1" + ",path=" + path1 + " " \
+            + "--file-prefix=virtio --log-level=8 -- " \
+            + "--txqflags=0xf00 --disable-hw-vlan --forward-mode=io --port-topology=chained --total-num-mbufs=2048 -a"
+        self.vnfBase[remoteIP][VNFIID] = {"name":name}
+        return command
+
+    def genVNFName(self,remoteIP):
+        self.vnfBase[remoteIP]["VNFAggCount"] = self.vnfBase[remoteIP]["VNFAggCount"] + 1
+        return "name"+str(self.vnfBase[remoteIP]["VNFAggCount"])
+
+    def getVNFName(self,remoteIP,VNFIID):
+        return self.vnfBase[remoteIP][VNFIID]["name"]
+
+    def uninstallVNF(self,sshUsrname,sshPassword,remoteIP,VNFIID):
+        command = self.genVNFUninstallationCommand(remoteIP,VNFIID)
+        self.sshA = SSHAgent()
+        self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
+        shellCmdRply = self.sshA.runShellCommandWithSudo(command,None)
+        # print("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
+        #     None,
+        #     shellCmdRply['stdout'].read().decode('utf-8'),
+        #     shellCmdRply['stderr'].read().decode('utf-8')))
+        del self.vnfBase[remoteIP][VNFIID]
+        return shellCmdRply
+
+    def genVNFUninstallationCommand(self,remoteIP,VNFIID):
+        name = self.getVNFName(remoteIP,VNFIID)
+        command = "sudo -S docker stop "+name
+        print(command)
         return command

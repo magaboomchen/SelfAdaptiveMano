@@ -1,6 +1,7 @@
 import pytest
-from sam.ryu.baseApp import *
 from ryu.controller import dpset
+
+from sam.ryu.baseApp import *
 from sam.ryu.topoCollector import TopoCollector
 
 class TestBaseAppClass(object):

@@ -1,5 +1,6 @@
 import subprocess
 import logging
+
 import psutil
 
 class BessStarter(object):

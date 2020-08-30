@@ -1,3 +1,5 @@
+import logging
+
 from ryu.base import app_manager
 from ryu.controller import mac_to_port
 from ryu.controller import ofp_event
@@ -11,9 +13,8 @@ from ryu.topology.api import get_switch, get_link
 from ryu.app.wsgi import ControllerBase
 from ryu.topology import event, switches 
 from ryu.controller import event as controllerEvent
-from sam.ryu.baseApp import BaseApp
 
-import logging
+from sam.ryu.baseApp import BaseApp
 
 class TopologyChangeEvent(controllerEvent.EventBase):
     def __init__(self):

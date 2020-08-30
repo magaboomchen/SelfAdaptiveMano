@@ -1,7 +1,11 @@
 import pika
 import subprocess
 import logging
-import Queue
+import sys
+if sys.version > '3':
+    import queue as Queue
+else:
+    import Queue
 import threading
 import time
 import ctypes
@@ -9,6 +13,7 @@ import inspect
 import uuid
 import base64
 import pickle
+
 from sam.base.command import *
 
 RABBITMQSERVERIP = '192.168.122.1'
@@ -24,6 +29,7 @@ VNF_CONTROLLER_QUEUE = "VNF_CONTROLLER_QUEUE"
 SERVER_CLASSIFIER_CONTROLLER_QUEUE = "SERVER_CLASSIFIER_CONTROLLER_QUEUE"
 SERVER_MANAGER_QUEUE = "SERVER_MANAGER_QUEUE"
 NETWORK_CONTROLLER_QUEUE = "NETWORK_CONTROLLER_QUEUE"
+MININET_TESTER_QUEUE = "MININET_TESTER_QUEUE"
 
 # general use case
 MSG_TYPE_STRING = "MSG_TYPE_STRING"
@@ -43,6 +49,8 @@ MSG_TYPE_CLASSIFIER_CONTROLLER_CMD = "MSG_TYPE_CLASSIFIER_CONTROLLER_CMD"
 MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY = "MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY"
 # server manager use case
 MSG_TYPE_SERVER_REPLY = "MSG_TYPE_SERVER_REPLY"
+# tester use case
+MST_TYPE_TESTER_CMD = "MST_TYPE_TESTER_CMD"
 
 class SAMMessage(object):
     def __init__(self,msgType,body):
@@ -72,28 +80,38 @@ class MessageAgent(object):
         self._consumerConnection = self._connectRabbitMQServer()
 
     def sendMsg(self,dstQueueName,message):
-        channel = self._publisherConnection.channel()
-        channel.queue_declare(queue=dstQueueName,durable=True)
-        channel.basic_publish(exchange='',routing_key=dstQueueName,body=self._encodeMessage(message),
-            properties=pika.BasicProperties(delivery_mode = 2, # make message persistent
-            ))
-        logging.info(" [x] Sent %r" % message)
-        channel.close()
+        try:
+            channel = self._publisherConnection.channel()
+            channel.queue_declare(queue=dstQueueName,durable=True)
+            channel.basic_publish(exchange='',routing_key=dstQueueName,body=self._encodeMessage(message),
+                properties=pika.BasicProperties(delivery_mode = 2, # make message persistent
+                ))
+            logging.info(" [x] Sent %r" % message)
+            channel.close()
+        except:
+            print("MessageAgent sendMsg failed!")
 
     def startRecvMsg(self,srcQueueName):
-        threadLock.acquire()
         logging.debug("MessageAgent.startRecvMsg().")
         if srcQueueName in self.msgQueues:
             logging.info("Already listening on recv queue.")
         else:
+            threadLock.acquire()
             self.msgQueues[srcQueueName] = Queue.Queue()
-            channel = self._consumerConnection.channel()
-            # start a new thread to recieve
-            thread = QueueReciever(len(self._threadSet), channel, srcQueueName, self.msgQueues[srcQueueName])
-            self._threadSet[srcQueueName] = thread
-            thread.setDaemon(True)
-            thread.start()
-        threadLock.release()
+            try:
+                channel = self._consumerConnection.channel()
+                # start a new thread to recieve
+                thread = QueueReciever(len(self._threadSet), channel, srcQueueName, self.msgQueues[srcQueueName])
+                self._threadSet[srcQueueName] = thread
+                thread.setDaemon(True)
+                thread.start()
+                result = True
+            except:
+                print("MessageAgent startRecvMsg failed")
+                result = False
+            finally:
+                threadLock.release()
+                return result
 
     def getMsg(self,srcQueueName, throughput=1000):
         # poll-mode: we need to trade-off between cpu utilization and performance

@@ -1,3 +1,7 @@
+import uuid
+import subprocess
+import time
+
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
@@ -10,22 +14,25 @@ from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
 from sam.test.fixtures.orchestrationStub import *
-import uuid
-import subprocess
+
+from scapy.all import *
 import psutil
 import pytest
-import time
-from scapy.all import *
 
 OUTTER_CLIENT_IP = "1.1.1.1"
 WEBSITE_REAL_IP = "2.2.0.34"
 
-CLASSIFIER_DATAPATH_IP = "2.2.0.35"
+TEST_SERVERID = 19999
+
+CLASSIFIER_DATAPATH_IP = "2.2.0.36"
 CLASSIFIER_DATAPATH_MAC = "52:54:00:05:4D:7D"
 CLASSIFIER_CONTROL_IP = "192.168.122.34"
+CLASSIFIER_SERVERID = 10001
 
 VNFI1_0_IP = "10.0.17.1"
 VNFI1_1_IP = "10.0.17.128"
+SFCI1_0_EGRESS_IP = "10.0.16.1"
+SFCI1_1_EGRESS_IP = "10.0.16.128"
 
 SFF1_DATAPATH_IP = "2.2.0.69"
 SFF1_DATAPATH_MAC = "52:54:00:9D:F4:F4"
@@ -46,22 +53,36 @@ class TestBase(object):
 
     def genClassifier(self, datapathIfIP):
         classifier = Server("ens3", datapathIfIP, SERVER_TYPE_CLASSIFIER)
-        classifier.setServerID(uuid.uuid1())
+        classifier.setServerID(CLASSIFIER_SERVERID)
         classifier._serverDatapathNICIP = CLASSIFIER_DATAPATH_IP
         classifier._ifSet["ens3"] = {}
         classifier._ifSet["ens3"]["IP"] = CLASSIFIER_CONTROL_IP
         classifier._serverDatapathNICMAC = CLASSIFIER_DATAPATH_MAC
         return classifier
 
-    def genTesterServer(self,datapathIfIP,datapathIfMac):
+    def genTesterServer(self, datapathIfIP, datapathIfMac):
         server = Server("virbr0", datapathIfIP, SERVER_TYPE_TESTER)
-        server.setServerID(uuid.uuid1())
+        server.setServerID(TEST_SERVERID)
         server.updateControlNICMAC()
         server.updateIfSet()
         server._serverDatapathNICMAC = datapathIfMac
         return server
 
-    def genUniDirectionSFC(self,classifier):
+    def runClassifierController(self):
+        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/classifierControllerCommandAgent.py"
+        self.sP.runPythonScript(filePath)
+
+    def killClassifierController(self):
+        self.sP.killPythonScript("classifierControllerCommandAgent.py")
+
+    def runSFFController(self):
+        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/sffController/sffControllerCommandAgent.py"
+        self.sP.runPythonScript(filePath)
+
+    def killSFFController(self):
+        self.sP.killPythonScript("sffControllerCommandAgent.py")
+
+    def genUniDirectionSFC(self, classifier):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_FORWARD]
         maxScalingInstanceNumber = 1
@@ -80,7 +101,7 @@ class TestBase(object):
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions)
 
-    def genBiDirectionSFC(self,classifier):
+    def genBiDirectionSFC(self, classifier):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_FORWARD]
         maxScalingInstanceNumber = 1
@@ -123,14 +144,14 @@ class TestBase(object):
         return SFCI(self.assignSFCIID(),VNFISequence, None,
             self.genUniDirection11BackupForwardingPathSet())
 
-    def gen10BackupVNFISequence(self,SFCLength=1):
+    def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
         VNFISequence = []
         for index in range(SFCLength):
             VNFISequence.append([])
             for iN in range(1):
                 server = Server("ens3",SFF1_DATAPATH_IP,SERVER_TYPE_NORMAL)
-                server.setServerID(SERVERID_OFFSET + index)
+                server.setServerID(SERVERID_OFFSET + 1)
                 server.setControlNICIP(SFF1_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
@@ -139,7 +160,7 @@ class TestBase(object):
                 VNFISequence[index].append(vnfi)
         return VNFISequence
 
-    def gen11BackupVNFISequence(self,SFCLength=1):
+    def gen11BackupVNFISequence(self, SFCLength=1):
         # hard-code function
         VNFISequence = []
         for index in range(SFCLength):
@@ -150,7 +171,7 @@ class TestBase(object):
             server.setControlNICIP(SFF1_CONTROLNIC_IP)
             server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
-            vnfi = VNFI(VNF_TYPE_FORWARD,VNFType=VNF_TYPE_FORWARD,VNFIID=uuid.uuid1(),
+            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD,VNFType=VNF_TYPE_FORWARD,VNFIID=uuid.uuid1(),
                 node=server)
             VNFISequence[index].append(vnfi)
 
@@ -159,69 +180,87 @@ class TestBase(object):
             server.setControlNICIP(SFF2_CONTROLNIC_IP)
             server.setControlNICMAC(SFF2_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF2_DATAPATH_MAC)
-            vnfi = VNFI(VNF_TYPE_FORWARD,VNFType=VNF_TYPE_FORWARD,VNFIID=uuid.uuid1(),
+            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD,VNFType=VNF_TYPE_FORWARD,VNFIID=uuid.uuid1(),
                 node=server)
             VNFISequence[index].append(vnfi)
 
         return VNFISequence
 
     def genUniDirection10BackupForwardingPathSet(self):
-        primaryForwardingPath = {1:[10001,1,2,10002],
-            128:[10002,2,1,10001]}
-        frrType = "UFFR"
+        primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
+        frrType = "UFRR"
         # {(srcID,dstID,pathID):forwardingPath}
-        backupForwardingPath = {(1,2,2):[[1,3,2,10002],[10002,2,3,1,10001]]}
+        backupForwardingPath = {
+            1:{(1,2,2):[[1,3,2,10002],[10002,2,3,1,10001]]}
+        }
         return ForwardingPathSet(primaryForwardingPath,frrType,
             backupForwardingPath)
 
     def genUniDirection11BackupForwardingPathSet(self):
-        primaryForwardingPath = {1:[10001,1,2,10002],
-            128:[10002,2,1,10001]}
-        frrType = "UFFR"
+        primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
+        frrType = "UFRR"
         # {(srcID,dstID,pathID):forwardingPath}
-        backupForwardingPath = {(1,2,2):[[1,3,10003],[10003,3,1,10001]],
-            (2,10002,3):[[2,3,10003],[10003,3,1,10001]]}
+        backupForwardingPath = {
+            1:{(1,2,2):[[1,3,10003],[10003,3,1,10001]],
+                (2,10002,3):[[2,3,10003],[10003,3,1,10001]]
+            }
+        }
         return ForwardingPathSet(primaryForwardingPath,frrType,
             backupForwardingPath)
 
     def genBiDirection10BackupForwardingPathSet(self):
-        # TODO: bi-direction
-        pass
-        return None
+        primaryForwardingPath = {
+            1:[[10001,1,2,10002],[10002,2,1,10001]],
+            128:[[10001,1,2,10002],[10002,2,1,10001]]
+        }
+        frrType = "UFRR"
+        # {(srcID,dstID,pathID):forwardingPath}
+        backupForwardingPath = {
+            1:{(1,2,2):[[1,3,2,10002],[10002,2,3,1,10001]]
+            },
+            128:{
+                (1,2,129):[[1,3,2,10002],[10002,2,3,1,10001]]
+            }
+        }
+        return ForwardingPathSet(primaryForwardingPath,frrType,
+            backupForwardingPath)
 
-    def recvCmd(self,queue):
-        self._messageAgent = MessageAgent()
-        self._messageAgent.startRecvMsg(queue)
+    def recvCmd(self, queue):
+        messageAgentTmp = MessageAgent()
+        messageAgentTmp.startRecvMsg(queue)
         print("testBase:recvCmd")
         while True:
-            msg = self._messageAgent.getMsg(queue)
+            msg = messageAgentTmp.getMsg(queue)
             msgType = msg.getMessageType()
             if msgType == None:
                 pass
             else:
                 body = msg.getbody()
-                if self._messageAgent.isCommand(body):
+                if messageAgentTmp.isCommand(body):
                     return body
                 else:
-                    logging.error("Unknown massage body")
+                    logging.error("Unknown massage body: {0}".format(type(body)))
+        del messageAgentTmp
 
-    def recvCmdRply(self,queue):
-        self._messageAgent = MessageAgent()
-        self._messageAgent.startRecvMsg(queue)
+    def recvCmdRply(self, queue):
+        messageAgentTmp = MessageAgent()
+        messageAgentTmp.startRecvMsg(queue)
         while True:
-            msg = self._messageAgent.getMsg(queue)
+            msg = messageAgentTmp.getMsg(queue)
             msgType = msg.getMessageType()
             if msgType == None:
                 pass
             else:
                 body = msg.getbody()
-                if self._messageAgent.isCommandReply(body):
+                if messageAgentTmp.isCommandReply(body):
                     print("testBase:recvCmdRply")
                     return body
                 else:
                     logging.error("Unknown massage body")
+        del messageAgentTmp
 
-    def sendCmd(self,queue,msgType,cmd):
-        self._messageAgent = MessageAgent()
+    def sendCmd(self, queue, msgType, cmd):
+        messageAgentTmp = MessageAgent()
         msg = SAMMessage(msgType, cmd)
-        self._messageAgent.sendMsg(queue,msg)
+        messageAgentTmp.sendMsg(queue,msg)
+        del messageAgentTmp

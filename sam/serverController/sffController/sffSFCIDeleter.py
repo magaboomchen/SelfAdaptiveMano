@@ -1,17 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import grpc
-import os
 from google.protobuf.any_pb2 import Any
-import pika
-import base64
-import pickle
-import time
-import uuid
-import subprocess
-import logging
-import Queue
-import struct
 
 import sam.serverController.builtin_pb.service_pb2 as service_pb2
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
@@ -21,7 +11,6 @@ import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
 from sam.serverController.bessControlPlane import *
 from sam.serverController.sffController.sffInitializer import *
 from sam.serverController.sffController.sibMaintainer import *
-
 from sam.base.server import *
 
 class SFFSFCIDeleter(BessControlPlane):
@@ -166,16 +155,14 @@ class SFFSFCIDeleter(BessControlPlane):
 
             # PMDPort0
             # PMDPort()
-            vnfPMDPort0Name = sibm.getModuleName("PMDPort",VNFIID,
-                directions[0]["ID"])
+            vnfPMDPort0Name = sibm.getModuleName("PMDPort",VNFIID,0)
             response = stub.DestroyPort(bess_msg_pb2.DestroyPortRequest(
                 name=vnfPMDPort0Name))
             self._checkResponse(response)
 
             # PMDPort1
             # PMDPort()
-            vnfPMDPort1Name = sibm.getModuleName("PMDPort",
-                VNFIID,directions[1]["ID"])
+            vnfPMDPort1Name = sibm.getModuleName("PMDPort",VNFIID,1)
             response = stub.DestroyPort(bess_msg_pb2.DestroyPortRequest(
                 name=vnfPMDPort1Name))
             self._checkResponse(response)

@@ -3,6 +3,7 @@ import os
 import pwd
 import subprocess
 import argparse
+
 from argParser import *
 from shellProcessor import *
 
@@ -22,13 +23,17 @@ class EnvironmentSetter(object):
     def __init__(self):
         self.sP = ShellProcessor()
 
-    def addSAMSystemPath(self,path):
+    def addPythonModuleSystemPath(self,path, pthfileName="selfAdaptiveMano.pth"):
         directorys = site.getsitepackages()
         print(directorys)
+        # ['/usr/local/lib/python2.7/dist-packages',
+        #  '/usr/lib/python2.7/dist-packages']
         for direct in directorys:
             self.sP.runShellCommand(
-                "echo  '" + selfAdaptiveManoFilePath + "' > " + \
-                direct + "/selfAdaptiveMano.pth")
+                "echo  '" + path + "' > " \
+                + direct + "/" + pthfileName)
+        # echo XXX > /usr/local/lib/python2.7/dist-packages/selfAdaptiveMano.pth
+        # echo XXX > /usr/lib/python2.7/dist-packagesselfAdaptiveMano.pth
 
     def getUsername():
         return pwd.getpwuid( os.getuid() )[ 0 ]
@@ -38,4 +43,4 @@ if __name__=="__main__":
     arg = aP.getArgs()
     selfAdaptiveManoFilePath = arg['path']
     eS = EnvironmentSetter()
-    eS.addSAMSystemPath(selfAdaptiveManoFilePath)
+    eS.addPythonModuleSystemPath(selfAdaptiveManoFilePath)

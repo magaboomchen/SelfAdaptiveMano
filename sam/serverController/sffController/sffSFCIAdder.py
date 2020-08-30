@@ -1,17 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import grpc
-import os
 from google.protobuf.any_pb2 import Any
-import pika
-import base64
-import pickle
-import time
-import uuid
-import subprocess
-import logging
-import Queue
-import struct
 
 import sam.serverController.builtin_pb.service_pb2 as service_pb2
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
@@ -21,7 +11,6 @@ import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
 from sam.serverController.bessControlPlane import *
 from sam.serverController.sffController.sffInitializer import *
 from sam.serverController.sffController.sibMaintainer import *
-
 from sam.base.server import *
 
 class SFFSFCIAdder(BessControlPlane):
@@ -66,9 +55,8 @@ class SFFSFCIAdder(BessControlPlane):
 
             # PMDPort0
             # PMDPort()
-            vnfPMDPORT0Vdev = sibm.getVdev(VNFIID,directions[0]["ID"])
-            vnfPMDPort0Name = sibm.getModuleName("PMDPort",VNFIID,
-                directions[0]["ID"])
+            vnfPMDPORT0Vdev = sibm.getVdev(VNFIID,0)
+            vnfPMDPort0Name = sibm.getModuleName("PMDPort",VNFIID,0)
             argument = Any()
             argument.Pack(port_msg_pb2.PMDPortArg(loopback=True,
                 vdev=vnfPMDPORT0Vdev,vlan_offload_rx_strip=False,
@@ -80,9 +68,8 @@ class SFFSFCIAdder(BessControlPlane):
 
             # PMDPort1
             # PMDPort()
-            vnfPMDPORT1Vdev = sibm.getVdev(VNFIID,directions[1]["ID"])
-            vnfPMDPort1Name = sibm.getModuleName("PMDPort",
-                VNFIID,directions[1]["ID"])
+            vnfPMDPORT1Vdev = sibm.getVdev(VNFIID,1)
+            vnfPMDPort1Name = sibm.getModuleName("PMDPort",VNFIID,1)
             argument = Any()
             argument.Pack(port_msg_pb2.PMDPortArg(loopback=True,
                 vdev=vnfPMDPORT1Vdev,vlan_offload_rx_strip=False,
@@ -123,26 +110,35 @@ class SFFSFCIAdder(BessControlPlane):
                 self._checkResponse(response)
 
                 # Update
+                # nameUpdate = sibm.getModuleName("Update",VNFIID,directionID)
+                # SFCIID = sfci.SFCIID
+                # srcIPValue = self._sc.ip2int(server.getDatapathNICIP())
+                # nextVNFID = sibm.getNextVNFID(sfci,vnfi,directionID)
+                # if nextVNFID == VNF_TYPE_CLASSIFIER:
+                #     egress = direction['egress']
+                #     dstIPValue = self._sc.ip2int(egress.getDatapathNICIP())
+                #     argument = Any()
+                #     argument.Pack( module_msg_pb2.UpdateArg( fields=[
+                #         {"offset":26, "size":4, "value":srcIPValue},
+                #         {"offset":30, "size":4, "value":dstIPValue}
+                #         ]))
+                # else:
+                #     dstIPValue = sibm.getUpdateValue(SFCIID,nextVNFID)
+                #     argument = Any()
+                #     argument.Pack( module_msg_pb2.UpdateArg( fields=[
+                #         {"offset":26, "size":4, "value":srcIPValue},
+                #         {"offset":31, "size":2, "value":dstIPValue}
+                #         ]))
                 nameUpdate = sibm.getModuleName("Update",VNFIID,directionID)
                 SFCIID = sfci.SFCIID
                 srcIPValue = self._sc.ip2int(server.getDatapathNICIP())
                 nextVNFID = sibm.getNextVNFID(sfci,vnfi,directionID)
-                if nextVNFID == VNF_TYPE_CLASSIFIER:
-                    egress = direction['egress']
-                    dstIPValue = self._sc.ip2int(egress.getDatapathNICIP())
-                    argument = Any()
-                    argument.Pack( module_msg_pb2.UpdateArg( fields=[
-                        {"offset":26, "size":4, "value":srcIPValue},
-                        {"offset":30, "size":4, "value":dstIPValue}
-                        ]))
-                else:
-                    dstIPValue = sibm.getUpdateValue(SFCIID,nextVNFID)
-                    dstIPValue     
-                    argument = Any()
-                    argument.Pack( module_msg_pb2.UpdateArg( fields=[
-                        {"offset":26, "size":4, "value":srcIPValue},
-                        {"offset":31, "size":2, "value":dstIPValue}
-                        ]))
+                dstIPValue = sibm.getUpdateValue(SFCIID,nextVNFID)
+                argument = Any()
+                argument.Pack( module_msg_pb2.UpdateArg( fields=[
+                    {"offset":26, "size":4, "value":srcIPValue},
+                    {"offset":31, "size":2, "value":dstIPValue}
+                    ]))
 
                 response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
                     name=nameUpdate,mclass="Update",arg=argument))

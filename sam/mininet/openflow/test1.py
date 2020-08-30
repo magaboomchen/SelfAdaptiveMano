@@ -2,7 +2,7 @@
 
 """
 3 switches topology
-test ryu self learning switch
+test ryu's app including: L2, northsouth, westeast, uffr, notvia, etc.
 """
 
 import re
@@ -18,6 +18,7 @@ from mininet.util import quietRun
 from functools import partial
 from mininet.node import OVSSwitch, Controller, RemoteController
 from mininet.topo import Topo
+from mininet.link import TCLink
 from mininet.util import irange, quietRun
 
 # KVM Bridge
@@ -60,7 +61,9 @@ class TriangleTopo( Topo ):
         switchNum = 3
 
         # Create hosts
-        hosts = [ self.addHost('h1'), self.addHost('h2'), self.addHost('h3'), self.addHost('h4')]
+        hosts = [ self.addHost('h1', privateDirs=[
+                '/home/vm2/mininet/scripts/results/']),
+            self.addHost('h2'), self.addHost('h3'), self.addHost('h4')]
 
         # Create switches
         s1 = self.addSwitch('s1', dpid="0000000000000001", protocols=["OpenFlow13"])
@@ -73,14 +76,17 @@ class TriangleTopo( Topo ):
         self.addLink( hosts[0],switches[0] )    # make sure the DCN gateway port 1 link to peer
 
         # Wire up switches
-        for i in range(switchNum):
-            print(i,(i+1)%switchNum)
-            self.addLink(switches[i],switches[(i+1)%switchNum])
+        # for i in range(switchNum):
+        #     print(i,(i+1)%switchNum)
+        #     self.addLink(switches[i],switches[(i+1)%switchNum])
+        self.addLink(switches[0], switches[1], delay='10ms')
+        self.addLink(switches[1], switches[2], delay='10ms')
+        self.addLink(switches[2], switches[0], delay='10ms')
 
         # Wire up hosts
-        self.addLink( hosts[1],switches[0] )
-        self.addLink( hosts[2],switches[0] )
-        self.addLink( hosts[3],switches[2] )
+        self.addLink( hosts[1],switches[0])
+        self.addLink( hosts[2],switches[0])
+        self.addLink( hosts[3],switches[2])
 
 class NetConfigurator(object):
     def __init__(self,net):
@@ -196,7 +202,8 @@ if __name__ == '__main__':
     info( '*** Creating network\n' )
     topo = TriangleTopo()
     net = Mininet( topo=topo,
-        controller=partial( RemoteController, ip='192.168.122.1', port=6633 )  )
+        controller=partial(RemoteController, ip='192.168.122.1', port=6633),
+        link=TCLink)
 
     nc = NetConfigurator(net)
     nc.configureSwitches()

@@ -10,7 +10,6 @@ import time
 import uuid
 import subprocess
 import logging
-import Queue
 
 import sam.serverController.builtin_pb.service_pb2
 import sam.serverController.builtin_pb.service_pb2_grpc

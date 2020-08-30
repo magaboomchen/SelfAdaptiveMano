@@ -2,18 +2,19 @@
 import pika
 import sys
 import base64
-import pickle
 import time
 import uuid
 import os
 import subprocess
 import logging
-import Queue
 import threading
-from argParser import ArgParser
-from systemChecker import SystemChecker
-from dpdkConfigurator import DPDKConfigurator
-from bessStarter import BessStarter
+
+import pickle
+
+from sam.serverAgent.argParser import ArgParser
+from sam.serverAgent.systemChecker import SystemChecker
+from sam.serverAgent.dpdkConfigurator import DPDKConfigurator
+from sam.serverAgent.bessStarter import BessStarter
 from sam.base.server import Server
 from sam.base.messageAgent import *
 
@@ -51,7 +52,7 @@ if __name__=="__main__":
 
     SystemChecker()
     DPDKConfigurator(NICPCIAddress)
-    BessStarter()
 
     serverAgent = ServerAgent(controllNICName, serverType, datapathNICIP)
+    BessStarter()
     serverAgent.run()

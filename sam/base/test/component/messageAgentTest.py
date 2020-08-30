@@ -1,7 +1,6 @@
 import pika
 import subprocess
 import logging
-import Queue
 import threading
 import time
 import ctypes

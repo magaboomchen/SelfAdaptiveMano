@@ -1,6 +1,8 @@
-import pytest
 import sys
+
+import pytest
 from ryu.controller import dpset
+
 from sam.ryu.topoCollector import TopoCollector
 
 class TestWestEastRoutingClass(object):

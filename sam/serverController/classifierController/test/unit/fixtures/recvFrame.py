@@ -1,6 +1,5 @@
-import os
 from scapy.all import *
-import logging
+
 from sam.base.socketConverter import *
 
 def recvFrame(inIntf):

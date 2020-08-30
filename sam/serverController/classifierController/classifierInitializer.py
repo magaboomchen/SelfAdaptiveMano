@@ -1,17 +1,8 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import grpc
-import os
 from google.protobuf.any_pb2 import Any
-import pika
-import base64
-import pickle
-import time
-import uuid
-import subprocess
 import logging
-import Queue
-import struct
 
 import sam.serverController.builtin_pb.service_pb2 as service_pb2
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
@@ -36,6 +27,9 @@ class ClassifierInitializer(BessControlPlane):
     def initClassifier(self, direction):
         classifier = direction['ingress']
         serverID = classifier.getServerID()
+        bessServerUrl = classifier.getControlNICIP() + ":10514"
+        if not self.isBESSAlive(bessServerUrl):
+            raise ValueError("classifier's bess is not alive")
         self.cibms.addCibm(serverID)
         self._addModules(classifier)
         self._addRules(classifier)
@@ -252,15 +246,15 @@ class ClassifierInitializer(BessControlPlane):
             arg = module_msg_pb2.WildcardMatchCommandAddArg(gate=1,
                 values=[
                     {"value_bin":b'\x00'},
-                    {"value_bin":b'\x00\x00\x00\x00\x00\x00\x00\x00'},
-                    {"value_bin":self._sc.aton(classifierDatapathIP)},
+                    {"value_bin":b'\x00\x00\x00\x00'},
+                    {"value_bin":b'\x0A\x00\x00\x00'},
                     {"value_bin":b'\x00\x00'},
                     {"value_bin":b'\x00\x00'}
                 ],
                 masks=[
                     {'value_bin':b'\x00'},
-                    {'value_bin':b'\x00\x00\x00\x00\x00\x00\x00\x00'},
-                    {'value_bin':b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF'},
+                    {'value_bin':b'\x00\x00\x00\x00'},
+                    {'value_bin':b'\x0F\x00\x0F\x00'},
                     {'value_bin':b'\x00\x00'},
                     {'value_bin':b'\x00\x00'}
                 ]

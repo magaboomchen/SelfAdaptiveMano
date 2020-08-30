@@ -6,7 +6,7 @@ VNF_TYPE_MONITOR = 4
 VNF_TYPE_LB = 5
 VNF_TYPE_TRAFFICSHAPER = 6
 
-VNFID_LENGTH = 4    # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
+VNFID_LENGTH = 4 # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 
 class VNFIStatus(object):
     def __init__(self):
@@ -16,12 +16,13 @@ class VNFIStatus(object):
         self.outputPacketAmount = None
 
 class VNFI(object):
-    def __init__(self, VNFID=None,VNFType=None,VNFIID=None,config=None,node=None,vnfiStatus=None):
+    def __init__(self, VNFID=None,VNFType=None,VNFIID=None,
+        config=None,node=None,vnfiStatus=None):
         self.VNFID = VNFID
         self.VNFType = VNFType
         self.VNFIID = VNFIID
         self.config = config
-        self.node = node    # server or switch
+        self.node = node # server or switch
         self.vnfiStatus = vnfiStatus
 
 class VNFIRequest(object):

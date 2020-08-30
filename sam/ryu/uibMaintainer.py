@@ -1,6 +1,6 @@
 from sam.base.xibMaintainer import *
 
-# TODO
+# TODO: test
 
 class UIBMaintainer(XInfoBaseMaintainer):
     def __init__(self, *args, **kwargs):
@@ -8,7 +8,7 @@ class UIBMaintainer(XInfoBaseMaintainer):
         self.groupIDSets = {}
         self.sfciRIB = {}
 
-    def assignGroupID(self,dpid):
+    def assignGroupID(self, dpid):
         if not self.groupIDSets.has_key(dpid):
             self.groupIDSets[dpid] = [0]
             return 0
@@ -17,23 +17,40 @@ class UIBMaintainer(XInfoBaseMaintainer):
             self.groupIDSets[dpid].append(groupID)
             return groupID
 
-    def delGroupID(self,dpid,groupID):
+    def delGroupID(self, dpid, groupID):
         self.groupIDSets[dpid].remove(groupID)
 
-    def addFlowTableEntry(self,SFCIID,dpid,matchFields,groupID=None):
+    def addSFCIFlowTableEntry(self, SFCIID, dpid, tableID, matchFields,
+        groupID=None):
         if not self.sfciRIB.has_key(SFCIID):
             self.sfciRIB[SFCIID] = {}
         if not self.sfciRIB[SFCIID].has_key(dpid):
             self.sfciRIB[SFCIID][dpid] = []
         if groupID == None:
             self.sfciRIB[SFCIID][dpid].append(
-                {"match":matchFields})
+                {"tableID":tableID, "match":matchFields})
         else:
             self.sfciRIB[SFCIID][dpid].append(
-                {"match":matchFields,"groupID":groupID})
+                {"tableID":tableID, "match":matchFields, "groupID":groupID})
 
-    def delSFCIFlowTableEntry(self,SFCIID):
+    def delSFCIFlowTableEntry(self, SFCIID):
         del self.sfciRIB[SFCIID]
-    
-    def getSFCIFlowTableEntry(self,SFCIID,dpid):
-        return self.sfciRIB[SFCIID][dpid]
+
+    def getSFCIFlowTable(self, SFCIID):
+        return self.sfciRIB[SFCIID]
+
+    def hasSFCIFlowTable(self, SFCIID, dpid, matchFields):
+        if not self.sfciRIB.has_key(SFCIID):
+            return False
+        if not self.sfciRIB[SFCIID].has_key(dpid):
+            return False
+        self.printSFCIFlowTable(SFCIID, dpid)
+        for entry in self.sfciRIB[SFCIID][dpid]:
+            if entry["match"] == matchFields:
+                return True
+        else:
+            return False
+
+    def printSFCIFlowTable(self, SFCIID, dpid):
+        for entry in self.sfciRIB[SFCIID][dpid]:
+            print(entry["match"])

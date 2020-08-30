@@ -1,12 +1,12 @@
 import base64
-import pickle
 import time
 import uuid
 import subprocess
 import logging
-import Queue
 import struct
 import copy
+
+import pickle
 
 from sam.base.server import Server
 from sam.base.messageAgent import *

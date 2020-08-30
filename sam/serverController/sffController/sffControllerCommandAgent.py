@@ -1,22 +1,9 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import grpc
-import os
-from google.protobuf.any_pb2 import Any
-import pika
-import base64
-import pickle
-import time
-import uuid
-import subprocess
 import logging
-import Queue
 
-import sam.serverController.builtin_pb.service_pb2
-import sam.serverController.builtin_pb.service_pb2_grpc
-import sam.serverController.builtin_pb.bess_msg_pb2
-import sam.serverController.builtin_pb.module_msg_pb2
-import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
+from google.protobuf.any_pb2 import Any
+import grpc
 
 from sam.base.server import Server
 from sam.base.messageAgent import *
@@ -60,15 +47,15 @@ class SFFControllerCommandAgent(object):
                     else:
                         logging.error("Unkonwn sff command type.")
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL
-                except ValueError as err:
-                    logging.error('sff controller command processing error: ' +
-                        repr(err))
-                    self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
-                except Exception as ex:
-                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                    message = template.format(type(ex).__name__, ex.args)
-                    logging.error("SFF Controller occure error: {0}".format(message))
-                    self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
+                # except ValueError as err:
+                #     logging.error('sff controller command processing error: ' +
+                #         repr(err))
+                #     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
+                # except Exception as ex:
+                #     template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                #     message = template.format(type(ex).__name__, ex.args)
+                #     logging.error("SFF Controller occure error: {0}".format(message))
+                #     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 finally:
                     rplyMsg = SAMMessage(MSG_TYPE_SSF_CONTROLLER_CMD_REPLY, 
                         CommandReply(cmd.cmdID,self._commandsInfo[cmd.cmdID]["state"]))

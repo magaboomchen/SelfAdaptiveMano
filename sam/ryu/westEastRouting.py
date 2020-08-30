@@ -1,3 +1,6 @@
+import logging
+import copy
+
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
@@ -10,12 +13,9 @@ from ryu.lib.packet import arp
 from ryu.lib.packet import ether_types
 from ryu.topology import event, switches 
 from ryu.controller import dpset
-
-import logging
 import networkx as nx
-import copy
+
 from sam.ryu.conf.ryuConf import *
-from sam.ryu.conf.genSwitchConf import SwitchConf
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
 from sam.ryu.baseApp import BaseApp
 

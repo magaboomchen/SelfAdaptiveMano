@@ -1,6 +1,7 @@
-import psutil
 import subprocess
 import logging
+
+import psutil
 
 class ShellProcessor(object):
     def listRunningProcess(self):

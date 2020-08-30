@@ -2,18 +2,14 @@ from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
 from sam.serverController.classifierController import *
-from sam.serverAgent.serverAgent import ServerAgent
 from sam.base.command import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
 from sam.test.fixtures.vnfControllerStub import *
 from sam.test.testBase import *
-import uuid
-import subprocess
-import psutil
+
 import pytest
-import time
 from scapy.all import *
 
 MANUAL_TEST = True
@@ -39,6 +35,8 @@ class TestSFFSFCIAdderClass(TestBase):
         self.runSFFController()
         yield
         # teardown
+        self.vC.uninstallVNF("t1", "123", "192.168.122.134",
+            self.sfci.VNFISequence[0][0].VNFIID)
         self.killSFFController()
 
     def runSFFController(self):
@@ -59,15 +57,18 @@ class TestSFFSFCIAdderClass(TestBase):
         self.verifyArpResponder()
         self.verifyCmdRply()
 
-        # exercise again
-        
-        print(self.sfci.VNFISequence[0][0].VNFIID)
-        self.vC.installVNF("t1", "123", "192.168.122.134",
-            self.sfci.VNFISequence[0][0].VNFIID, self.sfc.directions)
-        print("Please install VNF manually, then press any key to continue.")
-        print("If raise IOError: reading from stdin while output is captured")
-        print("Then pytest should use -s option!")
-        raw_input()
+        # setup again
+        try:
+            # In normal case, there should be a timeout error!
+            shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
+                self.sfci.VNFISequence[0][0].VNFIID, self.sfc.directions)
+            print("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
+                None,
+                shellCmdRply['stdout'].read().decode('utf-8'),
+                shellCmdRply['stderr'].read().decode('utf-8')))
+        except:
+            print("If raise IOError: reading from stdin while output is captured")
+            print("Then pytest should use -s option!")
 
         # verify again
         self.verifyDirection0Traffic()
@@ -110,7 +111,7 @@ class TestSFFSFCIAdderClass(TestBase):
     def encap_callback(self,frame):
         frame.show()
         condition = (frame[IP].src == SFF1_DATAPATH_IP and \
-            frame[IP].dst == CLASSIFIER_DATAPATH_IP and frame[IP].proto == 0x04)
+            frame[IP].dst == SFCI1_0_EGRESS_IP and frame[IP].proto == 0x04)
         assert condition
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
@@ -133,7 +134,7 @@ class TestSFFSFCIAdderClass(TestBase):
     def decap_callback(self,frame):
         frame.show()
         condition = (frame[IP].src == SFF1_DATAPATH_IP and \
-            frame[IP].dst == CLASSIFIER_DATAPATH_IP and frame[IP].proto == 0x04)
+            frame[IP].dst == SFCI1_1_EGRESS_IP and frame[IP].proto == 0x04)
         assert condition == True
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]

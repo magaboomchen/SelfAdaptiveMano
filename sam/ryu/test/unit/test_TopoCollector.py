@@ -1,7 +1,9 @@
-import pytest
 import sys
+
+import pytest
 from ryu.controller import dpset
-from san.ryu.topoCollector import TopoCollector
+
+from sam.ryu.topoCollector import TopoCollector
 
 class TestTopoCollectorClass(object):
     @classmethod

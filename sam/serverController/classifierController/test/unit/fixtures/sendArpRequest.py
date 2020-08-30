@@ -1,7 +1,7 @@
-import os
+
 from scapy.all import *
-import logging
 import time
+
 from sam.base.socketConverter import *
 from sam.test.testBase import *
 from sam.serverController.classifierController.test.unit.test_SFCIAdder import *

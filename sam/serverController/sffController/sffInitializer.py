@@ -1,24 +1,15 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import grpc
-import os
-from google.protobuf.any_pb2 import Any
-import pika
-import base64
-import pickle
-import time
-import uuid
-import subprocess
 import logging
-import Queue
-import struct
+
+from google.protobuf.any_pb2 import Any
+import grpc
 
 import sam.serverController.builtin_pb.service_pb2 as service_pb2
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
 import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
 import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
 import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
-
 from sam.base.server import Server
 from sam.base.messageAgent import *
 from sam.base.sfc import *
@@ -44,6 +35,9 @@ class SFFInitializer(BessControlPlane):
         sibm = self.sibms.getSibm(serverID)
         serverControlIP = server.getControlNICIP()
         bessServerUrl = serverControlIP + ":10514"
+        print("sffInitializer - bessServerUrl:{0}".format(bessServerUrl))
+        if not self.isBESSAlive(bessServerUrl):
+            raise ValueError ("bess is not alive")
         with grpc.insecure_channel(bessServerUrl) as channel:
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())

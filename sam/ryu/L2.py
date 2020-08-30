@@ -1,12 +1,13 @@
+import logging
+
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.controller import dpset
-# from ryu.controller import event as controllerEvent
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
-from ryu.lib.packet import arp
+from ryu.lib.packet import arp, ipv4, icmp
 from ryu.lib.packet import ether_types
 from ryu.topology import event, switches 
 
@@ -14,8 +15,6 @@ from sam.ryu.topoCollector import TopoCollector
 from sam.ryu.conf.genSwitchConf import SwitchConf
 from sam.ryu.conf.ryuConf import *
 from sam.ryu.baseApp import BaseApp
-
-import logging
 
 class L2(BaseApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -29,16 +28,24 @@ class L2(BaseApp):
         self.dpset = kwargs['dpset']
         self.topoCollector = kwargs['TopoCollector']
 
-        self._localPortTable = {}    # {switchid:{port1,port2}}
-        self._peerPortTable = {}
-        self._switchesLANMacTable = {}
+        # TODO: decouple the RIB(_localPortTable,
+        # _peerPortTable, _switchesLANMacTable) and L2's action
+        self._localPortTable = {}    # switch's local port, e.g. {switchid:{port1,port2}}
+        self._peerPortTable = {}    # switch's peer switch's port
+        self._switchesLANMacTable = {}  # {dpid:{mac:port}}
 
         self.logger.setLevel(logging.ERROR)
 
-    def getPortByMac(self,dpid,mac):
+    def getLocalPortByMac(self,dpid,mac):
         if self._switchesLANMacTable.has_key(dpid) and\
             self._switchesLANMacTable[dpid].has_key(mac):
             return self._switchesLANMacTable[dpid][mac]
+        else:
+            return None
+
+    def getMacByLocalPort(self,dpid,localPortNum):
+        if localPortNum in self._localPortTable[dpid]:
+            return self._localPortTable[dpid][localPortNum].hw_addr
         else:
             return None
 
@@ -53,9 +60,24 @@ class L2(BaseApp):
         portMac = port.hw_addr
 
         parser = datapath.ofproto_parser
-        match = parser.OFPMatch(eth_dst=portMac,eth_type=ether_types.ETH_TYPE_IP)
-        inst = [parser.OFPInstructionGotoTable(table_id=IPv4_CLASSIFIER_TABLE)]
-        self._add_flow(datapath, match, inst, table_id = MAIN_TABLE, priority = 1)
+
+        # IPv4
+        match = parser.OFPMatch(eth_dst=portMac,
+            eth_type=ether_types.ETH_TYPE_IP)
+        inst = [
+            parser.OFPInstructionGotoTable(table_id=IPv4_CLASSIFIER_TABLE)
+            ]
+        self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
+            priority = 1)
+
+        # VLAN
+        match = parser.OFPMatch(eth_dst=portMac, vlan_vid=(0x1000, 0x1000))
+        # eth_type=ether_types.ETH_TYPE_8021Q)
+        inst = [
+                parser.OFPInstructionGotoTable(table_id=VLAN_TABLE)
+            ]
+        self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
+            priority = 2)
 
     def _delLocalPort(self, datapath, port):
         if self._localPortTable.has_key(datapath.id):
@@ -68,20 +90,28 @@ class L2(BaseApp):
         portMac = port.hw_addr
 
         parser = datapath.ofproto_parser
-        match = parser.OFPMatch(eth_dst=portMac,eth_type=ether_types.ETH_TYPE_IP)
-        self._del_flow(datapath, match, table_id = MAIN_TABLE, priority = 1)
+
+        # IPv4
+        match = parser.OFPMatch(eth_dst=portMac,
+            eth_type=ether_types.ETH_TYPE_IP)
+        self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=1)
+
+        # VLAN
+        match = parser.OFPMatch(eth_dst=portMac, vlan_vid=(0x1000, 0x1000))
+        # eth_type=ether_types.ETH_TYPE_8021Q)
+        self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=2)
 
     def _addPeerPort(self, datapath, link):
         localPort = link.src
         peerPort = link.dst
 
         if self._peerPortTable.has_key(datapath.id):
-            if self._peerPortTable[datapath.id].has_key(peerPort.port_no):
+            if self._peerPortTable[datapath.id].has_key(localPort.port_no):
                 return 
         else:
             self._peerPortTable[datapath.id] = {}
 
-        self._peerPortTable[datapath.id][peerPort.port_no] = link
+        self._peerPortTable[datapath.id][localPort.port_no] = peerPort
         peerPortMac = peerPort.hw_addr
 
         ofproto = datapath.ofproto
@@ -96,17 +126,25 @@ class L2(BaseApp):
         peerPort = link.dst
 
         if self._peerPortTable.has_key(datapath.id):
-            if not self._peerPortTable[datapath.id].has_key(peerPort.port_no):
+            if not self._peerPortTable[datapath.id].has_key(localPort.port_no):
                 return 
         else:
             return 
 
-        del self._peerPortTable[datapath.id][peerPort.port_no]
+        del self._peerPortTable[datapath.id][localPort.port_no]
         peerPortMac = peerPort.hw_addr
 
         parser = datapath.ofproto_parser
         match = parser.OFPMatch(eth_dst=peerPortMac)
         self._del_flow(datapath, match, table_id = L2_TABLE, priority = 1)
+
+    def getLocalPortByPeerPort(self, currentDpid, nextDpid):
+        for portNum in self._peerPortTable[currentDpid].iterkeys():
+            peerPort = self._peerPortTable[currentDpid][portNum]
+            if peerPort.dpid == nextDpid:
+                return portNum
+        else:
+            return None
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def _switchFeaturesHandler(self, ev):
@@ -207,13 +245,13 @@ class L2(BaseApp):
         # print(link)
 
         dstPort = link.dst
-        dstDpid = dstPort.dpid
-        dstDatapath = self.topoCollector.switches[dstDpid].dp
+        nextDpid = dstPort.dpid
+        dstDatapath = self.topoCollector.switches[nextDpid].dp
         self._addLocalPort(dstDatapath, dstPort)
 
         srcPort = link.src
-        srcDpid = srcPort.dpid
-        srcDatapath = self.topoCollector.switches[srcDpid].dp
+        currentDpid = srcPort.dpid
+        srcDatapath = self.topoCollector.switches[currentDpid].dp
         self._addLocalPort(srcDatapath, srcPort)
 
         self._addPeerPort(srcDatapath, link)
@@ -222,8 +260,8 @@ class L2(BaseApp):
     def _delLink(self,ev):
         link = ev.link
         srcPort = link.src
-        srcDpid = srcPort.dpid
-        srcDatapath = self.topoCollector.switches[srcDpid].dp
+        currentDpid = srcPort.dpid
+        srcDatapath = self.topoCollector.switches[currentDpid].dp
         self._delPeerPort(srcDatapath, link)
 
     @set_ev_cls(event.EventHostAdd)
@@ -328,3 +366,27 @@ class L2(BaseApp):
                     datapath.send_msg(out)
             else:
                 self.logger.debug("This arp is from other LAN, drop it")
+        # elif eth.ethertype == ether_types.ETH_TYPE_IP:
+        #     ipHeader = pkt.get_protocol(ipv4.ipv4)
+        #     print("get an ip packet, its proto is {0}".format(ipHeader.proto))
+
+        #     if ipHeader.proto == 0x04:
+        #         ipHeaderList = pkt.get_protocols(ipv4.ipv4)
+        #         return 
+
+        #     if ipHeader.proto == 0x01:
+        #         self.logger.debug("get an icmp packet")
+        #         src_ip = ipHeader.dst
+        #         dst_ip = ipHeader.src
+        #         src_mac = eth.dst
+        #         dst_mac = eth.src
+        #         data = self._build_icmp_dest_unreach(src_mac, src_ip, dst_mac, dst_ip)
+
+        #         out_port = in_port
+        #         actions = [parser.OFPActionOutput(out_port)]
+
+        #         out = parser.OFPPacketOut(
+        #             datapath=datapath, buffer_id=ofproto.OFP_NO_BUFFER, 
+        #             in_port=ofproto_v1_3.OFPP_CONTROLLER,
+        #             actions=actions, data=data)
+        #         datapath.send_msg(out)

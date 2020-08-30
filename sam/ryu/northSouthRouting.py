@@ -1,21 +1,19 @@
+import logging
+import copy
+
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from ryu.ofproto import ofproto_v1_3_parser
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
-from ryu.lib.packet import ipv4
 from ryu.lib.packet import arp
 from ryu.lib.packet import ether_types
 from ryu.topology import event, switches 
 from ryu.controller import dpset
-
-import logging
 import networkx as nx
-import copy
+
 from sam.ryu.conf.ryuConf import *
-from sam.ryu.conf.genSwitchConf import SwitchConf
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
 from sam.ryu.baseApp import BaseApp
 
@@ -171,7 +169,7 @@ class NorthSouthRouting(BaseApp):
                 **matchFields
             )
 
-            link = self._cacheLinks[srcDpid,dstDpid]
+            link = self._cacheLinks[(srcDpid,dstDpid)]
             out_port = link.src.port_no
             actions = [
                 parser.OFPActionDecNwTtl(),

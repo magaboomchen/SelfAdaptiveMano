@@ -10,7 +10,6 @@ import time
 import uuid
 import subprocess
 import logging
-import Queue
 import struct
 
 import sam.serverController.builtin_pb.service_pb2 as service_pb2
@@ -47,15 +46,15 @@ class BessControlPlane(object):
     def _getWM2Rule(self,match):
         values=[
             {"value_bin":b'\x00'},
-            {"value_bin":b'\x00\x00\x00\x00\x00\x00\x00\x00'},
-            {"value_bin":b'\x00\x00\x00\x00\x00\x00\x00\x00'},
+            {"value_bin":b'\x00\x00\x00\x00'},
+            {"value_bin":b'\x00\x00\x00\x00'},
             {"value_bin":b'\x00\x00'},
             {"value_bin":b'\x00\x00'}
         ]
         masks=[
             {'value_bin':b'\x00'},
-            {'value_bin':b'\x00\x00\x00\x00\x00\x00\x00\x00'},
-            {'value_bin':b'\x00\x00\x00\x00\x00\x00\x00\x00'},
+            {'value_bin':b'\x00\x00\x00\x00'},
+            {'value_bin':b'\x00\x00\x00\x00'},
             {'value_bin':b'\x00\x00'},
             {'value_bin':b'\x00\x00'}
         ]
@@ -64,16 +63,16 @@ class BessControlPlane(object):
             masks[0]["value_bin"] = b'\xFF'
         if match['srcIP'] != None:
             values[1]["value_bin"] = self._sc.aton(match['srcIP'])
-            masks[1]["value_bin"] = b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF'
+            masks[1]["value_bin"] = b'\xFF\xFF\xFF\xFF'
         if match['dstIP'] != None:
             values[2]["value_bin"] = self._sc.aton(match['dstIP'])
-            masks[2]["value_bin"] = b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF'
+            masks[2]["value_bin"] = b'\xFF\xFF\xFF\xFF'
         if match['srcPort'] != None:
             values[3]["value_bin"] = self._sc.aton(match['srcPort'])
-            masks[3]["value_bin"] = b'\xFF\xFF\xFF\xFF'
+            masks[3]["value_bin"] = b'\xFF\xFF'
         if match['dstPort'] != None:
             values[4]["value_bin"] = self._sc.aton(match['dstPort'])
-            masks[4]["value_bin"] = b'\xFF\xFF\xFF\xFF'
+            masks[4]["value_bin"] = b'\xFF\xFF'
         return [values,masks]
 
     def _genIP4SVPIDs(self,sfcID,vnfID,pathID):

@@ -1,12 +1,14 @@
-from netifaces import interfaces, ifaddresses, AF_INET
 import fcntl
 import socket
 import struct
 import base64
-import pickle
 import logging
 import subprocess
+
 import psutil
+import pickle
+from netifaces import interfaces, ifaddresses, AF_INET
+from getmac import get_mac_address
 
 SERVER_TYPE_CLASSIFIER = "SERVER_TYPE_CLASSIFIER"
 SERVER_TYPE_NORMAL = "SERVER_TYPE_NORMAL"
@@ -96,9 +98,11 @@ class Server(object):
         return final
 
     def _getHwAddrInKernel(self,ifName):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        info = fcntl.ioctl(s.fileno(), 0x8927,  struct.pack('256s', ifName[:15]))
-        return ':'.join(['%02x' % ord(char) for char in info[18:24]])
+        # s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # info = fcntl.ioctl(s.fileno(), 0x8927,  struct.pack('256s', ifName[:15]))
+        # return ':'.join(['%02x' % ord(char) for char in info[18:24]])
+        ethMac = get_mac_address(interface=ifName)
+        return ethMac
 
     def _getIPList(self,ifName):
         addresses = [i['addr'] for i in ifaddresses(ifName).setdefault(AF_INET,[{'addr':'No IP addr'}])  ]

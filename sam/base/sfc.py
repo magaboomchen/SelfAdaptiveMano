@@ -1,9 +1,10 @@
-from slo import *
-from vnf import *
+from sam.base.slo import *
+from sam.base.vnf import *
 
 SFC_DOMAIN_PREFIX = "10.0.0.0"
-SFC_DOMAIN_PREFIX_LENGTH = 8    # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
-SFCID_LENGTH = 12   # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
+SFC_DOMAIN_PREFIX_LENGTH = 8    # DO NOT MODIFY THIS VALUE,
+    # otherwise BESS will incurr error
+SFCID_LENGTH = 12  # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 
 SFCR_STATE_INITIAL = "SFCR_STATE_INITIAL"
 SFCR_STATE_IN_PROCESSING = "SFCR_STATE_IN_PROCESSING"
@@ -13,6 +14,7 @@ SFCR_STATE_IN_ADAPTIVE = "SFCR_STATE_IN_ADAPTIVE"
 
 APP_TYPE_NORTHSOUTH_WEBSITE = "APP_TYPE_NORTHSOUTH_WEBSITE"
 
+
 class SFCI(object):
     def __init__(self, SFCIID, VNFISequence, sloRealTimeValue=None,
         ForwardingPathSet=None):
@@ -20,6 +22,7 @@ class SFCI(object):
         self.VNFISequence = VNFISequence    # only show the direction1
         self.sloRealTimeValue = sloRealTimeValue
         self.ForwardingPathSet = ForwardingPathSet
+
 
 class SFC(object):
     def __init__(self, sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
@@ -33,27 +36,50 @@ class SFC(object):
         self.slo = slo
         self.directions = directions
 
+        # directions' data structure
         # [
         # {
         # 'ID': 0   # forwarding direction
-        # 'source' : Outside    # {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or other routing addressing format
-        # 'ingress': Any # May be a P4 switch or a server
-        # 'match': {{},{},...} # classifier's match, generic match fields: {"offset":offset, "size":size, "value": value}
-        # 'egress' : Any # May be a P4 switch or a server
-        # 'destination': websiteIP  # {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or other routing addressing format
+        # 'source' : Outside
+        #       {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or
+        #       other routing addressing format
+        # 'ingress': Any 
+        #       May be a P4 switch or a server
+        # 'match': {{},{},...} 
+        #       classifier's match, 
+        #       generic match fields: {"offset":offset, 
+        #           "size":size, "value": value}
+        # 'egress' : Any 
+        #       May be a P4 switch or a server
+        # 'destination': websiteIP
+        #       {'IPv4':"0.0.0.0"} or
+        # {'MPLS':srcLable} or other routing addressing format
         # },
         # {
         # 'ID': 1   # reverse direction
-        # 'source' : WEBSITE    # {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or other routing addressing format
-        # 'ingress': Any # May be a P4 switch or a server
-        # 'match': {{},{},...} # classifier's match, generic match fields: {"offset":offset, "size":size, "value": value}
-        # 'egress': Any # May be a P4 switch or a server
-        # 'destination': Outside    # {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or other routing addressing format
+        # 'source' : WEBSITE
+        #       {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or
+        #       other routing addressing format
+        # 'ingress': Any
+        #       May be a P4 switch or a server
+        # 'match': {{},{},...}
+        #       classifier's match, generic match fields: {"offset":offset,
+        #           "size":size, "value": value}
+        # 'egress': Any
+        #       May be a P4 switch or a server
+        # 'destination': Outside
+        #       {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or
+        #       other routing addressing format
         # }
         # ]
 
         # following member is created by orchestrator
-        self.sFCIs = sFCIs # {SFCIID:active, SFCIID:active}, For switch, we use pathID to distinguish different direction; For bess, we use (src,dst) pair to distinguish different direction.
+        self.sFCIs = sFCIs  # {SFCIID:active, SFCIID:active},
+                            # For switch, we use pathID to distinguish
+                            # different direction; 
+                            # For bess, we use (src,dst) pair to distinguish
+                            # different direction.
+
 
 class SFCRequest(object):
     def __init__(self, userID, requestID, requestType,
@@ -61,8 +87,8 @@ class SFCRequest(object):
         traffic=None):
         self.userID =  userID # 0 is root
         self.requestID = requestID # uuid1()
-        self.requestType = requestType # CREATE_SFC_REQUEST/DELETE_SFC_REQUEST/GET_SFC_REQUEST/GETALL_SFC_REQUEST/ADDSFCINST/DELETESFCINST
-        self.requestState = requestState # SFCR_STATE_INITIAL, SFCR_STATE_IN_PROCESSING, SFCR_STATE_SUCCESSFUL, SFCR_STATE_FAILED, SFCR_STATE_IN_ADAPTIVE
-        self.objRequestID = objRequestID    # default: None
+        self.requestType = requestType
+        self.requestState = requestState 
+        self.objRequestID = objRequestID # default: None
         self.sfc = sfc
         self.traffic = traffic

@@ -1,7 +1,9 @@
-import pytest
 import sys
+
+import pytest
 from ryu.controller import dpset
-from san.ryu.L2 import *
+
+from sam.ryu.L2 import *
 
 class TestL2Class(object):
     @classmethod

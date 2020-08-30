@@ -8,7 +8,6 @@ import uuid
 import os
 import subprocess
 import logging
-import Queue
 import threading
 from sam.base.messageAgent import *
 from sam.serverAgent.serverAgent import ServerAgent
