@@ -44,6 +44,12 @@ SFF2_DATAPATH_MAC = "52:54:00:F7:34:25"
 SFF2_CONTROLNIC_IP = "192.168.122.208"
 SFF2_CONTROLNIC_MAC = "52:54:00:D5:A7:0C"
 
+SFF3_DATAPATH_IP = "2.2.0.71"
+SFF3_DATAPATH_MAC = "52:54:00:5a:14:f0"
+SFF3_CONTROLNIC_IP = "192.168.122.135"
+SFF3_CONTROLNIC_MAC = "52:54:00:1f:51:12"
+
+
 class TestBase(object):
     MAXSFCIID = 0
 
@@ -220,6 +226,58 @@ class TestBase(object):
             },
             128:{
                 (1,2,129):[[1,3,2,10002],[10002,2,3,1,10001]]
+            }
+        }
+        return ForwardingPathSet(primaryForwardingPath,frrType,
+            backupForwardingPath)
+
+    def genUniDirection12BackupSFCI(self):
+        VNFISequence = self.gen12BackupVNFISequence()
+        return SFCI(self.assignSFCIID(),VNFISequence, None,
+            self.genUniDirection12BackupForwardingPathSet())
+
+    def gen12BackupVNFISequence(self, SFCLength=1):
+        # hard-code function
+        VNFISequence = []
+        for index in range(SFCLength):
+            VNFISequence.append([])
+
+            server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NORMAL)
+            server.setServerID(SERVERID_OFFSET + 1)
+            server.setControlNICIP(SFF1_CONTROLNIC_IP)
+            server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
+            server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
+            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD, 
+                VNFIID=uuid.uuid1(), node=server)
+            VNFISequence[index].append(vnfi)
+
+            server = Server("ens3", SFF2_DATAPATH_IP, SERVER_TYPE_NORMAL)
+            server.setServerID(SERVERID_OFFSET + 2)
+            server.setControlNICIP(SFF2_CONTROLNIC_IP)
+            server.setControlNICMAC(SFF2_CONTROLNIC_MAC)
+            server.setDataPathNICMAC(SFF2_DATAPATH_MAC)
+            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
+                VNFIID=uuid.uuid1(), node=server)
+            VNFISequence[index].append(vnfi)
+
+            server = Server("ens3", SFF3_DATAPATH_IP, SERVER_TYPE_NORMAL)
+            server.setServerID(SERVERID_OFFSET + 3)
+            server.setControlNICIP(SFF3_CONTROLNIC_IP)
+            server.setControlNICMAC(SFF3_CONTROLNIC_MAC)
+            server.setDataPathNICMAC(SFF3_DATAPATH_MAC)
+            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
+                VNFIID=uuid.uuid1(), node=server)
+            VNFISequence[index].append(vnfi)
+
+        return VNFISequence
+
+    def genUniDirection12BackupForwardingPathSet(self):
+        primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
+        frrType = "UFRR"
+        # {(srcID,dstID,pathID):forwardingPath}
+        backupForwardingPath = {
+            1:{(1,2,2):[[1,3,10003],[10003,3,1,10001]],
+                (2,10002,3):[[2,10004],[10004,2,1,10001]]
             }
         }
         return ForwardingPathSet(primaryForwardingPath,frrType,

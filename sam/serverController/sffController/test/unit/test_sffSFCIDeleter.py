@@ -21,7 +21,7 @@ class TestSFFSFCIDeleterClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_delSFCI(self):
         # setup
-        classifier = self.genClassifier(datapathIfIP = SFF1_DATAPATH_IP)
+        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier)
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()

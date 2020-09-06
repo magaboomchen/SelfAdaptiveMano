@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 import pika
 import subprocess
 import logging
@@ -16,12 +19,10 @@ import pickle
 
 from sam.base.command import *
 
-RABBITMQSERVERIP = '192.168.122.1'
-RABBITMQSERVERUSER = 'mq'
-RABBITMQSERVERPASSWD = '123456'
 threadLock = threading.Lock()
 
-MEASUREMENT_QUEUE = "MEASUREMENT_QUEUE"
+# formal queue
+MEASURER_QUEUE = "MEASURER_QUEUE"
 ORCHESTRATION_QUEUE = "ORCHESTRATION_QUEUE"
 MEDIATOR_QUEUE = "MEDIATOR_QUEUE"
 SFF_CONTROLLER_QUEUE = "SFF_CONTROLLER_QUEUE"
@@ -52,6 +53,7 @@ MSG_TYPE_SERVER_REPLY = "MSG_TYPE_SERVER_REPLY"
 # tester use case
 MST_TYPE_TESTER_CMD = "MST_TYPE_TESTER_CMD"
 
+
 class SAMMessage(object):
     def __init__(self,msgType,body):
         self._msgType = msgType # can not be a type()
@@ -70,14 +72,30 @@ class SAMMessage(object):
     def __str__(self):
         return "Message type is %s\n Message ID is %d\n Message body is %s" % (self._msgType,self._msgID,self._body)
 
+
 class MessageAgent(object):
     def __init__(self):
         logging.info("Init MessaageAgent.")
-
+        self.readRabbitMQConf()
         self.msgQueues = {}
         self._threadSet = {}
         self._publisherConnection = self._connectRabbitMQServer()
         self._consumerConnection = self._connectRabbitMQServer()
+
+    def readRabbitMQConf(self):
+        filePath = __file__.split("/messageAgent.py")[0] + '/rabbitMQConf.conf'
+        with open(filePath, 'r') as f:
+            lines = f.readlines()
+            self.rabbitMqServerIP = lines[0].strip().split("= ")[1].strip("'")
+            self.rabbitMqServerUser = lines[1].strip().split("= ")[1].strip("'")
+            self.rabbitMqServerPasswd = lines[2].strip().split("= ")[1].strip("'")
+            logging.debug("messageAgentConf: {0}X{1}X{2}".format(self.rabbitMqServerIP,
+                self.rabbitMqServerUser, self.rabbitMqServerPasswd))
+
+    def setRabbitMqServer(self, serverIP, serverUser, serverPasswd):
+        self.rabbitMqServerIP = serverIP
+        self.rabbitMqServerUser = serverUser
+        self.rabbitMqServerPasswd = serverPasswd
 
     def sendMsg(self,dstQueueName,message):
         try:
@@ -131,8 +149,8 @@ class MessageAgent(object):
         return msg
 
     def _connectRabbitMQServer(self):
-        credentials = pika.PlainCredentials(RABBITMQSERVERUSER, RABBITMQSERVERPASSWD)
-        parameters = pika.ConnectionParameters(RABBITMQSERVERIP,5672,'/',credentials)
+        credentials = pika.PlainCredentials(self.rabbitMqServerUser, self.rabbitMqServerPasswd)
+        parameters = pika.ConnectionParameters(self.rabbitMqServerIP,5672,'/',credentials)
         connection = pika.BlockingConnection(parameters)
         return connection
 
@@ -179,6 +197,7 @@ class MessageAgent(object):
     def isCommandReply(self,body):
         return isinstance(body, CommandReply)
 
+
 class QueueReciever(threading.Thread):
     def __init__(self, threadID, channel, srcQueueName, msgQueue):
         threading.Thread.__init__(self)
@@ -212,3 +231,4 @@ class QueueReciever(threading.Thread):
         threadLock.release()
         logging.info(" [x] Done")
         ch.basic_ack(delivery_tag = method.delivery_tag)
+

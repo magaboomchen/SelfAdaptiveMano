@@ -59,7 +59,7 @@ class SeverManager(object):
     def _reportServerSet(self):
         logging.info("Get request from measurement module.")
         threadLock.acquire()
-        self._messageAgent.sendMsg(MEASUREMENT_QUEUE,self.serverSet)
+        self._messageAgent.sendMsg(MEASURER_QUEUE,self.serverSet)
         threadLock.release()
 
     def _timeoutCleaner(self):

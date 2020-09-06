@@ -83,8 +83,8 @@ class SFC(object):
 
 class SFCRequest(object):
     def __init__(self, userID, requestID, requestType,
-        requestState=SFCR_STATE_INITIAL, sfc=None, objRequestID=None, sla=None,
-        traffic=None):
+        requestState=SFCR_STATE_INITIAL, sfc=None, objRequestID=None,
+        sla=None, traffic=None):
         self.userID =  userID # 0 is root
         self.requestID = requestID # uuid1()
         self.requestType = requestType

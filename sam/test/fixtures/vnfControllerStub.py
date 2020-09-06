@@ -17,16 +17,16 @@ class VNFControllerStub(object):
         msg = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, cmdRply)
         self.mA.sendMsg(MEDIATOR_QUEUE,msg)
 
-    def installVNF(self,sshUsrname,sshPassword,remoteIP,VNFIID,directions):
+    def installVNF(self,sshUsrname,sshPassword,remoteIP,VNFIID):
         self.vnfBase[remoteIP] = {}
         self.vnfBase[remoteIP]["VNFAggCount"] = 0
-        command = self.genVNFInstallationCommand(remoteIP,VNFIID,directions)
+        command = self.genVNFInstallationCommand(remoteIP,VNFIID)
         self.sshA = SSHAgent()
         self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
         shellCmdRply = self.sshA.runShellCommandWithSudo(command,1)
         return shellCmdRply
 
-    def genVNFInstallationCommand(self,remoteIP,VNFIID,directions):
+    def genVNFInstallationCommand(self,remoteIP,VNFIID):
         vdevs0 = self.sibm.getVdev(VNFIID,0).split(",")
         vdevs1 = self.sibm.getVdev(VNFIID,1).split(",")
         vdev0 = vdevs0[0]

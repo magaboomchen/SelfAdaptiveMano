@@ -110,12 +110,14 @@ class TopoCollector(BaseApp):
         # future use.
         pass
 
-    def _get_topology_handler(self, cmd):
+    def get_topology_handler(self, cmd):
         print('*** TopoCollector App Received command= %s', cmd)
         attr = {
             "switches": self.switches,
             "links": self.links,
             "hosts": self.hosts
         }
-        cmdRply = CommandReply(cmd.cmdID,CMD_STATE_SUCCESSFUL,attr)
-        # TODO: send command reply
+        cmdRply = CommandReply(cmd.cmdID, CMD_STATE_SUCCESSFUL, attr)
+        rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY, cmdRply)
+        queue = MEDIATOR_QUEUE
+        self._messageAgent.sendMsg(queue, rplyMsg)

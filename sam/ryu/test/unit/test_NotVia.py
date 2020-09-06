@@ -32,7 +32,7 @@ class TestNotViaClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
         # setup
-        classifier = self.genClassifier(datapathIfIP = SFF1_DATAPATH_IP)
+        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genUniDirectionSFC(classifier)
         self.sfci = self.genUniDirection10BackupSFCI()
         self.mediator = MediatorStub()
@@ -81,7 +81,7 @@ class TestNotViaClass(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
-                self.sfci.VNFISequence[0][0].VNFIID, self.sfc.directions)
+                self.sfci.VNFISequence[0][0].VNFIID)
             print("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
@@ -119,7 +119,7 @@ class TestNotViaClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_delUniSFCI(self):
         # setup
-        classifier = self.genClassifier(datapathIfIP = SFF1_DATAPATH_IP)
+        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genUniDirectionSFC(classifier)
         self.sfci = self.genUniDirection10BackupSFCI()
         self.mediator = MediatorStub()

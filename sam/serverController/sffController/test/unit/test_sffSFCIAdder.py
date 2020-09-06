@@ -1,3 +1,6 @@
+import pytest
+from scapy.all import *
+
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
@@ -9,19 +12,17 @@ from sam.test.fixtures.mediatorStub import *
 from sam.test.fixtures.vnfControllerStub import *
 from sam.test.testBase import *
 
-import pytest
-from scapy.all import *
-
 MANUAL_TEST = True
 
 TESTER_SERVER_DATAPATH_IP = "192.168.124.1"
 TESTER_SERVER_DATAPATH_MAC = "fe:54:00:42:26:44"
 
+
 class TestSFFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addSFCI(self):
         # setup
-        classifier = self.genClassifier(datapathIfIP = SFF1_DATAPATH_IP)
+        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier)
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
@@ -61,7 +62,7 @@ class TestSFFSFCIAdderClass(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
-                self.sfci.VNFISequence[0][0].VNFIID, self.sfc.directions)
+                self.sfci.VNFISequence[0][0].VNFIID)
             print("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
@@ -144,3 +145,4 @@ class TestSFFSFCIAdderClass(TestBase):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+

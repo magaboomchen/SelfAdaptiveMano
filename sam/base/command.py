@@ -10,17 +10,20 @@ CMD_TYPE_GET_TOPOLOGY = "CMD_TYPE_GET_TOPOLOGY"
 CMD_TYPE_GET_SFCI_STATE = "CMD_TYPE_GET_SFCI_STATE"
 CMD_TYPE_TESTER_REMAP_SFCI = "CMD_TYPE_TESTER_REMAP_SFCI"
 
+
 class Command(object):
     def __init__(self, cmdType, cmdID, attributes={}):
         self.cmdType = cmdType
         self.cmdID = cmdID
         self.attributes = attributes    # {'sfcUUID':sfcUUID,'sfci':sfci, 'sfc':sfc, 'classifier':classifier}
 
+
 class CommandReply(object):
     def __init__(self, cmdID, cmdState, attributes={}):
         self.cmdID = cmdID
         self.cmdState = cmdState
         self.attributes = attributes    # {'switches':{},'links':{},'server':{},'vnfi':{}}
+
 
 class CommandMaintainer(object):
     def __init__(self):
@@ -99,3 +102,4 @@ class CommandMaintainer(object):
             if self.getCmdState(childCmdID) == CMD_STATE_WAITING:
                 return True
         return False
+

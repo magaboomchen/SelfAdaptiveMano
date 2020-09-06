@@ -313,7 +313,7 @@ class NotVia(FRR):
             table_id = IPv4_CLASSIFIER_TABLE, priority=2)
 
     def _sendCmdRply(self, cmdID, cmdState):
-        cmdRply = CommandReply(cmdID,cmdState)
-        rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY,cmdRply)
+        cmdRply = CommandReply(cmdID, cmdState)
+        rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY, cmdRply)
         queue = MEDIATOR_QUEUE
-        self._messageAgent.sendMsg(queue,rplyMsg)
+        self._messageAgent.sendMsg(queue, rplyMsg)

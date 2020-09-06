@@ -36,7 +36,6 @@ class UFRR(FRR):
         self.ibm = UIBMaintainer()
         self.logger.info("UFRR App is running !")
 
-
     def _addSfciHandler(self, cmd):
         self.logger.debug('*** FRR App Received command= %s', cmd)
         try:

@@ -29,7 +29,8 @@ from sam.base.command import *
 # KVM Bridge
 INT_TO_CLASSIFIER = 'eth1'
 INT_TO_VNF1 = 'eth2'
-INTTOVNF1BACKUP = 'eth3'
+INT_TO_VNF1BACKUP = 'eth3'
+INT_TO_VNF1BACKUP0 = "eth4"
 
 # Websites server
 WEBSITE1_IP = "2.2.0.34"
@@ -117,9 +118,10 @@ class NetConfigurator(object):
         s3 = self._net.get('s3')
 
         # Add interface to switches
-        self._addIntf2Switch(INT_TO_CLASSIFIER,s1)
-        self._addIntf2Switch(INT_TO_VNF1,s2)
-        self._addIntf2Switch(INTTOVNF1BACKUP,s3)
+        self._addIntf2Switch(INT_TO_CLASSIFIER, s1)
+        self._addIntf2Switch(INT_TO_VNF1, s2)
+        self._addIntf2Switch(INT_TO_VNF1BACKUP0, s2)
+        self._addIntf2Switch(INT_TO_VNF1BACKUP, s3)
 
         # assign mac and ip address
         # config s1
@@ -130,7 +132,7 @@ class NetConfigurator(object):
         # configure h1
         h1 = self._net.get('h1')
         # ip and mac address
-        h1.setIP( INGRESS_IP1, prefixLen=INGRESS_IP1_PREFIX )
+        h1.setIP(INGRESS_IP1, prefixLen=INGRESS_IP1_PREFIX)
         INGRESS_MAC1 = h1.MAC()
         # default route
         s1 = self._net.get('s1')
@@ -142,7 +144,7 @@ class NetConfigurator(object):
         # configure h2
         h2 = self._net.get('h2')
         # ip and mac address
-        h2.setIP( WEBSITE1_IP, prefixLen=WEBSITE1_IP_PREFIX )
+        h2.setIP(WEBSITE1_IP, prefixLen=WEBSITE1_IP_PREFIX)
         WEBSITE1_MAC = h2.MAC()
         # default route
         defInt = h2.defaultIntf()
@@ -152,7 +154,7 @@ class NetConfigurator(object):
         # configure h3
         h3 = self._net.get('h3')
         # ip and mac address
-        h3.setIP( "2.2.0.37", prefixLen=27 )
+        h3.setIP("2.2.0.37", prefixLen=27)
         HOST3_MAC = h3.MAC()
         # default route
         defInt = h3.defaultIntf()
@@ -162,7 +164,7 @@ class NetConfigurator(object):
         # configure h4
         h4 = self._net.get('h4')
         # ip and mac address
-        h4.setIP( "2.2.0.100", prefixLen=27 )
+        h4.setIP("2.2.0.100", prefixLen=27)
         HOST3_MAC = h4.MAC()
         # default route
         defInt = h4.defaultIntf()
@@ -183,10 +185,10 @@ class NetConfigurator(object):
         info("\n")
 
     def _addIntf2Switch(self,intfName,switch):
-        info( '*** Checking', intfName, '\n' )
+        info('*** Checking', intfName, '\n')
         self._checkIntf( intfName )
-        info( '*** Adding hardware interface', intfName, 'to switch',
-            switch.name, '\n' )
+        info('*** Adding hardware interface', intfName, 'to switch',
+            switch.name, '\n')
         _intf = Intf(intfName, node=switch)
         info("\n")
 
@@ -197,13 +199,14 @@ class ManoTester(object):
         self.outfiles = {}
         self.errfiles = {}
         self.filePath = "/home/vm2/Projects/SelfAdaptiveMano/sam/test/FRR/"
-        self.SLEEP_TIME = 2
-        self.INTERVAL = 0.2
+        self.SLEEP_TIME = 8
+        self.INTERVAL = 0.5
         self._messageAgent = MessageAgent()
 
     def startTest(self):
         while True:
-            print("Mode 0: UFRR\n"
+            print(
+                "Mode 0: UFRR\n"
                 "Mode 1: NotVia + Remapping\n"
                 "Mode 2: Direct remapping\n"
                 "cli: start interactive cli\n"
@@ -225,11 +228,12 @@ class ManoTester(object):
     def testHandler(self):
         h1 = self.net.get('h1')
         h2 = self.net.get('h2')
+        self.stabilizeNetwork(h1, h2)
         # self.startMeasureThroughput(h1, h2)
         self.startMeasureDropRate(h1, h2)
-        time.sleep(self.SLEEP_TIME) # wait for drop rate measurement program
+        # time.sleep(self.SLEEP_TIME) # wait for drop rate measurement program
         self.startMeasureE2EDelay(h1, h2)
-        time.sleep(self.SLEEP_TIME * 2)
+        time.sleep(self.SLEEP_TIME)
         self.disableLink('s1','s2')
         time.sleep(self.SLEEP_TIME)
         self.enableLink('s1','s2')
@@ -238,11 +242,16 @@ class ManoTester(object):
         self.disableDpdkServer(s2, 'eth2')
         if self.mode == "1":
             self.sendReMappingCmd()
-        time.sleep(self.SLEEP_TIME * 5)
+        time.sleep(self.SLEEP_TIME * 2)
         self.endMeasureE2EDelay(h1, h2)
         # self.endMeasureThroughput(h1, h2)
         self.endMeasureDropRate(h1, h2)
         self.enableDpdkServer(s2, 'eth2')
+
+    def stabilizeNetwork(self, src, dst):
+        src.cmdPrint(
+                    'ping '+dst.IP()+' -c 5 -i 0.2 ',
+                    '&' )
 
     def addOurputFiles(self, host, fileName):
         if not self.outfiles.has_key(host):
@@ -266,7 +275,7 @@ class ManoTester(object):
                     '&' )
         # print("src start iperf3 client")
         src.cmdPrint(
-                    'iperf3 -c ' + dst.IP() + ' -M 1420 -u --length 1420 -i ' + str(self.INTERVAL) + ' -t ' + str(self.SLEEP_TIME * 10),
+                    'iperf3 -c ' + dst.IP() + ' -M 1420 -u --length 1420 -i ' + str(self.INTERVAL) + ' -t ' + str(self.SLEEP_TIME * 7),
                     '>', self.outfiles[src]["iperf3udp"],
                     '2>', self.errfiles[src]["iperf3udp"],
                     '&' )
