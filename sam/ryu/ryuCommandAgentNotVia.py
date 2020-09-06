@@ -40,10 +40,11 @@ class RyuCommandAgent(BaseApp):
                 elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
                     self.notVia._delSfciHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
-                    pass
+                    self.tC.get_topology_handler(cmd)
                 else:
                     logging.error("Unkonwn cmd type.")
             elif msg.getMessageType() == None:
                 pass
             else:
                 logging.error("Unknown msg type.")
+

@@ -209,7 +209,7 @@ class Mediator(object):
         elif cmdRplyType == CMD_TYPE_GET_SERVER_SET or\
             cmdRplyType == CMD_TYPE_GET_TOPOLOGY or\
             cmdRplyType == CMD_TYPE_GET_SFCI_STATE:
-            queue = MEASUREMENT_QUEUE
+            queue = MEASURER_QUEUE
         else:
             logging.error("Command reply error.")
         # generate message

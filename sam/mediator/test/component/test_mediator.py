@@ -59,7 +59,7 @@ class TestMediatorClass(TestBase):
             {1:self.server})
         self.sMS.sendCmdRply(cmdRply)
         # verify
-        recvCmdRply = self.recvCmdRply(MEASUREMENT_QUEUE)
+        recvCmdRply = self.recvCmdRply(MEASURER_QUEUE)
         assert recvCmdRply.cmdID == getServerSetCmd.cmdID
         assert recvCmdRply.cmdState == CMD_STATE_SUCCESSFUL
         lObj = recvCmdRply.attributes[1]

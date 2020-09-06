@@ -18,8 +18,8 @@ import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
 import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
 import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
 
-import logging
 from sam.base.socketConverter import SocketConverter
+from sam.base.server import *
 
 class BessControlPlane(object):
     def __init__(self):
@@ -86,13 +86,13 @@ class BessControlPlane(object):
     def getSFCModuleSuffix(self,sfcUUID,direction):
         return '_' + str(sfcUUID) + '_' + str(direction['ID'])
 
-    def _checkVNFISequence(self,VNFISequence):
+    def _checkVNFISequence(self, VNFISequence):
         for vnf in VNFISequence:
             for i in range(len(vnf)-1):
                 for j in range(i+1,len(vnf)-1):
                     vnfi1 = vnf[i]
                     vnfi2 = vnf[j]
-                    if isinstance(vnfi1.node,Server) and\
-                        vnfi1.serverID == vnfi2.serverID:
+                    if isinstance(vnfi1.node, Server) and\
+                        vnfi1.node.getServerID() == vnfi2.node.getServerID():
                         raise ValueError(
                             'Backup VNFI can\'t be placed in the same server.')

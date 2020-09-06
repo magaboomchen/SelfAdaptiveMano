@@ -4,11 +4,13 @@ import struct
 import base64
 import logging
 import subprocess
+import sys
 
 import psutil
 import pickle
 from netifaces import interfaces, ifaddresses, AF_INET
 from getmac import get_mac_address
+
 
 SERVER_TYPE_CLASSIFIER = "SERVER_TYPE_CLASSIFIER"
 SERVER_TYPE_NORMAL = "SERVER_TYPE_NORMAL"
