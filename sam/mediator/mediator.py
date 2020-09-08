@@ -35,7 +35,7 @@ class Mediator(object):
                 elif self._messageAgent.isCommandReply(body):
                     self._commandReplyHandler(body)
                 else:
-                    loggind.error("Unknown massage body")
+                    logging.error("Unknown massage body")
 
     def _commandHandler(self,cmd):
         print("Get command ________________")
