@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 SWITCH_CONF_FILEPATH = "./conf/switch.yaml"
 
 MAIN_TABLE = 0

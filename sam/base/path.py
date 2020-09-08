@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 DIRECTION1_PATHID_OFFSET = 1
 DIRECTION2_PATHID_OFFSET = 128
 

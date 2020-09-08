@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 import base64
 import time
 import uuid
@@ -13,6 +16,7 @@ from sam.base.messageAgent import *
 from sam.base.switch import *
 from sam.base.sfc import *
 from sam.base.command import *
+
 
 class Mediator(object):
     def __init__(self, mode):
@@ -227,6 +231,7 @@ class Mediator(object):
                 cmd = self._cm.getCmd(parentCmdID)
                 self._addSFCIs2Server(cmd)
 
+
 if __name__=="__main__":
     logging.basicConfig(level=logging.INFO)
     mode = {
@@ -235,3 +240,4 @@ if __name__=="__main__":
     }
     m = Mediator(mode)
     m.startMediator()
+

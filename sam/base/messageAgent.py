@@ -21,7 +21,7 @@ from sam.base.command import *
 
 threadLock = threading.Lock()
 
-# formal queue
+# formal queue type
 MEASURER_QUEUE = "MEASURER_QUEUE"
 ORCHESTRATION_QUEUE = "ORCHESTRATION_QUEUE"
 MEDIATOR_QUEUE = "MEDIATOR_QUEUE"
@@ -70,7 +70,10 @@ class SAMMessage(object):
         return self._body
 
     def __str__(self):
-        return "Message type is %s\n Message ID is %d\n Message body is %s" % (self._msgType,self._msgID,self._body)
+        output = "Message type is {0} ".format(self._msgType)\
+                    + "Message ID is {0} ".format(self._msgID)\
+                    + "Message body is {0}".format(self._body)
+        return output
 
 
 class MessageAgent(object):
@@ -86,25 +89,36 @@ class MessageAgent(object):
         filePath = __file__.split("/messageAgent.py")[0] + '/rabbitMQConf.conf'
         with open(filePath, 'r') as f:
             lines = f.readlines()
-            self.rabbitMqServerIP = lines[0].strip().split("= ")[1].strip("'")
-            self.rabbitMqServerUser = lines[1].strip().split("= ")[1].strip("'")
-            self.rabbitMqServerPasswd = lines[2].strip().split("= ")[1].strip("'")
-            logging.debug("messageAgentConf: {0}X{1}X{2}".format(self.rabbitMqServerIP,
-                self.rabbitMqServerUser, self.rabbitMqServerPasswd))
+            newLines = []
+            for line in lines:
+                line = line.strip().split("= ")[1].strip("'")
+                newLines.append(line)
+            self.rabbitMqServerIP = newLines[0]
+            self.rabbitMqServerUser = newLines[1]
+            self.rabbitMqServerPasswd = newLines[2]
+            logging.info(
+                "messageAgentConf:\nServer:{0}\nUser:{1}\nPasswd:{2}".format(
+                    self.rabbitMqServerIP, self.rabbitMqServerUser,
+                    self.rabbitMqServerPasswd))
 
     def setRabbitMqServer(self, serverIP, serverUser, serverPasswd):
         self.rabbitMqServerIP = serverIP
         self.rabbitMqServerUser = serverUser
         self.rabbitMqServerPasswd = serverPasswd
 
+    def genQueueName(self, queueType, zoneName=""):
+        return queueType + "_" + zoneName
+
     def sendMsg(self,dstQueueName,message):
         try:
             channel = self._publisherConnection.channel()
             channel.queue_declare(queue=dstQueueName,durable=True)
-            channel.basic_publish(exchange='',routing_key=dstQueueName,body=self._encodeMessage(message),
-                properties=pika.BasicProperties(delivery_mode = 2, # make message persistent
-                ))
-            logging.info(" [x] Sent %r" % message)
+            channel.basic_publish(exchange='', routing_key=dstQueueName,
+                body=self._encodeMessage(message),
+                properties=pika.BasicProperties(delivery_mode = 2)
+                # make message persistent
+                )
+            # logging.info(" [x] Sent %r" % message)
             channel.close()
         except:
             print("MessageAgent sendMsg failed!")
@@ -119,7 +133,8 @@ class MessageAgent(object):
             try:
                 channel = self._consumerConnection.channel()
                 # start a new thread to recieve
-                thread = QueueReciever(len(self._threadSet), channel, srcQueueName, self.msgQueues[srcQueueName])
+                thread = QueueReciever(len(self._threadSet), channel,
+                    srcQueueName, self.msgQueues[srcQueueName])
                 self._threadSet[srcQueueName] = thread
                 thread.setDaemon(True)
                 thread.start()
@@ -132,7 +147,8 @@ class MessageAgent(object):
                 return result
 
     def getMsg(self,srcQueueName, throughput=1000):
-        # poll-mode: we need to trade-off between cpu utilization and performance
+        # poll-mode: we need to trade-off between 
+        # cpu utilization and performance
         time.sleep(1/float(throughput))    # throughput pps msg
         threadLock.acquire()
         msg = None
@@ -149,8 +165,10 @@ class MessageAgent(object):
         return msg
 
     def _connectRabbitMQServer(self):
-        credentials = pika.PlainCredentials(self.rabbitMqServerUser, self.rabbitMqServerPasswd)
-        parameters = pika.ConnectionParameters(self.rabbitMqServerIP,5672,'/',credentials)
+        credentials = pika.PlainCredentials(self.rabbitMqServerUser,
+            self.rabbitMqServerPasswd)
+        parameters = pika.ConnectionParameters(self.rabbitMqServerIP,
+            5672, '/', credentials)
         connection = pika.BlockingConnection(parameters)
         return connection
 
@@ -178,7 +196,8 @@ class MessageAgent(object):
         tid = ctypes.c_long(tid)
         if not inspect.isclass(exctype):
             exctype = type(exctype)
-        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid,
+            ctypes.py_object(exctype))
         if res == 0:
             raise ValueError("Invalid thread id")
         elif res != 1:
@@ -211,7 +230,7 @@ class QueueReciever(threading.Thread):
         self._recvMsg()
 
     def _recvMsg(self):
-        self.channel.queue_declare(queue=self.srcQueueName,durable=True)
+        self.channel.queue_declare(queue=self.srcQueueName, durable=True)
         self.channel.basic_consume(queue=self.srcQueueName,
                             on_message_callback=self.callback)
         logging.info(' [*] Waiting for messages. To exit press CTRL+C')
@@ -220,12 +239,12 @@ class QueueReciever(threading.Thread):
         except KeyboardInterrupt:
             logging.warning("messageAgent get keyboardInterrupt.")
             requeued_messages = self.channel.cancel()
-            logging.info('Requeued %i messages' % requeued_messages)
+            # logging.info('Requeued %i messages' % requeued_messages)
             logging.info('Channel stop consuming')
             self.channel.stop_consuming()
 
     def callback(self,ch, method, properties, body):
-        logging.info(" [x] Received %r" % body)
+        # logging.info(" [x] Received %r" % body)
         threadLock.acquire()
         self.msgQueue.put(body)
         threadLock.release()

@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 CMD_STATE_WAITING = "CMD_STATE_WAITING"
 CMD_STATE_PROCESSING = "CMD_STATE_PROCESSING"
 CMD_STATE_SUCCESSFUL = "CMD_STATE_SUCCESSFUL"
@@ -5,9 +8,11 @@ CMD_STATE_FAIL = "CMD_STATE_FAIL"
 
 CMD_TYPE_ADD_SFCI = "CMD_TYPE_ADD_SFCI"
 CMD_TYPE_DEL_SFCI = "CMD_TYPE_DEL_SFCI"
+CMD_TYPE_DEL_SFC = "CMD_TYPE_DEL_SFC"
 CMD_TYPE_GET_SERVER_SET = "CMD_TYPE_GET_SERVER_SET"
 CMD_TYPE_GET_TOPOLOGY = "CMD_TYPE_GET_TOPOLOGY"
 CMD_TYPE_GET_SFCI_STATE = "CMD_TYPE_GET_SFCI_STATE"
+# tester use case
 CMD_TYPE_TESTER_REMAP_SFCI = "CMD_TYPE_TESTER_REMAP_SFCI"
 
 
@@ -22,7 +27,7 @@ class CommandReply(object):
     def __init__(self, cmdID, cmdState, attributes={}):
         self.cmdID = cmdID
         self.cmdState = cmdState
-        self.attributes = attributes    # {'switches':{},'links':{},'server':{},'vnfi':{}}
+        self.attributes = attributes    # {'switches':{},'links':{},'servers':{},'vnfi':{}}
 
 
 class CommandMaintainer(object):

@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 import logging
 
 from ryu.base import app_manager
@@ -16,9 +19,11 @@ from ryu.controller import event as controllerEvent
 
 from sam.ryu.baseApp import BaseApp
 
+
 class TopologyChangeEvent(controllerEvent.EventBase):
     def __init__(self):
         super(TopologyChangeEvent, self).__init__()
+
 
 class TopoCollector(BaseApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -121,3 +126,4 @@ class TopoCollector(BaseApp):
         rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY, cmdRply)
         queue = MEDIATOR_QUEUE
         self._messageAgent.sendMsg(queue, rplyMsg)
+
