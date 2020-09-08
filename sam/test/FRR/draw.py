@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
 from sam.test.FRR.dataProcessor import DataProcessor

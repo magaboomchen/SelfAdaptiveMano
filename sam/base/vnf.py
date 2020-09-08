@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 VNF_TYPE_CLASSIFIER = 0
 VNF_TYPE_FORWARD = 1
 VNF_TYPE_FW = 2
@@ -15,15 +18,21 @@ class VNFIStatus(object):
         self.outputTrafficAmount = None
         self.outputPacketAmount = None
 
+
 class VNFI(object):
-    def __init__(self, VNFID=None,VNFType=None,VNFIID=None,
-        config=None,node=None,vnfiStatus=None):
+    def __init__(self, VNFID=None, VNFType=None, VNFIID=None,
+        config=None, node=None, vnfiStatus=None):
         self.VNFID = VNFID
         self.VNFType = VNFType
         self.VNFIID = VNFIID
         self.config = config
         self.node = node # server or switch
         self.vnfiStatus = vnfiStatus
+        self.minCPUNum = 2
+        self.maxCPUNum = 2
+        self.minMem = 1024
+        self.maxMem = 1024
+
 
 class VNFIRequest(object):
     def __init__(self, userID, requestID, requestType, VNFIID, config=None):

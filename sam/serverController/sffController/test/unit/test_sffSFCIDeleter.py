@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *

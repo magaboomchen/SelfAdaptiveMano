@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 from ruamel import yaml
 import sys
 from sam.base.socketConverter import SocketConverter

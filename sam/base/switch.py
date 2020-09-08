@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
 
 SWITCH_TYPE_P4 = "SWITCH_TYPE_P4"
 SWITCH_TYPE_OPENFLOW = "SWITCH_TYPE_OPENFLOW"

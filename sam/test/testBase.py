@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 import uuid
 import subprocess
 import time
@@ -320,5 +323,6 @@ class TestBase(object):
     def sendCmd(self, queue, msgType, cmd):
         messageAgentTmp = MessageAgent()
         msg = SAMMessage(msgType, cmd)
-        messageAgentTmp.sendMsg(queue,msg)
+        messageAgentTmp.sendMsg(queue, msg)
         del messageAgentTmp
+

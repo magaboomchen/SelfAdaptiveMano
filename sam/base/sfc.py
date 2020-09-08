@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 from sam.base.slo import *
 from sam.base.vnf import *
 
@@ -10,7 +13,6 @@ SFCR_STATE_INITIAL = "SFCR_STATE_INITIAL"
 SFCR_STATE_IN_PROCESSING = "SFCR_STATE_IN_PROCESSING"
 SFCR_STATE_SUCCESSFUL = "SFCR_STATE_SUCCESSFUL"
 SFCR_STATE_FAILED = "SFCR_STATE_FAILED"
-SFCR_STATE_IN_ADAPTIVE = "SFCR_STATE_IN_ADAPTIVE"
 
 APP_TYPE_NORTHSOUTH_WEBSITE = "APP_TYPE_NORTHSOUTH_WEBSITE"
 
@@ -92,3 +94,4 @@ class SFCRequest(object):
         self.objRequestID = objRequestID # default: None
         self.sfc = sfc
         self.traffic = traffic
+
