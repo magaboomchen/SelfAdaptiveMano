@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 import logging
 
 from sam.base.messageAgent import *
@@ -7,6 +10,9 @@ from sam.base.command import *
 from sam.base.server import *
 from sam.serverController.vnfController.vnfiAdder import *
 from sam.serverController.vnfController.vnfMaintainer import *
+from sam.serverController.vnfController.vioAllocator import *
+
+MAX_VIO_NUM = 65536
 
 # port for docker tcp connect
 # (maybe unsafe, to modify in the future)
@@ -19,7 +25,10 @@ class VNFController(object):
         self._commandsInfo = {}
 
         self._vnfiAdder = VNFIAdder(DOCKER_TCP_PORT)
+        
         self._vnfiMaintainer = VNFIMaintainer()
+
+        self._vioManager = {}
 
         self._messageAgent = MessageAgent()
         self._messageAgent.startRecvMsg(VNF_CONTROLLER_QUEUE)
@@ -31,6 +40,7 @@ class VNFController(object):
             if msgType == None:
                 pass
             elif msgType == MSG_TYPE_VNF_CONTROLLER_CMD:
+                logging.info('VNF controller get a command.')
                 cmd = msg.getbody()
                 self._commandsInfo[cmd.cmdID] = {'cmd':cmd, 'state':CMD_STATE_PROCESSING}
                 if cmd.cmdType == CMD_TYPE_ADD_SFCI:
@@ -60,6 +70,7 @@ class VNFController(object):
 
     def _sfciAddHandler(self, cmd):
         sfciID = cmd.attributes['sfci'].SFCIID
+        logging.info('vnf controller add sfci')
         # TODO: if sfciID in vnfMaintainer?
         self._vnfiMaintainer.addSFCI(sfciID)
         vnfSeq = cmd.attributes['sfci'].VNFISequence
@@ -67,15 +78,26 @@ class VNFController(object):
         for vnf in vnfSeq:
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):
-                    # TODO: if vnfi in vnfMaintaine?
+                    # TODO: if vnfi in vnfMaintainer?
+                    logging.info('vnf controller add vnfi')
                     self._vnfiMaintainer.addVNFI(sfciID, vnfi)
+
+                    # get vioAllocator of server
+                    serverID = vnfi.node.getServerID()
+                    if serverID not in self._vioManager:
+                        self._vioManager[serverID] = VIOAllocator(serverID, MAX_VIO_NUM)
+                    allocator = self._vioManager[serverID]
+                    vioStart = allocator.allocateVIO() 
                     try:
-                        container = self._vnfiAdder.addVNFI(vnfi)
+                        containerID = self._vnfiAdder.addVNFI(vnfi, vioStart)
                         self._vnfiMaintainer.setVNFIState(sfciID, vnfi, VNFI_STATE_DEPLOYED)
-                        self._vnfiMaintainer.setVNFIContainer(sfciID, vnfi, container)
+                        self._vnfiMaintainer.setVNFIContainerID(sfciID, vnfi, containerID)
+                        self._vnfiMaintainer.setVNFIVIOStart(sfciID, vnfi, vioStart)
                     except Exception as exp:
+                        logging.info('error occurs in vnf controller %s' % exp)
                         self._vnfiMaintainer.setVNFIState(sfciID, vnfi, VNFI_STATE_FAILED)
                         self._vnfiMaintainer.setVNFIError(sfciID, vnfi, exp)    
+                        allocator.freeVIO(vioStart)
                         success = False
         return success
                         

@@ -1,5 +1,6 @@
 import pytest
 from scapy.all import *
+import time
 
 from sam.base.sfc import *
 from sam.base.vnf import *
@@ -50,7 +51,7 @@ class TestVNFSFCIAdderClass(TestBase):
         
         yield
         # teardown
-        self.delVNFI4Server()
+        #self.delVNFI4Server()
         self.killSFFController()
         self.killVNFController()
 
@@ -134,6 +135,7 @@ class TestVNFSFCIAdderClass(TestBase):
             MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
 
         # verifiy
+        time.sleep(10)
         self.verifyDirection0Traffic()
         self.verifyDirection1Traffic()
         self.verifyCmdRply()

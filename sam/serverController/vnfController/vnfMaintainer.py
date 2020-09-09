@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 import docker
 
 from sam.base.vnf import *
@@ -11,8 +14,8 @@ class VNFIDeployStatus(object):
     def __init__(self, vnfi, state):
         self.vnfi = vnfi
         self.state = state
-        self.container = None # container object of docker module; 
-                              # you can get the output inside it by calling container.logs() 
+        self.containerID = None 
+        self.vioStart = None  # start port of virtio in dpdk vdev
         self.error = None # error of the docker
 
 class VNFIMaintainer(object):
@@ -28,9 +31,12 @@ class VNFIMaintainer(object):
     def setVNFIState(self, sfciID, vnfi, state):
         self._vnfiSet[sfciID][vnfi.VNFIID].state = state 
 
-    def setVNFIContainer(self, sfciID, vnfi, container):
-        self._vnfiSet[sfciID][vnfi.VNFIID].container = container
-    
+    def setVNFIContainerID(self, sfciID, vnfi, containerID):
+        self._vnfiSet[sfciID][vnfi.VNFIID].containerID = containerID
+
+    def setVNFIVIOStart(self, sfciID, vnfi, vioStart):
+        self._vnfiSet[sfciID][vnfi.VNFIID].vioStart = vioStart
+
     def setVNFIError(self, sfciID, vnfi, error):
         self._vnfiSet[sfciID][vnfi.VNFIID].error = error
 
