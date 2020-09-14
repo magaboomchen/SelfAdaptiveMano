@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import pika
 import subprocess
 import logging
 import sys
@@ -15,15 +14,20 @@ import ctypes
 import inspect
 import uuid
 import base64
+
 import pickle
+import pika
 
 from sam.base.command import *
+from sam.base.request import *
 
 threadLock = threading.Lock()
 
 # formal queue type
+REQUEST_PROCESSOR_QUEUE = "REQUEST_PROCESSOR_QUEUE"
+DCN_INFO_RECIEVER_QUEUE = "DCN_INFO_RECIEVER_QUEUE"
 MEASURER_QUEUE = "MEASURER_QUEUE"
-ORCHESTRATION_QUEUE = "ORCHESTRATION_QUEUE"
+ORCHESTRATOR_QUEUE = "ORCHESTRATOR_QUEUE"
 MEDIATOR_QUEUE = "MEDIATOR_QUEUE"
 SFF_CONTROLLER_QUEUE = "SFF_CONTROLLER_QUEUE"
 VNF_CONTROLLER_QUEUE = "VNF_CONTROLLER_QUEUE"
@@ -34,6 +38,8 @@ MININET_TESTER_QUEUE = "MININET_TESTER_QUEUE"
 
 # general use case
 MSG_TYPE_STRING = "MSG_TYPE_STRING"
+MSG_TYPE_REQUEST = "MSG_TYPE_REQUEST"
+MSG_TYPE_REPLY = "MSG_TYPE_REPLY"
 # orchestration & measurement use case
 MSG_TYPE_MEDIATOR_CMD = "MSG_TYPE_MEDIATOR_CMD"
 MSG_TYPE_MEDIATOR_CMD_REPLY = "MSG_TYPE_MEDIATOR_CMD_REPLY"
@@ -55,7 +61,7 @@ MST_TYPE_TESTER_CMD = "MST_TYPE_TESTER_CMD"
 
 
 class SAMMessage(object):
-    def __init__(self,msgType,body):
+    def __init__(self, msgType, body):
         self._msgType = msgType # can not be a type()
         self._msgID = uuid.uuid1()
         self._body = body
@@ -85,6 +91,8 @@ class MessageAgent(object):
         self._publisherConnection = self._connectRabbitMQServer()
         self._consumerConnection = self._connectRabbitMQServer()
 
+        logging.getLogger("pika").setLevel(logging.ERROR)
+
     def readRabbitMQConf(self):
         filePath = __file__.split("/messageAgent.py")[0] + '/rabbitMQConf.conf'
         with open(filePath, 'r') as f:
@@ -107,9 +115,24 @@ class MessageAgent(object):
         self.rabbitMqServerPasswd = serverPasswd
 
     def genQueueName(self, queueType, zoneName=""):
-        return queueType + "_" + zoneName
+        if zoneName == "":
+            return queueType
+        else:
+            return queueType + "_" + zoneName
 
-    def sendMsg(self,dstQueueName,message):
+    def isCommand(self, body):
+        return isinstance(body, Command)
+
+    def isCommandReply(self, body):
+        return isinstance(body, CommandReply)
+
+    def isRequest(self, body):
+        return isinstance(body, Request)
+
+    def isReply(self, body):
+        return isinstance(body, Reply)
+
+    def sendMsg(self, dstQueueName, message):
         try:
             channel = self._publisherConnection.channel()
             channel.queue_declare(queue=dstQueueName,durable=True)
@@ -121,7 +144,7 @@ class MessageAgent(object):
             # logging.info(" [x] Sent %r" % message)
             channel.close()
         except:
-            print("MessageAgent sendMsg failed!")
+            logging.error("MessageAgent sendMsg failed!")
 
     def startRecvMsg(self,srcQueueName):
         logging.debug("MessageAgent.startRecvMsg().")
@@ -140,7 +163,7 @@ class MessageAgent(object):
                 thread.start()
                 result = True
             except:
-                print("MessageAgent startRecvMsg failed")
+                logging.error("MessageAgent startRecvMsg failed")
                 result = False
             finally:
                 threadLock.release()
@@ -209,12 +232,6 @@ class MessageAgent(object):
     def _disConnectRabbiMQServer(self):
         self._publisherConnection.close()
         self._consumerConnection.close()
-
-    def isCommand(self,body):
-        return isinstance(body, Command)
-
-    def isCommandReply(self,body):
-        return isinstance(body, CommandReply)
 
 
 class QueueReciever(threading.Thread):

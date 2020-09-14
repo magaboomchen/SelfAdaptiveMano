@@ -1,9 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import pytest
-from sam.serverAgent.dpdkConfigurator import *
+import logging
 import subprocess
+
+import pytest
+
+from sam.serverAgent.dpdkConfigurator import *
+
+logging.basicConfig(level=logging.INFO)
 
 class TestDPDKConfiguratorClass(object):
     banList = """

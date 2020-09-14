@@ -9,11 +9,6 @@ SFC_DOMAIN_PREFIX_LENGTH = 8    # DO NOT MODIFY THIS VALUE,
     # otherwise BESS will incurr error
 SFCID_LENGTH = 12  # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 
-SFCR_STATE_INITIAL = "SFCR_STATE_INITIAL"
-SFCR_STATE_IN_PROCESSING = "SFCR_STATE_IN_PROCESSING"
-SFCR_STATE_SUCCESSFUL = "SFCR_STATE_SUCCESSFUL"
-SFCR_STATE_FAILED = "SFCR_STATE_FAILED"
-
 APP_TYPE_NORTHSOUTH_WEBSITE = "APP_TYPE_NORTHSOUTH_WEBSITE"
 
 
@@ -25,17 +20,27 @@ class SFCI(object):
         self.sloRealTimeValue = sloRealTimeValue
         self.ForwardingPathSet = ForwardingPathSet
 
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
+
+    def __repr__(self):
+        return str(self)
+
 
 class SFC(object):
     def __init__(self, sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
         backupInstanceNumber, applicationType, directions=None,
-        sFCIs=[], traffic=None, slo=None, sloRealTimeValue=None):
+        attributes={}, traffic=None, slo=None, sFCIs=[]):
         self.sfcUUID = sfcUUID
         self.vNFTypeSequence = vNFTypeSequence # [FW, LB]
         self.maxScalingInstanceNumber = maxScalingInstanceNumber # 2
         self.backupInstanceNumber = backupInstanceNumber # 1
         self.applicationType = applicationType # NORTHSOUTH_WEBSITE
         self.slo = slo
+        self.attributes = attributes # {"zone":ZONENAME}
         self.directions = directions
 
         # directions' data structure
@@ -82,16 +87,11 @@ class SFC(object):
                             # For bess, we use (src,dst) pair to distinguish
                             # different direction.
 
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
 
-class SFCRequest(object):
-    def __init__(self, userID, requestID, requestType,
-        requestState=SFCR_STATE_INITIAL, sfc=None, objRequestID=None,
-        sla=None, traffic=None):
-        self.userID =  userID # 0 is root
-        self.requestID = requestID # uuid1()
-        self.requestType = requestType
-        self.requestState = requestState 
-        self.objRequestID = objRequestID # default: None
-        self.sfc = sfc
-        self.traffic = traffic
-
+    def __repr__(self):
+        return str(self)

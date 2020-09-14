@@ -1,12 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import sys
+import logging
 
 import pytest
 from ryu.controller import dpset
 
 from sam.ryu.L2 import *
+
+logging.basicConfig(level=logging.INFO)
 
 class TestL2Class(object):
     @classmethod

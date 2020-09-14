@@ -6,7 +6,7 @@ from sam.base.vnf import *
 class MeasurementStub(object):
     def __init__(self):
         self.mA = MessageAgent()
-        # self.mA.startRecvMsg(ORCHESTRATION_QUEUE)
+        # self.mA.startRecvMsg(ORCHESTRATOR_QUEUE)
 
     def genCMDGetServerSet(self):
         cmdID = uuid.uuid1()

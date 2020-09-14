@@ -1,10 +1,18 @@
-import pytest
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 import uuid
+import logging
+
+import pytest
+
 from sam.base.server import *
 from sam.base.command import *
 from sam.base.messageAgent import *
 
 MANUAL_TEST = True
+
+logging.basicConfig(level=logging.INFO)
 
 class TestCommandMaintainerClass(object):
     def setup_method(self, method):

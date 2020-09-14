@@ -1,7 +1,15 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+import logging
+
 import pytest
+
 from sam.base.server import *
 
 MANUAL_TEST = True
+
+logging.basicConfig(level=logging.INFO)
 
 class TestServerClass(object):
     banList = """

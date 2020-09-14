@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import logging
+
 from sam.base.xibMaintainer import *
 
 # TODO: test
@@ -56,4 +58,6 @@ class UIBMaintainer(XInfoBaseMaintainer):
 
     def printSFCIFlowTable(self, SFCIID, dpid):
         for entry in self.sfciRIB[SFCIID][dpid]:
-            print(entry["match"])
+            logging.info(
+                "entry[match]={0}".format(entry["match"])
+                )

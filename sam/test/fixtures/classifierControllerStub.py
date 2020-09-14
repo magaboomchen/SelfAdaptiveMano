@@ -9,6 +9,6 @@ class ClassifierControllerStub(object):
         self.mA = MessageAgent()
         # self.mA.startRecvMsg(self.queue)
 
-    def sendCmdRply(self,cmdRply):
+    def sendCmdRply(self, cmdRply):
         msg = SAMMessage(MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY, cmdRply)
         self.mA.sendMsg(MEDIATOR_QUEUE,msg)

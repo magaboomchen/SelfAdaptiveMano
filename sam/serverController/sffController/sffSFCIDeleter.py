@@ -42,7 +42,6 @@ class SFFSFCIDeleter(BessControlPlane):
                     self._delModules(server,sfc.directions,sfci,vnfi)
                     # self.sibms.show()
                 else:
-                    print("continue!")
                     continue
 
     def _delLinks(self,server,directions,vnfi):

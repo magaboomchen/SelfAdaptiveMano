@@ -1,5 +1,10 @@
-import pytest
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+import logging
 from scapy.all import *
+
+import pytest
 
 from sam.base.sfc import *
 from sam.base.vnf import *
@@ -12,7 +17,6 @@ from sam.test.fixtures.vnfControllerStub import *
 from sam.test.testBase import *
 from sam.serverController.classifierController import *
 
-
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.199"
 TESTER_SERVER_DATAPATH_MAC = "52:54:00:a8:b0:a1"
@@ -22,6 +26,7 @@ SFF0_DATAPATH_MAC = "52:54:00:5a:14:f0"
 SFF0_CONTROLNIC_IP = "192.168.0.156"
 SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 
+logging.basicConfig(level=logging.INFO)
 
 class TestVNFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
@@ -91,7 +96,7 @@ class TestVNFSFCIAdderClass(TestBase):
         self.sP.killPythonScript("sffControllerCommandAgent.py")
 
     def addSFCI2SFF(self):
-        print("setup add SFCI to sff")
+        logging.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
             MSG_TYPE_SSF_CONTROLLER_CMD , self.addSFCICmd)
@@ -109,26 +114,27 @@ class TestVNFSFCIAdderClass(TestBase):
         self.sP.killPythonScript("XXX.py")
 
     def addVNFI2Server(self):
-        print("setup add SFCI to server")
+        logging.info("setup add SFCI to server")
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "t1@netlab325", "192.168.0.156",
                 self.sfci.VNFISequence[0][0].VNFIID)
-            print("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
+            logging.info(
+                "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
                 shellCmdRply['stderr'].read().decode('utf-8')))
         except:
-            print("If raise IOError: reading from stdin while output is captured")
-            print("Then pytest should use -s option!")
+            logging.info("If raise IOError: reading from stdin while output is captured")
+            logging.info("Then pytest should use -s option!")
 
     def delVNFI4Server(self):
-        print("teardown del SFCI from server")
+        logging.info("teardown del SFCI from server")
         self.vC.uninstallVNF("t1", "t1@netlab325", "192.168.0.156",
                     self.sfci.VNFISequence[0][0].VNFIID)
         time.sleep(10)
         # Here is a bug
-        print("Sometimes, we can't delete VNFI, you should delete it manually"
+        logging.info("Sometimes, we can't delete VNFI, you should delete it manually"
             "Command: sudo docker stop name1"
             )
 
@@ -136,7 +142,7 @@ class TestVNFSFCIAdderClass(TestBase):
 
     def test_addSFCI(self, setup_addSFCI):
         # exercise
-        print("exercise")
+        logging.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE,
             MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
@@ -156,7 +162,7 @@ class TestVNFSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
-        print("_checkEncapsulatedTraffic: wait for packet")
+        logging.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         sniff(filter=filterRE,
             iface=inIntf, prn=self.encap_callback,count=1,store=0)
@@ -181,7 +187,7 @@ class TestVNFSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
-        print("_checkDecapsulatedTraffic: wait for packet")
+        logging.info("_checkDecapsulatedTraffic: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback,count=1,store=0)
 

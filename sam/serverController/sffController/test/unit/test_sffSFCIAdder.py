@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import pytest
+import logging
 from scapy.all import *
+
+import pytest
 
 from sam.base.sfc import *
 from sam.base.vnf import *
@@ -20,6 +22,7 @@ MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "192.168.124.1"
 TESTER_SERVER_DATAPATH_MAC = "fe:54:00:42:26:44"
 
+logging.basicConfig(level=logging.INFO)
 
 class TestSFFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
@@ -66,13 +69,14 @@ class TestSFFSFCIAdderClass(TestBase):
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
                 self.sfci.VNFISequence[0][0].VNFIID)
-            print("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
+            logging.info(
+                "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
                 shellCmdRply['stderr'].read().decode('utf-8')))
         except:
-            print("If raise IOError: reading from stdin while output is captured")
-            print("Then pytest should use -s option!")
+            logging.info("If raise IOError: reading from stdin while output is captured")
+            logging.info("Then pytest should use -s option!")
 
         # verify again
         self.verifyDirection0Traffic()
@@ -87,7 +91,7 @@ class TestSFFSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkArpRespond(self,inIntf):
-        print("_checkArpRespond: wait for packet")
+        logging.info("_checkArpRespond: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()) +
             " and arp",iface=inIntf, prn=self.frame_callback,count=1,store=0)
 
@@ -107,7 +111,7 @@ class TestSFFSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
-        print("_checkEncapsulatedTraffic: wait for packet")
+        logging.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         sniff(filter=filterRE,
             iface=inIntf, prn=self.encap_callback,count=1,store=0)
@@ -131,7 +135,7 @@ class TestSFFSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
-        print("_checkDecapsulatedTraffic: wait for packet")
+        logging.info("_checkDecapsulatedTraffic: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback,count=1,store=0)
 

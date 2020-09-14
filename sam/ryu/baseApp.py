@@ -63,7 +63,8 @@ class BaseApp(app_manager.RyuApp):
     def _getLANNet(self,dpid):
         return self._switchConfs[dpid].lANNet
 
-    def _isLANIP(self,dstIP, net):
+    # TODO: refactor, move this function to class SocketConverter()
+    def _isLANIP(self, dstIP, net):
         dstIPNum = SocketConverter().ip2int(dstIP)
 
         netIP = net.split('/')[0]        
@@ -105,8 +106,9 @@ class BaseApp(app_manager.RyuApp):
 
     def _ls(self,obj):
         # Handy function that lists all attributes in the given object
-        self.logger.info("list attributes of:", type(obj))
+        self.logger.info("list attributes of:{0}".format(type(obj)))
         self.logger.info("\n".join([x for x in dir(obj) if x[0] != "_"]))
+
 
     def _dict2OrderJson(self,dict):
         return json.dumps(dict, sort_keys=True)

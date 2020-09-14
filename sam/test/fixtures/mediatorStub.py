@@ -6,7 +6,6 @@ from sam.test.fixtures.orchestrationStub import *
 class MediatorStub(OrchestrationStub):
     def __init__(self):
         self.mA = MessageAgent()
-        # self.mA.startRecvMsg(MEDIATOR_QUEUE)
 
     def genCMDAddSFCI(self,sfc,sfci):
         cmdID = uuid.uuid1()

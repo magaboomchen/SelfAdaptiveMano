@@ -14,13 +14,14 @@ import pickle
 from netifaces import interfaces, ifaddresses, AF_INET
 from getmac import get_mac_address
 
+SERVER_TYPE_CLASSIFIER = "classifier"
+SERVER_TYPE_NORMAL = "normal"
+SERVER_TYPE_NFVI = "nfvi"
+SERVER_TYPE_TESTER = "tester"
 
-SERVER_TYPE_CLASSIFIER = "SERVER_TYPE_CLASSIFIER"
-SERVER_TYPE_NORMAL = "SERVER_TYPE_NORMAL"
-SERVER_TYPE_TESTER = "SERVER_TYPE_TESTER"
 
 class Server(object):
-    def __init__(self,controlIfName, datapathIfIP, serverType):
+    def __init__(self, controlIfName, datapathIfIP, serverType):
         # each server has at least two nic, one for control, another for data processing
         self._serverID = None
         self._serverType = serverType
@@ -40,19 +41,22 @@ class Server(object):
     def setServerID(self, id):
         self._serverID = id
 
-    def setControlNICIP(self,controlNICIP):
+    def setControlNICIP(self, controlNICIP):
         ifName = self._controlIfName
         self._ifSet[ifName] = {}
         self._ifSet[ifName]["IP"] = controlNICIP
 
-    def setControlNICMAC(self,controlNICMAC):
+    def setControlNICMAC(self, controlNICMAC):
         self._serverControlNICMAC = controlNICMAC
 
-    def setDataPathNICMAC(self,datapathNICMAC):
+    def setDataPathNICMAC(self, datapathNICMAC):
         self._serverDatapathNICMAC = datapathNICMAC
 
     def getServerID(self):
         return self._serverID
+
+    def getServerType(self):
+        return self._serverType
 
     def updateControlNICMAC(self):
         self._serverControlNICMAC = self._getHwAddrInKernel(self._controlIfName)
@@ -102,14 +106,14 @@ class Server(object):
         final = result.split(' ')[2][0:17]
         return final
 
-    def _getHwAddrInKernel(self,ifName):
+    def _getHwAddrInKernel(self, ifName):
         # s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # info = fcntl.ioctl(s.fileno(), 0x8927,  struct.pack('256s', ifName[:15]))
         # return ':'.join(['%02x' % ord(char) for char in info[18:24]])
         ethMac = get_mac_address(interface=ifName)
         return ethMac
 
-    def _getIPList(self,ifName):
+    def _getIPList(self, ifName):
         addresses = [i['addr'] for i in ifaddresses(ifName).setdefault(AF_INET,[{'addr':'No IP addr'}])  ]
         addList = []
         for add in addresses:
@@ -118,7 +122,7 @@ class Server(object):
 
     def printCpuUtil(self):
         for x in range(10):
-            print(psutil.cpu_percent(interval=1, percpu=True))
+            logging.info(psutil.cpu_percent(interval=1, percpu=True))
 
     def updateResource(self):
         self._updateCpuCount()
@@ -144,3 +148,12 @@ class Server(object):
     def _updateHugepagesSize(self):
         out_bytes = subprocess.check_output(['grep Huge /proc/meminfo | grep Hugepagesize'], shell=True)
         self._hugepageSize = int(out_bytes.split(':')[1].split('kB')[0])
+
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
+
+    def __repr__(self):
+        return str(self)

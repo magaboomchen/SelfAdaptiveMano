@@ -12,36 +12,62 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
         self._servers = {}
         self._switches = {}
         self._links = {}
-        self._hosts = {}
         self._vnfis = {}
 
-    def updateServers(self, servers):
+    def updateServersInAllZone(self, servers):
         self._servers = servers
 
-    def updateSwitches(self, switches):
+    def updateServersByZone(self, servers, zoneName):
+        self._servers[zoneName] = servers
+
+    def updateSwitchesInAllZone(self, switches):
         self._switches = switches
 
-    def updateLinks(self, links):
+    def updateSwitchesByZone(self, switches, zoneName):
+        self._switches[zoneName] = switches
+
+    def updateLinksInAllZone(self, links):
         self._links = links
 
-    def updateHosts(self, hosts):
-        self._hosts = hosts
+    def updateLinksByZone(self, links, zoneName):
+        self._links[zoneName] = links
 
-    def updateVnfis(self, vnfis):
+    def updateVnfisInAllZone(self, vnfis):
         self._vnfis = vnfis
-    
-    def getServers(self):
+
+    def updateVnfisByZone(self, vnfis, zoneName):
+        self._vnfis[zoneName] = vnfis
+
+    def getServersInAllZone(self):
         return self._servers
-    
-    def getSwitches(self):
+
+    def getServersByZone(self, zoneName):
+        return self._servers[zoneName]
+
+    def getSwitchesInAllZone(self):
         return self._switches
 
-    def getLinks(self):
+    def getSwitchesByZone(self, zoneName):
+        return self._switches[zoneName]
+
+    def getLinksInAllZone(self):
         return self._links
-    
-    def getHosts(self):
-        return self._hosts
-    
-    def getVnfis(self):
+
+    def getLinksByZone(self, zoneName):
+        return self._links[zoneName]
+
+    def getVnfisInAllZone(self):
         return self._vnfis
+
+    def getVnfisByZone(self, zoneName):
+        return self._vnfis[zoneName]
+
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
+
+    def __repr__(self):
+        return str(self)
 

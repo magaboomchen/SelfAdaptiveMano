@@ -84,8 +84,8 @@ class NotVia(FRR):
             for i in range(1,len(stage)-1):
                 currentSwitchID = stage[i]
                 groupID = self.ibm.assignGroupID(currentSwitchID)
-                print("dpid:{0}".format(currentSwitchID))
-                print("______: assignGroupID:{0}".format(groupID))
+                self.logger.debug("dpid:{0}".format(currentSwitchID))
+                self.logger.debug("______: assignGroupID:{0}".format(groupID))
                 nextNodeID = stage[i+1]
 
                 if self._canSkipPrimaryPathFlowInstallation(sfci.SFCIID,
@@ -108,8 +108,8 @@ class NotVia(FRR):
             direction,currentDpid,nextDpid)
         if defaultOutPort == None:
             raise ValueError("NotVia: can not get default out port")
-        print("Bucket1")
-        print("srcMAC:{0},dstMAC:{1},outport:{2}".format(srcMAC,dstMAC,
+        self.logger.debug("Bucket1")
+        self.logger.debug("srcMAC:{0},dstMAC:{1},outport:{2}".format(srcMAC,dstMAC,
             defaultOutPort))
         actions = [
             parser.OFPActionDecNwTtl(),
@@ -124,14 +124,14 @@ class NotVia(FRR):
         # get backup src/dst ether, backup OutPort and new vlanID
         backupnextDpid = self._getBackupNextHop(currentDpid,nextDpid,sfci,
             direction,stageCount)
-        print("backupnextDpid:{0}".format(backupnextDpid))
+        self.logger.debug("backupnextDpid:{0}".format(backupnextDpid))
         if backupnextDpid != None:
             vlanID = self._getNewVLANID(currentDpid,nextDpid,sfci,direction)
             (srcMAC,dstMAC,backupOutPort) = self._getNextHopActionFields(sfci,
                 direction,currentDpid,backupnextDpid)
 
-            print("Bucket2")
-            print("srcMAC:{0}, dstMAC:{1}, vlanID:{2}, outport:{2}".format(
+            self.logger.debug("Bucket2")
+            self.logger.debug("srcMAC:{0}, dstMAC:{1}, vlanID:{2}, outport:{2}".format(
                     srcMAC,dstMAC,vlanID,backupOutPort))
             actions = [
                 parser.OFPActionDecNwTtl(),
@@ -145,8 +145,8 @@ class NotVia(FRR):
             bucket = parser.OFPBucket(watch_port=watch_port,actions=actions)
             buckets.append(bucket)
 
-        print("groupID:{0},buckets:{1}".format(groupID,buckets))
-        print("datapath:{0}".format(datapath))
+        self.logger.debug("groupID:{0},buckets:{1}".format(groupID,buckets))
+        self.logger.debug("datapath:{0}".format(datapath))
         req = parser.OFPGroupMod(datapath, ofproto.OFPGC_ADD,
                                     ofproto.OFPGT_FF, groupID, buckets)
         datapath.send_msg(req)
@@ -162,7 +162,7 @@ class NotVia(FRR):
             return None
 
     def _addNotViaSFCIFlowtable(self, currentDpid, SFCIID, dstIP, groupID):
-        print("_addNotViaSFCIFlowtable")
+        self.logger.debug("_addNotViaSFCIFlowtable")
         datapath = self.dpset.get(int(str(currentDpid),0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -188,8 +188,8 @@ class NotVia(FRR):
             sfciLength = len(sfci.VNFISequence)
             fpLength = len(FP)
             stageCount = sfciLength - fpLength
-            print("_installBackupPaths")
-            print(FP)
+            self.logger.debug("_installBackupPaths")
+            self.logger.debug(FP)
             for stage in FP:
                 stageCount = stageCount + 1
                 if len(stage)==2:
@@ -207,9 +207,9 @@ class NotVia(FRR):
 
     def _installRouteOnBackupPath(self, sfci, direction, currentDpid,
             nextDpid, vlanID):
-        print("**********************")
-        print("_installRouteOnBackupPath")
-        print(currentDpid)
+        self.logger.debug("**********************")
+        self.logger.debug("_installRouteOnBackupPath")
+        self.logger.debug(currentDpid)
         datapath = self.dpset.get(int(str(currentDpid), 0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -225,7 +225,7 @@ class NotVia(FRR):
             direction, currentDpid, nextDpid)
         if defaultOutPort == None:
             raise ValueError("NotVia: can not get default out port")
-        print("srcMAC:{0}, dstMAC:{1}, outport:{2}".format(srcMAC, dstMAC,
+        self.logger.debug("srcMAC:{0}, dstMAC:{1}, outport:{2}".format(srcMAC, dstMAC,
             defaultOutPort))
         actions = [
             parser.OFPActionSetField(eth_src=srcMAC),
@@ -246,8 +246,8 @@ class NotVia(FRR):
 
     def _installLastRouteOnBackupPath(self, sfci, direction, currentDpid,
             vlanID):
-        print("_installLastRouteOnBackupPath")
-        print(currentDpid)
+        self.logger.debug("_installLastRouteOnBackupPath")
+        self.logger.debug(currentDpid)
         datapath = self.dpset.get(int(str(currentDpid), 0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -258,7 +258,7 @@ class NotVia(FRR):
         match = parser.OFPMatch()
         # eth_VLAN = ether_types.ETH_TYPE_8021Q
         # match.set_dl_type(eth_VLAN)
-        print("vlanID:{0}".format(vlanID))
+        self.logger.debug("vlanID:{0}".format(vlanID))
         match.set_vlan_vid(vlanID)
         actions = [parser.OFPActionPopVlan()]
 

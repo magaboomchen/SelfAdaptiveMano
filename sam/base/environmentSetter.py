@@ -28,7 +28,6 @@ class EnvironmentSetter(object):
 
     def addPythonModuleSystemPath(self,path, pthfileName="selfAdaptiveMano.pth"):
         directorys = site.getsitepackages()
-        print(directorys)
         # ['/usr/local/lib/python2.7/dist-packages',
         #  '/usr/lib/python2.7/dist-packages']
         for direct in directorys:

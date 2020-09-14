@@ -2,10 +2,13 @@
 # -*- coding: UTF-8 -*-
 
 import paramiko
+import logging
 
 class SSHAgent(object):
     def __init__(self, ):
         self.ssh = paramiko.SSHClient()
+
+        logging.getLogger("paramiko").setLevel(logging.ERROR)
 
     def connectSSH(self,sshUsrname, sshPassword, remoteIP, remoteSSHPort=22):
         self.passwd = sshPassword

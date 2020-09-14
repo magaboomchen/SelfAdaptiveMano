@@ -34,6 +34,6 @@ class ServerTester(object):
         server.printCpuUtil()
 
 if __name__=="__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     controlIfName = "eno1"
     ServerTester(controlIfName)

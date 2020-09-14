@@ -1,8 +1,15 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+import logging
+
 import pytest
+
 from sam.base.shellProcessor import *
 
-
 MANUAL_TEST = True
+
+logging.basicConfig(level=logging.INFO)
 
 class TestShellProcessorClass(object):
     def setup_method(self, method):

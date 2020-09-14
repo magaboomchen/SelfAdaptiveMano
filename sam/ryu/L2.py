@@ -37,7 +37,7 @@ class L2(BaseApp):
         self._peerPortTable = {}    # switch's peer switch's port
         self._switchesLANMacTable = {}  # {dpid:{mac:port}}
 
-        self.logger.setLevel(logging.ERROR)
+        self.logger.setLevel(logging.DEBUG)
 
     def getLocalPortByMac(self,dpid,mac):
         if self._switchesLANMacTable.has_key(dpid) and\
@@ -207,10 +207,10 @@ class L2(BaseApp):
         elif reason == ofproto.OFPPR_DELETE:
             self.logger.info("_port_status_handler, dpid: %d, port deleted %s" %(dpid, port_no))
             # self._ls(datapath.ports)
-            # print(type(datapath.ports))
+            # self.logger.debug(type(datapath.ports))
             # for key in datapath.ports.iterkeys():
-            #     print(key)
-            #     print(datapath.ports[key])
+            #     self.logger.debug(key)
+            #     self.logger.debug(datapath.ports[key])
             self._delLocalPort(datapath, port)
         elif reason == ofproto.OFPPR_MODIFY:
             self.logger.info("_port_status_handler, dpid: %d, port modified %s" %(dpid, port_no))
@@ -225,10 +225,10 @@ class L2(BaseApp):
         switch = ev.switch
         # self._ls(switch)
         # self._ls(switch.ports)
-        # print(switch.to_dict())
-        # print(type(switch.ports))
+        # self.logger.debug(switch.to_dict())
+        # self.logger.debug(type(switch.ports))
         for port in switch.ports:
-            # print(port)
+            # self.logger.debug(port)
             # self._ls(port)
             self._addLocalPort(switch.dp, port)
         self._peerPortTable[switch.dp.id] = {}
@@ -243,9 +243,9 @@ class L2(BaseApp):
     def _addLink(self,ev):
         link = ev.link
         # self._ls(link.dst)
-        # print(link.dst)
-        # print(type(link))
-        # print(link)
+        # self.logger.debug(link.dst)
+        # self.logger.debug(type(link))
+        # self.logger.debug(link)
 
         dstPort = link.dst
         nextDpid = dstPort.dpid
@@ -369,27 +369,4 @@ class L2(BaseApp):
                     datapath.send_msg(out)
             else:
                 self.logger.debug("This arp is from other LAN, drop it")
-        # elif eth.ethertype == ether_types.ETH_TYPE_IP:
-        #     ipHeader = pkt.get_protocol(ipv4.ipv4)
-        #     print("get an ip packet, its proto is {0}".format(ipHeader.proto))
 
-        #     if ipHeader.proto == 0x04:
-        #         ipHeaderList = pkt.get_protocols(ipv4.ipv4)
-        #         return 
-
-        #     if ipHeader.proto == 0x01:
-        #         self.logger.debug("get an icmp packet")
-        #         src_ip = ipHeader.dst
-        #         dst_ip = ipHeader.src
-        #         src_mac = eth.dst
-        #         dst_mac = eth.src
-        #         data = self._build_icmp_dest_unreach(src_mac, src_ip, dst_mac, dst_ip)
-
-        #         out_port = in_port
-        #         actions = [parser.OFPActionOutput(out_port)]
-
-        #         out = parser.OFPPacketOut(
-        #             datapath=datapath, buffer_id=ofproto.OFP_NO_BUFFER, 
-        #             in_port=ofproto_v1_3.OFPP_CONTROLLER,
-        #             actions=actions, data=data)
-        #         datapath.send_msg(out)

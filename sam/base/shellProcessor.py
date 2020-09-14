@@ -7,6 +7,9 @@ import logging
 import psutil
 
 class ShellProcessor(object):
+    def __init__(self):
+        logging.getLogger("psutil").setLevel(logging.ERROR)
+
     def listRunningProcess(self):
         logging.info("List running process.")
         for p in psutil.process_iter(attrs=['pid', 'name']):
@@ -53,7 +56,6 @@ class ShellProcessor(object):
 
     def killPythonScript(self,moduleName):
         for p in psutil.process_iter(attrs=['pid', 'name', 'cmdline']):
-            logging.info(p)
             if p.info['name'] == "python":
                 for cmdline in p.info['cmdline']:
                     if cmdline.find(moduleName) != -1:

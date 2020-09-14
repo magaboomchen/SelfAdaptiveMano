@@ -20,6 +20,8 @@ from sam.base.command import *
 from sam.base.path import *
 from sam.serverController.bessControlPlane import *
 
+logging.basicConfig(level=logging.INFO)
+
 class SFFInitializer(BessControlPlane):
     def __init__(self,sibms):
         super(SFFInitializer, self).__init__()
@@ -37,7 +39,8 @@ class SFFInitializer(BessControlPlane):
         sibm = self.sibms.getSibm(serverID)
         serverControlIP = server.getControlNICIP()
         bessServerUrl = serverControlIP + ":10514"
-        print("sffInitializer - bessServerUrl:{0}".format(bessServerUrl))
+        logging.info(
+            "sffInitializer - bessServerUrl:{0}".format(bessServerUrl))
         if not self.isBESSAlive(bessServerUrl):
             raise ValueError ("bess is not alive")
         with grpc.insecure_channel(bessServerUrl) as channel:

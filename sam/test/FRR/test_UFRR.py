@@ -3,6 +3,7 @@
 
 import sys
 import time
+import logging
 
 import pytest
 from ryu.controller import dpset
@@ -13,6 +14,7 @@ from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
 from sam.test.FRR.testFRR import TestFRR
 
+logging.basicConfig(level=logging.INFO)
 
 class TestUFRRClass(TestFRR):
     @pytest.fixture(scope="function")
@@ -70,7 +72,7 @@ class TestUFRRClass(TestFRR):
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_UFRRAddUniSFCI(self, setup_addUniSFCI):
-        print("You need start ryu-manager and mininet manually!"
+        logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
         raw_input()
         # exercise: mapping SFCI
@@ -80,12 +82,12 @@ class TestUFRRClass(TestFRR):
             self.addSFCICmd)
 
         # verify
-        print("Start listening on mediator queue")
+        logging.info("Start listening on mediator queue")
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-        print("Please input mode 0 into mininet\n"
+        logging.info("Please input mode 0 into mininet\n"
             "After the test, "
             "Press any key to quit!")
         raw_input()

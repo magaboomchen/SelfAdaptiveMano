@@ -27,7 +27,7 @@ class CommandReply(object):
     def __init__(self, cmdID, cmdState, attributes={}):
         self.cmdID = cmdID
         self.cmdState = cmdState
-        self.attributes = attributes    # {'switches':{},'links':{},'servers':{},'vnfi':{}}
+        self.attributes = attributes    # {'switches':{},'links':{},'servers':{},'vnfis':{}}
 
 
 class CommandMaintainer(object):
@@ -42,6 +42,18 @@ class CommandMaintainer(object):
             'parentCmdID': None,
             'childCmdID': {}   # {CmdName1:cmdID,CmdName1:cmdID}
         }
+
+    def getCmd(self, cmdID):
+        if cmdID in self._commandsInfo:
+            return self._commandsInfo[cmdID]
+        else:
+            return None
+
+    def hasCmd(self, cmdID):
+        if cmdID in self._commandsInfo:
+            return True
+        else:
+            return False
 
     def delCmdwithChildCmd(self, cmdID):
         for childCmdID in self._commandsInfo[cmdID]['childCmdID'].itervalues():

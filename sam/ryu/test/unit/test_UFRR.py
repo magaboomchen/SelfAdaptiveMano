@@ -3,6 +3,7 @@
 
 import sys
 import time
+import logging
 
 import pytest
 from ryu.controller import dpset
@@ -12,6 +13,7 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
 
+logging.basicConfig(level=logging.INFO)
 
 class TestUFRRClass(TestBase):
     @pytest.fixture(scope="function")
@@ -33,7 +35,7 @@ class TestUFRRClass(TestBase):
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc,self.sfci)
 
         # add SFCI to classifier
-        print("setup add SFCI to classifier")
+        logging.info("setup add SFCI to classifier")
         self.runClassifierController()
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SERVER_CLASSIFIER_CONTROLLER_QUEUE,
@@ -43,7 +45,7 @@ class TestUFRRClass(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
         # add SFCI to SFF
-        print("setup add SFCI to sff")
+        logging.info("setup add SFCI to sff")
         self.runSFFController()
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
@@ -53,7 +55,7 @@ class TestUFRRClass(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
         # add VNFI to server
-        print("setup add SFCI to server")
+        logging.info("setup add SFCI to server")
         self.addVNFI2Server()
 
         yield
@@ -67,24 +69,24 @@ class TestUFRRClass(TestBase):
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
                 self.sfci.VNFISequence[0][0].VNFIID)
-            print("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
+            logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
                 shellCmdRply['stderr'].read().decode('utf-8')))
         except:
-            print("If raise IOError: reading from stdin while output is captured")
-            print("Then pytest should use -s option!")
+            logging.info("If raise IOError: reading from stdin while output is captured")
+            logging.info("Then pytest should use -s option!")
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.208",
                 self.sfci.VNFISequence[0][1].VNFIID)
-            print("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
+            logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
                 shellCmdRply['stderr'].read().decode('utf-8')))
         except:
-            print("If raise IOError: reading from stdin while output is captured")
-            print("Then pytest should use -s option!")
+            logging.info("If raise IOError: reading from stdin while output is captured")
+            logging.info("Then pytest should use -s option!")
 
     def delVNFI4Server(self):
         self.vC.uninstallVNF("t1", "123", "192.168.122.134",
@@ -98,7 +100,7 @@ class TestUFRRClass(TestBase):
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_UFRRAddUniSFCI(self, setup_addUniSFCI):
-        print("You need start ryu-manager and mininet manually!"
+        logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
         raw_input()
         # exercise
@@ -108,11 +110,11 @@ class TestUFRRClass(TestBase):
             self.addSFCICmd)
 
         # verify
-        print("Start listening on mediator queue")
+        logging.info("Start listening on mediator queue")
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-        print("Press any key to quit!")
+        logging.info("Press any key to quit!")
         raw_input()
 
     @pytest.fixture(scope="function")
@@ -134,7 +136,7 @@ class TestUFRRClass(TestBase):
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc,self.sfci)
 
         # add SFCI to classifier
-        print("setup add SFCI to classifier")
+        logging.info("setup add SFCI to classifier")
         self.runClassifierController()
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SERVER_CLASSIFIER_CONTROLLER_QUEUE,
@@ -144,7 +146,7 @@ class TestUFRRClass(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
         # add SFCI to SFF
-        print("setup add SFCI to sff")
+        logging.info("setup add SFCI to sff")
         self.runSFFController()
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
@@ -161,21 +163,21 @@ class TestUFRRClass(TestBase):
 
     @pytest.mark.skip(reason='Temporarly')
     def test_UFRRDelUniSFCI(self, setup_delUniSFCI):
-        print("You need start ryu-manager and mininet manually!"
+        logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
         raw_input()
         # exercise
-        print("Sending add SFCI command to ryu")
+        logging.info("Sending add SFCI command to ryu")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,
             MSG_TYPE_NETWORK_CONTROLLER_CMD,
             self.addSFCICmd)
-        print("Start listening on mediator queue")
+        logging.info("Start listening on mediator queue")
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-        print("Ready to send delete SFCI command to ryu"
+        logging.info("Ready to send delete SFCI command to ryu"
                 "Press any key to continue!")
         raw_input()
         self.delSFCICmd.cmdID = uuid.uuid1()
@@ -211,7 +213,7 @@ class TestUFRRClass(TestBase):
             self.addSFCICmd)
 
         # verify
-        print("Start listening on mediator queue")
+        logging.info("Start listening on mediator queue")
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
@@ -219,4 +221,6 @@ class TestUFRRClass(TestBase):
     def printVNFISequence(self, VNFISequence):
         for vnf in VNFISequence:
             for vnfi in vnf:
-                print("VNFID:{0},VNFIID:{1}".format(vnfi.VNFID,vnfi.VNFIID))
+                logging.info(
+                    "VNFID:{0},VNFIID:{1}".format(
+                        vnfi.VNFID,vnfi.VNFIID))

@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import copy
+import logging
 
 from sam.base.server import Server
 from sam.base.messageAgent import *
@@ -31,7 +32,7 @@ class SIBMS(object):
 
     def show(self):
         for key in self._sibms.iterkeys():
-            print("{0}'s sibm:".format(key))
+            logging.info("{0}'s sibm:".format(key))
             self._sibms[key].show()
 
 class SIBMaintainer(BessInfoBaseMaintainer):
@@ -84,9 +85,7 @@ class SIBMaintainer(BessInfoBaseMaintainer):
         return value
     
     def show(self):
-        print("sfcSet:")
-        print(self._sfcSet)
-        print("modules:")
-        print(self._modules)
-        print("links:")
-        print(self._links)
+        logging.info("sfcSet:{0}".format(self._sfcSet))
+        logging.info("modules:{0}".format(self._modules))
+        logging.info("links:{0}".format(self._links))
+

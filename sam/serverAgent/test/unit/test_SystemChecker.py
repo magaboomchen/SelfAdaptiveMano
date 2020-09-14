@@ -1,9 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import pytest
-from sam.serverAgent.systemChecker import *
 import subprocess
+import logging
+
+import pytest
+
+from sam.serverAgent.systemChecker import *
+
+logging.basicConfig(level=logging.INFO)
 
 class TestSystemCheckerClass(object):
     banList = """

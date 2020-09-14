@@ -146,8 +146,11 @@ class FRR(BaseApp):
             'ipv4_dst':dstIP}
         if self.ibm.hasSFCIFlowTable(SFCIID, currentSwitchID,
             matchFields):
-            print("___________________________\n"
-                "Duplicate Flow Table Entry!")
+            self.logger.warning(
+                "\n___________________________\n"
+                "Duplicate Flow Table Entry!"
+                "\n___________________________\n"
+                )
             return True
         else:
             return False
@@ -182,9 +185,10 @@ class FRR(BaseApp):
 
     def isFirstElementUnderProtection(self,currentDpid, nextDpid, sfci,
             direction, currentStageCount):
-        print("isFirstElementUnderProtection")
-        print("check {0},{1},{2}".format(currentDpid, nextDpid, 
-            currentStageCount))
+        self.logger.debug("isFirstElementUnderProtection")
+        self.logger.debug(
+            "currentDpid:{0}, nextDpid:{1}, currentStageCount:{2}".format(
+            currentDpid, nextDpid, currentStageCount))
         primaryPathID = self._getPathID(direction["ID"])
         primaryFP = self._getPrimaryPath(sfci,primaryPathID)
         stageCount = -1
@@ -196,11 +200,19 @@ class FRR(BaseApp):
             for i in range(len(stage)-1):
                 currentSwitchID = stage[i]
                 nextNodeID = stage[i+1]
-                print(currentSwitchID, nextNodeID, stageCount)
+                self.logger.debug(
+                    "currentSwitchID:{0}, nextNodeID:{1}, stageCount:{2}".format(
+                        currentSwitchID, nextNodeID, stageCount
+                    )
+                    )
                 if currentDpid != currentSwitchID or\
                     nextNodeID != nextDpid:
                     continue
-                print(currentStageCount,stageCount)
+                self.logger.debug(
+                    "currentStageCount:{0}, stageCount:{1}".format(
+                        currentStageCount,stageCount
+                    )
+                )
                 if currentStageCount == stageCount:
                     return True
                 else:
@@ -213,15 +225,13 @@ class FRR(BaseApp):
     def _getNextHopActionFields(self, sfci, direction, currentDpid,
             nextDpid):
         if nextDpid < SERVERID_OFFSET:
-            # dst is a switch
-            print("dst is a switch")
+            self.logger.debug("_getNextHopActionFields: dst is a switch")
             link = self.topoCollector.links[(currentDpid,nextDpid)]
             srcMAC = link.src.hw_addr
             dstMAC = link.dst.hw_addr
             defaultOutPort = self.L2.getLocalPortByPeerPort(currentDpid,nextDpid)
         else:
-            # dst is a server
-            print("dst is a server")
+            self.logger.debug("_getNextHopActionFields: dst is a server")
             server = self.getServerByServerID(sfci,direction,nextDpid)
             dstMAC = server.getDatapathNICMac()
             dstDatapathIP = server.getDatapathNICIP()
@@ -231,7 +241,7 @@ class FRR(BaseApp):
         return (srcMAC,dstMAC,defaultOutPort)
 
     def getServerByServerID(self, sfci, direction, nextDpid):
-        print("getServerByServerID")
+        self.logger.debug("getServerByServerID")
         for vnf in sfci.VNFISequence:
             for vnfi in vnf:
                 node = vnfi.node
@@ -249,7 +259,7 @@ class FRR(BaseApp):
                 return None
 
     def _delSfciHandler(self, cmd):
-        self.logger.debug('*** FRR App Received command= %s', cmd)
+        self.logger.info('*** FRR App Received command={0}'.format(cmd))
         sfc = cmd.attributes['sfc']
         sfci = cmd.attributes['sfci']
         self._delSFCIRoute(sfc,sfci)

@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import pytest
+import logging
 from scapy.all import *
+
+import pytest
 
 from sam.base.sfc import *
 from sam.base.vnf import *
@@ -18,6 +20,8 @@ MANUAL_TEST = True
 
 TESTER_SERVER_DATAPATH_IP = "192.168.123.1"
 TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"
+
+logging.basicConfig(level=logging.INFO)
 
 class TestSFCIDeleterClass(TestBase):
     @pytest.fixture(scope="function")

@@ -62,7 +62,7 @@ class BESSController(object):
                     rplyMsg = SAMMessage(MSG_TYPE_SSF_CONTROLLER_CMD_REPLY,
                         CommandReply(cmd.cmdID,
                         self._commandsInfo[cmd.cmdID]["state"]) )
-                    self._messageAgent.sendMsg(ORCHESTRATION_QUEUE,
+                    self._messageAgent.sendMsg(ORCHESTRATOR_QUEUE,
                         rplyMsg)
             elif msg.getMessageType() == None:
                 pass

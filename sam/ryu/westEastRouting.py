@@ -83,11 +83,11 @@ class WestEastRouting(BaseApp):
         targetDPID = None
         for keys in stsPath.iterkeys():
             path = stsPath[keys]
-            self.logger.debug(path)
-            # print(type(path))
+            self.logger.debug("path:{0}".format(path))
+            self.logger.debug("typeOfPath:{0}".format(type(path)))
             targetDPID = path[-1]
             path.reverse()
-            # print(type(path))
+            self.logger.debug("typeOfPath:{0}".format(type(path)))
             for index in range(len(path)-1):
                 dstDpid = path[index]
                 srcDpid = path[index+1]

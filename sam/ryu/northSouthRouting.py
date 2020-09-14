@@ -76,10 +76,10 @@ class NorthSouthRouting(BaseApp):
         for keys in stsPath.iterkeys():
             path = stsPath[keys]
             self.logger.debug(path)
-            # print(type(path))
+            # self.logger.debug(type(path))
             targetDPID = path[-1]
             path.reverse()
-            # print(type(path))
+            # self.logger.debug(type(path))
             for index in range(len(path)-1):
                 dstDpid = path[index]
                 srcDpid = path[index+1]
@@ -300,7 +300,7 @@ class NorthSouthRouting(BaseApp):
         if not self._cacheNorthSouthRIB.has_key(srcDpid):
             self._cacheNorthSouthRIB[srcDpid] = {}
         self._cacheNorthSouthRIB[srcDpid][self._dict2OrderJson(matchFields)] = inst
-        print(self._cacheNorthSouthRIB[srcDpid])
+        self.logger.debug(self._cacheNorthSouthRIB[srcDpid])
 
     def _updateAllSwitchNorthSouthRIB(self):
         northSouthRIBTmp = copy.copy(self._northSouthRIB)
