@@ -16,6 +16,7 @@ class VNFIDeployStatus(object):
         self.state = state
         self.containerID = None 
         self.vioStart = None  # start port of virtio in dpdk vdev
+        self.cpuStart = None # start numebr of CPU used for dpdk arg -l
         self.error = None # error of the docker
 
 class VNFIMaintainer(object):
@@ -37,6 +38,9 @@ class VNFIMaintainer(object):
     def setVNFIVIOStart(self, sfciID, vnfi, vioStart):
         self._vnfiSet[sfciID][vnfi.VNFIID].vioStart = vioStart
 
+    def setVNFICPUStart(self, sfciID, vnfi, cpuStart):
+        self._vnfiSet[sfciID][vnfi.VNFIID].cpuStart = cpuStart
+
     def setVNFIError(self, sfciID, vnfi, error):
         self._vnfiSet[sfciID][vnfi.VNFIID].error = error
 
@@ -45,3 +49,9 @@ class VNFIMaintainer(object):
     
     def getSFCI(self, sfciID):
         return self._vnfiSet[sfciID]
+
+    def deleteVNFI(self, sfciID, vnfiID):
+        del(self._vnfiSet[sfciID][vnfiID])
+
+    def deleteSFCI(self, sfciID):
+        del(self._vnfiSet[sfciID])
