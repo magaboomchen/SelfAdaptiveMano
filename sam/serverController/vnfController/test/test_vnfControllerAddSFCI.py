@@ -3,6 +3,7 @@
 
 import logging
 from scapy.all import *
+import time
 
 import pytest
 
@@ -51,17 +52,11 @@ class TestVNFSFCIAdderClass(TestBase):
         self.addSFCI2SFF()
 
         # setup
-        # TODO: run vnfController
-        # self.runVNFController()
-
-        ################################# TODO: delete this code block by real vnfController
-        self.vC = VNFControllerStub()
-        self.addVNFI2Server()
-        #################################
-
+        self.runVNFController()
+        
         yield
         # teardown
-        self.delVNFI4Server()
+        #self.delVNFI4Server()
         self.killSFFController()
         self.killVNFController()
 
@@ -105,13 +100,11 @@ class TestVNFSFCIAdderClass(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def runVNFController(self):
-        # TODO: replace XXX.py by your vnfController module
-        filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/vnfController/XXX.py"
+        filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/vnfController/vnfController.py"
         self.sP.runPythonScript(filePath)
 
     def killVNFController(self):
-        # TODO: replace XXX.py by your vnfController module
-        self.sP.killPythonScript("XXX.py")
+        self.sP.killPythonScript("vnfController.py")
 
     def addVNFI2Server(self):
         logging.info("setup add SFCI to server")
@@ -148,6 +141,7 @@ class TestVNFSFCIAdderClass(TestBase):
             MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
 
         # verifiy
+        time.sleep(10)
         self.verifyDirection0Traffic()
         self.verifyDirection1Traffic()
         self.verifyCmdRply()
