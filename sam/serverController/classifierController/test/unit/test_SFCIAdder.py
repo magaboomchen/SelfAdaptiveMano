@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import pytest
+import logging
 from scapy.all import *
+
+import pytest
 
 from sam.base.sfc import *
 from sam.base.vnf import *
@@ -18,6 +20,8 @@ MANUAL_TEST = True
 
 TESTER_SERVER_DATAPATH_IP = "192.168.123.1"
 TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"
+
+logging.basicConfig(level=logging.INFO)
 
 class TestSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
@@ -64,7 +68,7 @@ class TestSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkArpRespond(self,inIntf):
-        print("_checkArpRespond: wait for packet")
+        logging.info("_checkArpRespond: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()) +
             " and arp",iface=inIntf, prn=self.frame_callback,count=1,store=0)
 
@@ -83,7 +87,7 @@ class TestSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
-        print("_checkEncapsulatedTraffic: wait for packet")
+        logging.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         sniff(filter=filterRE,
             iface=inIntf, prn=self.encap_callback,count=1,store=0)
@@ -107,7 +111,7 @@ class TestSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
-        print("_checkDecapsulatedTraffic: wait for packet")
+        logging.info("_checkDecapsulatedTraffic: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback,count=1,store=0)
 

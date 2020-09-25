@@ -26,16 +26,16 @@ PS：
 # 人工部署VNF
 下面是人工实现部署VNF的过程：
 
-1）在虚拟机（192.168.0.156）中启动vnf，并运行DPDK程序testpmd。
+1）在虚拟机（192.168.0.156）中启动docker，并运行DPDK程序testpmd。
 
-1.1）启动vnf：
+1.1）启动docker：
 
-    sudo vnf run -ti --rm --privileged  --name=test \
+    sudo docker run -ti --rm --privileged  --name=test \
     -v /mnt/huge_1GB:/dev/hugepages \
     -v /tmp/:/tmp/  \
     dpdk-app-testpmd
 
-1.2）在vnf中运行testpmd：
+1.2）在docker中运行testpmd：
 
     ./x86_64-native-linuxapp-gcc/app/testpmd -l 0-1 -n 1 -m 1024 --no-pci \
     --vdev=net_virtio_user0,path=/tmp/vsock0_FW1 \

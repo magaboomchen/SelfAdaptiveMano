@@ -18,6 +18,11 @@ from ryu.topology import event, switches
 from ryu.controller import event as controllerEvent
 
 from sam.ryu.baseApp import BaseApp
+from sam.base.command import *
+from sam.base.messageAgent import *
+from sam.base.switch import *
+from sam.base.server import *
+from sam.base.link import Link
 
 
 class TopologyChangeEvent(controllerEvent.EventBase):
@@ -35,20 +40,20 @@ class TopoCollector(BaseApp):
         self.switches = {}
         self.links = {}
         self.hosts = {}
-        self.logger.setLevel(logging.ERROR)
+        self.logger.setLevel(logging.DEBUG)
         self.logger.warning("Please use'ryu-manager --observe-links topoCollector.py'")
 
     def _printSwitches(self):
         for switch in self.switches.itervalues():
-            print(switch)
+            self.logger.info("switch:{0}".format(switch))
 
     def _printLinks(self):
         for link in self.links.itervalues():
-            print(link)
+            self.logger.info("link:{0}".format(link))
 
     def _printHosts(self):
         for host in self.hosts.itervalues():
-            print(host)
+            self.logger.info("host:{0}".format(host))
 
     def _sendEvent(self, ev):
         self.logger.info('*** Send event: %s' %(ev.__class__.__name__))
@@ -58,72 +63,107 @@ class TopoCollector(BaseApp):
     def _addSwitch(self,ev):
         switch = ev.switch
         self.switches[switch.dp.id] = switch
-        self.logger.info("add switch: ")
-        print(switch)
+        self.logger.info("add switch:{0}".format(switch))
         self._sendEvent(TopologyChangeEvent())
         # self._ls(switch)
         # self._ls(switch.ports)
-        # print(switch.to_dict())
-        # print(type(switch.ports))
-        # for port in switch.ports:
-        #     print(port)
-        #     self._ls(port)
-        #     pass
+        self.logger.debug(switch.to_dict())
+        self.logger.debug(type(switch.ports))
+        for port in switch.ports:
+            self.logger.debug(port)
+            # self._ls(port)
 
     @set_ev_cls(event.EventSwitchLeave)
     def _delSwitch(self,ev):
         switch = ev.switch
         del self.switches[switch.dp.id]
-        self.logger.info("delete switch: ")
-        print(switch)
+        self.logger.info("delete switch:{0}".format(switch))
         self._sendEvent(TopologyChangeEvent())
 
     @set_ev_cls(event.EventLinkAdd)
     def _addLink(self,ev):
         link = ev.link
         self.links[(link.src.dpid,link.dst.dpid)] = link
-        self.logger.info("add link: ")
-        print(link)
+        self.logger.info("add link:{0}".format(link))
         self._sendEvent(TopologyChangeEvent())
 
     @set_ev_cls(event.EventLinkDelete)
     def _delLink(self,ev):
         link = ev.link
         del self.links[(link.src.dpid,link.dst.dpid)]
-        self.logger.info("del link: ")
-        print(link)
+        self.logger.info("del link:{0}".format(link))
         self._sendEvent(TopologyChangeEvent())
 
     @set_ev_cls(event.EventHostAdd)
     def _addHost(self,ev):
         host = ev.host
         self.hosts[host.mac] = host
-        self.logger.info("add host")
-        print(host)
+        self.logger.info("add host:{0}".format(host))
 
     @set_ev_cls(event.EventHostMove)
     def _moveHost(self,ev):
         host = ev.host
         self.hosts[host.mac] = host
-        self.logger.info("move host")
-        print(host)
+        self.logger.info("move host:{0}".format(host))
 
     @set_ev_cls(event.EventHostDelete)
     def _delHost(self,ev):
-        # Note: Currently, EventHostDelete will never be raised, because we have no
-        # appropriate way to detect the disconnection of hosts. Just defined for
-        # future use.
+        # Note: Currently, EventHostDelete will never be raised,
+        # because we have no appropriate way to detect the disconnection
+        # of hosts.
+        # Just defined for future use.
         pass
 
     def get_topology_handler(self, cmd):
-        print('*** TopoCollector App Received command= %s', cmd)
+        self.logger.info(
+            '*** TopoCollector App Received command={0}'.format(cmd)
+            )
         attr = {
-            "switches": self.switches,
-            "links": self.links,
-            "hosts": self.hosts
+            "switches": self._transSwitches(self.switches),
+            "links": self._transLinks(self.links),
+            # "servers": self._transHosts(self.hosts)
         }
         cmdRply = CommandReply(cmd.cmdID, CMD_STATE_SUCCESSFUL, attr)
         rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY, cmdRply)
         queue = MEDIATOR_QUEUE
         self._messageAgent.sendMsg(queue, rplyMsg)
 
+    def _transSwitches(self, switches):
+        switchList = []
+        for switch in self.switches.values():
+            # self._ls(switch.address)
+            logging.info(
+                "switch:dpid:{0},address:{1}".format(
+                    switch.dp.id, switch.dp.address
+                )
+            )
+            dpid = switch.dp.id
+            sw = Switch(dpid, SWITCH_TYPE_TOR,
+                self._switchConfs[dpid].lANNet)
+            switchList.append(sw)
+        return switchList
+
+    def _transLinks(self, links):
+        linkList = []
+        for link in self.links.values():
+            # self._ls(link)
+            logging.info(
+                "link:({0},{1})".format(
+                    link.src.dpid,link.dst.dpid
+                    )
+                )
+            linkList.append(Link(link.src.dpid,link.dst.dpid))
+        return linkList
+
+    # def _transHosts(self, hosts):
+    #     serverList = []
+    #     for host in self.hosts.values():
+    #         # self._ls(host)
+    #         logging.info(
+    #             "ipv4:{0},ipv6:{1},mac:{2},port:{3}".format(
+    #                 host.ipv4, host.ipv6, host.mac, host.port
+    #             )
+    #         )
+    #         server = Server(None, host.ipv4, SERVER_TYPE_NORMAL)
+    #         serverList.append(server)
+    #     return serverList

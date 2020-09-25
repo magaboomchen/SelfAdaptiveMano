@@ -42,7 +42,6 @@ class SFFSFCIAdder(BessControlPlane):
                     self._addLinks(server,sfc.directions,vnfi)
                     self.sibms.show()
                 else:
-                    print("continue!")
                     continue
 
     def _addModules(self,server,directions,sfci,vnfi):

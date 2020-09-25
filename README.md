@@ -24,10 +24,11 @@ We need to discuss together and then work it out.
 
 ## Refactor datapath: encoding format error. "VNFID+SFCID+PATHID"
 
-## Add queue name generator for messageAgent
-
 ## Add zone to all controller
 
 ## Modify mediator: add zone
 
 ## Simulator as Zone_Simulation; Mininet as Zone_Mininet;
+
+## Modify NetworkController's add SFCI cmd function. (add match filed with inport into IPv4_CLASSIFIER_TABLE); add delete SFC cmd function (delete the match entry in IPv4_CLASSIFIER_TABLE)
+

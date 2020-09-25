@@ -6,7 +6,7 @@ from sam.base.vnf import *
 class OrchestrationStub(object):
     def __init__(self):
         self.mA = MessageAgent()
-        # self.mA.startRecvMsg(ORCHESTRATION_QUEUE)
+        # self.mA.startRecvMsg(ORCHESTRATOR_QUEUE)
 
     def genCMDAddSFCI(self,sfc,sfci):
         cmdID = uuid.uuid1()

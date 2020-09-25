@@ -1,11 +1,15 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import logging
+
 import pytest
 from ryu.controller import dpset
 
 from sam.ryu.baseApp import *
 from sam.ryu.topoCollector import TopoCollector
+
+logging.basicConfig(level=logging.INFO)
 
 class TestBaseAppClass(object):
     @classmethod

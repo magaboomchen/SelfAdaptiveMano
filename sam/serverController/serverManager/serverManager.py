@@ -12,6 +12,7 @@ import datetime
 
 from sam.base.server import Server
 from sam.base.messageAgent import *
+from sam.base.command import *
 
 SERVER_TIMEOUT = 10
 TIMEOUT_CLEANER_INTERVAL = 5
@@ -34,7 +35,8 @@ class SeverManager(object):
             if msg.getMessageType() == MSG_TYPE_SERVER_REPLY:
                 self._storeServerInfo(msg)
             elif msg.getMessageType() == MSG_TYPE_SERVER_MANAGER_CMD:
-                self._reportServerSet()
+                cmd = msg.getbody()
+                self._reportServerSet(cmd)
             elif msg.getMessageType() == None:
                 self._printServerSet()
             else:
@@ -50,7 +52,8 @@ class SeverManager(object):
         else:
             serverID = self._assignServerID()
         server.setServerID(serverID)
-        self.serverSet[serverControlNICMac] = {"server":server, "Active": True,"timestamp":self._getCurrentTime()}
+        self.serverSet[serverControlNICMac] = {"server":server, 
+            "Active": True, "timestamp":self._getCurrentTime()}
         threadLock.release()
 
     def _assignServerID(self):
@@ -59,11 +62,18 @@ class SeverManager(object):
     def _getCurrentTime(self):
         return datetime.datetime.now()
 
-    def _reportServerSet(self):
-        logging.info("Get request from measurement module.")
+    def _reportServerSet(self, cmd):
+        logging.info("Get command from mediator.")
         threadLock.acquire()
-        self._messageAgent.sendMsg(MEASURER_QUEUE,self.serverSet)
+        cmdRply = self.genGetServersCmdReply(cmd)
+        msg = SAMMessage(MSG_TYPE_SERVER_MANAGER_CMD_REPLY, cmdRply)
+        self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
         threadLock.release()
+
+    def genGetServersCmdReply(self, cmd):
+        attributes = {'servers': self.serverSet}
+        cmdRply = CommandReply(cmd.cmdID, CMD_STATE_SUCCESSFUL, attributes)
+        return cmdRply
 
     def _timeoutCleaner(self):
         # start a new thread

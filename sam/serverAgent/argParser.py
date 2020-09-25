@@ -12,7 +12,7 @@ class ArgParser(ArgParserBase):
         self.parser.add_argument('controllNicName', metavar='cnn', type=str, 
             help='name of control nic, e.g. ens3')
         self.parser.add_argument('serverType', metavar='st', type=str, 
-            help='type of server, e.g. vnfi or classifier')
+            help='type of server, e.g. nfvi , classifier, tester, normal')
         self.parser.add_argument('datapathNicIP', metavar='dni', type=str, 
             help='ip of datapath nic, e.g. 2.2.0.35')
         self.parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,

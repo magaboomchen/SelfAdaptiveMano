@@ -45,7 +45,7 @@ class RyuCommandAgent(BaseApp):
                 elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
                     self.tC.get_topology_handler(cmd)
                 else:
-                    logging.error("Unkonwn cmd type.")
+                    logging.error("Unkonwn cmd type:{0}".format(cmd.cmdType))
             elif msg.getMessageType() == None:
                 pass
             else:

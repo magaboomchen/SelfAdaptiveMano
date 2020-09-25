@@ -1,3 +1,5 @@
+import logging
+
 from sam.base.messageAgent import *
 from sam.base.command import *
 from sam.base.sfc import *
@@ -57,7 +59,8 @@ class VNFControllerStub(object):
         self.sshA = SSHAgent()
         self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
         shellCmdRply = self.sshA.runShellCommandWithSudo(command,None)
-        # print("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
+        # logging.info(
+        #     "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
         #     None,
         #     shellCmdRply['stdout'].read().decode('utf-8'),
         #     shellCmdRply['stderr'].read().decode('utf-8')))
@@ -67,5 +70,5 @@ class VNFControllerStub(object):
     def genVNFUninstallationCommand(self,remoteIP,VNFIID):
         name = self.getVNFName(remoteIP,VNFIID)
         command = "sudo -S docker stop "+name
-        print(command)
+        logging.info(command)
         return command

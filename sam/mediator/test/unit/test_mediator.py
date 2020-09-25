@@ -1,8 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import pytest
 import uuid
+import logging
+
+import pytest
+
 from sam.base.server import *
 from sam.base.command import *
 from sam.test.fixtures.orchestrationStub import *
@@ -10,6 +13,8 @@ from sam.test.testBase import *
 from sam.mediator.mediator import *
 
 MANUAL_TEST = True
+
+logging.basicConfig(level=logging.INFO)
 
 class TestMediatorClass(TestBase):
     def setup_method(self, method):
@@ -22,7 +27,7 @@ class TestMediatorClass(TestBase):
         self.sfci = self.genBiDirection10BackupSFCI()
         self.genTesterServer("192.168.123.1","fe:54:00:05:4d:7d")
         mode = {
-            'switchType': SWITCH_TYPE_OPENFLOW,    # SWITCH_TYPE_P4/SWITCH_TYPE_OPENFLOW
+            'switchType': SWITCH_TYPE_TOR,
             'classifierType': 'Server'  # 'Switch'/'Server'
         }
         self.mediator = Mediator(mode)

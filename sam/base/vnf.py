@@ -11,6 +11,7 @@ VNF_TYPE_TRAFFICSHAPER = 6
 
 VNFID_LENGTH = 4 # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 
+
 class VNFIStatus(object):
     def __init__(self):
         self.inputTrafficAmount = None
@@ -28,10 +29,19 @@ class VNFI(object):
         self.config = config
         self.node = node # server or switch
         self.vnfiStatus = vnfiStatus
-        self.minCPUNum = 2
-        self.maxCPUNum = 2
+        self.minCPUNum = 1
+        self.maxCPUNum = 1
         self.minMem = 1024
         self.maxMem = 1024
+
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
+
+    def __repr__(self):
+        return str(self)
 
 
 class VNFIRequest(object):
@@ -41,3 +51,4 @@ class VNFIRequest(object):
         self.requestType = requestType # GETCONFIG/UPDATECONFIG/GETVNFI
         self.VNFIID = VNFIID
         self.config = config
+

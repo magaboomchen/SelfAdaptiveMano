@@ -1,7 +1,15 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+import logging
+
 import pytest
+
 from sam.base.sshAgent import *
 
 MANUAL_TEST = True
+
+logging.basicConfig(level=logging.INFO)
 
 class TestSSHAgentClass(object):
     def setup_method(self, method):
@@ -17,7 +25,7 @@ class TestSSHAgentClass(object):
         """
         name = "name1"
         command = "sudo -S docker stop "+name
-        print(command)
+        logging.info(command)
         shellCmdRply = self.sshA.runShellCommandWithSudo(command,1)
         self.sshA.disconnectSSH()
 
@@ -26,7 +34,7 @@ class TestSSHAgentClass(object):
         stdin = shellCmdRply['stdin']
         stdout = shellCmdRply['stdout']
         stderr = shellCmdRply['stderr']
-        print("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
+        logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
             None,
             stdout.read().decode('utf-8'),
             stderr.read().decode('utf-8')))
@@ -38,7 +46,7 @@ class TestSSHAgentClass(object):
             stdin = shellCmdRply['stdin']
             stdout = shellCmdRply['stdout']
             stderr = shellCmdRply['stderr']
-            print("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
+            logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 stdout.read().decode('utf-8'),
                 stderr.read().decode('utf-8')))

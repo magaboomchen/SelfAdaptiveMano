@@ -37,7 +37,7 @@ class SimpleSwitch13(simple_switch_13.SimpleSwitch13):
 
     # Handy function that lists all attributes in the given object
     def ls(self,obj):
-        print("\n".join([x for x in dir(obj) if x[0] != "_"]))
+        self.logger.info("\n".join([x for x in dir(obj) if x[0] != "_"]))
 
     def delete_flow(self, datapath):
         ofproto = datapath.ofproto

@@ -40,7 +40,9 @@ class UFRR(FRR):
         self.logger.info("UFRR App is running !")
 
     def _addSfciHandler(self, cmd):
-        self.logger.debug('*** FRR App Received command= %s', cmd)
+        self.logger.debug(
+            '*** FRR App Received command={0}'.format(cmd)
+            )
         try:
             sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
@@ -78,8 +80,8 @@ class UFRR(FRR):
             for i in range(1,len(stage)-1):
                 currentSwitchID = stage[i]
                 groupID = self.ibm.assignGroupID(currentSwitchID)
-                print("dpid:{0}".format(currentSwitchID))
-                print("______: assignGroupID:{0}".format(groupID))
+                self.logger.info("dpid:{0}".format(currentSwitchID))
+                self.logger.info("assignGroupID:{0}".format(groupID))
                 nextNodeID = stage[i+1]
 
                 if self._canSkipPrimaryPathFlowInstallation(sfci.SFCIID, dstIP,
@@ -102,8 +104,8 @@ class UFRR(FRR):
             direction,currentDpid,nextDpid)
         if defaultOutPort == None:
             raise ValueError("UFRR: can not get default out port")
-        print("Bucket1")
-        print("srcMAC:{0},dstMAC:{1},outport:{2}".format(srcMAC,dstMAC,
+        self.logger.info("Bucket1")
+        self.logger.info("srcMAC:{0},dstMAC:{1},outport:{2}".format(srcMAC,dstMAC,
             defaultOutPort))
         actions = [
             parser.OFPActionDecNwTtl(),
@@ -118,15 +120,15 @@ class UFRR(FRR):
         # get backup src/dst ether, backup OutPort and new dstIP
         backupnextDpid = self._getBackupNextHop(currentDpid,nextDpid,sfci,
             direction,stageCount)
-        print("backupnextDpid:{0}".format(backupnextDpid))
+        self.logger.info("backupnextDpid:{0}".format(backupnextDpid))
         if backupnextDpid != None:
             newDstIP = self._getNewDstIP(currentDpid,nextDpid,sfci,direction,
                 stageCount)
             (srcMAC,dstMAC,backupOutPort) = self._getNextHopActionFields(sfci,
                 direction,currentDpid,backupnextDpid)
 
-            print("Bucket2")
-            print("srcMAC:{0},dstMAC:{1},newDstIP:{2},outport:{2}".format(
+            self.logger.info("Bucket2")
+            self.logger.info("srcMAC:{0},dstMAC:{1},newDstIP:{2},outport:{2}".format(
                     srcMAC,dstMAC,newDstIP,backupOutPort))
             actions = [
                 parser.OFPActionDecNwTtl(),
@@ -139,14 +141,14 @@ class UFRR(FRR):
             bucket = parser.OFPBucket(watch_port=watch_port,actions=actions)
             buckets.append(bucket)
 
-        print("groupID:{0},buckets:{1}".format(groupID,buckets))
-        print("datapath:{0}".format(datapath))
+        self.logger.info("groupID:{0},buckets:{1}".format(groupID,buckets))
+        self.logger.info("datapath:{0}".format(datapath))
         req = parser.OFPGroupMod(datapath, ofproto.OFPGC_ADD,
                                     ofproto.OFPGT_FF, groupID, buckets)
         datapath.send_msg(req)
 
     def _addUFRRSFCIFlowtable(self, currentDpid, SFCIID, dstIP, groupID):
-        print("_addUFRRSFCIFlowtable")
+        self.logger.info("_addUFRRSFCIFlowtable")
         datapath = self.dpset.get(int(str(currentDpid),0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -172,7 +174,7 @@ class UFRR(FRR):
         for key in backupPaths.iterkeys():
             if key[0] == currentDpid and key[1] == nextDpid:
                 pathID = key[2]
-                print("_getNewDstIP")
+                self.logger.info("_getNewDstIP")
                 return self.getSFCIStageDstIP(sfci,stageCount,pathID)
         else:
             return None
@@ -186,7 +188,7 @@ class UFRR(FRR):
             sfciLength = len(sfci.VNFISequence)
             fpLength = len(FP)
             stageCount = sfciLength - fpLength
-            print("_installBackupPaths")
+            self.logger.info("_installBackupPaths")
             for stage in FP:
                 stageCount = stageCount + 1
                 if len(stage)==2:
@@ -201,8 +203,8 @@ class UFRR(FRR):
 
     def _installRouteOnBackupPath(self, sfci, direction, currentDpid,
             nextDpid, dstIP):
-        print("_installRouteOnBackupPath")
-        print(currentDpid)
+        self.logger.info("_installRouteOnBackupPath")
+        self.logger.info("currentDpid:{0}".format(currentDpid))
         datapath = self.dpset.get(int(str(currentDpid), 0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -214,8 +216,10 @@ class UFRR(FRR):
             direction, currentDpid, nextDpid)
         if defaultOutPort == None:
             raise ValueError("UFRR: can not get default out port")
-        print("srcMAC:{0},dstMAC:{1},outport:{2}".format(srcMAC, dstMAC,
-            defaultOutPort))
+        self.logger.info(
+            "srcMAC:{0},dstMAC:{1},outport:{2}".format(
+                srcMAC, dstMAC, defaultOutPort)
+            )
         actions = [
             parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),

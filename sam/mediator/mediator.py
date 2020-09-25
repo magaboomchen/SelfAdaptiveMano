@@ -42,7 +42,7 @@ class Mediator(object):
                     logging.error("Unknown massage body")
 
     def _commandHandler(self,cmd):
-        print("Get command ________________")
+        logging.debug("Get a command")
         self._cm.addCmd(cmd)
         if cmd.cmdType == CMD_TYPE_ADD_SFCI:
             if self._mode['classifierType'] == 'Server':
@@ -60,12 +60,15 @@ class Mediator(object):
             self._delSFCI4NetworkController(cmd)
             self._delSFCIs4Server(cmd)
         elif cmd.cmdType == CMD_TYPE_GET_SERVER_SET:
-            print("Get CMD_TYPE_GET_SERVER_SET ________________")
+            logging.debug("Get CMD_TYPE_GET_SERVER_SET")
             self._getServerSet4ServerManager(cmd)
         elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
+            logging.debug("Get CMD_TYPE_GET_TOPOLOGY")
             self._getTopo4NetworkController(cmd)
         elif cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
-            self._getSFCIStatus4ServerP4(cmd)
+            logging.debug("Get CMD_TYPE_GET_SFCI_STATE")
+            # self._getSFCIStatus4ServerP4(cmd)
+            self._getSFCIStatus4SFF(cmd)
         else:
             self._cm.delCmdwithChildCmd(cmd.cmdID)
             logging.error("Unkonwn command type.")
@@ -146,11 +149,17 @@ class Mediator(object):
             NETWORK_CONTROLLER_QUEUE)
         self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
+    def _getSFCIStatus4SFF(self, cmd):
+        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SSF_CONTROLLER_CMD)
+        self.forwardCmd(cCmd, MSG_TYPE_SSF_CONTROLLER_CMD,
+            SFF_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID, CMD_STATE_PROCESSING)
+
     def _getSFCIStatus4ServerP4(self,cmd):
-        cCmd = self._prepareChildCmd(cmd,MSG_TYPE_SERVER_MANAGER_CMD)
-        self.forwardCmd(cCmd,MSG_TYPE_SERVER_MANAGER_CMD,
-            SERVER_MANAGER_QUEUE)
-        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
+        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SSF_CONTROLLER_CMD)
+        self.forwardCmd(cCmd, MSG_TYPE_SSF_CONTROLLER_CMD,
+            SFF_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID, CMD_STATE_PROCESSING)
 
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_NETWORK_CONTROLLER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_NETWORK_CONTROLLER_CMD,
@@ -168,14 +177,15 @@ class Mediator(object):
 
     def _exeCmdStateAction(self,cmdID):
         parentCmdID = self._cm.getParentCmdID(cmdID)
-        # if all child cmd is successfule, then send cmdRply
+        # if all child cmd is successful, then send cmdRply
         if self._cm.isParentCmdSuccessful(parentCmdID):
-            self._cm.changeCmdState(parentCmdID,CMD_STATE_SUCCESSFUL)
+            self._cm.changeCmdState(parentCmdID, CMD_STATE_SUCCESSFUL)
             cmdRply = self._genParentCmdRply(parentCmdID,
                 CMD_STATE_SUCCESSFUL)
             self._sendParentCmdRply(cmdRply)
+            self._cm.delCmdwithChildCmd(parentCmdID)
         elif self._cm.isParentCmdFailed(parentCmdID):
-            self._cm.changeCmdState(parentCmdID,CMD_STATE_FAIL)
+            self._cm.changeCmdState(parentCmdID, CMD_STATE_FAIL)
             cmdRply = self._genParentCmdRply(parentCmdID,
                 CMD_STATE_FAIL)
             self._sendParentCmdRply(cmdRply)
@@ -209,7 +219,7 @@ class Mediator(object):
         cmdRplyType = self._cm.getCmdType(cmdRply.cmdID)
         if cmdRplyType == CMD_TYPE_ADD_SFCI or \
             cmdRplyType == CMD_TYPE_DEL_SFCI:
-            queue = ORCHESTRATION_QUEUE
+            queue = ORCHESTRATOR_QUEUE
         elif cmdRplyType == CMD_TYPE_GET_SERVER_SET or\
             cmdRplyType == CMD_TYPE_GET_TOPOLOGY or\
             cmdRplyType == CMD_TYPE_GET_SFCI_STATE:
@@ -225,9 +235,8 @@ class Mediator(object):
         if self._cm.getCmdType(parentCmdID) == CMD_TYPE_ADD_SFCI:
             bessState = self._cm.getChildCmdState(parentCmdID,
                 MSG_TYPE_SSF_CONTROLLER_CMD)
-            print("wating check______")
+            logging.debug("wating check______")
             if bessState == CMD_STATE_SUCCESSFUL:
-                print("hope!!!!!!!!!!!!!!!")
                 cmd = self._cm.getCmd(parentCmdID)
                 self._addSFCIs2Server(cmd)
 
@@ -235,7 +244,7 @@ class Mediator(object):
 if __name__=="__main__":
     logging.basicConfig(level=logging.INFO)
     mode = {
-        'switchType': SWITCH_TYPE_OPENFLOW,    # SWITCH_TYPE_P4/SWITCH_TYPE_OPENFLOW
+        'switchType': SWITCH_TYPE_TOR,
         'classifierType': 'Server'  # 'Switch'
     }
     m = Mediator(mode)

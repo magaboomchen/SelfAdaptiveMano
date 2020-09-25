@@ -4,11 +4,19 @@
 import uuid
 import subprocess
 import time
+import logging
+
+from scapy.all import *
+import psutil
+import pytest
 
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
 from sam.base.path import *
+from sam.base.switch import *
+from sam.base.server import *
+from sam.base.link import *
 from sam.serverController.classifierController import *
 from sam.serverAgent.serverAgent import ServerAgent
 from sam.serverController.serverManager.serverManager import *
@@ -17,10 +25,6 @@ from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
 from sam.test.fixtures.orchestrationStub import *
-
-from scapy.all import *
-import psutil
-import pytest
 
 OUTTER_CLIENT_IP = "1.1.1.1"
 WEBSITE_REAL_IP = "2.2.0.34"
@@ -52,6 +56,7 @@ SFF3_DATAPATH_MAC = "52:54:00:5a:14:f0"
 SFF3_CONTROLNIC_IP = "192.168.122.135"
 SFF3_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 
+logging.basicConfig(level=logging.INFO)
 
 class TestBase(object):
     MAXSFCIID = 0
@@ -108,7 +113,7 @@ class TestBase(object):
         }
         directions = [direction1]
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions)
+            backupInstanceNumber, applicationType, directions, {'zone':""})
 
     def genBiDirectionSFC(self, classifier):
         sfcUUID = uuid.uuid1()
@@ -136,21 +141,21 @@ class TestBase(object):
         }
         directions = [direction1,direction2]
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions)
+            backupInstanceNumber, applicationType, directions, {'zone':""})
 
     def genUniDirection10BackupSFCI(self):
         VNFISequence = self.gen10BackupVNFISequence()
-        return SFCI(self.assignSFCIID(),VNFISequence, None,
+        return SFCI(self.assignSFCIID(), VNFISequence, None,
             self.genUniDirection10BackupForwardingPathSet())
 
     def genBiDirection10BackupSFCI(self):
         VNFISequence = self.gen10BackupVNFISequence()
-        return SFCI(self.assignSFCIID(),VNFISequence, None,
+        return SFCI(self.assignSFCIID(), VNFISequence, None,
             self.genBiDirection10BackupForwardingPathSet())
 
     def genUniDirection11BackupSFCI(self):
         VNFISequence = self.gen11BackupVNFISequence()
-        return SFCI(self.assignSFCIID(),VNFISequence, None,
+        return SFCI(self.assignSFCIID(), VNFISequence, None,
             self.genUniDirection11BackupForwardingPathSet())
 
     def gen10BackupVNFISequence(self, SFCLength=1):
@@ -164,8 +169,8 @@ class TestBase(object):
                 server.setControlNICIP(SFF1_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
-                vnfi = VNFI(VNF_TYPE_FORWARD,VNFType=VNF_TYPE_FORWARD,VNFIID=uuid.uuid1(),
-                    node=server)
+                vnfi = VNFI(VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
+                    VNFIID=uuid.uuid1(), node=server)
                 VNFISequence[index].append(vnfi)
         return VNFISequence
 
@@ -180,8 +185,8 @@ class TestBase(object):
             server.setControlNICIP(SFF1_CONTROLNIC_IP)
             server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
-            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD,VNFType=VNF_TYPE_FORWARD,VNFIID=uuid.uuid1(),
-                node=server)
+            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
+                VNFIID=uuid.uuid1(), node=server)
             VNFISequence[index].append(vnfi)
 
             server = Server("ens3",SFF2_DATAPATH_IP,SERVER_TYPE_NORMAL)
@@ -189,8 +194,8 @@ class TestBase(object):
             server.setControlNICIP(SFF2_CONTROLNIC_IP)
             server.setControlNICMAC(SFF2_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF2_DATAPATH_MAC)
-            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD,VNFType=VNF_TYPE_FORWARD,VNFIID=uuid.uuid1(),
-                node=server)
+            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
+                VNFIID=uuid.uuid1(), node=server)
             VNFISequence[index].append(vnfi)
 
         return VNFISequence
@@ -289,7 +294,7 @@ class TestBase(object):
     def recvCmd(self, queue):
         messageAgentTmp = MessageAgent()
         messageAgentTmp.startRecvMsg(queue)
-        print("testBase:recvCmd")
+        logging.info("testBase:recvCmd")
         while True:
             msg = messageAgentTmp.getMsg(queue)
             msgType = msg.getMessageType()
@@ -300,7 +305,8 @@ class TestBase(object):
                 if messageAgentTmp.isCommand(body):
                     return body
                 else:
-                    logging.error("Unknown massage body: {0}".format(type(body)))
+                    logging.error("Unknown massage body: {0}".format(
+                        type(body)))
         del messageAgentTmp
 
     def recvCmdRply(self, queue):
@@ -314,7 +320,7 @@ class TestBase(object):
             else:
                 body = msg.getbody()
                 if messageAgentTmp.isCommandReply(body):
-                    print("testBase:recvCmdRply")
+                    logging.info("testBase:recvCmdRply")
                     return body
                 else:
                     logging.error("Unknown massage body")
@@ -325,4 +331,79 @@ class TestBase(object):
         msg = SAMMessage(msgType, cmd)
         messageAgentTmp.sendMsg(queue, msg)
         del messageAgentTmp
+
+    def sendCmdRply(self, queue, msgType, cmdRply):
+        messageAgentTmp = MessageAgent()
+        msg = SAMMessage(msgType, cmdRply)
+        messageAgentTmp.sendMsg(queue, msg)
+        del messageAgentTmp
+
+    def sendRequest(self, queue, request):
+        messageAgentTmp = MessageAgent()
+        msg = SAMMessage(MSG_TYPE_REQUEST, request)
+        messageAgentTmp.sendMsg(queue, msg)
+        del messageAgentTmp
+
+    def recvReply(self, queue):
+        messageAgentTmp = MessageAgent()
+        messageAgentTmp.startRecvMsg(queue)
+        while True:
+            msg = messageAgentTmp.getMsg(queue)
+            msgType = msg.getMessageType()
+            if msgType == None:
+                pass
+            else:
+                body = msg.getbody()
+                if messageAgentTmp.isReply(body):
+                    logging.info("testBase: recv a reply")
+                    return body
+                else:
+                    logging.error("Unknown massage body")
+        del messageAgentTmp
+
+    def clearQueue(self):
+        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
+        self.sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue MEASURER_QUEUE")
+        self.sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue ORCHESTRATOR_QUEUE")
+        self.sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue SFF_CONTROLLER_QUEUE")
+        self.sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue VNF_CONTROLLER_QUEUE")
+        self.sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue SERVER_MANAGER_QUEUE")
+        self.sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue NETWORK_CONTROLLER_QUEUE")
+
+    def genSwitchList(self, num, switchType, 
+            switchLANNetlist, switchIDList):
+        switches = []
+        for i in range(num):
+            switch = Switch(switchIDList[i], switchType, switchLANNetlist[i])
+            switches.append(switch)
+        return switches
+
+    # def genLinkList(self, num):
+    #     links = []
+    #     for i in range(num):
+    #         link = Link(i,(i+1)%num)
+    #         links.append(link)
+    #     return links
+
+    def genServerList(self, num, serverType, serverCIPList,
+            serverDPIPList, serverIDList):
+        servers = []
+        for i in range(num):
+            server = Server("ens3",serverDPIPList[i], serverType)
+            server.setServerID(serverIDList[i])
+            server.setControlNICIP(serverCIPList[i])
+            servers.append(server)
+        return servers
+
+    def genAddSFCIRequest(self, sfc):
+        sfc.backupInstanceNumber = 3
+        request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
+            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'zone':""})
+        return request
 

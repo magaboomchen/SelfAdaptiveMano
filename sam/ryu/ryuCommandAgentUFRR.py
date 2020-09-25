@@ -15,6 +15,7 @@ from sam.ryu.baseApp import BaseApp
 DCNGATEWAY_INBOUND_PORT = 1
 SWITCH_CLASSIFIER_PORT = 3
 
+
 class RyuCommandAgent(BaseApp):
     def __init__(self, *args, **kwargs):
         super(RyuCommandAgent, self).__init__(*args, **kwargs)
@@ -45,10 +46,11 @@ class RyuCommandAgent(BaseApp):
                 elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
                     self.ufrr._delSfciHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
-                    pass
+                    self.tC.get_topology_handler(cmd)
                 else:
-                    logging.error("Unkonwn cmd type.")
+                    logging.error("Unkonwn cmd type:{0}".format(cmd.cmdType))
             elif msg.getMessageType() == None:
                 pass
             else:
                 logging.error("Unknown msg type.")
+

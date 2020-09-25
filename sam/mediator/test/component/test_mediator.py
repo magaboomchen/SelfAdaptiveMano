@@ -1,9 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import pytest
 import uuid
 import time
+import logging
+
+import pytest
+
 from sam.base.server import *
 from sam.base.command import *
 from sam.test.fixtures.orchestrationStub import *
@@ -16,6 +19,8 @@ MANUAL_TEST = True
 
 # TODO: CMD_TYPE_GET_SFCI_STATE, CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_DEL_SFCI
 # need to be test
+
+logging.basicConfig(level=logging.INFO)
 
 class TestMediatorClass(TestBase):
     def setup_method(self, method):
@@ -107,7 +112,7 @@ class TestMediatorClass(TestBase):
         self.sMS.sendCmdRply(recvCmdVNFCtlRply)
 
         # orchestration recv command reply
-        recvCmdRply = self.recvCmdRply(ORCHESTRATION_QUEUE)
+        recvCmdRply = self.recvCmdRply(ORCHESTRATOR_QUEUE)
         assert recvCmdRply.cmdID == addSFCICmd.cmdID
         assert recvCmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
@@ -139,6 +144,6 @@ class TestMediatorClass(TestBase):
 
         # mediator recv command reply from SFFController, 
         # orchestration recv command reply
-        recvCmdRply = self.recvCmdRply(ORCHESTRATION_QUEUE)
+        recvCmdRply = self.recvCmdRply(ORCHESTRATOR_QUEUE)
         assert recvCmdRply.cmdID == addSFCICmd.cmdID
         assert recvCmdRply.cmdState == CMD_STATE_FAIL

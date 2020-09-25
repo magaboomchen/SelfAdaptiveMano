@@ -52,3 +52,22 @@ class SocketConverter(object):
         result.reverse()
         result = bytes(bytearray(result))
         return result
+
+    def isInSameLAN(self, IP1, IP2, prefixNum):
+        IPNum1 = self.ip2int(IP1)
+        IPNum2 = self.ip2int(IP2)
+        netIPMask = self.ipPrefix2Mask(prefixNum)
+        netIPMaskNum = self.ip2int(netIPMask)
+        return (IPNum1 & netIPMaskNum) == (IPNum2 & netIPMaskNum)
+
+    def isLANIP(self, dstIP, net):
+        dstIPNum = self.ip2int(dstIP)
+
+        netIP = net.split('/')[0]        
+        netIPNum = self.ip2int(netIP)
+
+        netIPPrefixNum = int(net.split('/')[1])
+        netIPMask = self.ipPrefix2Mask(netIPPrefixNum)
+        netIPMaskNum = self.ip2int(netIPMask)
+
+        return (dstIPNum & netIPMaskNum) == (netIPNum & netIPMaskNum)
