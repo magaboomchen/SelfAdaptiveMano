@@ -158,4 +158,53 @@ PS2: dockerfile中需要增加 RUN apt-get update && apt-get install libnuma-dev
 
 来自 <https://datawine.github.io/2018/07/15/DPDK-Pktgen-Docker%E6%90%AD%E5%BB%BAVNF%E7%8E%AF%E5%A2%83%E5%8F%8A%E9%AA%8C%E8%AF%81/> 
 
+# 使用fastclick简化DPDK开发
 
+https://github.com/tbarbette/fastclick
+
+## fastclick配置
+
+```
+./configure --enable-dpdk --enable-multithread --disable-linuxmodule --enable-intel-cpu --enable-user-multithread --verbose --enable-select=poll CFLAGS="-O3" CXXFLAGS="-std=c++11 -O3"  --disable-dynamic-linking --enable-poll --enable-bound-port-transfer --enable-local --enable-flow --disable-task-stats --disable-cpu-load
+
+make
+```
+
+## 制作镜像文件
+
+```
+FROM ubuntu:latest  
+WORKDIR /home/t1/bess/deps
+COPY . /home/t1/bess/deps
+RUN apt-get update && apt-get install -y \
+    numactl  \
+    libnuma-dev \
+    time \
+    iproute2 \
+    python \
+    libpcap-dev \
+    linux-headers-generic \
+    pciutils \
+    kmod \
+```
+
+PS1: ubuntu版本不能太老，否则会报libstdc++的版本错误。
+
+PS2: 把dpdk和fastclick的文件都得打包进来，相比单纯的dpdk，fastclick会多用到几个必须安装的库。
+
+## 最简单的fastclick-dpdk应用:
+
+```
+in0 :: FromDPDKDevice(0);
+out0 :: ToDPDKDevice(0);
+in1 :: FromDPDKDevice(1);
+out1 ::ToDPDKDevice(1);
+in0 -> Print() -> out1;
+in1 -> Print() -> out0;
+```
+
+运行命令：
+
+```
+fastclick/bin/click --dpdk -l 0-1 -n 1 -m 1024 --no-pci --vdev=net_virtio_user0,path=/tmp/vsock_XXX --vdev=net_virtio_user1,path=/tmp/vsock_XXX -- ./test-dpdk.click
+```
