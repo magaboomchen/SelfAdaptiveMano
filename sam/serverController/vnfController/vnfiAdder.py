@@ -26,9 +26,7 @@ class VNFIAdder(object):
             # TODO
             pass
 
-    def _addTestpmd(self, vnfi, client, vioAllo, cpuAllo):
-        imageName = 'dpdk-app-testpmd'
-        appName = './x86_64-native-linuxapp-gcc/app/testpmd'
+    def _addTestpmd(self, vnfi, client, vioAllo, cpuAllo, useFastClick=True, debug=False):
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
         vioStart = vioAllo.allocateSource(2)
@@ -36,14 +34,22 @@ class VNFIAdder(object):
         _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
         vdev0 = '%s,path=%s' % ('net_virtio_user%d' % vioStart, _vdev0[1][6:])
         vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
-        command = "%s -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s " % (appName, startCPU, endCPU, vnfi.maxMem, vdev0, vdev1) +\
+        if not useFastClick:
+            imageName = 'dpdk-app-testpmd'
+            appName = './x86_64-native-linuxapp-gcc/app/testpmd'
+            command = "%s -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s " % (appName, startCPU, endCPU, vnfi.maxMem, vdev0, vdev1) +\
                   '--file-prefix=virtio --log-level=8 -- --txqflags=0xf00 --disable-hw-vlan ' +\
                   '--forward-mode=io --port-topology=chained --total-num-mbufs=2048 -a' 
+        else:
+            imageName = 'fastclick'
+            appName = './test-dpdk.click'
+            command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
         logging.info(command)
         containerName = 'vnf-%s' % vnfi.VNFIID 
         try:
-            container = client.containers.run(imageName, command, tty=True, remove=True, privileged=True, name=containerName, 
+            container = client.containers.run(imageName, command, tty=True, remove=not debug, privileged=True, name=containerName, 
                 volumes={'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}, detach=True)
+            logging.info(container.logs())
         except Exception as e:
             # free allocated CPU and virtioID
             cpuAllo.freeSource(startCPU, vnfi.maxCPUNum)
