@@ -9,6 +9,10 @@ from sam.base.server import *
 from sam.serverController.sffController.sibMaintainer import *
 from sam.serverController.vnfController.sourceAllocator import *
 
+DEFAULT_FASTCLICK = True
+DEBUG = False  # if you set debug=True, the container will not be removed even if the app is terminated.
+               # !!!please run docker rm XXX to free resources of the container.!!!
+
 class VNFIAdder(object):
     def __init__(self, dockerPort):
         self._sibm = SIBMaintainer()
@@ -26,7 +30,7 @@ class VNFIAdder(object):
             # TODO
             pass
 
-    def _addTestpmd(self, vnfi, client, vioAllo, cpuAllo, useFastClick=True, debug=False):
+    def _addTestpmd(self, vnfi, client, vioAllo, cpuAllo, useFastClick=DEFAULT_FASTCLICK, debug=DEBUG):
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
         vioStart = vioAllo.allocateSource(2)
