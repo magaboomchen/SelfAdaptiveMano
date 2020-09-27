@@ -48,14 +48,12 @@ class VNFController(object):
                 cmd = msg.getbody()
                 self._commandsInfo[cmd.cmdID] = {'cmd':cmd, 'state':CMD_STATE_PROCESSING}
                 if cmd.cmdType == CMD_TYPE_ADD_SFCI:
-                    self._sfciAddHandler(cmd)
-                    success = self._sfciAddHandler
+                    success = self._sfciAddHandler(cmd)
                     if success:
                         self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_SUCCESSFUL
                     else:
                         self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_FAIL
                 elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
-                    self._sfciDeleteHandler(cmd)
                     success = self._sfciDeleteHandler(cmd)
                     if success:
                         self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_SUCCESSFUL
@@ -112,17 +110,17 @@ class VNFController(object):
             sfciState = self._vnfiMaintainer.getSFCI(sfciID)
         except Exception as e:
             logging.error('SFCI %s not maintained in vnf controller.' % sfciID)
-        return False
+            return False
         success = True
         for vnfiID in sfciState.keys():
             serverID = sfciState[vnfiID].vnfi.node.getServerID()
             try: 
                 vioAllo = self._vioManager[serverID]
                 cpuAllo = self._cpuManager[serverID]
-                self._vnfiDeleter.deleteVNFI(sfciState[vnfi], vioAllo, cpuAllo)
+                self._vnfiDeleter.deleteVNFI(sfciState[vnfiID], vioAllo, cpuAllo)
                 self._vnfiMaintainer.deleteVNFI(sfciID, vnfiID)
             except Exception as e:
-                logging.info('error occurs in vnf controller when deleting vnfi: %s' % exp)
+                logging.info('error occurs in vnf controller when deleting vnfi: %s' % e)
                 success = False
         if success:
             self._vnfiMaintainer.deleteSFCI(sfciID)
