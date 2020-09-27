@@ -127,7 +127,7 @@ class VNFController(object):
         if success:
             self._vnfiMaintainer.deleteSFCI(sfciID)
         return success 
-            
+
 
 if __name__=="__main__":
     logging.basicConfig(level=logging.INFO)

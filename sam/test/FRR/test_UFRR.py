@@ -16,6 +16,7 @@ from sam.test.FRR.testFRR import TestFRR
 
 logging.basicConfig(level=logging.INFO)
 
+
 class TestUFRRClass(TestFRR):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
@@ -32,7 +33,7 @@ class TestUFRRClass(TestFRR):
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
 
         self._messageAgent = MessageAgent()
-        self._messageAgent.startRecvMsg(MININET_TESTER_QUEUE)
+        # self._messageAgent.startRecvMsg(MININET_TESTER_QUEUE)
 
         self.runClassifierController()
         self.addSFCI2Classifier()
@@ -40,7 +41,9 @@ class TestUFRRClass(TestFRR):
         self.runSFFController()
         self.addSFCI2SFF()
 
-        self.vC = VNFControllerStub()
+        # self.vC = VNFControllerStub()
+        time.sleep(5)
+        self.runVNFController()
         self.addVNFI2Server()
 
         yield
@@ -50,6 +53,21 @@ class TestUFRRClass(TestFRR):
         self.delSFCI2Classifier()
         self.killClassifierController()
         self.killSFFController()
+
+    def addVNFI2Server(self):
+        self.sendCmd(VNF_CONTROLLER_QUEUE,
+            MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.addSFCICmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+
+    def delVNFI4Server(self):
+        logging.warning("Deleting VNFI")
+        self.sendCmd(VNF_CONTROLLER_QUEUE,
+            MSG_TYPE_VNF_CONTROLLER_CMD , self.delSFCICmd)
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.delSFCICmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def genUniDirectionSFC(self, classifier):
         sfcUUID = uuid.uuid1()
@@ -91,3 +109,5 @@ class TestUFRRClass(TestFRR):
             "After the test, "
             "Press any key to quit!")
         raw_input()
+
+

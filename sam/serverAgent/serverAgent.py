@@ -17,6 +17,7 @@ from sam.serverAgent.argParser import ArgParser
 from sam.serverAgent.systemChecker import SystemChecker
 from sam.serverAgent.dpdkConfigurator import DPDKConfigurator
 from sam.serverAgent.bessStarter import BessStarter
+from sam.serverAgent.dockerConfigurator import DockerConfigurator
 from sam.base.server import Server
 from sam.base.messageAgent import *
 
@@ -53,6 +54,9 @@ if __name__=="__main__":
     datapathNICIP = argParser.getArgs()['datapathNicIP']   # example: 2.2.0.38
 
     SystemChecker()
+
+    DockerConfigurator().configDockerListenPort()
+
     DPDKConfigurator(NICPCIAddress)
 
     serverAgent = ServerAgent(controllNICName, serverType, datapathNICIP)

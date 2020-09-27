@@ -30,7 +30,7 @@ class VNFI(object):
         self.node = node # server or switch
         self.vnfiStatus = vnfiStatus
         self.minCPUNum = 1
-        self.maxCPUNum = 1
+        self.maxCPUNum = 2
         self.minMem = 1024
         self.maxMem = 1024
 

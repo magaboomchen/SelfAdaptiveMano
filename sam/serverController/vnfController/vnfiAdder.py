@@ -26,7 +26,7 @@ class VNFIAdder(object):
             # TODO
             pass
 
-    def _addTestpmd(self, vnfi, client, vioAllo, cpuAllo, useFastClick=True, debug=False):
+    def _addTestpmd(self, vnfi, client, vioAllo, cpuAllo, useFastClick=False, debug=True):
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
         vioStart = vioAllo.allocateSource(2)

@@ -29,6 +29,7 @@ SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 
 logging.basicConfig(level=logging.INFO)
 
+
 class TestVNFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addSFCI(self):
@@ -53,7 +54,7 @@ class TestVNFSFCIAdderClass(TestBase):
 
         # setup
         self.runVNFController()
-        
+
         yield
         # teardown
         #self.delVNFI4Server()

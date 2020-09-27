@@ -8,6 +8,7 @@ from sam.base.shellProcessor import *
 from sam.base.sshAgent import *
 from sam.serverController.sffController.sibMaintainer import *
 
+
 class VNFControllerStub(object):
     def __init__(self):
         self.mA = MessageAgent()
