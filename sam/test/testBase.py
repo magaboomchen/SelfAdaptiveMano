@@ -96,6 +96,13 @@ class TestBase(object):
     def killSFFController(self):
         self.sP.killPythonScript("sffControllerCommandAgent.py")
 
+    def runVNFController(self):
+        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/vnfController/vnfController.py"
+        self.sP.runPythonScript(filePath)
+
+    def killVNFController(self):
+        self.sP.killPythonScript("vnfController.py")
+
     def genUniDirectionSFC(self, classifier):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_FORWARD]

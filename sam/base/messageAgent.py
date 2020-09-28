@@ -17,6 +17,7 @@ import base64
 
 import pickle
 import pika
+from pika.exceptions import ChannelClosed
 
 from sam.base.command import *
 from sam.base.request import *
@@ -251,14 +252,25 @@ class QueueReciever(threading.Thread):
         self.channel.basic_consume(queue=self.srcQueueName,
                             on_message_callback=self.callback)
         logging.info(' [*] Waiting for messages. To exit press CTRL+C')
-        try:
-            self.channel.start_consuming()
-        except KeyboardInterrupt:
-            logging.warning("messageAgent get keyboardInterrupt.")
-            requeued_messages = self.channel.cancel()
-            # logging.info('Requeued %i messages' % requeued_messages)
-            logging.info('Channel stop consuming')
-            self.channel.stop_consuming()
+        while True:
+            try:
+                self.channel.start_consuming()
+            except KeyboardInterrupt:
+                logging.warning("messageAgent get keyboardInterrupt.")
+                requeued_messages = self.channel.cancel()
+                # logging.info('Requeued %i messages' % requeued_messages)
+                logging.info('Channel stop consuming')
+                self.channel.stop_consuming()
+                return None
+            except ChannelClosed:
+                logging.warning(
+                    "channel closed by broker, reconnect to broker.")
+            except ReentrancyError:
+                logging.error(
+                    "The requested operation would result in unsupported"
+                    " recursion or reentrancy."
+                    "Used by BlockingConnection/BlockingChannel.")
+                return None
 
     def callback(self,ch, method, properties, body):
         # logging.info(" [x] Received %r" % body)

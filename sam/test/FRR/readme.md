@@ -14,6 +14,8 @@ runTest.sh
 sudo python test2.py
 ```
 
+<br />
+
 ## UFRR 测试
 
 在 host上运行test_UFRR.py
@@ -22,6 +24,11 @@ sudo python test2.py
 sudo python -m pytest ./test_UFRR.py -s
 ```
 
+
+根据提示，在mininet中输入0启动UFRR测试；输入cli进入命令行模式
+
+<br />
+
 ## NotVia 测试
 
 在 host上运行test_NotViaReMapping.py
@@ -29,3 +36,5 @@ sudo python -m pytest ./test_UFRR.py -s
 ```
 sudo python -m pytest ./test_NotViaReMapping.py -s
 ```
+
+根据提示，在mininet中输入1启动NotVia+Remapping测试；输入cli进入命令行模式

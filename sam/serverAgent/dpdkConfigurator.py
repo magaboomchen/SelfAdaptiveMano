@@ -8,6 +8,7 @@ UNBIND = 0
 BIND_IGB_UIO = 1
 BIND_OTHER_DRIVER = 2
 
+
 class DPDKConfigurator(object):
     def __init__(self, NICPCIAddress):
         logging.info('Config DPDK nic: ' + NICPCIAddress )
