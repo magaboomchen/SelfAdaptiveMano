@@ -145,6 +145,15 @@ class SFFSFCIAdder(BessControlPlane):
                     name=nameUpdate,mclass="Update",arg=argument))
                 self._checkResponse(response)
 
+                # Checksum()
+                nameIPChecksum = sibm.getModuleName("IPChecksum",VNFIID,directionID)
+                argument = Any()
+                argument.Pack( module_msg_pb2.IPChecksumArg( verify=0))
+                response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
+                    name=nameIPChecksum,mclass="IPChecksum",arg=argument))
+                self._checkResponse(response)
+
+
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
     def _addRules(self,server,sfci,directions,vnfi):
@@ -198,6 +207,8 @@ class SFFSFCIAdder(BessControlPlane):
                     directionID)
                 nameUpdate = sibm.getModuleName("Update",VNFIID,
                     directionID)
+                nameIPChecksum = sibm.getModuleName("IPChecksum",VNFIID,
+                    directionID)
 
                 # connection
                 # wm2 -> nameQueueOut
@@ -213,10 +224,16 @@ class SFFSFCIAdder(BessControlPlane):
                     m1=nameQueueInc,m2=nameUpdate,ogate=0,igate=0))
                 self._checkResponse(response)
 
-                # nameUpdate -> wm2
+                # nameUpdate -> IPChecksum
                 response = stub.ConnectModules(
                     bess_msg_pb2.ConnectModulesRequest(
-                    m1=nameUpdate,m2="wm2",ogate=0,igate=0))
+                    m1=nameUpdate,m2=nameIPChecksum,ogate=0,igate=0))
+                self._checkResponse(response)
+
+                # IPChecksum -> wm2
+                response = stub.ConnectModules(
+                    bess_msg_pb2.ConnectModulesRequest(
+                    m1=nameIPChecksum,m2="wm2",ogate=0,igate=0))
                 self._checkResponse(response)
 
                 stub.ResumeAll(bess_msg_pb2.EmptyRequest())
