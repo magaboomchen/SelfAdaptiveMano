@@ -154,6 +154,13 @@ class SFFSFCIDeleter(BessControlPlane):
                     name=nameUpdate))
                 self._checkResponse(response)
 
+                # Checksum()
+                nameIPChecksum = sibm.getModuleName("IPChecksum",VNFIID,directionID)
+                response = stub.DestroyModule(
+                    bess_msg_pb2.DestroyModuleRequest(
+                    name=nameIPChecksum))
+                self._checkResponse(response)
+
             # PMDPort0
             # PMDPort()
             vnfPMDPort0Name = sibm.getModuleName("PMDPort",VNFIID,0)

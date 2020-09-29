@@ -9,6 +9,7 @@ from sam.base.socketConverter import *
 from sam.test.testBase import *
 from sam.serverController.sffController.test.unit.test_sffSFCIAdder import *
 
+
 def sendDirection0Traffic():
     data = "Hello World"
     ether = Ether(src=TESTER_SERVER_DATAPATH_MAC, dst=SFF1_DATAPATH_MAC)
