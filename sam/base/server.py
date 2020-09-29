@@ -97,7 +97,7 @@ class Server(object):
         return self._serverDatapathNICIP
 
     def _getHwAddrInDPDK(self):
-        command = "echo -ne \'\n\' | sudo $RTE_SDK/x86_64-native-linuxapp-gcc/app/testpmd | grep \"Port 0: \""
+        command = "echo -ne \'\n\' | sudo $RTE_SDK/build/app/testpmd | grep \"Port 0: \""
         res = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True)
         result = str(res.stdout.readlines())
         if result.find("Port 0: ")==-1:

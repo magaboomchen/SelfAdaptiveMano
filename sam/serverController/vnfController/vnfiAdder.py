@@ -40,7 +40,7 @@ class VNFIAdder(object):
         vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
         if not useFastClick:
             imageName = 'dpdk-app-testpmd'
-            appName = './x86_64-native-linuxapp-gcc/app/testpmd'
+            appName = './build/app/testpmd'
             command = "%s -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s " % (appName, startCPU, endCPU, vnfi.maxMem, vdev0, vdev1) +\
                   '--file-prefix=virtio --log-level=8 -- --txqflags=0xf00 --disable-hw-vlan ' +\
                   '--forward-mode=io --port-topology=chained --total-num-mbufs=2048 -a' 

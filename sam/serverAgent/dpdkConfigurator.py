@@ -34,7 +34,7 @@ class DPDKConfigurator(object):
         if out_bytes.find('igb_uio') == -1:
             out_bytes = subprocess.check_output(['sudo modprobe uio'],shell=True)
             out_bytes = subprocess.check_output(
-                ['sudo insmod $RTE_SDK/x86_64-native-linuxapp-gcc/kmod/igb_uio.ko'],
+                ['sudo insmod $RTE_SDK/build/kmod/igb_uio.ko'],
                 shell=True
                 )
             logging.info("Insert IGB_UIO successfully.")
