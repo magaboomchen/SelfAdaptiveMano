@@ -14,7 +14,7 @@ class BessStarter(object):
             self.startBESSD()
 
     def startBESSD(self):
-        out_bytes = subprocess.check_output(["sudo $RTE_SDK/../../bessctl/bessctl daemon start "+str(self.grpcUrl)],shell=True)
+        out_bytes = subprocess.check_output(["sudo -E $RTE_SDK/../../core/bessd -k --grpc_url="+str(self.grpcUrl)],shell=True)
         logging.info("Start bessd.")
 
     def isBessdRun(self):

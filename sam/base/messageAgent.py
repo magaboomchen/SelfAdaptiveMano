@@ -58,7 +58,7 @@ MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY = "MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_R
 # server manager use case
 MSG_TYPE_SERVER_REPLY = "MSG_TYPE_SERVER_REPLY"
 # tester use case
-MST_TYPE_TESTER_CMD = "MST_TYPE_TESTER_CMD"
+MSG_TYPE_TESTER_CMD = "MSG_TYPE_TESTER_CMD"
 
 
 class SAMMessage(object):
@@ -133,19 +133,24 @@ class MessageAgent(object):
     def isReply(self, body):
         return isinstance(body, Reply)
 
-    def sendMsg(self, dstQueueName, message):
-        try:
-            channel = self._publisherConnection.channel()
-            channel.queue_declare(queue=dstQueueName,durable=True)
-            channel.basic_publish(exchange='', routing_key=dstQueueName,
-                body=self._encodeMessage(message),
-                properties=pika.BasicProperties(delivery_mode = 2)
-                # make message persistent
-                )
-            # logging.info(" [x] Sent %r" % message)
-            channel.close()
-        except:
-            logging.error("MessageAgent sendMsg failed!")
+    def sendMsg(self, dstQueueName, message, maxRetryNum=3):
+        tryCount = 0
+        while tryCount<maxRetryNum:
+            try:
+                channel = self._publisherConnection.channel()
+                channel.queue_declare(queue=dstQueueName,durable=True)
+                channel.basic_publish(exchange='', routing_key=dstQueueName,
+                    body=self._encodeMessage(message),
+                    properties=pika.BasicProperties(delivery_mode = 2)
+                    # make message persistent
+                    )
+                # logging.info(" [x] Sent %r" % message)
+                channel.close()
+                break
+            except:
+                if tryCount == 2:
+                    logging.error("MessageAgent sendMsg failed!")
+                tryCount = tryCount + 1
 
     def startRecvMsg(self,srcQueueName):
         logging.debug("MessageAgent.startRecvMsg().")
