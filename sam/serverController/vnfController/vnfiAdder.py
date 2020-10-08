@@ -48,8 +48,9 @@ class VNFIAdder(object):
         logging.info(command)
         containerName = 'vnf-%s' % vnfi.VNFIID 
         try:
+            volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
             container = client.containers.run(imageName, command, tty=True, remove=not debug, privileged=True, name=containerName, 
-                volumes={'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}, detach=True)
+                volumes=volumes, detach=True)
             logging.info(container.logs())
         except Exception as e:
             # free allocated CPU and virtioID

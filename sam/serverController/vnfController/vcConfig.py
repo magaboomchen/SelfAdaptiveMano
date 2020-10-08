@@ -10,13 +10,16 @@ class VCConfig:
     DEBUG = True  # if you set debug=True, the container will not be removed even if the app is terminated.
                   # !!!please run docker rm XXX to free resources of the container.!!!
 
-    DEFAULT_FASTCLICK = False
+    DEFAULT_FASTCLICK = True
 
     FWD_IMAGE_DPDK = 'dpdk-app-testpmd'
     FWD_APP_DPDK = './x86_64-native-linuxapp-gcc/app/testpmd'
 
     FWD_IMAGE_CLICK = 'fastclick'
     FWD_APP_CLICK = './test-dpdk.click'
+
+    FW_IMAGE_CLICK = 'test-click-fw'
+    FW_APP_CLICK = './click-conf/testFW.click'
 
 
 vcConfig = VCConfig()
