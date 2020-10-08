@@ -40,7 +40,16 @@ class TestSSHAgentClass(object):
             stderr.read().decode('utf-8')))
 
     def test_runShellCommandWithSudo(self):
-        command = "sudo -S docker run -ti --rm --privileged  --name=name1 -v /mnt/huge_1GB:/dev/hugepages -v /tmp/:/tmp/ dpdk-app-testpmd ./x86_64-native-linuxapp-gcc/app/testpmd -l 0-1 -n 1 -m 1024 --no-pci --vdev=net_virtio_user0,path=/tmp/vsock_ecc5e758-e1ff-11ea-bb15-1866da864c17_0 --vdev=net_virtio_user1,path=/tmp/vsock_ecc5e758-e1ff-11ea-bb15-1866da864c17_1 --file-prefix=virtio --log-level=8 -- --txqflags=0xf00 --disable-hw-vlan --forward-mode=io --port-topology=chained --total-num-mbufs=2048 -a "
+        command = "sudo -S docker run -ti --rm --privileged --name=name1 " \
+            + "-v /mnt/huge_1GB:/dev/hugepages " \
+            + "-v /tmp/:/tmp/ dpdk-app-testpmd " \
+            + "./build/app/testpmd -l 0-1 -n 1 -m 1024 " \
+            + "--no-pci " \
+            + "--vdev=net_virtio_user0,path=/tmp/vsock_ecc5e758-e1ff-11ea-bb15-1866da864c17_0 " \
+            + "--vdev=net_virtio_user1,path=/tmp/vsock_ecc5e758-e1ff-11ea-bb15-1866da864c17_1 " \
+            + "--file-prefix=virtio --log-level=8 -- --txqflags=0xf00 " \
+            + "--disable-hw-vlan --forward-mode=io --port-topology=chained " \
+            + "--total-num-mbufs=2048 -a "
         try:
             shellCmdRply = self.sshA.runShellCommandWithSudo(command,1)
             stdin = shellCmdRply['stdin']
