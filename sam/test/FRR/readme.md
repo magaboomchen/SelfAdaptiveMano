@@ -18,7 +18,7 @@ sudo python test2.py
 
 ## UFRR 测试
 
-在 host上运行test_UFRR.py
+在 testServer 上运行test_UFRR.py
 
 ```
 sudo python -m pytest ./test_UFRR.py -s
@@ -31,7 +31,7 @@ sudo python -m pytest ./test_UFRR.py -s
 
 ## NotVia 测试
 
-在 host上运行test_NotViaReMapping.py
+在 testServer 上运行test_NotViaReMapping.py
 
 ```
 sudo python -m pytest ./test_NotViaReMapping.py -s

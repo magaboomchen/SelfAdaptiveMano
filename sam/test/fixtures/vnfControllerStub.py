@@ -40,7 +40,7 @@ class VNFControllerStub(object):
         command = "sudo -S docker run -ti --rm --privileged  --name="+ str(name) + " " \
             + "-v /mnt/huge_1GB:/dev/hugepages " \
             + "-v /tmp/:/tmp/ " \
-            + "dpdk-app-testpmd ./x86_64-native-linuxapp-gcc/app/testpmd -l 0-1 -n 1 -m 1024 --no-pci " \
+            + "dpdk-app-testpmd ./build/app/testpmd -l 0-1 -n 1 -m 1024 --no-pci " \
             + "--vdev=net_virtio_user0" + ",path=" + path0 + " " \
             + "--vdev=net_virtio_user1" + ",path=" + path1 + " " \
             + "--file-prefix=virtio --log-level=8 -- " \

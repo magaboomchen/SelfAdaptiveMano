@@ -7,13 +7,14 @@ import logging
 import psutil
 
 class BessStarter(object):
-    def __init__(self):
+    def __init__(self, grpcUrl):
         logging.info('Init bessd')
+        self.grpcUrl = grpcUrl
         if self.isBessdRun() == 0:
             self.startBESSD()
 
     def startBESSD(self):
-        out_bytes = subprocess.check_output(["sudo $RTE_SDK/../../bessctl/bessctl daemon start"],shell=True)
+        out_bytes = subprocess.check_output(["sudo $RTE_SDK/../../bessctl/bessctl daemon start "+str(self.grpcUrl)],shell=True)
         logging.info("Start bessd.")
 
     def isBessdRun(self):

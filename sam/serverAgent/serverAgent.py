@@ -23,6 +23,7 @@ from sam.base.messageAgent import *
 
 HEAT_BEAT_TIME = 10
 
+
 class ServerAgent(object):
     def __init__(self,controlNICName, serverType, datapathNICIP):
         logging.info('Init ServerAgent')
@@ -39,10 +40,15 @@ class ServerAgent(object):
             self._sendServerInfo()
             time.sleep(HEAT_BEAT_TIME)
 
+    def getControlNICIP(self):
+        self._server.updateIfSet()
+        return self._server.getControlNICIP()
+
     def _sendServerInfo(self):
         msg = SAMMessage(MSG_TYPE_SERVER_REPLY, self._server)
         logging.debug(msg.getMessageID())
         self._messageAgent.sendMsg(SERVER_MANAGER_QUEUE,msg)
+
 
 if __name__=="__main__":
     logging.basicConfig(level=logging.INFO)
@@ -60,5 +66,6 @@ if __name__=="__main__":
     DPDKConfigurator(NICPCIAddress)
 
     serverAgent = ServerAgent(controllNICName, serverType, datapathNICIP)
-    BessStarter()
+    grpcUrl = serverAgent.getControlNICIP()[0] + ":10514"
+    BessStarter(grpcUrl)
     serverAgent.run()
