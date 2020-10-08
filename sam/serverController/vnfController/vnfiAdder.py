@@ -8,10 +8,7 @@ from sam.base.vnf import *
 from sam.base.server import *
 from sam.serverController.sffController.sibMaintainer import *
 from sam.serverController.vnfController.sourceAllocator import *
-
-DEFAULT_FASTCLICK = True
-DEBUG = False  # if you set debug=True, the container will not be removed even if the app is terminated.
-               # !!!please run docker rm XXX to free resources of the container.!!!
+from sam.serverController.vnfController.vcConfig import vcConfig
 
 class VNFIAdder(object):
     def __init__(self, dockerPort):
@@ -25,12 +22,12 @@ class VNFIAdder(object):
 
         vnfiType = vnfi.VNFType
         if vnfiType == VNF_TYPE_FORWARD:  # add testpmd
-            return self._addTestpmd(vnfi, client, vioAllo, cpuAllo)
+            return self._addFWD(vnfi, client, vioAllo, cpuAllo)
         else:
             # TODO
             pass
 
-    def _addTestpmd(self, vnfi, client, vioAllo, cpuAllo, useFastClick=False, debug=True):
+    def _addFWD(self, vnfi, client, vioAllo, cpuAllo, useFastClick=vcConfig.DEFAULT_FASTCLICK, debug=vcConfig.DEBUG):
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
         vioStart = vioAllo.allocateSource(2)
@@ -39,14 +36,14 @@ class VNFIAdder(object):
         vdev0 = '%s,path=%s' % ('net_virtio_user%d' % vioStart, _vdev0[1][6:])
         vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
         if not useFastClick:
-            imageName = 'dpdk-app-testpmd'
-            appName = './build/app/testpmd'
+            imageName = vcConfig.FWD_IMAGE_DPDK
+            appName = vcConfig.FWD_APP_DPDK
             command = "%s -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s " % (appName, startCPU, endCPU, vnfi.maxMem, vdev0, vdev1) +\
                   '--file-prefix=virtio --log-level=8 -- --txqflags=0xf00 --disable-hw-vlan ' +\
                   '--forward-mode=io --port-topology=chained --total-num-mbufs=2048 -a' 
         else:
-            imageName = 'fastclick'
-            appName = './test-dpdk.click'
+            imageName = vcConfig.FWD_IMAGE_CLICK
+            appName = vcConfig.FWD_APP_CLICK
             command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
         logging.info(command)
         containerName = 'vnf-%s' % vnfi.VNFIID 

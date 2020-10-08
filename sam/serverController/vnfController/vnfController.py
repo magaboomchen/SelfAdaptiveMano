@@ -8,17 +8,11 @@ from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.command import *
 from sam.base.server import *
+from sam.serverController.vnfController.vcConfig import vcConfig
 from sam.serverController.vnfController.vnfiAdder import *
 from sam.serverController.vnfController.vnfiDeleter import *
 from sam.serverController.vnfController.vnfMaintainer import *
 from sam.serverController.vnfController.sourceAllocator import *
-
-MAX_VIO_NUM = 65536
-MAX_CPU_NUM = 12
-
-# port for docker tcp connect
-# (maybe unsafe, to modify in the future)
-DOCKER_TCP_PORT = 5982
 
 class VNFController(object):
     def __init__(self):
@@ -26,8 +20,8 @@ class VNFController(object):
 
         self._commandsInfo = {}
 
-        self._vnfiAdder = VNFIAdder(DOCKER_TCP_PORT)
-        self._vnfiDeleter = VNFIDeleter(DOCKER_TCP_PORT)
+        self._vnfiAdder = VNFIAdder(vcConfig.DOCKER_TCP_PORT)
+        self._vnfiDeleter = VNFIDeleter(vcConfig.DOCKER_TCP_PORT)
 
         self._vnfiMaintainer = VNFIMaintainer()
 
@@ -85,10 +79,10 @@ class VNFController(object):
                     # get vioAllocator of server
                     serverID = vnfi.node.getServerID()
                     if serverID not in self._vioManager:
-                        self._vioManager[serverID] = SourceAllocator(serverID, MAX_VIO_NUM)
+                        self._vioManager[serverID] = SourceAllocator(serverID, vcConfig.MAX_VIO_NUM)
                     vioAllo = self._vioManager[serverID]
                     if serverID not in self._cpuManager:
-                        self._cpuManager[serverID] = SourceAllocator(serverID, MAX_CPU_NUM)
+                        self._cpuManager[serverID] = SourceAllocator(serverID, vcConfig.MAX_CPU_NUM)
                     cpuAllo = self._cpuManager[serverID]
                     try:
                         containerID, cpuStart, vioStart = self._vnfiAdder.addVNFI(vnfi, vioAllo, cpuAllo)

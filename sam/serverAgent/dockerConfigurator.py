@@ -5,7 +5,7 @@ import subprocess
 import logging
 import time
 
-from sam.serverController.vnfController.vnfController import *
+from sam.serverController.vnfController.vcConfig import vcConfig
 from sam.base.shellProcessor import ShellProcessor
 
 
@@ -19,7 +19,7 @@ class DockerConfigurator(object):
         if results.find("ubuntu") == -1:
             raise ValueError("Only support ubuntu system!")
 
-    def configDockerListenPort(self, listenPort=DOCKER_TCP_PORT):
+    def configDockerListenPort(self, listenPort=vcConfig.DOCKER_TCP_PORT):
         try:
             self.sP.runShellCommand(
                 "sudo mkdir /etc/systemd/system/docker.service.d")
