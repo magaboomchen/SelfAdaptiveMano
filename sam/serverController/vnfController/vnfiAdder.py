@@ -3,7 +3,6 @@
 
 import logging
 import docker
-import paramiko
 
 from sam.base.vnf import *
 from sam.base.server import *
@@ -61,32 +60,7 @@ class VNFIAdder(object):
         return container.id, startCPU, vioStart
 
     def _addFW(self, vnfi, client, vioAllo, cpuAllo, debug=vcConfig.DEBUG):
-   
         ACL = vnfi.config['ACL']        
-
-        sshClient = paramiko.SSHClient()
-        sshClient.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        server = vnfi.node
-        # hardcode
-        sshClient.connect(hostname=server.getControlNICIP(), port=22, username='t1', password='t1@netlab325')
-        
-        sftp = sshClient.open_sftp()
-        try:
-            sftp.mkdir(vcConfig.RULE_PATH)
-        except:   
-            pass
-        sftp.chdir(vcConfig.RULE_PATH)
-        ruleDir = '%s/%s' % (sftp.getcwd(), vnfi.VNFIID)
-        sftp.mkdir(ruleDir)
-        with sftp.open('%s/statelessFW' % ruleDir, 'w') as f:
-            for rule in ACL:
-                line = rule.genFWLine()
-                f.write(line)
-                f.write('\n')
-                continue
-        sftp.close()
-        sshClient.close()
- 
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
         vioStart = vioAllo.allocateSource(2)
@@ -96,15 +70,17 @@ class VNFIAdder(object):
         vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
         imageName = vcConfig.FW_IMAGE_CLICK
         appName = vcConfig.FW_APP_CLICK
-        command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
-        logging.info(command)
-        
         containerName = 'vnf-%s' % vnfi.VNFIID 
         try:
-            volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}, ruleDir: {'bind': '/rule/', 'mode': 'rw'}}
-            container = client.containers.run(imageName, command, tty=True, remove=not debug, privileged=True, name=containerName, 
+            volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
+            container = client.containers.run(imageName, '/bin/bash', tty=True, remove=not debug, privileged=True, name=containerName, 
                 volumes=volumes, detach=True)
-            logging.info(container.logs())
+            container.exec_run(['/bin/sh', '-c', 'mkdir %s' % vcConfig.FW_RULE_DIR])
+            for rule in ACL:
+                container.exec_run(['/bin/sh', '-c', 'echo \"%s\" >> %s' % (rule.genFWLine(), vcConfig.FW_RULE_PATH)])
+            command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+            logging.info(command)
+            container.exec_run(command, privileged=True, detach=True)
         except Exception as e:
             # free allocated CPU and virtioID
             cpuAllo.freeSource(startCPU, vnfi.maxCPUNum)

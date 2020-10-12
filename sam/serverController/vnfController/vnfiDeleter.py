@@ -3,7 +3,6 @@
 
 import logging
 import docker
-import paramiko
 
 from sam.base.vnf import *
 from sam.base.server import *
@@ -29,19 +28,4 @@ class VNFIDeleter(object):
             container = client.containers.get(containerID)
             container.kill()
         except:
-            pass
-        ''' remove rule file '''
-        if vnfiDS.vnfi.VNFType == VNF_TYPE_FW:
-            sshClient = paramiko.SSHClient()
-            sshClient.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            # hardcode
-            sshClient.connect(hostname=server.getControlNICIP(), port=22, username='t1', password='t1@netlab325')
-            
-            sftp = sshClient.open_sftp()
-            sftp.chdir(vcConfig.RULE_PATH)
-            ruleDir = '%s/%s' % (sftp.getcwd(), vnfiDS.vnfi.VNFIID)
-            rulePath = '%s/statelessFW' % ruleDir
-            sftp.remove(rulePath)
-            sftp.rmdir(ruleDir)
-            sftp.close()
-            sshClient.close()
+            return
