@@ -11,7 +11,7 @@ from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
 from sam.base.command import *
-from sam.base.acl import *
+from sam.base.lb import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
@@ -28,18 +28,20 @@ SFF0_DATAPATH_MAC = "52:54:00:5a:14:f0"
 SFF0_CONTROLNIC_IP = "192.168.0.158"
 SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 
+LB_VIP = "10.1.1.200"
+LB_DST = ["10.1.2.1", "10.1.2.2", "10.1.2.3"]
+
 logging.basicConfig(level=logging.INFO)
 
-
-class TestVNFAddFW(TestBase):
+class TestVNFAddLB(TestBase):
     @pytest.fixture(scope="function")
-    def setup_addFW(self):
+    def setup_addLB(self):
         # setup
         self.resetRabbitMQConf(
             "/home/t1/Projects/SelfAdaptiveMano/sam/base/rabbitMQConf.conf",
             "192.168.0.201", "mq", "123456")
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_FW])
+        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_LB])
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
         self.sP = ShellProcessor()
@@ -81,20 +83,11 @@ class TestVNFAddFW(TestBase):
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 config = {}
-                config['ACL'] = self.genTestFWRules()
-                vnfi = VNFI(VNF_TYPE_FW, VNFType=VNF_TYPE_FW, 
+                config['LB'] = LBTuple(LB_VIP, LB_DST)
+                vnfi = VNFI(VNF_TYPE_LB, VNFType=VNF_TYPE_LB, 
                     VNFIID=uuid.uuid1(), config=config, node=server)
                 VNFISequence[index].append(vnfi)
         return VNFISequence
-
-    def genTestFWRules(self):
-        rules = []
-        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
-            srcPort=(1234, 1234), dstPort=(80, 80)))
-        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=WEBSITE_REAL_IP, dstAddr=OUTTER_CLIENT_IP,
-            srcPort=(80, 80), dstPort=(1234, 1234)))
-        rules.append(ACLTuple(ACL_ACTION_DENY))
-        return rules
 
     def runSFFController(self):
         filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/sffController/sffControllerCommandAgent.py"
@@ -143,7 +136,7 @@ class TestVNFAddFW(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
 
-    def test_addFW(self, setup_addFW):
+    def test_addLB(self, setup_addLB):
         # exercise
         logging.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
@@ -162,7 +155,7 @@ class TestVNFAddFW(TestBase):
         self._checkEncapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection0Traffic2SFF(self):
-        filePath = "./fixtures/sendFWDirection0Traffic.py"
+        filePath = "./fixtures/sendLBDirection0Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
@@ -179,15 +172,15 @@ class TestVNFAddFW(TestBase):
         assert condition
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].dst == WEBSITE_REAL_IP
-
+        #assert innerPkt[IP].dst in LB_DST
+        assert innerPkt[IP].src == LB_VIP
 
     def verifyDirection1Traffic(self):
         self._sendDirection1Traffic2SFF()
         self._checkDecapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection1Traffic2SFF(self):
-        filePath = "./fixtures/sendFWDirection1Traffic.py"
+        filePath = "./fixtures/sendLBDirection1Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
@@ -203,8 +196,8 @@ class TestVNFAddFW(TestBase):
         assert condition == True
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].src == WEBSITE_REAL_IP
-
+        #assert innerPkt[IP].src == LB_VIP
+        assert innerPkt[IP].dst in LB_DST
 
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)

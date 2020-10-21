@@ -15,12 +15,15 @@ class VCConfig:
     FWD_IMAGE_DPDK = 'dpdk-app-testpmd'
     FWD_APP_DPDK = './x86_64-native-linuxapp-gcc/app/testpmd'
 
-    FWD_IMAGE_CLICK = 'fastclick'
-    FWD_APP_CLICK = './test-dpdk.click'
+    FWD_IMAGE_CLICK = 'fastclick-vnf'
+    FWD_APP_CLICK = './click-conf/fwd.click'
 
-    FW_IMAGE_CLICK = 'test-click-fw'
-    FW_APP_CLICK = './click-conf/testFW.click'
+    FW_IMAGE_CLICK = 'fastclick-vnf'
+    FW_APP_CLICK = './click-conf/statelessFW.click'
     FW_RULE_DIR = '/rule'
     FW_RULE_PATH = '/rule/statelessFW'
+
+    LB_IMAGE_CLICK = 'fastclick-vnf'
+    LB_APP_CLICK = './click-conf/lb.click'
 
 vcConfig = VCConfig()
