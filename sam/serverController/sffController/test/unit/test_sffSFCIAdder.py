@@ -79,6 +79,7 @@ class TestSFFSFCIAdderClass(TestBase):
             logging.info("Then pytest should use -s option!")
 
         # verify again
+        time.sleep(5)
         self.verifyDirection0Traffic()
         self.verifyDirection1Traffic()
 

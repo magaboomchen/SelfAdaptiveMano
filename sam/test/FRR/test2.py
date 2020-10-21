@@ -338,7 +338,7 @@ class ManoTester(object):
 
     def sendReMappingCmd(self):
         print("sendReMappingCmd")
-        msg = SAMMessage(MST_TYPE_TESTER_CMD, Command(cmdType=CMD_TYPE_TESTER_REMAP_SFCI, cmdID=uuid.uuid1()))
+        msg = SAMMessage(MSG_TYPE_TESTER_CMD, Command(cmdType=CMD_TYPE_TESTER_REMAP_SFCI, cmdID=uuid.uuid1()))
         self._messageAgent.sendMsg(MININET_TESTER_QUEUE, msg)
 
 

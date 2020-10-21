@@ -135,6 +135,7 @@ class UFRR(FRR):
                 parser.OFPActionSetField(eth_src=srcMAC),
                 parser.OFPActionSetField(eth_dst=dstMAC),
                 parser.OFPActionSetField(ipv4_dst=newDstIP),
+                # parser.OFPActionSetField(ipv4_dst=(newDstIP,"0.0.0.255")), # available for openflow 1.5
                 parser.OFPActionOutput(backupOutPort)
             ]
             watch_port = backupOutPort
@@ -272,3 +273,5 @@ class UFRR(FRR):
         rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY,cmdRply)
         queue = MEDIATOR_QUEUE
         self._messageAgent.sendMsg(queue,rplyMsg)
+
+
