@@ -134,9 +134,8 @@ class UFRR(FRR):
                 parser.OFPActionDecNwTtl(),
                 parser.OFPActionSetField(eth_src=srcMAC),
                 parser.OFPActionSetField(eth_dst=dstMAC),
-                parser.OFPActionSetField(ipv4_dst=newDstIP+str("/0.0.0.255")),
-                # parser.OFPActionSetField(ipv4_dst=newDstIP),
-                # parser.OFPActionSetField(ipv4_dst=(newDstIP,"0.0.0.255")),
+                parser.OFPActionSetField(ipv4_dst=newDstIP),
+                # parser.OFPActionSetField(ipv4_dst=(newDstIP,"0.0.0.255")), # available for openflow 1.5
                 parser.OFPActionOutput(backupOutPort)
             ]
             watch_port = backupOutPort
