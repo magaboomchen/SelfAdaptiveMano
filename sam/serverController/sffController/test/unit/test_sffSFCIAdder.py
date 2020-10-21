@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import logging
+import time
 from scapy.all import *
 
 import pytest
