@@ -133,24 +133,25 @@ class MessageAgent(object):
     def isReply(self, body):
         return isinstance(body, Reply)
 
-    def sendMsg(self, dstQueueName, message, maxRetryNum=3):
-        tryCount = 0
-        while tryCount<maxRetryNum:
-            try:
-                channel = self._publisherConnection.channel()
-                channel.queue_declare(queue=dstQueueName,durable=True)
-                channel.basic_publish(exchange='', routing_key=dstQueueName,
-                    body=self._encodeMessage(message),
-                    properties=pika.BasicProperties(delivery_mode = 2)
-                    # make message persistent
-                    )
-                # logging.info(" [x] Sent %r" % message)
-                channel.close()
-                break
-            except:
-                if tryCount == 2:
-                    logging.error("MessageAgent sendMsg failed!")
-                tryCount = tryCount + 1
+    def sendMsg(self, dstQueueName, message):
+        logging.debug("MessageAgent ready to send msg")
+        if not self._publisherConnection.is_open:
+            logging.warning("MessageAgent _publisherConnection is_closed, re-establish the connection")
+            self._publisherConnection = self._connectRabbitMQServer()
+        try:
+            channel = self._publisherConnection.channel()
+            channel.queue_declare(queue=dstQueueName,durable=True)
+            channel.basic_publish(exchange='', routing_key=dstQueueName,
+                body=self._encodeMessage(message),
+                properties=pika.BasicProperties(delivery_mode = 2)
+                # make message persistent
+                )
+            # logging.info(" [x] Sent %r" % message)
+            channel.close()
+        except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            logging.error("MessageAgent sendMsg failed! occure error: {0}".format(message))
 
     def startRecvMsg(self,srcQueueName):
         logging.debug("MessageAgent.startRecvMsg().")
@@ -276,11 +277,18 @@ class QueueReciever(threading.Thread):
                     " recursion or reentrancy."
                     "Used by BlockingConnection/BlockingChannel.")
                 return None
+            except Exception as ex:
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                logging.error("MessageAgent recvMsg failed! occure error: {0}".format(message))
 
     def callback(self,ch, method, properties, body):
         # logging.info(" [x] Received %r" % body)
         threadLock.acquire()
-        self.msgQueue.put(body)
+        if self.msgQueue.qsize() < 99999:
+            self.msgQueue.put(body)
+        else:
+            raise ValueError("MessageAgent recv qeueu full! Drop new msg!")
         threadLock.release()
         logging.info(" [x] Done")
         ch.basic_ack(delivery_tag = method.delivery_tag)

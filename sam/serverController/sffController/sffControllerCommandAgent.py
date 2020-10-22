@@ -68,7 +68,7 @@ class SFFControllerCommandAgent(object):
                 logging.error("Unknown msg type.")
 
 if __name__=="__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     sC = SFFControllerCommandAgent()
     sC.startSFFControllerCommandAgent()

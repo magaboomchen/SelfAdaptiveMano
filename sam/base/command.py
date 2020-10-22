@@ -22,12 +22,30 @@ class Command(object):
         self.cmdID = cmdID
         self.attributes = attributes    # {'sfcUUID':sfcUUID,'sfci':sfci, 'sfc':sfc, 'classifier':classifier}
 
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
+
+    def __repr__(self):
+        return str(self)
+
 
 class CommandReply(object):
     def __init__(self, cmdID, cmdState, attributes={}):
         self.cmdID = cmdID
         self.cmdState = cmdState
         self.attributes = attributes    # {'switches':{},'links':{},'servers':{},'vnfis':{}}
+
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
+
+    def __repr__(self):
+        return str(self)
 
 
 class CommandMaintainer(object):

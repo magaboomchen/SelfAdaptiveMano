@@ -38,7 +38,8 @@ class SeverManager(object):
                 cmd = msg.getbody()
                 self._reportServerSet(cmd)
             elif msg.getMessageType() == None:
-                self._printServerSet()
+                # self._printServerSet()
+                pass
             else:
                 logging.warning("Unknown msg type.")
 
@@ -72,6 +73,7 @@ class SeverManager(object):
 
     def genGetServersCmdReply(self, cmd):
         attributes = {'servers': self.serverSet}
+        attributes.update(cmd.attributes)
         cmdRply = CommandReply(cmd.cmdID, CMD_STATE_SUCCESSFUL, attributes)
         return cmdRply
 
@@ -82,10 +84,12 @@ class SeverManager(object):
         self._timeoutCleanerThread.start()
 
     def _printServerSet(self):
-        logging.debug("printServerSet:")
+        logging.info("printServerSet:")
         threadLock.acquire()
         for serverKey in self.serverSet.iterkeys():
-            logging.debug(self.serverSet[serverKey])
+            logging.info(self.serverSet[serverKey])
+            logging.info("----------------------\n")
+        logging.info("==============================\n")
         threadLock.release()
 
     def _async_raise(self,tid, exctype):

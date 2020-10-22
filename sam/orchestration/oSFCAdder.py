@@ -41,10 +41,11 @@ class OSFCAdder(object):
 
         self._mapForwardingPath()
         # logging.info("ForwardingPath:{0}".format(self.sfci.ForwardingPathSet))
-        
-        cmd =Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
+
+        cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
             'sfc':self.sfc, 'sfci':self.sfci, 'zone':self.zoneName
         })
+
         return cmd
 
     def _checkRequest(self):

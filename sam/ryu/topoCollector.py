@@ -123,6 +123,7 @@ class TopoCollector(BaseApp):
             "links": self._transLinks(self.links),
             # "servers": self._transHosts(self.hosts)
         }
+        attr.update(cmd.attributes)
         cmdRply = CommandReply(cmd.cmdID, CMD_STATE_SUCCESSFUL, attr)
         rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY, cmdRply)
         queue = MEDIATOR_QUEUE

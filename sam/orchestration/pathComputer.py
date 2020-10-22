@@ -47,7 +47,7 @@ class PathComputer(object):
         multiStagePath = self._transPath2MultiStagePath(path)
         self.primaryFP = multiStagePath
         self.sfci.ForwardingPathSet.primaryForwardingPath[1] = self.primaryFP
-        logging.info("primayFP:{0}".format(self.primaryFP))
+        logging.info("PathComputer, primayFP:{0}".format(self.primaryFP))
 
     def _genMultiLayerGraph(self):
         gList = []
@@ -200,7 +200,7 @@ class PathComputer(object):
             pathID = pathID + 1
         self.sfci.ForwardingPathSet.backupForwardingPath[1]\
             = backupForwardingPath
-        logging.info("backupFP:{0}".format(backupForwardingPath))
+        logging.info("PathComputer, backupFP:{0}".format(backupForwardingPath))
 
     def _deleteNodeInMLG(self, mLG, nextNodeID):
         for stageIndex in range(self.sfcLength + 1):

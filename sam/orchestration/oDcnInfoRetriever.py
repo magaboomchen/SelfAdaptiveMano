@@ -9,18 +9,19 @@ from sam.measurement.dcnInfoBaseMaintainer import *
 
 
 class ODCNInfoRetriever(object):
-    def __init__(self, dib, messageAgent):
+    def __init__(self, dib):
         self._dib = dib
-        self._messageAgent = messageAgent
+        self._messageAgent = MessageAgent()
         self._messageAgent.startRecvMsg(DCN_INFO_RECIEVER_QUEUE)
 
-    def _getDCNInfo(self):
+    def getDCNInfo(self):
         self._requestDCNInfo()
         self._recvDCNInfo()
 
     def _requestDCNInfo(self):
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_GET_DCN_INFO,
-            ORCHESTRATOR_QUEUE)
+            DCN_INFO_RECIEVER_QUEUE)
+            # ORCHESTRATOR_QUEUE) # it seems that this should be DCN_INFO_RECIEVER_QUEUE, may be delete this comment later
         msg = SAMMessage(MSG_TYPE_REQUEST, request)
         self._messageAgent.sendMsg(MEASURER_QUEUE, msg)
 
@@ -34,6 +35,7 @@ class ODCNInfoRetriever(object):
                 body = msg.getbody()
                 if self._messageAgent.isReply(body):
                     self._replyHandler(body)
+                    return 
                 else:
                     logging.error("Unknown massage body:{0}".format(body))
 
@@ -51,3 +53,4 @@ class ODCNInfoRetriever(object):
                 logging.error("Unknown reply attributes:{0}".format(
                     key
                 ))
+

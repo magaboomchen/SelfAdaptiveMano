@@ -73,7 +73,13 @@ class TestOrchestratorADDSFCIClass(TestBase):
     # @pytest.mark.skip(reason='Temporarly')
     def test_collectTopology(self, setup_collectDCNInfo):
         # exercise
-        self.oA.genAddSFCICmd(self.request)
+        cmd = self.oA.genAddSFCICmd(self.request)
+        sfci = cmd.attributes['sfci']
+        ForwardingPathSet = sfci.ForwardingPathSet
+        primaryForwardingPath = ForwardingPathSet.primaryForwardingPath
+        backupForwardingPath = ForwardingPathSet.backupForwardingPath
+
         # verify
-        assert 1==1
+        assert primaryForwardingPath == {1: [[10001, 1, 2, 10003], [10003, 2, 1, 10001]]}
+        assert backupForwardingPath == {1: {(1, 2, 2): [[1, 3, 10005], [10005, 3, 1, 10001]], (2, 10003, 3): [[2, 10004], [10004, 2, 1, 10001]]}}
 

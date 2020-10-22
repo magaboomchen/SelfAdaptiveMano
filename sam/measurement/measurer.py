@@ -21,7 +21,6 @@ from sam.measurement.dcnInfoBaseMaintainer import *
 
 # TODO: database agent, multiple zones
 
-
 class Measurer(object):
     def __init__(self):
         self._dib = DCNInfoBaseMaintainer()
@@ -78,19 +77,23 @@ class Measurer(object):
                 pass
             else:
                 body = msg.getbody()
-                if self._messageAgent.isRequest(body):
-                    self._requestHandler(body)
-                elif self._messageAgent.isCommandReply(body):
-                    self._commandReplyHandler(body)
-                else:
-                    logging.error("Unknown massage body")
+                try:
+                    if self._messageAgent.isRequest(body):
+                        self._requestHandler(body)
+                    elif self._messageAgent.isCommandReply(body):
+                        self._commandReplyHandler(body)
+                    else:
+                        logging.error("Unknown massage body")
+                except Exception as ex:
+                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    logging.error("measurer occure error: {0}".format(message))
 
     def _requestHandler(self, request):
         if request.requestType == REQUEST_TYPE_GET_DCN_INFO:
             attributes = self.getTopoAttributes()
             rply = Reply(request.requestID,
                 REQUEST_STATE_SUCCESSFUL, attributes)
-            # queueName = request.requestSrcQueue
             queueName = DCN_INFO_RECIEVER_QUEUE
             self.sendReply(rply, queueName)
         else:
@@ -110,6 +113,7 @@ class Measurer(object):
 
     def _commandReplyHandler(self, cmdRply):
         logging.info("Get command reply")
+        # logging.info(cmdRply)
         zoneName = cmdRply.attributes['zone']
         for key,value in cmdRply.attributes.items():
             if key == 'switches':
@@ -124,7 +128,7 @@ class Measurer(object):
                 pass
             else:
                 logging.warning("Unknown attributes:{0}".format(key))
-        logging.info("dib:{0}".format(self._dib))
+        logging.debug("dib:{0}".format(self._dib))
 
 class MeasurerCommandSender(threading.Thread):
     def __init__(self, threadID, messageAgent):
@@ -138,7 +142,8 @@ class MeasurerCommandSender(threading.Thread):
             time.sleep(5)
             self.sendGetTopoCmd()
             self.sendGetServersCmd()
-            self.sendGetSFCIStateCmd()
+            # TODO
+            # self.sendGetSFCIStateCmd()
 
     def sendGetTopoCmd(self):
         getTopoCmd = Command(CMD_TYPE_GET_TOPOLOGY, uuid.uuid1(),
@@ -160,7 +165,7 @@ class MeasurerCommandSender(threading.Thread):
 
 
 if __name__=="__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     m = Measurer()
     m.startMeasurer()
 

@@ -22,13 +22,22 @@ We need to discuss together and then work it out.
 
 # TODO LIST
 
-## Refactor datapath: encoding format error. "VNFID+SFCID+PATHID"
+test orchestrator
 
-## Add zone to all controller
+Modify NetworkController's add SFCI cmd function. (add match filed with inport into IPv4_CLASSIFIER_TABLE); add delete SFC cmd function (delete the match entry in IPv4_CLASSIFIER_TABLE)
 
-## Modify mediator: add zone
+Add zone to all controller
 
-## Simulator as Zone_Simulation; Mininet as Zone_Mininet;
+Modify mediator: add zone
 
-## Modify NetworkController's add SFCI cmd function. (add match filed with inport into IPv4_CLASSIFIER_TABLE); add delete SFC cmd function (delete the match entry in IPv4_CLASSIFIER_TABLE)
+Simulator as Zone_Simulation; Mininet as Zone_Mininet;
 
+Refactor datapath: encoding format error. "VNFID+SFCID+PATHID"
+
+Add getSFCIStatus in sffController; measurer: add self.sendGetSFCIStateCmd()
+
+Add sfci deleter in ufrr (optional)
+
+# BUG LIST
+
+messageAgent send message failed when idle time is too long.

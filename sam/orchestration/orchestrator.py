@@ -15,7 +15,9 @@ LANIPPrefix = 27
 class Orchestrator(object):
     def __init__(self):
         self._dib = DCNInfoBaseMaintainer()
-        self._odir = ODCNInfoRetriever(self._dib, self._messageAgent)
+
+        self._odir = ODCNInfoRetriever(self._dib)
+
         self._osa = OSFCAdder(self._dib)
         self._osd = OSFCDeleter(self._dib)
 
@@ -93,8 +95,9 @@ class Orchestrator(object):
         # TODO
         pass
 
+
 if __name__=="__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     ot = Orchestrator()
     ot.startOrchestrator()
