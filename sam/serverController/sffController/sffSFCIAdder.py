@@ -84,8 +84,11 @@ class SFFSFCIAdder(BessControlPlane):
                 directionID = direction["ID"]
 
                 # QueueInc()
-                vnfPMDPortName = sibm.getModuleName("PMDPort",VNFIID,
-                    directionID)
+                if directionID in [0,1]:
+                    vnfPMDPortName = sibm.getModuleName("PMDPort",VNFIID,
+                        1 - directionID)
+                else:
+                    raise ValueError('Invalid direction ID.')
                 nameQueueInc = sibm.getModuleName("QueueInc",VNFIID,
                     directionID)
                 argument = Any()
@@ -98,7 +101,7 @@ class SFFSFCIAdder(BessControlPlane):
                 # QueueOut()
                 if directionID in [0,1]:
                     vnfPMDPortName = sibm.getModuleName("PMDPort",VNFIID,
-                        1 - directionID)
+                        directionID)
                 else:
                     raise ValueError('Invalid direction ID.')
                 nameQueueOut = sibm.getModuleName("QueueOut",VNFIID,
