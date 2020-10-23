@@ -172,8 +172,7 @@ class TestVNFAddLB(TestBase):
         assert condition
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
-        #assert innerPkt[IP].dst in LB_DST
-        assert innerPkt[IP].src == LB_VIP
+        assert innerPkt[IP].dst in LB_DST
 
     def verifyDirection1Traffic(self):
         self._sendDirection1Traffic2SFF()
@@ -196,8 +195,7 @@ class TestVNFAddLB(TestBase):
         assert condition == True
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
-        #assert innerPkt[IP].src == LB_VIP
-        assert innerPkt[IP].dst in LB_DST
+        assert innerPkt[IP].src == LB_VIP
 
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
