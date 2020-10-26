@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import subprocess
-import logging
 import sys
 if sys.version > '3':
     import queue as Queue
@@ -18,7 +17,9 @@ import base64
 import pickle
 import pika
 from pika.exceptions import ChannelClosed
+from pika.exceptions import ReentrancyError
 
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.command import *
 from sam.base.request import *
 
@@ -84,15 +85,19 @@ class SAMMessage(object):
 
 
 class MessageAgent(object):
-    def __init__(self):
-        logging.info("Init MessaageAgent.")
+    def __init__(self, logger=None):
+        if logger != None:
+            self.logger = logger
+        else:
+            logConfigur = LoggerConfigurator(__name__, './log',
+                'messageAgent.log', level='warning')
+            self.logger = logConfigur.getLogger()
+        self.logger.info("Init MessaageAgent.")
         self.readRabbitMQConf()
         self.msgQueues = {}
         self._threadSet = {}
         self._publisherConnection = self._connectRabbitMQServer()
         self._consumerConnection = self._connectRabbitMQServer()
-
-        logging.getLogger("pika").setLevel(logging.ERROR)
 
     def readRabbitMQConf(self):
         filePath = __file__.split("/messageAgent.py")[0] + '/rabbitMQConf.conf'
@@ -105,7 +110,7 @@ class MessageAgent(object):
             self.rabbitMqServerIP = newLines[0]
             self.rabbitMqServerUser = newLines[1]
             self.rabbitMqServerPasswd = newLines[2]
-            logging.info(
+            self.logger.info(
                 "messageAgentConf:\nServer:{0}\nUser:{1}\nPasswd:{2}".format(
                     self.rabbitMqServerIP, self.rabbitMqServerUser,
                     self.rabbitMqServerPasswd))
@@ -134,9 +139,11 @@ class MessageAgent(object):
         return isinstance(body, Reply)
 
     def sendMsg(self, dstQueueName, message):
-        logging.debug("MessageAgent ready to send msg")
+        self.logger.debug("MessageAgent ready to send msg")
         if not self._publisherConnection.is_open:
-            logging.warning("MessageAgent _publisherConnection is_closed, re-establish the connection")
+            self.logger.warning(
+                "MessageAgent _publisherConnection is_closed," \
+                " re-establish the connection")
             self._publisherConnection = self._connectRabbitMQServer()
         try:
             channel = self._publisherConnection.channel()
@@ -146,17 +153,18 @@ class MessageAgent(object):
                 properties=pika.BasicProperties(delivery_mode = 2)
                 # make message persistent
                 )
-            # logging.info(" [x] Sent %r" % message)
+            self.logger.debug(" [x] Sent %r" % message)
             channel.close()
         except Exception as ex:
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
-            logging.error("MessageAgent sendMsg failed! occure error: {0}".format(message))
+            self.logger.error(
+                "MessageAgent sendMsg failed!: {0}".format(message))
 
     def startRecvMsg(self,srcQueueName):
-        logging.debug("MessageAgent.startRecvMsg().")
+        self.logger.debug("MessageAgent.startRecvMsg().")
         if srcQueueName in self.msgQueues:
-            logging.info("Already listening on recv queue.")
+            self.logger.warning("Already listening on recv queue.")
         else:
             threadLock.acquire()
             self.msgQueues[srcQueueName] = Queue.Queue()
@@ -164,13 +172,13 @@ class MessageAgent(object):
                 channel = self._consumerConnection.channel()
                 # start a new thread to recieve
                 thread = QueueReciever(len(self._threadSet), channel,
-                    srcQueueName, self.msgQueues[srcQueueName])
+                    srcQueueName, self.msgQueues[srcQueueName], self.logger)
                 self._threadSet[srcQueueName] = thread
                 thread.setDaemon(True)
                 thread.start()
                 result = True
             except:
-                logging.error("MessageAgent startRecvMsg failed")
+                self.logger.error("MessageAgent startRecvMsg failed")
                 result = False
             finally:
                 threadLock.release()
@@ -189,7 +197,7 @@ class MessageAgent(object):
             else:
                 msg =  SAMMessage(None,None)
         else:
-            logging.error("No such msg queue.")
+            self.logger.error("No such msg queue.")
             msg =  SAMMessage(None,None)
         threadLock.release()
         return msg
@@ -209,16 +217,15 @@ class MessageAgent(object):
         return pickle.loads(base64.b64decode(message))
 
     def __del__(self):
-        logging.info("Delete MessageAgent.")
-        logging.debug(self._threadSet)
+        self.logger.info("Delete MessageAgent.")
         for thread in self._threadSet.itervalues():
-            logging.debug("check thread is alive?")
+            self.logger.debug("check thread is alive?")
             if thread.isAlive():
-                logging.info("Kill thread: %d" %thread.ident)
+                self.logger.info("Kill thread: %d" %thread.ident)
                 self._async_raise(thread.ident, KeyboardInterrupt)
                 thread.join()
 
-        logging.info("Disconnect from RabbiMQServer.")
+        self.logger.info("Disconnect from RabbiMQServer.")
         self._disConnectRabbiMQServer()
 
     def _async_raise(self,tid, exctype):
@@ -242,37 +249,37 @@ class MessageAgent(object):
 
 
 class QueueReciever(threading.Thread):
-    def __init__(self, threadID, channel, srcQueueName, msgQueue):
+    def __init__(self, threadID, channel, srcQueueName, msgQueue, logger):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.channel = channel
         self.srcQueueName = srcQueueName
         self.msgQueue = msgQueue
+        self.logger = logger
 
     def run(self):
-        logging.debug("thread QueueReciever.run().")
+        self.logger.debug("thread QueueReciever.run().")
         self._recvMsg()
 
     def _recvMsg(self):
         self.channel.queue_declare(queue=self.srcQueueName, durable=True)
         self.channel.basic_consume(queue=self.srcQueueName,
                             on_message_callback=self.callback)
-        logging.info(' [*] Waiting for messages. To exit press CTRL+C')
+        self.logger.info(' [*] Waiting for messages. To exit press CTRL+C')
         while True:
             try:
                 self.channel.start_consuming()
             except KeyboardInterrupt:
-                logging.warning("messageAgent get keyboardInterrupt.")
+                self.logger.info("messageAgent get keyboardInterrupt.")
                 requeued_messages = self.channel.cancel()
-                # logging.info('Requeued %i messages' % requeued_messages)
-                logging.info('Channel stop consuming')
+                self.logger.info('Channel stop consuming')
                 self.channel.stop_consuming()
                 return None
             except ChannelClosed:
-                logging.warning(
+                self.logger.warning(
                     "channel closed by broker, reconnect to broker.")
             except ReentrancyError:
-                logging.error(
+                self.logger.error(
                     "The requested operation would result in unsupported"
                     " recursion or reentrancy."
                     "Used by BlockingConnection/BlockingChannel.")
@@ -280,16 +287,16 @@ class QueueReciever(threading.Thread):
             except Exception as ex:
                 template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 message = template.format(type(ex).__name__, ex.args)
-                logging.error("MessageAgent recvMsg failed! occure error: {0}".format(message))
+                self.logger.error("MessageAgent recvMsg failed! occure error: {0}".format(message))
 
     def callback(self,ch, method, properties, body):
-        # logging.info(" [x] Received %r" % body)
+        self.logger.debug(" [x] Received %r" % body)
         threadLock.acquire()
         if self.msgQueue.qsize() < 99999:
             self.msgQueue.put(body)
         else:
             raise ValueError("MessageAgent recv qeueu full! Drop new msg!")
         threadLock.release()
-        logging.info(" [x] Done")
+        self.logger.debug(" [x] Done")
         ch.basic_ack(delivery_tag = method.delivery_tag)
 

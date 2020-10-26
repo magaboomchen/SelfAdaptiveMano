@@ -11,6 +11,7 @@ import inspect
 import datetime
 
 from sam.base.server import Server
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import *
 from sam.base.command import *
 
@@ -20,8 +21,11 @@ SERVERID_OFFSET = 10001
 
 class SeverManager(object):
     def __init__(self):
-        logging.info('Init ServerManager')
-        self._messageAgent = MessageAgent()
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'serverManager.log', level='info')
+        self.logger = logConfigur.getLogger()
+        self.logger.info('Init ServerManager')
+        self._messageAgent = MessageAgent(self.logger)
         self._messageAgent.startRecvMsg(SERVER_MANAGER_QUEUE)
         self.serverSet = {}
         self._timeoutCleaner()
@@ -30,7 +34,7 @@ class SeverManager(object):
     def _listener(self):
         while True:
             msg = self._messageAgent.getMsg(SERVER_MANAGER_QUEUE)
-            logging.debug(msg.getMessageType())
+            self.logger.debug("msgType:".format(msg.getMessageType()))
             time.sleep(1)
             if msg.getMessageType() == MSG_TYPE_SERVER_REPLY:
                 self._storeServerInfo(msg)
@@ -38,15 +42,16 @@ class SeverManager(object):
                 cmd = msg.getbody()
                 self._reportServerSet(cmd)
             elif msg.getMessageType() == None:
-                # self._printServerSet()
-                pass
+                self._printServerSet()
             else:
-                logging.warning("Unknown msg type.")
+                self.logger.warning("Unknown msg type.")
 
     def _storeServerInfo(self,msg):
-        logging.info("Get head beat from server.")
         server = msg.getbody()
         serverControlNICMac = server.getControlNICMac()
+        self.logger.info("Get head beat from server {0}.".format(
+            serverControlNICMac
+        ))
         threadLock.acquire()
         if serverControlNICMac in self.serverSet.iterkeys():
             serverID = self.serverSet[serverControlNICMac]["server"].getServerID()
@@ -64,7 +69,7 @@ class SeverManager(object):
         return datetime.datetime.now()
 
     def _reportServerSet(self, cmd):
-        logging.info("Get command from mediator.")
+        self.logger.info("Get command from mediator.")
         threadLock.acquire()
         cmdRply = self.genGetServersCmdReply(cmd)
         msg = SAMMessage(MSG_TYPE_SERVER_MANAGER_CMD_REPLY, cmdRply)
@@ -79,17 +84,18 @@ class SeverManager(object):
 
     def _timeoutCleaner(self):
         # start a new thread
-        self._timeoutCleanerThread = TimeoutCleaner(self.serverSet)
+        self._timeoutCleanerThread = TimeoutCleaner(self.serverSet,
+            self.logger)
         self._timeoutCleanerThread.setDaemon(True)
         self._timeoutCleanerThread.start()
 
     def _printServerSet(self):
-        logging.info("printServerSet:")
+        self.logger.debug("printServerSet:")
         threadLock.acquire()
         for serverKey in self.serverSet.iterkeys():
-            logging.info(self.serverSet[serverKey])
-            logging.info("----------------------\n")
-        logging.info("==============================\n")
+            self.logger.debug(self.serverSet[serverKey])
+            self.logger.debug("----------------------\n")
+        self.logger.debug("==============================\n")
         threadLock.release()
 
     def _async_raise(self,tid, exctype):
@@ -109,28 +115,29 @@ class SeverManager(object):
     def __del__(self):
         # first, delet self._messageAgent, or self._timeoutCleanerThread is hard to killed. Still need to address this problem
         del self._messageAgent
-        logging.info("Delete ServerManager.")
+        self.logger.info("Delete ServerManager.")
         thread = self._timeoutCleanerThread
         if thread.isAlive():
-            logging.warning("Kill thread: %d" %thread.ident)
+            self.logger.warning("Kill thread: %d" %thread.ident)
             self._async_raise(thread.ident, KeyboardInterrupt)
             thread.join()
 
 class TimeoutCleaner(threading.Thread):
-    def __init__(self,serverSet):
+    def __init__(self, serverSet, logger):
         threading.Thread.__init__(self)
         self.serverSet = serverSet
+        self.logger = logger
 
     def run(self):
         try:
             self._startTimeout()
         except KeyboardInterrupt:
-            logging.warning("TimeoutCleaner get KeyboardInterrupt.")
+            self.logger.warning("TimeoutCleaner get KeyboardInterrupt.")
 
     def _startTimeout(self):
-        logging.info("timeoutCleaner is running")
+        self.logger.info("timeoutCleaner is running")
         while True:
-            logging.debug("timeoutcleanr run once.")
+            self.logger.debug("timeoutcleanr run once.")
             threadLock.acquire()
             currentTime = datetime.datetime.now()
             for serverKey in self.serverSet.iterkeys():
@@ -146,5 +153,4 @@ class TimeoutCleaner(threading.Thread):
         return difference.days * seconds_in_day + difference.seconds
 
 if __name__=="__main__":
-    logging.basicConfig(level=logging.INFO)
     severManager = SeverManager()

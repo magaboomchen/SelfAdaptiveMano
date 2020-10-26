@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
 
 import networkx
 
@@ -15,13 +14,13 @@ from sam.base.path import *
 from sam.base.command import *
 from sam.base.socketConverter import SocketConverter
 from sam.orchestration.pathComputer import *
-from sam.orchestration.orchestrator import LANIPPrefix
-
+from sam.orchestration.orchestrator import *
 
 
 class OSFCAdder(object):
-    def __init__(self, dib):
+    def __init__(self, dib, logger):
         self._dib = dib
+        self.logger = logger
         self._sc = SocketConverter()
 
     def genAddSFCICmd(self, request):
@@ -34,13 +33,13 @@ class OSFCAdder(object):
             ForwardingPathSet=ForwardingPathSet({},"UFRR",{}))
 
         self._mapIngressEgress()
-        # logging.info("sfc:{0}".format(self.sfc))
+        self.logger.debug("sfc:{0}".format(self.sfc))
 
         self._mapVNFI()
-        # logging.info("sfci:{0}".format(self.sfci))
+        self.logger.debug("sfci:{0}".format(self.sfci))
 
         self._mapForwardingPath()
-        # logging.info("ForwardingPath:{0}".format(self.sfci.ForwardingPathSet))
+        self.logger.debug("ForwardingPath:{0}".format(self.sfci.ForwardingPathSet))
 
         cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
             'sfc':self.sfc, 'sfci':self.sfci, 'zone':self.zoneName
@@ -83,7 +82,7 @@ class OSFCAdder(object):
         dcnGateway = None
         for switch in self._dib.getSwitchesByZone(self.zoneName):
             if switch.switchType == SWITCH_TYPE_DCNGATEWAY:
-                logging.debug(
+                self.logger.debug(
                     "switch.switchType:{0}".format(switch.switchType)
                     )
                 dcnGateway = switch
@@ -122,7 +121,8 @@ class OSFCAdder(object):
         return vnfiList
 
     def _mapForwardingPath(self):
-        self._pC = PathComputer(self._dib, self.request, self.sfci)
+        self._pC = PathComputer(self._dib, self.request, self.sfci,
+            self.logger)
         self._pC.mapPrimaryFP()
         self._pC.mapBackupFP()
 

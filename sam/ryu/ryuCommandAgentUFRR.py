@@ -39,7 +39,7 @@ class RyuCommandAgent(BaseApp):
                 self.notVia = lookup_service_brick("NotVia")
             msg = self._messageAgent.getMsg(NETWORK_CONTROLLER_QUEUE)
             if msg.getMessageType() == MSG_TYPE_NETWORK_CONTROLLER_CMD:
-                logging.info("Ryu command agent gets a ryu cmd.")
+                self.logger.info("Ryu command agent gets a ryu cmd.")
                 cmd = msg.getbody()
                 if cmd.cmdType == CMD_TYPE_ADD_SFCI:
                     self.ufrr._addSfciHandler(cmd)
@@ -48,9 +48,9 @@ class RyuCommandAgent(BaseApp):
                 elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
                     self.tC.get_topology_handler(cmd)
                 else:
-                    logging.error("Unkonwn cmd type:{0}".format(cmd.cmdType))
+                    self.logger.error("Unkonwn cmd type:{0}".format(cmd.cmdType))
             elif msg.getMessageType() == None:
                 pass
             else:
-                logging.error("Unknown msg type.")
+                self.logger.error("Unknown msg type.")
 

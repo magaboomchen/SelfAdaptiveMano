@@ -20,12 +20,12 @@ from sam.base.command import *
 from sam.base.path import *
 from sam.serverController.bessControlPlane import *
 
-logging.basicConfig(level=logging.INFO)
 
 class SFFInitializer(BessControlPlane):
-    def __init__(self,sibms):
+    def __init__(self,sibms,logger):
         super(SFFInitializer, self).__init__()
         self.sibms = sibms
+        self.logger = logger
 
     def initClassifier(self,server):
         serverID = server.getServerID()
@@ -39,7 +39,7 @@ class SFFInitializer(BessControlPlane):
         sibm = self.sibms.getSibm(serverID)
         serverControlIP = server.getControlNICIP()
         bessServerUrl = serverControlIP + ":10514"
-        logging.info(
+        self.logger.info(
             "sffInitializer - bessServerUrl:{0}".format(bessServerUrl))
         if not self.isBESSAlive(bessServerUrl):
             raise ValueError ("bess is not alive")
@@ -191,7 +191,7 @@ class SFFInitializer(BessControlPlane):
             # add rule to ArpResponder
             serverDatapathNICIP = server.getDatapathNICIP()
             serverControlNICMAC = server.getDatapathNICMac()
-            logging.debug("ArpResponder IP:{}, MAC:{}".format(
+            self.logger.debug("ArpResponder IP:{}, MAC:{}".format(
                 serverDatapathNICIP,serverControlNICMAC))
             argument = Any()
             arg = module_msg_pb2.ArpResponderArg(ip=serverDatapathNICIP,

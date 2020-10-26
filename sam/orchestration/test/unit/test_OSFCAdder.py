@@ -13,7 +13,7 @@ from sam.measurement.dcnInfoBaseMaintainer import *
 logging.basicConfig(level=logging.INFO)
 
 
-class TestOrchestratorADDSFCIClass(TestBase):
+class TestOSFCAdderClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_collectDCNInfo(self):
         # setup
@@ -60,7 +60,10 @@ class TestOrchestratorADDSFCIClass(TestBase):
         zoneName = sfc.attributes['zone']
         self.request = self.genAddSFCIRequest(sfc)
 
-        self.oA = OSFCAdder(DCNInfoBaseMaintainer())
+        logConfigur = LoggerConfigurator(__name__, level='info')
+        self.logger = logConfigur.getLogger()
+
+        self.oA = OSFCAdder(DCNInfoBaseMaintainer(), self.logger)
         self.oA._dib.updateServersInAllZone(self.servers)
         self.oA._dib.updateSwitchesInAllZone(self.switches)
         self.oA._dib.updateLinksInAllZone(self.links)
@@ -71,7 +74,7 @@ class TestOrchestratorADDSFCIClass(TestBase):
         # teardown
 
     # @pytest.mark.skip(reason='Temporarly')
-    def test_collectTopology(self, setup_collectDCNInfo):
+    def test_genAddSFCICmd(self, setup_collectDCNInfo):
         # exercise
         cmd = self.oA.genAddSFCICmd(self.request)
         sfci = cmd.attributes['sfci']

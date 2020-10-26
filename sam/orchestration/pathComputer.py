@@ -10,15 +10,15 @@ from sam.base.server import *
 from sam.base.switch import *
 from sam.base.link import *
 from sam.base.socketConverter import *
-from sam.orchestration.orchestrator import LANIPPrefix
 
 # TODO: bidirection computation
 
 
 class PathComputer(object):
-    def __init__(self, dib, request, sfci):
+    def __init__(self, dib, request, sfci, logger):
         self._dib = dib
         self._sc = SocketConverter()
+        self.logger = logger
 
         self.request = request
         self.sfc = request.attributes['sfc']
@@ -35,19 +35,19 @@ class PathComputer(object):
                 self.egress.getServerID(), self.sfcLength)
 
         self._genMultiLayerGraph()
-        logging.debug(
+        self.logger.debug(
             "multiLayerGraph edges:{0}".format(self.multiLayerGraph.edges))
-        logging.debug(
+        self.logger.debug(
             "multiLayerGraph nodes:{0}".format(self.multiLayerGraph.nodes))
 
         path = nx.dijkstra_path(self.multiLayerGraph,
             self.ingressIDInMLG, self.egressIDInMLG)
-        logging.debug("path:{0}".format(path))
+        self.logger.debug("path:{0}".format(path))
 
         multiStagePath = self._transPath2MultiStagePath(path)
         self.primaryFP = multiStagePath
         self.sfci.ForwardingPathSet.primaryForwardingPath[1] = self.primaryFP
-        logging.info("PathComputer, primayFP:{0}".format(self.primaryFP))
+        self.logger.info("PathComputer, primayFP:{0}".format(self.primaryFP))
 
     def _genMultiLayerGraph(self):
         gList = []
@@ -80,7 +80,7 @@ class PathComputer(object):
         else:
             self._addEdge4Switch2Egresser(G)
 
-        logging.debug("Graph nodes:{0}".format(G.nodes))
+        self.logger.debug("Graph nodes:{0}".format(G.nodes))
 
         return G
 
@@ -150,7 +150,7 @@ class PathComputer(object):
 
     def _transPath2MultiStagePath(self, path):
         multiStagePath = [ [] for i in range(self.sfcLength + 1) ]
-        logging.debug(
+        self.logger.debug(
             "_transPath2MultiStagePath, multiStagePath:{0}".format(
                 multiStagePath))
         for index in range(len(path)):
@@ -178,7 +178,7 @@ class PathComputer(object):
                 nextNodeID = path[index + 1]
                 mLG = copy.deepcopy(self.multiLayerGraph)
                 self._deleteNodeInMLG(mLG, nextNodeID)
-                logging.debug(
+                self.logger.debug(
                     "pruned node {0}, mLG.edges:{1}\n".format(
                         nextNodeID, mLG.edges)
                     )
@@ -200,16 +200,16 @@ class PathComputer(object):
             pathID = pathID + 1
         self.sfci.ForwardingPathSet.backupForwardingPath[1]\
             = backupForwardingPath
-        logging.info("PathComputer, backupFP:{0}".format(backupForwardingPath))
+        self.logger.info("PathComputer, backupFP:{0}".format(backupForwardingPath))
 
     def _deleteNodeInMLG(self, mLG, nextNodeID):
         for stageIndex in range(self.sfcLength + 1):
             nextNodeIDInMLG = self._genNodeID(nextNodeID, stageIndex)
-            logging.debug("try to prune node:{0}\n".format(nextNodeIDInMLG))
+            self.logger.debug("try to prune node:{0}\n".format(nextNodeIDInMLG))
             try:
                 mLG.remove_node(nextNodeIDInMLG)
             except:
-                logging.error("Unknown node in multi-layer graph")
+                self.logger.error("Unknown node in multi-layer graph")
 
     def _genMultiStagePath(self, mLG, startNodeInMLG):
         self.egress = self.sfc.directions[0]["egress"]
@@ -218,7 +218,7 @@ class PathComputer(object):
 
         path = nx.dijkstra_path(mLG,
             startNodeInMLG, self.egressIDInMLG)
-        logging.debug("path:{0}".format(path))
+        self.logger.debug("path:{0}".format(path))
 
         multiStagePath = self._transPath2MultiStagePath(path)
         return multiStagePath

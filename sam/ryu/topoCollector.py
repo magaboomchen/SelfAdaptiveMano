@@ -133,7 +133,7 @@ class TopoCollector(BaseApp):
         switchList = []
         for switch in self.switches.values():
             # self._ls(switch.address)
-            logging.info(
+            self.logger.info(
                 "switch:dpid:{0},address:{1}".format(
                     switch.dp.id, switch.dp.address
                 )
@@ -148,7 +148,7 @@ class TopoCollector(BaseApp):
         linkList = []
         for link in self.links.values():
             # self._ls(link)
-            logging.info(
+            self.logger.info(
                 "link:({0},{1})".format(
                     link.src.dpid,link.dst.dpid
                     )
@@ -160,7 +160,7 @@ class TopoCollector(BaseApp):
     #     serverList = []
     #     for host in self.hosts.values():
     #         # self._ls(host)
-    #         logging.info(
+    #         self.logger.info(
     #             "ipv4:{0},ipv6:{1},mac:{2},port:{3}".format(
     #                 host.ipv4, host.ipv6, host.mac, host.port
     #             )

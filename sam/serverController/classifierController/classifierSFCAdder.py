@@ -17,9 +17,10 @@ from sam.serverController.bessControlPlane import *
 from sam.base.socketConverter import SocketConverter
 
 class ClassifierSFCAdder(BessControlPlane):
-    def __init__(self,cibms):
+    def __init__(self,cibms,logger):
         super(ClassifierSFCAdder,self).__init__()
         self.cibms = cibms
+        self.logger = logger
 
     def addSFC(self,sfcUUID,direction):
         classifier = direction['ingress']
@@ -35,7 +36,7 @@ class ClassifierSFCAdder(BessControlPlane):
         cibm = self.cibms.getCibm(serverID)
 
         bessServerUrl = classifier.getControlNICIP() + ":10514"
-        logging.info(bessServerUrl)
+        self.logger.info(bessServerUrl)
         with grpc.insecure_channel(bessServerUrl) as channel:
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())
@@ -57,7 +58,7 @@ class ClassifierSFCAdder(BessControlPlane):
 
     def _addRules(self,classifier,sfcUUID,direction):
         bessServerUrl = classifier.getControlNICIP() + ":10514"
-        logging.info(bessServerUrl)
+        self.logger.info(bessServerUrl)
         match = direction['match']
         serverID = classifier.getServerID()
         with grpc.insecure_channel(bessServerUrl) as channel:
@@ -89,7 +90,7 @@ class ClassifierSFCAdder(BessControlPlane):
         cibm = self.cibms.getCibm(serverID)
 
         bessServerUrl = classifier.getControlNICIP() + ":10514"
-        logging.info(bessServerUrl)
+        self.logger.info(bessServerUrl)
         with grpc.insecure_channel(bessServerUrl) as channel:
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())

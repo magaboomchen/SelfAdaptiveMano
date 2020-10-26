@@ -11,6 +11,8 @@ SFCID_LENGTH = 12  # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 
 APP_TYPE_NORTHSOUTH_WEBSITE = "APP_TYPE_NORTHSOUTH_WEBSITE"
 
+MANUAL_SCALE = 0
+ADAPTIVE_SCALE = 1
 
 class SFCI(object):
     def __init__(self, SFCIID, VNFISequence, sloRealTimeValue=None,
@@ -33,9 +35,10 @@ class SFCI(object):
 class SFC(object):
     def __init__(self, sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
         backupInstanceNumber, applicationType, directions=None,
-        attributes={}, traffic=None, slo=None, sFCIs=[]):
+        attributes={}, traffic=None, slo=None, scalingMode=MANUAL_SCALE, sFCIs=[]):
         self.sfcUUID = sfcUUID
         self.vNFTypeSequence = vNFTypeSequence # [FW, LB]
+        self.scalingMode = scalingMode
         self.maxScalingInstanceNumber = maxScalingInstanceNumber # 2
         self.backupInstanceNumber = backupInstanceNumber # 1
         self.applicationType = applicationType # NORTHSOUTH_WEBSITE

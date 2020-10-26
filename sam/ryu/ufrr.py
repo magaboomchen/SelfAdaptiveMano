@@ -51,7 +51,7 @@ class UFRR(FRR):
         except Exception as ex:
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
-            logging.error("SFF Controller occure error: {0}".format(message))
+            self.logger.error("SFF Controller occure error: {0}".format(message))
             self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
         finally:
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)

@@ -369,19 +369,7 @@ class TestBase(object):
         del messageAgentTmp
 
     def clearQueue(self):
-        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue MEASURER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue ORCHESTRATOR_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue SFF_CONTROLLER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue VNF_CONTROLLER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue SERVER_MANAGER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue NETWORK_CONTROLLER_QUEUE")
+        self.sP.runShellCommand("python ../../../toolkit/clearAllSAMQueue.py")
 
     def genSwitchList(self, num, switchType, 
             switchLANNetlist, switchIDList):

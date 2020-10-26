@@ -20,6 +20,10 @@ Yuxuan Zhang needs to give a design of P4 controller according to our requiremen
 
 We need to discuss together and then work it out.
 
+# BUG LIST
+
+messageAgent send message failed when idle time is too long.
+
 # TODO LIST
 
 test orchestrator
@@ -38,6 +42,4 @@ Add getSFCIStatus in sffController; measurer: add self.sendGetSFCIStateCmd()
 
 Add sfci deleter in ufrr (optional)
 
-# BUG LIST
-
-messageAgent send message failed when idle time is too long.
+# FEATURE REQUEST LIST

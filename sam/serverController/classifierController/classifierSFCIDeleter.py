@@ -17,10 +17,11 @@ from sam.serverController.bessInfoBaseMaintainer import *
 from sam.serverController.classifierController.classifierSFCDeleter import *
 
 class ClassifierSFCIDeleter(BessControlPlane):
-    def __init__(self, cibms):
+    def __init__(self, cibms, logger):
         super(ClassifierSFCIDeleter,self).__init__()
         self.cibms = cibms
-        self.clsfSFCDeleter = ClassifierSFCDeleter(self.cibms)
+        self.logger = logger
+        self.clsfSFCDeleter = ClassifierSFCDeleter(self.cibms, logger)
 
     def delSFCIHandler(self,cmd):
         sfc = cmd.attributes['sfc']
@@ -50,7 +51,7 @@ class ClassifierSFCIDeleter(BessControlPlane):
         SFCIID = sfci.SFCIID
 
         bessServerUrl = classifier.getControlNICIP() + ":10514"
-        logging.info(bessServerUrl)
+        self.logger.info(bessServerUrl)
         with grpc.insecure_channel(bessServerUrl) as channel:
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())
@@ -131,7 +132,7 @@ class ClassifierSFCIDeleter(BessControlPlane):
         SFCIID = sfci.SFCIID
 
         bessServerUrl = classifier.getControlNICIP() + ":10514"
-        logging.info(bessServerUrl)
+        self.logger.info(bessServerUrl)
         with grpc.insecure_channel(bessServerUrl) as channel:
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())

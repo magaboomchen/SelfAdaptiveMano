@@ -2,16 +2,16 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
 
 from sam.base.messageAgent import *
 from sam.measurement.dcnInfoBaseMaintainer import *
 
 
 class ODCNInfoRetriever(object):
-    def __init__(self, dib):
+    def __init__(self, dib, logger):
         self._dib = dib
-        self._messageAgent = MessageAgent()
+        self.logger = logger
+        self._messageAgent = MessageAgent(logger)
         self._messageAgent.startRecvMsg(DCN_INFO_RECIEVER_QUEUE)
 
     def getDCNInfo(self):
@@ -37,7 +37,7 @@ class ODCNInfoRetriever(object):
                     self._replyHandler(body)
                     return 
                 else:
-                    logging.error("Unknown massage body:{0}".format(body))
+                    self.logger.error("Unknown massage body:{0}".format(body))
 
     def _replyHandler(self, reply):
         for key, values in reply.items():
@@ -50,7 +50,7 @@ class ODCNInfoRetriever(object):
             elif key == 'vnfis':
                 self._dib.updateVnfisInAllZone(values)
             else:
-                logging.error("Unknown reply attributes:{0}".format(
+                self.logger.error("Unknown reply attributes:{0}".format(
                     key
                 ))
 

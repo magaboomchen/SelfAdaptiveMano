@@ -5,7 +5,6 @@ import base64
 import time
 import uuid
 import subprocess
-import logging
 import struct
 import copy
 
@@ -21,16 +20,21 @@ from sam.measurement.dcnInfoBaseMaintainer import *
 
 # TODO: database agent, multiple zones
 
+
 class Measurer(object):
     def __init__(self):
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'measurer.log', level='info')
+        self.logger = logConfigur.getLogger()
+
         self._dib = DCNInfoBaseMaintainer()
 
-        self._messageAgent = MessageAgent()
+        self._messageAgent = MessageAgent(self.logger)
         self.queueName = self._messageAgent.genQueueName(MEASURER_QUEUE)
         self._messageAgent.startRecvMsg(self.queueName)
 
         self._threadSet = {}
-        logging.info("self.queueName:{0}".format(self.queueName))
+        self.logger.info("self.queueName:{0}".format(self.queueName))
 
     def startMeasurer(self):
         self._collectTopology()
@@ -39,18 +43,19 @@ class Measurer(object):
     def _collectTopology(self):
         # start a new thread to send command
         threadID = len(self._threadSet)
-        thread = MeasurerCommandSender(threadID, self._messageAgent)
+        thread = MeasurerCommandSender(threadID, self._messageAgent,
+            self.logger)
         self._threadSet[threadID] = thread
         thread.setDaemon(True)
         thread.start()
 
     def __del__(self):
-        logging.info("Delete Measurer.")
-        logging.debug(self._threadSet)
+        self.logger.info("Delete Measurer.")
+        self.logger.debug(self._threadSet)
         for thread in self._threadSet.itervalues():
-            logging.debug("check thread is alive?")
+            self.logger.debug("check thread is alive?")
             if thread.isAlive():
-                logging.info("Kill thread: %d" %thread.ident)
+                self.logger.info("Kill thread: %d" %thread.ident)
                 self._async_raise(thread.ident, KeyboardInterrupt)
                 thread.join()
 
@@ -83,11 +88,11 @@ class Measurer(object):
                     elif self._messageAgent.isCommandReply(body):
                         self._commandReplyHandler(body)
                     else:
-                        logging.error("Unknown massage body")
+                        self.logger.error("Unknown massage body")
                 except Exception as ex:
                     template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                     message = template.format(type(ex).__name__, ex.args)
-                    logging.error("measurer occure error: {0}".format(message))
+                    self.logger.error("measurer occure error: {0}".format(message))
 
     def _requestHandler(self, request):
         if request.requestType == REQUEST_TYPE_GET_DCN_INFO:
@@ -97,7 +102,7 @@ class Measurer(object):
             queueName = DCN_INFO_RECIEVER_QUEUE
             self.sendReply(rply, queueName)
         else:
-            logging.warning("Unknown request:{0}".format(request.requestType))
+            self.logger.warning("Unknown request:{0}".format(request.requestType))
 
     def getTopoAttributes(self):
         servers = self._dib.getServersInAllZone()
@@ -112,8 +117,8 @@ class Measurer(object):
         self._messageAgent.sendMsg(queueName, msg)
 
     def _commandReplyHandler(self, cmdRply):
-        logging.info("Get command reply")
-        # logging.info(cmdRply)
+        self.logger.info("Get command reply")
+        self.logger.debug(cmdRply)
         zoneName = cmdRply.attributes['zone']
         for key,value in cmdRply.attributes.items():
             if key == 'switches':
@@ -127,17 +132,18 @@ class Measurer(object):
             elif key == 'zone':
                 pass
             else:
-                logging.warning("Unknown attributes:{0}".format(key))
-        logging.debug("dib:{0}".format(self._dib))
+                self.logger.warning("Unknown attributes:{0}".format(key))
+        self.logger.debug("dib:{0}".format(self._dib))
 
 class MeasurerCommandSender(threading.Thread):
-    def __init__(self, threadID, messageAgent):
+    def __init__(self, threadID, messageAgent, logger):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self._messageAgent = messageAgent
+        self.logger = logger
 
     def run(self):
-        logging.debug("thread MeasurerCommandSender.run().")
+        self.logger.debug("thread MeasurerCommandSender.run().")
         while True:
             time.sleep(5)
             self.sendGetTopoCmd()
@@ -165,7 +171,6 @@ class MeasurerCommandSender(threading.Thread):
 
 
 if __name__=="__main__":
-    logging.basicConfig(level=logging.DEBUG)
     m = Measurer()
     m.startMeasurer()
 
