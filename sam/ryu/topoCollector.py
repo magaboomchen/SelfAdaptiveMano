@@ -40,7 +40,7 @@ class TopoCollector(BaseApp):
         self.switches = {}
         self.links = {}
         self.hosts = {}
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.WARNING)
         self.logger.warning("Please use'ryu-manager --observe-links topoCollector.py'")
 
     def _printSwitches(self):
@@ -139,7 +139,7 @@ class TopoCollector(BaseApp):
                 )
             )
             dpid = switch.dp.id
-            sw = Switch(dpid, SWITCH_TYPE_TOR,
+            sw = Switch(dpid, self._switchConfs[dpid].switchType,
                 self._switchConfs[dpid].lANNet)
             switchList.append(sw)
         return switchList

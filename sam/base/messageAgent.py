@@ -96,7 +96,7 @@ class MessageAgent(object):
         self.readRabbitMQConf()
         self.msgQueues = {}
         self._threadSet = {}
-        self._publisherConnection = self._connectRabbitMQServer()
+        self._publisherConnection = None
         self._consumerConnection = self._connectRabbitMQServer()
 
     def readRabbitMQConf(self):
@@ -140,26 +140,27 @@ class MessageAgent(object):
 
     def sendMsg(self, dstQueueName, message):
         self.logger.debug("MessageAgent ready to send msg")
-        if not self._publisherConnection.is_open:
-            self.logger.warning(
-                "MessageAgent _publisherConnection is_closed," \
-                " re-establish the connection")
-            self._publisherConnection = self._connectRabbitMQServer()
-        try:
-            channel = self._publisherConnection.channel()
-            channel.queue_declare(queue=dstQueueName,durable=True)
-            channel.basic_publish(exchange='', routing_key=dstQueueName,
-                body=self._encodeMessage(message),
-                properties=pika.BasicProperties(delivery_mode = 2)
-                # make message persistent
-                )
-            self.logger.debug(" [x] Sent %r" % message)
-            channel.close()
-        except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            self.logger.error(
-                "MessageAgent sendMsg failed!: {0}".format(message))
+        while True:
+            try:
+                self._publisherConnection = self._connectRabbitMQServer()
+                channel = self._publisherConnection.channel()
+                channel.queue_declare(queue=dstQueueName,durable=True)
+                channel.basic_publish(exchange='', routing_key=dstQueueName,
+                    body=self._encodeMessage(message),
+                    properties=pika.BasicProperties(delivery_mode = 2)
+                    # make message persistent
+                    )
+                self.logger.debug(" [x] Sent %r" % message)
+                channel.close()
+            except Exception as ex:
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                message = template.format(type(ex).__name__, ex.args)
+                self.logger.error(
+                    "MessageAgent sendMsg failed!: {0}".format(message))
+            finally:
+                if self._publisherConnection.is_open:
+                    self._publisherConnection.close()
+                break
 
     def startRecvMsg(self,srcQueueName):
         self.logger.debug("MessageAgent.startRecvMsg().")
@@ -244,8 +245,11 @@ class MessageAgent(object):
             raise SystemError("PyThreadState_SetAsyncExc failed")
 
     def _disConnectRabbiMQServer(self):
-        self._publisherConnection.close()
-        self._consumerConnection.close()
+        if self._publisherConnection != None:
+            if self._publisherConnection.is_open:
+                self._publisherConnection.close()
+        if self._consumerConnection.is_open:
+            self._consumerConnection.close()
 
 
 class QueueReciever(threading.Thread):

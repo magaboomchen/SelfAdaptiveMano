@@ -63,7 +63,7 @@ class CommandMaintainer(object):
 
     def getCmd(self, cmdID):
         if cmdID in self._commandsInfo:
-            return self._commandsInfo[cmdID]
+            return self._commandsInfo[cmdID]['cmd']
         else:
             return None
 
@@ -102,12 +102,15 @@ class CommandMaintainer(object):
     
     def getParentCmdID(self,cmdID):
         return self._commandsInfo[cmdID]['parentCmdID']
-    
-    def getCmd(self, cmdID):
-        return self._commandsInfo[cmdID]['cmd']
 
     def addCmdRply(self,cmdID,cmdRply):
         self._commandsInfo[cmdID]['cmdReply'] = cmdRply
+
+    def isChildCmdHasCmdRply(self,cmdID):
+        if self._commandsInfo[cmdID]['cmdReply'] != None:
+            return True
+        else:
+            return False
 
     def getChildCMdRplyList(self,parentCmdID):
         childCmdRplyList = []
@@ -118,6 +121,7 @@ class CommandMaintainer(object):
         return childCmdRplyList
 
     def isParentCmdSuccessful(self,cmdID):
+        # if all child cmd is successful, then send cmdRply
         cmdInfo = self._commandsInfo[cmdID]
         for childCmdID in cmdInfo['childCmdID'].itervalues():
             if self.getCmdState(childCmdID) != CMD_STATE_SUCCESSFUL:
@@ -125,11 +129,31 @@ class CommandMaintainer(object):
         return True
 
     def isParentCmdFailed(self,cmdID):
+        # if at least one child cmd is failed, then parent cmd failed
         cmdInfo = self._commandsInfo[cmdID]
         for childCmdID in cmdInfo['childCmdID'].itervalues():
             if self.getCmdState(childCmdID) == CMD_STATE_FAIL:
                 return True
         return False
+
+    def isOnlyOneChildCmdFailed(self,cmdID):
+        cmdInfo = self._commandsInfo[cmdID]
+        count = 0
+        for childCmdID in cmdInfo['childCmdID'].itervalues():
+            if self.getCmdState(childCmdID) == CMD_STATE_FAIL:
+                count = count + 1
+        if count == 1:
+            return True
+        else:
+            return False
+
+    def isAllChildCmdDetermined(self,cmdID):
+        cmdInfo = self._commandsInfo[cmdID]
+        for childCmdID in cmdInfo['childCmdID'].itervalues():
+            if self.getCmdState(childCmdID) == CMD_STATE_WAITING or \
+                self.getCmdState(childCmdID) == CMD_STATE_PROCESSING:
+                return False
+        return True
 
     def isParentCmdWaiting(self,cmdID):
         cmdInfo = self._commandsInfo[cmdID]
@@ -138,3 +162,11 @@ class CommandMaintainer(object):
                 return True
         return False
 
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
+
+    def __repr__(self):
+        return str(self)

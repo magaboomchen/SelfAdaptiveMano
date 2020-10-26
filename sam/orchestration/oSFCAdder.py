@@ -22,6 +22,7 @@ class OSFCAdder(object):
         self._dib = dib
         self.logger = logger
         self._sc = SocketConverter()
+        self.sfciCounter = 0
 
     def genAddSFCICmd(self, request):
         self.request = request
@@ -29,7 +30,7 @@ class OSFCAdder(object):
 
         self.sfc = self.request.attributes['sfc']
         self.zoneName = self.sfc.attributes["zone"]
-        self.sfci = SFCI(uuid.uuid1(), [],
+        self.sfci = SFCI(self._genSFCIID(), [],
             ForwardingPathSet=ForwardingPathSet({},"UFRR",{}))
 
         self._mapIngressEgress()
@@ -51,6 +52,10 @@ class OSFCAdder(object):
         if 'sfc' not in self.request.attributes:
             raise ValueError("Request missing sfc")
 
+    def _genSFCIID(self):
+        self.sfciCounter = self.sfciCounter + 1
+        return self.sfciCounter
+
     def _mapIngressEgress(self):
         for direction in self.sfc.directions:
             source = direction['source']
@@ -69,8 +74,9 @@ class OSFCAdder(object):
             else:
                 raise ValueError("Unsupport source/destination type")
 
-            for server in self._dib.getServersByZone(self.zoneName):
-                ip = server.getControlNICIP()
+            for serverInfo in self._dib.getServersByZone(self.zoneName).values():
+                server = serverInfo['server']
+                ip = server.getDatapathNICIP()
                 serverType = server.getServerType()
                 if self._sc.isInSameLAN(nodeIP, ip, LANIPPrefix) and\
                     serverType == SERVER_TYPE_CLASSIFIER:
@@ -81,10 +87,11 @@ class OSFCAdder(object):
     def _getDCNGateway(self):
         dcnGateway = None
         for switch in self._dib.getSwitchesByZone(self.zoneName):
+            # self.logger.debug(switch)
             if switch.switchType == SWITCH_TYPE_DCNGATEWAY:
-                self.logger.debug(
-                    "switch.switchType:{0}".format(switch.switchType)
-                    )
+                # self.logger.debug(
+                #     "switch.switchType:{0}".format(switch.switchType)
+                #     )
                 dcnGateway = switch
                 break
         else:
@@ -92,10 +99,18 @@ class OSFCAdder(object):
         return dcnGateway
 
     def _getClassifierBySwitch(self, switch):
-        for server in self._dib.getServersByZone(self.zoneName):
-            ip = server.getControlNICIP()
+        self.logger.debug(self._dib.getServersByZone(self.zoneName))
+        for serverInfo in self._dib.getServersByZone(self.zoneName).values():
+            server = serverInfo['server']
+            self.logger.debug(server)
+            ip = server.getDatapathNICIP()
+            self.logger.debug(ip)
             serverType = server.getServerType()
-            if self._sc.isLANIP(ip, switch.LanNet) and\
+            if serverType == SERVER_TYPE_CLASSIFIER:
+                self.logger.debug(
+                    "server type is classifier " \
+                    "ip:{0}, switchLanNet:{1}".format(ip, switch.LanNet))
+            if self._sc.isLANIP(ip, switch.LanNet) and \
                 serverType == SERVER_TYPE_CLASSIFIER:
                 return server
         else:
@@ -113,8 +128,8 @@ class OSFCAdder(object):
 
     def _roundRobinSelectServers(self, vnfType, iNum):
         vnfiList = []
-        servers = self._dib.getServersByZone(self.zoneName)
-        for server in servers:
+        for serverInfo in self._dib.getServersByZone(self.zoneName).values():
+            server = serverInfo['server']
             if server.getServerType() == 'nfvi':
                 vnfi = VNFI(vnfType, vnfType, uuid.uuid1(), None, server)
                 vnfiList.append(vnfi)

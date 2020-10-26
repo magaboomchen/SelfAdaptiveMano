@@ -122,6 +122,7 @@ class NorthSouthRouting(BaseApp):
         self.logger.debug("_updateDefaultDCNGateway")
         self._dcnGateways = []
         for dpid in self._cacheSwitches.iterkeys():
+            self.logger.debug("dpid: {0}".format(dpid))
             if self._isDCNGateway(dpid):
                 self._dcnGateways.append(dpid)
         if not self._defaultDCNGateway in self._dcnGateways:

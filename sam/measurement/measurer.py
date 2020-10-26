@@ -145,11 +145,11 @@ class MeasurerCommandSender(threading.Thread):
     def run(self):
         self.logger.debug("thread MeasurerCommandSender.run().")
         while True:
-            time.sleep(5)
             self.sendGetTopoCmd()
             self.sendGetServersCmd()
             # TODO
             # self.sendGetSFCIStateCmd()
+            time.sleep(5)
 
     def sendGetTopoCmd(self):
         getTopoCmd = Command(CMD_TYPE_GET_TOPOLOGY, uuid.uuid1(),

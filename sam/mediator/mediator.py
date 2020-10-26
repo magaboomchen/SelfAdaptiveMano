@@ -20,7 +20,7 @@ from sam.base.command import *
 class Mediator(object):
     def __init__(self, mode):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'mediator.log', level='info')
+            'mediator.log', level='debug')
         self.logger = logConfigur.getLogger()
         self.logger.info("Init mediator.")
         self._cm = CommandMaintainer()
@@ -172,29 +172,53 @@ class Mediator(object):
         # update cmd state
         cmdID = cmdRply.cmdID
         state = cmdRply.cmdState
+        if self._cm.isChildCmdHasCmdRply(cmdID) == True:
+            self.logger.warning("Get duplicated cmd reply")
+            return 
         self._cm.changeCmdState(cmdID,state)
         self._cm.addCmdRply(cmdID,cmdRply)
+        # debug
+        cmd = self._cm.getCmd(cmdID)
+        self.logger.debug("cmdRply attributes: {0}".format(
+            cmdRply.attributes.keys()))
+        if  cmdRply.attributes.has_key('source'):
+            self.logger.debug(
+                "get cmd reply, cmdID:{0}, cmdType:{1}, source:{2}.".format(
+                    cmdID, cmd.cmdType, cmdRply.attributes['source']))
+        for keys, value in self._cm._commandsInfo.items():
+            self.logger.debug("self._cm: {0},{1}".format(keys, value['state']))
         # execute state transfer action
         self._exeCmdStateAction(cmdID)
 
     def _exeCmdStateAction(self,cmdID):
         parentCmdID = self._cm.getParentCmdID(cmdID)
-        # if all child cmd is successful, then send cmdRply
         if self._cm.isParentCmdSuccessful(parentCmdID):
             self._cm.changeCmdState(parentCmdID, CMD_STATE_SUCCESSFUL)
             cmdRply = self._genParentCmdRply(parentCmdID,
                 CMD_STATE_SUCCESSFUL)
             self._sendParentCmdRply(cmdRply)
-            self._cm.delCmdwithChildCmd(parentCmdID)
         elif self._cm.isParentCmdFailed(parentCmdID):
-            self._cm.changeCmdState(parentCmdID, CMD_STATE_FAIL)
-            cmdRply = self._genParentCmdRply(parentCmdID,
-                CMD_STATE_FAIL)
-            self._sendParentCmdRply(cmdRply)
+            # if mediator haven't send cmd rply, send cmd rply
+            if self._cm.isOnlyOneChildCmdFailed(parentCmdID) and \
+                self._cm.getCmdState(cmdID) == CMD_STATE_FAIL:
+                # debug
+                cmdInfo = self._cm._commandsInfo[parentCmdID]
+                for childCmdID in cmdInfo['childCmdID'].itervalues():
+                    if self._cm.getCmdState(childCmdID) == CMD_STATE_FAIL:
+                        self.logger.debug("childCmdID: {0}".format(childCmdID))
+                # workflow
+                self._cm.changeCmdState(parentCmdID, CMD_STATE_FAIL)
+                cmdRply = self._genParentCmdRply(parentCmdID,
+                    CMD_STATE_FAIL)
+                self._sendParentCmdRply(cmdRply)
+                self.logger.debug("send cmd rply")
         elif self._cm.isParentCmdWaiting(parentCmdID):
             self._waitingParentCmdHandler(parentCmdID)
         else:
             pass
+
+        if self._cm.isAllChildCmdDetermined(parentCmdID):
+            self._cm.delCmdwithChildCmd(parentCmdID)
 
     def _genParentCmdRply(self,parentCmdID,state):
         cCmdRplyList = self._cm.getChildCMdRplyList(parentCmdID)

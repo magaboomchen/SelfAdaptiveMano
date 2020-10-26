@@ -22,7 +22,7 @@ class SFFControllerCommandAgent(object):
     def __init__(self):
         self._commandsInfo = {}
         logConfigur = LoggerConfigurator(__name__, './log',
-            'sffController.log', level='info')
+            'sffController.log', level='debug')
         self.logger = logConfigur.getLogger()
 
         self.sibms = SIBMS(self.logger)
@@ -52,18 +52,21 @@ class SFFControllerCommandAgent(object):
                     else:
                         self.logger.error("Unkonwn sff command type.")
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL
-                # except ValueError as err:
-                #     self.logger.error('sff controller command processing error: ' +
-                #         repr(err))
-                #     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
-                # except Exception as ex:
-                #     template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                #     message = template.format(type(ex).__name__, ex.args)
-                #     self.logger.error("SFF Controller occure error: {0}".format(message))
-                #     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
+                except ValueError as err:
+                    self.logger.error('sff controller command processing error: ' +
+                        repr(err))
+                    self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
+                except Exception as ex:
+                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                    message = template.format(type(ex).__name__, ex.args)
+                    self.logger.error("SFF Controller occure error: {0}".format(message))
+                    self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 finally:
-                    rplyMsg = SAMMessage(MSG_TYPE_SSF_CONTROLLER_CMD_REPLY, 
-                        CommandReply(cmd.cmdID,self._commandsInfo[cmd.cmdID]["state"]))
+                    cmdRply = CommandReply(
+                        cmd.cmdID,self._commandsInfo[cmd.cmdID]["state"])
+                    cmdRply.attributes["source"] = {"sffController"}
+                    rplyMsg = SAMMessage(MSG_TYPE_SSF_CONTROLLER_CMD_REPLY,
+                        cmdRply)
                     self._messageAgent.sendMsg(MEDIATOR_QUEUE,rplyMsg)
             elif msg.getMessageType() == None:
                 pass

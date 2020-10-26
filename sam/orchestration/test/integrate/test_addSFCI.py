@@ -2,9 +2,11 @@
 # -*- coding: UTF-8 -*-
 
 import os
+import time
 import logging
 
 from sam.test.testBase import *
+from sam.base.request import *
 from sam.orchestration import orchestrator
 from sam.mediator import mediator
 from sam.measurement import measurer
@@ -22,18 +24,20 @@ class TestOrchestratorADDSFCIClass(TestBase):
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
+        self.cleanLog()
+        self.killAllModule()
 
-        self.runOrchestrator()
-        self.runMeasurer()
+        # self.runOrchestrator()
+        self.runServerManager()
         self.runMediator()
+        self.runMeasurer()
         self.runSFFController()
         self.runClassifierController()
         self.runVNFController()
-        self.runServerManager()
 
         yield
         # teardown
-        self.killAllModule()
+        # self.killAllModule()
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_REQUEST_TYPE_ADD_SFCI(self, setup_startOrchestrator):
@@ -45,7 +49,9 @@ class TestOrchestratorADDSFCIClass(TestBase):
         self.sendRequest(ORCHESTRATOR_QUEUE, self.request)
 
         # verify
-        assert 1 == 1
+        reply = self.recvReply(REQUEST_PROCESSOR_QUEUE)
+        assert reply.requestID == self.request.requestID
+        assert reply.requestState == REQUEST_STATE_SUCCESSFUL
 
     def runOrchestrator(self):
         filePath = orchestrator.__file__

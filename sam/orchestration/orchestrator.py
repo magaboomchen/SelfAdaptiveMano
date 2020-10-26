@@ -1,7 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import time
+
 from sam.base.messageAgent import *
+from sam.base.request import Request, Reply
 from sam.measurement.dcnInfoBaseMaintainer import *
 from sam.orchestration.oDcnInfoRetriever import *
 from sam.orchestration.oSFCAdder import *
@@ -12,8 +15,10 @@ LANIPPrefix = 27
 
 class Orchestrator(object):
     def __init__(self):
+        time.sleep(6)   # wait for other basic module boot
+
         logConfigur = LoggerConfigurator(__name__, './log',
-            'orchestrator.log', level='info')
+            'orchestrator.log', level='debug')
         self.logger = logConfigur.getLogger()
 
         self._dib = DCNInfoBaseMaintainer()
@@ -72,6 +77,10 @@ class Orchestrator(object):
         #     self.logger.error(
         #         "Orchestrator request handler error: {0}".format(message)
         #         )
+        #     rplyMsg = SAMMessage(MSG_TYPE_REPLY, 
+        #             Reply(request.requestID, REQUEST_STATE_FAILED))
+        #     self._messageAgent.sendMsg(request.requestSrcQueue, rplyMsg)
+        #     # TODO: update request
         finally:
             pass
 
@@ -94,14 +103,15 @@ class Orchestrator(object):
         cmdType = self._cm.getCmdType(cmdID)
         self.logger.info("Command:{0}, cmdType:{1}, state:{2}".format(
             cmdID, cmdType, state))
-        self._cm.delCmdwithChildCmd(cmdID)
 
         # find the request by sfcUUID in cmd
         cmd = self._cm.getCmd(cmdID)
-        request = self._getRequestFromDB(cmd.attributes['sfcUUID'])
+        request = self._getRequestFromDB(cmd.attributes['sfc'].sfcUUID)
 
         # update request state
         self._updateRequest2DB(request, state)
+
+        self._cm.delCmdwithChildCmd(cmdID)
 
     def _addRequest2DB(self, request):
         # TODO
@@ -121,4 +131,3 @@ class Orchestrator(object):
 if __name__=="__main__":
     ot = Orchestrator()
     ot.startOrchestrator()
-

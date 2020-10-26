@@ -40,7 +40,8 @@ class ODCNInfoRetriever(object):
                     self.logger.error("Unknown massage body:{0}".format(body))
 
     def _replyHandler(self, reply):
-        for key, values in reply.items():
+        self.logger.debug(reply)
+        for key, values in reply.attributes.items():
             if key == 'servers':
                 self._dib.updateServersInAllZone(values)
             elif key == 'switches':

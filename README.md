@@ -22,11 +22,17 @@ We need to discuss together and then work it out.
 
 # BUG LIST
 
-messageAgent send message failed when idle time is too long.
+messageAgent send message failed when idle time is too long. (debugged)
+
+test_OSFCAdder.py: server's data structure in setup is wrong! This unit test can't pass.
+
+orchestrator
 
 # TODO LIST
 
 test orchestrator
+
+Modify emulation physical topology: keep it real, portable to TurboNet
 
 Modify NetworkController's add SFCI cmd function. (add match filed with inport into IPv4_CLASSIFIER_TABLE); add delete SFC cmd function (delete the match entry in IPv4_CLASSIFIER_TABLE)
 

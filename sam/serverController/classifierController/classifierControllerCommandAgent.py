@@ -23,7 +23,7 @@ from sam.serverController.classifierController.classifierSFCIDeleter import *
 class ClassifierControllerCommandAgent(object):
     def __init__(self):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'classifierController.log', level='info')
+            'classifierController.log', level='warning')
         self.logger = logConfigur.getLogger()
         self.logger.info("Initialize classifier controller command agent.")
         self._commandsInfo = {}

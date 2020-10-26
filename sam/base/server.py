@@ -91,10 +91,16 @@ class Server(object):
 
     def getControlNICIP(self):
         ifName = self._controlIfName
-        return self._ifSet[ifName]["IP"]
+        if type(self._ifSet[ifName]["IP"]) == list:
+            return self._ifSet[ifName]["IP"][0]
+        else:
+            return self._ifSet[ifName]["IP"]
 
     def getDatapathNICIP(self):
-        return self._serverDatapathNICIP
+        if type(self._serverDatapathNICIP) == list:
+            return self._serverDatapathNICIP[0]
+        else:
+            return self._serverDatapathNICIP
 
     def _getHwAddrInDPDK(self):
         command = "echo -ne \'\n\' | sudo $RTE_SDK/build/app/testpmd | grep \"Port 0: \""

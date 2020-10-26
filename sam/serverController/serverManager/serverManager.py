@@ -22,7 +22,7 @@ SERVERID_OFFSET = 10001
 class SeverManager(object):
     def __init__(self):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'serverManager.log', level='info')
+            'serverManager.log', level='debug')
         self.logger = logConfigur.getLogger()
         self.logger.info('Init ServerManager')
         self._messageAgent = MessageAgent(self.logger)
@@ -49,8 +49,8 @@ class SeverManager(object):
     def _storeServerInfo(self,msg):
         server = msg.getbody()
         serverControlNICMac = server.getControlNICMac()
-        self.logger.info("Get head beat from server {0}.".format(
-            serverControlNICMac
+        self.logger.info("Get head beat from server {0}, type: {1}.".format(
+            serverControlNICMac, server.getServerType()
         ))
         threadLock.acquire()
         if serverControlNICMac in self.serverSet.iterkeys():

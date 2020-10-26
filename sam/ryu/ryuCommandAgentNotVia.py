@@ -20,7 +20,7 @@ class RyuCommandAgent(BaseApp):
         self.ufrr = lookup_service_brick("UFRR")
         self.notVia = lookup_service_brick("NotVia")
         self.tC = lookup_service_brick('TopoCollector')
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.WARNING)
 
     def start(self):
         super(RyuCommandAgent, self).start()

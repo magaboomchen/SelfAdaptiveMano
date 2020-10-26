@@ -123,7 +123,7 @@ class PathComputer(object):
         G.add_edge(switchIDInMLG, serverIDInMLG, weight=1)
 
     def _findSwitchByServer(self, server):
-        serverIP = server.getControlNICIP()
+        serverIP = server.getDatapathNICIP()
         switchList = self._dib.getSwitchesByZone(self.zoneName)
         for switch in switchList:
             lanNet = switch.LanNet
