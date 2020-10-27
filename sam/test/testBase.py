@@ -38,6 +38,10 @@ CLASSIFIER_SERVERID = 10001
 
 VNFI1_0_IP = "10.0.17.1"
 VNFI1_1_IP = "10.0.17.128"
+FW_VNFI1_0_IP = "10.0.18.1"
+FW_VNFI1_1_IP = "10.0.18.128"
+LB_VNFI1_0_IP = "10.0.21.1"
+LB_VNFI1_1_IP = "10.0.21.128"
 SFCI1_0_EGRESS_IP = "10.0.16.1"
 SFCI1_1_EGRESS_IP = "10.0.16.128"
 
@@ -123,9 +127,9 @@ class TestBase(object):
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions, {'zone':""})
 
-    def genBiDirectionSFC(self, classifier):
+    def genBiDirectionSFC(self, classifier, vnfTypeSeq=[VNF_TYPE_FORWARD]):
         sfcUUID = uuid.uuid1()
-        vNFTypeSequence = [VNF_TYPE_FORWARD]
+        vNFTypeSequence = vnfTypeSeq
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE

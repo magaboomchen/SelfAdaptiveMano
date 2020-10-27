@@ -11,6 +11,7 @@ from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
 from sam.base.command import *
+from sam.base.acl import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
@@ -30,15 +31,15 @@ SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 logging.basicConfig(level=logging.INFO)
 
 
-class TestVNFSFCIAdderClass(TestBase):
+class TestVNFAddFW(TestBase):
     @pytest.fixture(scope="function")
-    def setup_addSFCI(self):
+    def setup_addFW(self):
         # setup
         self.resetRabbitMQConf(
             "/home/t1/Projects/SelfAdaptiveMano/sam/base/rabbitMQConf.conf",
             "192.168.0.201", "mq", "123456")
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genBiDirectionSFC(classifier)
+        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_FW])
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
         self.sP = ShellProcessor()
@@ -79,10 +80,21 @@ class TestVNFSFCIAdderClass(TestBase):
                 server.setControlNICIP(SFF0_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
-                vnfi = VNFI(VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD, 
-                    VNFIID=uuid.uuid1(), node=server)
+                config = {}
+                config['ACL'] = self.genTestFWRules()
+                vnfi = VNFI(VNF_TYPE_FW, VNFType=VNF_TYPE_FW, 
+                    VNFIID=uuid.uuid1(), config=config, node=server)
                 VNFISequence[index].append(vnfi)
         return VNFISequence
+
+    def genTestFWRules(self):
+        rules = []
+        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
+            srcPort=(1234, 1234), dstPort=(80, 80)))
+        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=WEBSITE_REAL_IP, dstAddr=OUTTER_CLIENT_IP,
+            srcPort=(80, 80), dstPort=(1234, 1234)))
+        rules.append(ACLTuple(ACL_ACTION_DENY))
+        return rules
 
     def runSFFController(self):
         filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/sffController/sffControllerCommandAgent.py"
@@ -131,7 +143,7 @@ class TestVNFSFCIAdderClass(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
 
-    def test_addSFCI(self, setup_addSFCI):
+    def test_addFW(self, setup_addFW):
         # exercise
         logging.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
@@ -150,7 +162,7 @@ class TestVNFSFCIAdderClass(TestBase):
         self._checkEncapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection0Traffic2SFF(self):
-        filePath = "./fixtures/sendDirection0Traffic.py"
+        filePath = "./fixtures/sendFWDirection0Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
@@ -175,7 +187,7 @@ class TestVNFSFCIAdderClass(TestBase):
         self._checkDecapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection1Traffic2SFF(self):
-        filePath = "./fixtures/sendDirection1Traffic.py"
+        filePath = "./fixtures/sendFWDirection1Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
