@@ -64,6 +64,7 @@ logging.basicConfig(level=logging.INFO)
 
 class TestBase(object):
     MAXSFCIID = 0
+    logging.getLogger("pika").setLevel(logging.WARNING)
 
     def assignSFCIID(self):
         TestBase.MAXSFCIID = TestBase.MAXSFCIID + 1
@@ -373,19 +374,10 @@ class TestBase(object):
         del messageAgentTmp
 
     def clearQueue(self):
-        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue MEASURER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue ORCHESTRATOR_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue SFF_CONTROLLER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue VNF_CONTROLLER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue SERVER_MANAGER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue NETWORK_CONTROLLER_QUEUE")
+        self.sP.runShellCommand("python ../../../toolkit/clearAllSAMQueue.py")
+
+    def cleanLog(self):
+        self.sP.runShellCommand("python ../../../toolkit/cleanAllLogFile.py")
 
     def genSwitchList(self, num, switchType, 
             switchLANNetlist, switchIDList):
@@ -408,9 +400,14 @@ class TestBase(object):
         for i in range(num):
             server = Server("ens3",serverDPIPList[i], serverType)
             server.setServerID(serverIDList[i])
-            server.setControlNICIP(serverCIPList[i])
+            server.setControlNICIP([serverCIPList[i]])
+            server.setControlNICMAC(self.genRandomMacAddress())
             servers.append(server)
         return servers
+
+    def genRandomMacAddress(self):
+        return "02:00:00:%02x:%02x:%02x" % (random.randint(0, 255),
+            random.randint(0, 255), random.randint(0, 255))
 
     def genAddSFCIRequest(self, sfc):
         sfc.backupInstanceNumber = 3

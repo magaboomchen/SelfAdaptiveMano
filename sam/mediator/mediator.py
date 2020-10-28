@@ -5,7 +5,6 @@ import base64
 import time
 import uuid
 import subprocess
-import logging
 import struct
 import copy
 
@@ -20,10 +19,13 @@ from sam.base.command import *
 
 class Mediator(object):
     def __init__(self, mode):
-        logging.info("Init mediator.")
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'mediator.log', level='debug')
+        self.logger = logConfigur.getLogger()
+        self.logger.info("Init mediator.")
         self._cm = CommandMaintainer()
         self._mode = mode
-        self._messageAgent = MessageAgent()
+        self._messageAgent = MessageAgent(self.logger)
         self._messageAgent.startRecvMsg(MEDIATOR_QUEUE)
 
     def startMediator(self):
@@ -39,10 +41,10 @@ class Mediator(object):
                 elif self._messageAgent.isCommandReply(body):
                     self._commandReplyHandler(body)
                 else:
-                    logging.error("Unknown massage body")
+                    self.logger.error("Unknown massage body")
 
     def _commandHandler(self,cmd):
-        logging.debug("Get a command")
+        self.logger.debug("Get a command")
         self._cm.addCmd(cmd)
         if cmd.cmdType == CMD_TYPE_ADD_SFCI:
             if self._mode['classifierType'] == 'Server':
@@ -60,18 +62,18 @@ class Mediator(object):
             self._delSFCI4NetworkController(cmd)
             self._delSFCIs4Server(cmd)
         elif cmd.cmdType == CMD_TYPE_GET_SERVER_SET:
-            logging.debug("Get CMD_TYPE_GET_SERVER_SET")
+            self.logger.debug("Get CMD_TYPE_GET_SERVER_SET")
             self._getServerSet4ServerManager(cmd)
         elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
-            logging.debug("Get CMD_TYPE_GET_TOPOLOGY")
+            self.logger.debug("Get CMD_TYPE_GET_TOPOLOGY")
             self._getTopo4NetworkController(cmd)
         elif cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
-            logging.debug("Get CMD_TYPE_GET_SFCI_STATE")
+            self.logger.debug("Get CMD_TYPE_GET_SFCI_STATE")
             # self._getSFCIStatus4ServerP4(cmd)
             self._getSFCIStatus4SFF(cmd)
         else:
             self._cm.delCmdwithChildCmd(cmd.cmdID)
-            logging.error("Unkonwn command type.")
+            self.logger.error("Unkonwn command type.")
 
     def _prepareChildCmd(self,cmd,cCmdName):
         cmdID = cmd.cmdID
@@ -170,29 +172,53 @@ class Mediator(object):
         # update cmd state
         cmdID = cmdRply.cmdID
         state = cmdRply.cmdState
+        if self._cm.isChildCmdHasCmdRply(cmdID) == True:
+            self.logger.warning("Get duplicated cmd reply")
+            return 
         self._cm.changeCmdState(cmdID,state)
         self._cm.addCmdRply(cmdID,cmdRply)
+        # debug
+        cmd = self._cm.getCmd(cmdID)
+        self.logger.debug("cmdRply attributes: {0}".format(
+            cmdRply.attributes.keys()))
+        if  cmdRply.attributes.has_key('source'):
+            self.logger.debug(
+                "get cmd reply, cmdID:{0}, cmdType:{1}, source:{2}.".format(
+                    cmdID, cmd.cmdType, cmdRply.attributes['source']))
+        for keys, value in self._cm._commandsInfo.items():
+            self.logger.debug("self._cm: {0},{1}".format(keys, value['state']))
         # execute state transfer action
         self._exeCmdStateAction(cmdID)
 
     def _exeCmdStateAction(self,cmdID):
         parentCmdID = self._cm.getParentCmdID(cmdID)
-        # if all child cmd is successful, then send cmdRply
         if self._cm.isParentCmdSuccessful(parentCmdID):
             self._cm.changeCmdState(parentCmdID, CMD_STATE_SUCCESSFUL)
             cmdRply = self._genParentCmdRply(parentCmdID,
                 CMD_STATE_SUCCESSFUL)
             self._sendParentCmdRply(cmdRply)
-            self._cm.delCmdwithChildCmd(parentCmdID)
         elif self._cm.isParentCmdFailed(parentCmdID):
-            self._cm.changeCmdState(parentCmdID, CMD_STATE_FAIL)
-            cmdRply = self._genParentCmdRply(parentCmdID,
-                CMD_STATE_FAIL)
-            self._sendParentCmdRply(cmdRply)
+            # if mediator haven't send cmd rply, send cmd rply
+            if self._cm.isOnlyOneChildCmdFailed(parentCmdID) and \
+                self._cm.getCmdState(cmdID) == CMD_STATE_FAIL:
+                # debug
+                cmdInfo = self._cm._commandsInfo[parentCmdID]
+                for childCmdID in cmdInfo['childCmdID'].itervalues():
+                    if self._cm.getCmdState(childCmdID) == CMD_STATE_FAIL:
+                        self.logger.debug("childCmdID: {0}".format(childCmdID))
+                # workflow
+                self._cm.changeCmdState(parentCmdID, CMD_STATE_FAIL)
+                cmdRply = self._genParentCmdRply(parentCmdID,
+                    CMD_STATE_FAIL)
+                self._sendParentCmdRply(cmdRply)
+                self.logger.debug("send cmd rply")
         elif self._cm.isParentCmdWaiting(parentCmdID):
             self._waitingParentCmdHandler(parentCmdID)
         else:
             pass
+
+        if self._cm.isAllChildCmdDetermined(parentCmdID):
+            self._cm.delCmdwithChildCmd(parentCmdID)
 
     def _genParentCmdRply(self,parentCmdID,state):
         cCmdRplyList = self._cm.getChildCMdRplyList(parentCmdID)
@@ -225,7 +251,7 @@ class Mediator(object):
             cmdRplyType == CMD_TYPE_GET_SFCI_STATE:
             queue = MEASURER_QUEUE
         else:
-            logging.error("Command reply error.")
+            self.logger.error("Command reply error.")
         # generate message
         cmdRplyMsg = SAMMessage(MSG_TYPE_MEDIATOR_CMD_REPLY,
             cmdRply)
@@ -235,14 +261,13 @@ class Mediator(object):
         if self._cm.getCmdType(parentCmdID) == CMD_TYPE_ADD_SFCI:
             bessState = self._cm.getChildCmdState(parentCmdID,
                 MSG_TYPE_SSF_CONTROLLER_CMD)
-            logging.debug("wating check______")
+            self.logger.debug("wating check______")
             if bessState == CMD_STATE_SUCCESSFUL:
                 cmd = self._cm.getCmd(parentCmdID)
                 self._addSFCIs2Server(cmd)
 
 
 if __name__=="__main__":
-    logging.basicConfig(level=logging.INFO)
     mode = {
         'switchType': SWITCH_TYPE_TOR,
         'classifierType': 'Server'  # 'Switch'

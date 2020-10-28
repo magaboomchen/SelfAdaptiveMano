@@ -37,7 +37,7 @@ class L2(BaseApp):
         self._peerPortTable = {}    # switch's peer switch's port
         self._switchesLANMacTable = {}  # {dpid:{mac:port}}
 
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.WARNING)
 
     def getLocalPortByMac(self,dpid,mac):
         if self._switchesLANMacTable.has_key(dpid) and\

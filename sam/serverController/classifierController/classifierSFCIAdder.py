@@ -18,11 +18,12 @@ from sam.serverController.classifierController.classifierInitializer import *
 from sam.serverController.classifierController.classifierSFCAdder import *
 
 class ClassifierSFCIAdder(BessControlPlane):
-    def __init__(self,cibms):
+    def __init__(self,cibms,logger):
         super(ClassifierSFCIAdder,self).__init__()
         self.cibms = cibms
-        self.clsfSFCInitializer = ClassifierInitializer(self.cibms)
-        self.clsfSFCAdder = ClassifierSFCAdder(self.cibms)
+        self.logger = logger
+        self.clsfSFCInitializer = ClassifierInitializer(self.cibms, logger)
+        self.clsfSFCAdder = ClassifierSFCAdder(self.cibms, logger)
 
     def addSFCIHandler(self,cmd):
         sfc = cmd.attributes['sfc']
@@ -49,7 +50,7 @@ class ClassifierSFCIAdder(BessControlPlane):
         SFCIID = sfci.SFCIID
 
         bessServerUrl = classifier.getControlNICIP() + ":10514"
-        logging.info(bessServerUrl)
+        self.logger.info(bessServerUrl)
         with grpc.insecure_channel(bessServerUrl) as channel:
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())
@@ -132,7 +133,7 @@ class ClassifierSFCIAdder(BessControlPlane):
         SFCIID = sfci.SFCIID
 
         bessServerUrl = classifier.getControlNICIP() + ":10514"
-        logging.info(bessServerUrl)
+        self.logger.info(bessServerUrl)
         with grpc.insecure_channel(bessServerUrl) as channel:
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())

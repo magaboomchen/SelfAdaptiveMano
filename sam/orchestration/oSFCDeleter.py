@@ -3,8 +3,9 @@
 
 
 class OSFCDeleter(object):
-    def __init__(self, dib):
+    def __init__(self, dib, logger):
         self._dib = dib
+        self.logger = logger
 
     def genDelSFCICmd(self, request):
         # TODO

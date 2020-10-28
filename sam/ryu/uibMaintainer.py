@@ -1,8 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.xibMaintainer import *
 
 # TODO: test
@@ -12,6 +11,8 @@ class UIBMaintainer(XInfoBaseMaintainer):
         super(UIBMaintainer, self).__init__(*args, **kwargs)
         self.groupIDSets = {}
         self.sfciRIB = {}
+        logConfigur = LoggerConfigurator('uibmaintainer', level='info')
+        self.logger = logConfigur.getLogger()
 
     def assignGroupID(self, dpid):
         if not self.groupIDSets.has_key(dpid):
@@ -58,6 +59,6 @@ class UIBMaintainer(XInfoBaseMaintainer):
 
     def printSFCIFlowTable(self, SFCIID, dpid):
         for entry in self.sfciRIB[SFCIID][dpid]:
-            logging.info(
+            self.logger.info(
                 "entry[match]={0}".format(entry["match"])
                 )

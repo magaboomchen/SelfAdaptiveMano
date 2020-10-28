@@ -16,9 +16,10 @@ from sam.serverController.sffController.sibMaintainer import *
 from sam.base.server import *
 
 class SFFSFCIDeleter(BessControlPlane):
-    def __init__(self,sibms):
+    def __init__(self,sibms,logger):
         super(SFFSFCIDeleter, self).__init__()
         self.sibms = sibms
+        self.logger = logger
 
     def delSFCIHandler(self,cmd):
         sfc = cmd.attributes['sfc']

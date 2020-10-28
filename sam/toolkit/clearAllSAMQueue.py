@@ -7,6 +7,16 @@ if __name__ == "__main__":
     sP = ShellProcessor()
     try:
         sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue REQUEST_PROCESSOR_QUEUE")
+    except:
+        pass
+    try:
+        sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue DCN_INFO_RECIEVER_QUEUE")
+    except:
+        pass
+    try:
+        sP.runShellCommand(
             "sudo rabbitmqctl purge_queue MEASURER_QUEUE")
     except:
         pass

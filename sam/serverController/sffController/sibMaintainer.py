@@ -14,25 +14,27 @@ from sam.serverController.bessInfoBaseMaintainer import *
 # TODO: need test
 
 class SIBMS(object):
-    def __init__(self):
+    def __init__(self, logger):
         self._sibms = {} # {serverID:SIBMaintainer}
+        self.logger = logger
 
     def hasSibm(self, serverID):
         return self._sibms.has_key(serverID)
 
     def addSibm(self,serverID):
         self._sibms[serverID] = SIBMaintainer()
+        self._sibms[serverID].addLogger(self.logger)
 
     def getSibm(self, serverID):
         return self._sibms[serverID]
-    
+
     def delSibm(self,serverID):
         if serverID in self._sibms.iterkeys():
             del self._sibms[serverID]
 
     def show(self):
         for key in self._sibms.iterkeys():
-            logging.info("{0}'s sibm:".format(key))
+            self.logger.info("{0}'s sibm:".format(key))
             self._sibms[key].show()
 
 class SIBMaintainer(BessInfoBaseMaintainer):
@@ -40,6 +42,9 @@ class SIBMaintainer(BessInfoBaseMaintainer):
     def __init__(self, *args, **kwargs):
         super(SIBMaintainer, self).__init__(*args, **kwargs)
         self._sfcSet = {}   # {sfcUUID:[sfciid]}
+
+    def addLogger(self, logger):
+        self.logger = logger
 
     def getModuleNameSuffix(self,VNFIID,directionID):
         return "_" + str(VNFIID) + "_" + str(directionID)
@@ -85,7 +90,7 @@ class SIBMaintainer(BessInfoBaseMaintainer):
         return value
     
     def show(self):
-        logging.info("sfcSet:{0}".format(self._sfcSet))
-        logging.info("modules:{0}".format(self._modules))
-        logging.info("links:{0}".format(self._links))
+        self.logger.info("sfcSet:{0}".format(self._sfcSet))
+        self.logger.info("modules:{0}".format(self._modules))
+        self.logger.info("links:{0}".format(self._links))
 

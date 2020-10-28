@@ -16,10 +16,11 @@ from sam.serverController.sffController.sibMaintainer import *
 from sam.base.server import *
 
 class SFFSFCIAdder(BessControlPlane):
-    def __init__(self,sibms):
+    def __init__(self,sibms, logger):
         super(SFFSFCIAdder, self).__init__()
         self.sibms = sibms
-        self.sffSFCInitializer = SFFInitializer(self.sibms)
+        self.logger = logger
+        self.sffSFCInitializer = SFFInitializer(self.sibms, self.logger)
 
     def addSFCIHandler(self,cmd):
         sfc = cmd.attributes['sfc']

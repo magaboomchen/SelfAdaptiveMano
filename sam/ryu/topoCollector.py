@@ -40,7 +40,7 @@ class TopoCollector(BaseApp):
         self.switches = {}
         self.links = {}
         self.hosts = {}
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.WARNING)
         self.logger.warning("Please use'ryu-manager --observe-links topoCollector.py'")
 
     def _printSwitches(self):
@@ -123,6 +123,7 @@ class TopoCollector(BaseApp):
             "links": self._transLinks(self.links),
             # "servers": self._transHosts(self.hosts)
         }
+        attr.update(cmd.attributes)
         cmdRply = CommandReply(cmd.cmdID, CMD_STATE_SUCCESSFUL, attr)
         rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY, cmdRply)
         queue = MEDIATOR_QUEUE
@@ -132,13 +133,13 @@ class TopoCollector(BaseApp):
         switchList = []
         for switch in self.switches.values():
             # self._ls(switch.address)
-            logging.info(
+            self.logger.info(
                 "switch:dpid:{0},address:{1}".format(
                     switch.dp.id, switch.dp.address
                 )
             )
             dpid = switch.dp.id
-            sw = Switch(dpid, SWITCH_TYPE_TOR,
+            sw = Switch(dpid, self._switchConfs[dpid].switchType,
                 self._switchConfs[dpid].lANNet)
             switchList.append(sw)
         return switchList
@@ -147,7 +148,7 @@ class TopoCollector(BaseApp):
         linkList = []
         for link in self.links.values():
             # self._ls(link)
-            logging.info(
+            self.logger.info(
                 "link:({0},{1})".format(
                     link.src.dpid,link.dst.dpid
                     )
@@ -159,7 +160,7 @@ class TopoCollector(BaseApp):
     #     serverList = []
     #     for host in self.hosts.values():
     #         # self._ls(host)
-    #         logging.info(
+    #         self.logger.info(
     #             "ipv4:{0},ipv6:{1},mac:{2},port:{3}".format(
     #                 host.ipv4, host.ipv6, host.mac, host.port
     #             )

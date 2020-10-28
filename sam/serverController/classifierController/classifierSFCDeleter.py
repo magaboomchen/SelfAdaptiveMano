@@ -15,9 +15,10 @@ import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
 from sam.serverController.bessControlPlane import *
 
 class ClassifierSFCDeleter(BessControlPlane):
-    def __init__(self,cibms):
+    def __init__(self,cibms,logger):
         super(ClassifierSFCDeleter,self).__init__()
         self.cibms = cibms
+        self.logger = logger
 
     def delSFC(self,sfc,direction):
         sfcUUID = sfc.sfcUUID
@@ -35,7 +36,7 @@ class ClassifierSFCDeleter(BessControlPlane):
         cibm = self.cibms.getCibm(serverID)
 
         bessServerUrl = classifier.getControlNICIP() + ":10514"
-        logging.info(bessServerUrl)
+        self.logger.info(bessServerUrl)
         with grpc.insecure_channel(bessServerUrl) as channel:
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())
@@ -53,7 +54,7 @@ class ClassifierSFCDeleter(BessControlPlane):
 
     def _delRules(self,classifier,sfcUUID,direction):
         bessServerUrl = classifier.getControlNICIP() + ":10514"
-        logging.info(bessServerUrl)
+        self.logger.info(bessServerUrl)
         match = direction['match']
         serverID = classifier.getServerID()
         with grpc.insecure_channel(bessServerUrl) as channel:
@@ -78,7 +79,7 @@ class ClassifierSFCDeleter(BessControlPlane):
         cibm = self.cibms.getCibm(serverID)
 
         bessServerUrl = classifier.getControlNICIP() + ":10514"
-        logging.info(bessServerUrl)
+        self.logger.info(bessServerUrl)
         with grpc.insecure_channel(bessServerUrl) as channel:
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())

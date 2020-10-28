@@ -5,7 +5,7 @@ import paramiko
 import logging
 
 class SSHAgent(object):
-    def __init__(self, ):
+    def __init__(self):
         self.ssh = paramiko.SSHClient()
 
         logging.getLogger("paramiko").setLevel(logging.ERROR)

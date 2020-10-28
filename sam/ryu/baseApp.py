@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import json
+import logging
 
 from ryu.base import app_manager
 from ryu.ofproto import ofproto_v1_3
@@ -11,6 +12,7 @@ from ryu.lib.packet import arp, ipv4, icmp
 from ryu.lib.packet import ether_types
 from ruamel import yaml
 
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.ryu.conf.genSwitchConf import SwitchConf
 from sam.ryu.conf.ryuConf import *
 from sam.base.socketConverter import SocketConverter
@@ -19,9 +21,12 @@ from sam.base.messageAgent import *
 class BaseApp(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(BaseApp, self).__init__(*args, **kwargs)
+        logging.getLogger("pika").setLevel(logging.WARNING)
+        logConfigur = LoggerConfigurator('logger', './log', 'ryuApp.log', level='info')
+        self.logger = logConfigur.getLogger()
+        self._messageAgent = MessageAgent(self.logger)
         self._switchConfs = {}
         self._initSwitchConf(SWITCH_CONF_FILEPATH)
-        self._messageAgent = MessageAgent()
 
     def _initSwitchConf(self,filepath):
         yamlObj = yaml.YAML()
@@ -77,7 +82,7 @@ class BaseApp(app_manager.RyuApp):
         return (dstIPNum & netIPMaskNum) == (netIPNum & netIPMaskNum)
 
     def _isDCNGateway(self,dpid):
-        return self._switchConfs[dpid].switchType == "DCNGateway"
+        return self._switchConfs[dpid].switchType == "SWITCH_TYPE_DCNGATEWAY"
 
     def _build_arp(self, opcode, src_mac, src_ip, dst_mac, dst_ip):
         e = ethernet.ethernet(dst=dst_mac, src=src_mac, ethertype=ether_types.ETH_TYPE_ARP)

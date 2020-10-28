@@ -2,7 +2,7 @@
   dcnGatewayPeerIP: 1.1.1.2
   switchID: 1
   lANNet: 2.2.0.32/27
-  switchType: DCNGateway
+  switchType: SWITCH_TYPE_DCNGATEWAY
   dpid: 1
   dcnGatewaySelfIP: 1.1.1.1
   gatewayIP: 2.2.0.33
@@ -10,7 +10,7 @@
   dcnGatewayPeerIP:
   switchID: 2
   lANNet: 2.2.0.64/27
-  switchType: ToR
+  switchType: SWITCH_TYPE_TOR
   dpid: 2
   dcnGatewaySelfIP:
   gatewayIP: 2.2.0.65
@@ -18,7 +18,7 @@
   dcnGatewayPeerIP:
   switchID: 3
   lANNet: 2.2.0.96/27
-  switchType: ToR
+  switchType: SWITCH_TYPE_TOR
   dpid: 3
   dcnGatewaySelfIP:
   gatewayIP: 2.2.0.97

@@ -21,9 +21,10 @@ from sam.base.path import *
 from sam.serverController.bessControlPlane import *
 
 class ClassifierInitializer(BessControlPlane):
-    def __init__(self,cibms):
+    def __init__(self,cibms,logger):
         super(ClassifierInitializer,self).__init__()
         self.cibms = cibms
+        self.logger = logger
         self._sc = SocketConverter()
 
     def initClassifier(self, direction):
@@ -42,7 +43,7 @@ class ClassifierInitializer(BessControlPlane):
         cibm = self.cibms.getCibm(serverID)
 
         bessServerUrl = classifier.getControlNICIP() + ":10514"
-        logging.info(bessServerUrl)
+        self.logger.info(bessServerUrl)
         with grpc.insecure_channel(bessServerUrl) as channel:
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())
@@ -167,11 +168,11 @@ class ClassifierInitializer(BessControlPlane):
             # list all module
             response = stub.ListModules(bess_msg_pb2.EmptyRequest())
             if response.error.code != 0:
-                logging.error( str(response.error) )
+                self.logger.error( str(response.error) )
                 raise ValueError('bess cmd failed.')
             else:
                 for m in response.modules:
-                    logging.info(' {0},{1},{2}'.format(m.name,m.mclass,m.desc))
+                    self.logger.info(' {0},{1},{2}'.format(m.name,m.mclass,m.desc))
 
     def _addRules(self,classifier):
         serverID = classifier.getServerID()
@@ -217,7 +218,7 @@ class ClassifierInitializer(BessControlPlane):
             # add rule to ArpResponder
             classifierIP = classifier.getDatapathNICIP()
             classifierMAC = classifier.getDatapathNICMac()
-            logging.debug("ArpResponder IP:{}, MAC:{}".format(classifierIP,
+            self.logger.debug("ArpResponder IP:{}, MAC:{}".format(classifierIP,
                 classifierMAC))
             argument = Any()
             arg = module_msg_pb2.ArpResponderArg(ip=classifierIP,

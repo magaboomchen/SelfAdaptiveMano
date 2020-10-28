@@ -13,16 +13,14 @@ from sam.measurement.dcnInfoBaseMaintainer import *
 logging.basicConfig(level=logging.INFO)
 
 
-class TestOrchestratorADDSFCIClass(TestBase):
+class TestOSFCAdderClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_collectDCNInfo(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__, level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
-
-        # self.sendCmd(ORCHESTRATOR_QUEUE,MSG_TYPE_STRING,"1")
-        # self.sendCmd(REQUEST_PROCESSOR_QUEUE,MSG_TYPE_STRING,"1")
-        # self.sendCmd(DCN_INFO_RECIEVER_QUEUE,MSG_TYPE_STRING,"1")
-
         self.clearQueue()
 
         self.switches = {"":[]}
@@ -54,26 +52,39 @@ class TestOrchestratorADDSFCIClass(TestBase):
             ["2.2.0.68", "2.2.0.70", "2.2.0.98"],
             range(SERVERID_OFFSET+2,SERVERID_OFFSET+2+3))
         )
+        self.serverDict = {"":{}}
+        for server in self.servers[""]:
+            self.serverDict[""][server.getControlNICMac()] = {'Active': True,
+            'timestamp': datetime.datetime(2020, 10, 27, 0, 2, 39, 408596),
+            'server': server}
+        self.logger.debug(self.serverDict)
 
         classifier = self.genClassifier("2.2.0.36")
         sfc = self.genUniDirectionSFC(classifier)
         zoneName = sfc.attributes['zone']
         self.request = self.genAddSFCIRequest(sfc)
 
-        self.oA = OSFCAdder(DCNInfoBaseMaintainer())
-        self.oA._dib.updateServersInAllZone(self.servers)
+
+
+        self.oA = OSFCAdder(DCNInfoBaseMaintainer(), self.logger)
+        self.oA._dib.updateServersInAllZone(self.serverDict)
         self.oA._dib.updateSwitchesInAllZone(self.switches)
         self.oA._dib.updateLinksInAllZone(self.links)
 
-        # logging.info("request:{0}".format(self.request))
 
         yield
         # teardown
 
     # @pytest.mark.skip(reason='Temporarly')
-    def test_collectTopology(self, setup_collectDCNInfo):
+    def test_genAddSFCICmd(self, setup_collectDCNInfo):
         # exercise
-        self.oA.genAddSFCICmd(self.request)
+        cmd = self.oA.genAddSFCICmd(self.request)
+        sfci = cmd.attributes['sfci']
+        ForwardingPathSet = sfci.ForwardingPathSet
+        primaryForwardingPath = ForwardingPathSet.primaryForwardingPath
+        backupForwardingPath = ForwardingPathSet.backupForwardingPath
+
         # verify
-        assert 1==1
+        assert primaryForwardingPath == {1: [[10001, 1, 2, 10003], [10003, 2, 1, 10001]]}
+        assert backupForwardingPath == {1: {(1, 2, 2): [[1, 3, 10005], [10005, 3, 1, 10001]], (2, 10003, 3): [[2, 10004], [10004, 2, 1, 10001]]}}
 

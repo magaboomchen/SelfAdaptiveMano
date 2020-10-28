@@ -1,9 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
+import time
 
 from sam.base.messageAgent import *
+from sam.base.request import Request, Reply
 from sam.measurement.dcnInfoBaseMaintainer import *
 from sam.orchestration.oDcnInfoRetriever import *
 from sam.orchestration.oSFCAdder import *
@@ -14,14 +15,22 @@ LANIPPrefix = 27
 
 class Orchestrator(object):
     def __init__(self):
+        time.sleep(6)   # wait for other basic module boot
+
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'orchestrator.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
         self._dib = DCNInfoBaseMaintainer()
-        self._odir = ODCNInfoRetriever(self._dib, self._messageAgent)
-        self._osa = OSFCAdder(self._dib)
-        self._osd = OSFCDeleter(self._dib)
+
+        self._odir = ODCNInfoRetriever(self._dib, self.logger)
+
+        self._osa = OSFCAdder(self._dib, self.logger)
+        self._osd = OSFCDeleter(self._dib, self.logger)
 
         self._cm = CommandMaintainer()
 
-        self._messageAgent = MessageAgent()
+        self._messageAgent = MessageAgent(self.logger)
         self._messageAgent.startRecvMsg(ORCHESTRATOR_QUEUE)
 
     def startOrchestrator(self):
@@ -37,12 +46,15 @@ class Orchestrator(object):
                 elif self._messageAgent.isCommandReply(body):
                     self._commandReplyHandler(body)
                 else:
-                    logging.error("Unknown massage body:{0}".format(body))
+                    self.logger.error("Unknown massage body:{0}".format(body))
 
     def _requestHandler(self, request):
         try:
-            if request.requestType == REQUEST_TYPE_ADD_SFCI:
-                # self._addRequest2DB()
+            if request.requestType == REQUEST_TYPE_ADD_SFC:
+                # TODO
+                pass
+            elif request.requestType == REQUEST_TYPE_ADD_SFCI:
+                self._addRequest2DB(request)
                 self._odir.getDCNInfo()
                 cmd = self._osa.genAddSFCICmd(request)
                 self._cm.addCmd(cmd)
@@ -56,15 +68,19 @@ class Orchestrator(object):
                 self._cm.addCmd(cmd)
                 self.sendCmd(cmd)
             else:
-                logging.warning(
+                self.logger.warning(
                     "Unknown request:{0}".format(request.requestType)
                     )
         # except Exception as ex:
         #     template = "An exception of type {0} occurred. Arguments:\n{1!r}"
         #     message = template.format(type(ex).__name__, ex.args)
-        #     logging.error(
+        #     self.logger.error(
         #         "Orchestrator request handler error: {0}".format(message)
         #         )
+        #     rplyMsg = SAMMessage(MSG_TYPE_REPLY, 
+        #             Reply(request.requestID, REQUEST_STATE_FAILED))
+        #     self._messageAgent.sendMsg(request.requestSrcQueue, rplyMsg)
+        #     # TODO: update request
         finally:
             pass
 
@@ -73,29 +89,45 @@ class Orchestrator(object):
         self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
 
     def _commandReplyHandler(self, cmdRply):
-        logging.info("Get a command reply")
+        self.logger.info("Get a command reply")
         # update cmd state
         cmdID = cmdRply.cmdID
         state = cmdRply.cmdState
         if not self._cm.hasCmd(cmdID):
-            logging.error(
+            self.logger.error(
                 "Unknown command reply, cmdID:{0}".format(cmdID)
                 )
             return 
         self._cm.changeCmdState(cmdID, state)
         self._cm.addCmdRply(cmdID, cmdRply)
         cmdType = self._cm.getCmdType(cmdID)
-        logging.info("Command:{0}, cmdType:{1}, state:{2}".format(
+        self.logger.info("Command:{0}, cmdType:{1}, state:{2}".format(
             cmdID, cmdType, state))
+
+        # find the request by sfcUUID in cmd
+        cmd = self._cm.getCmd(cmdID)
+        request = self._getRequestFromDB(cmd.attributes['sfc'].sfcUUID)
+
+        # update request state
+        self._updateRequest2DB(request, state)
+
         self._cm.delCmdwithChildCmd(cmdID)
 
-    def _addRequest2DB(self):
+    def _addRequest2DB(self, request):
         # TODO
         pass
 
-if __name__=="__main__":
-    logging.basicConfig(level=logging.INFO)
+    def _getRequestFromDB(self, sfcUUID):
+        # TODO
+        pass
+        return 0
 
+    def _updateRequest2DB(self, request, state):
+        # TODO
+        # update request's state by retrieve requestID
+        pass
+
+
+if __name__=="__main__":
     ot = Orchestrator()
     ot.startOrchestrator()
-

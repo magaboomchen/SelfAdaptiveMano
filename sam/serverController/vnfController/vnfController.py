@@ -14,6 +14,7 @@ from sam.serverController.vnfController.vnfiDeleter import *
 from sam.serverController.vnfController.vnfMaintainer import *
 from sam.serverController.vnfController.sourceAllocator import *
 
+
 class VNFController(object):
     def __init__(self):
         logging.info('Initialize vnf controller.')
