@@ -2,7 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 import subprocess
-import logging
+
+from sam.base.loggerConfigurator import LoggerConfigurator
 
 UNBIND = 0
 BIND_IGB_UIO = 1
@@ -11,7 +12,10 @@ BIND_OTHER_DRIVER = 2
 
 class DPDKConfigurator(object):
     def __init__(self, NICPCIAddress):
-        logging.info('Config DPDK nic: ' + NICPCIAddress )
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'dpdkConfigurator.log', level='info')
+        self.logger = logConfigur.getLogger()
+        self.logger.info('Config DPDK nic: ' + NICPCIAddress )
         self._NICPCIAddress = NICPCIAddress
         self.configDPDK()
 
@@ -26,7 +30,7 @@ class DPDKConfigurator(object):
             self.unbindNIC()
             self.bindNIC()
         else:
-            logging.error("Config DPDK failed.")
+            self.logger.error("Config DPDK failed.")
             exit(1)
 
     def insertIGB_UIO(self):
@@ -37,9 +41,9 @@ class DPDKConfigurator(object):
                 ['sudo insmod $RTE_SDK/build/kmod/igb_uio.ko'],
                 shell=True
                 )
-            logging.info("Insert IGB_UIO successfully.")
+            self.logger.info("Insert IGB_UIO successfully.")
         else:
-            logging.info("IGB_UIO already inserted.")
+            self.logger.info("IGB_UIO already inserted.")
 
     def getNICStatus(self):
         out_bytes = subprocess.check_output(

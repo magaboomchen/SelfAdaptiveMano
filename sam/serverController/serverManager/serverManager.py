@@ -3,7 +3,6 @@
 
 import sys
 import time
-import logging
 import threading
 import ctypes
 import inspect

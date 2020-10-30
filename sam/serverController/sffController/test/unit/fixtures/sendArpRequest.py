@@ -3,7 +3,6 @@
 
 import os
 from scapy.all import *
-import logging
 import time
 from sam.base.socketConverter import *
 from sam.serverController.sffController.test.unit.test_sffSFCIAdder import *

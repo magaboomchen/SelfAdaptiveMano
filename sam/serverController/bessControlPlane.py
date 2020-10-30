@@ -11,7 +11,6 @@ import pickle
 import time
 import uuid
 import subprocess
-import logging
 import struct
 
 import sam.serverController.builtin_pb.service_pb2 as service_pb2
@@ -21,11 +20,16 @@ import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
 import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
 
 from sam.base.socketConverter import SocketConverter
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.server import *
+
 
 class BessControlPlane(object):
     def __init__(self):
         self._sc = SocketConverter()
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'bessControlPlane.log', level='info')
+        self.logger = logConfigur.getLogger()
 
     def isBESSAlive(self,bessServerUrl):
         count = 3
@@ -42,7 +46,7 @@ class BessControlPlane(object):
 
     def _checkResponse(self,response):
         if response.error.code != 0:
-            logging.error( str(response.error) )
+            self.logger.error( str(response.error) )
             raise ValueError('bess cmd failed.')
 
     def _getWM2Rule(self,match):

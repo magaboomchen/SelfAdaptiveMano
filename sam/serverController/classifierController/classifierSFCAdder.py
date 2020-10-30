@@ -5,7 +5,6 @@ from __future__ import print_function
 import grpc
 from google.protobuf.any_pb2 import Any
 import uuid
-import logging
 
 import sam.serverController.builtin_pb.service_pb2 as service_pb2
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc

@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 from __future__ import print_function
-import logging
 
 from google.protobuf.any_pb2 import Any
 import grpc
@@ -11,6 +10,7 @@ from sam.base.server import Server
 from sam.base.messageAgent import *
 from sam.base.sfc import *
 from sam.base.socketConverter import SocketConverter
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.sffController.sibMaintainer import *
 from sam.serverController.sffController.sffSFCIAdder import *
 from sam.serverController.sffController.sffSFCIDeleter import *

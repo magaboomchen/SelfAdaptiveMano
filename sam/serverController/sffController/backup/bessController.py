@@ -9,7 +9,6 @@ import pickle
 import time
 import uuid
 import subprocess
-import logging
 
 import sam.serverController.builtin_pb.service_pb2
 import sam.serverController.builtin_pb.service_pb2_grpc
@@ -22,6 +21,8 @@ from sam.base.messageAgent import *
 from sam.base.sfc import *
 from sam.base.socketConverter import SocketConverter
 from sam.orchestrator import *
+from sam.base.loggerConfigurator import LoggerConfigurator
+
 
 class BESSState(object):
     def __init__(self):
@@ -30,7 +31,10 @@ class BESSState(object):
 
 class BESSController(object):
     def __init__(self):
-        logging.info("Init BESS controller.")
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'bessController.log', level='info')
+        self.logger = logConfigur.getLogger()
+        self.logger.info("Init BESS controller.")
         self._serverSet = {}
         self._commandsInfo = {}
         self._messageAgent = MessageAgent()
@@ -41,7 +45,7 @@ class BESSController(object):
         while True:
             msg = self._messageAgent.getMsg(SFF_CONTROLLER_QUEUE)
             if msg.getMessageType() == MSG_TYPE_SSF_CONTROLLER_CMD:
-                logging.info("BESS controller get a bess cmd.")
+                self.logger.info("BESS controller get a bess cmd.")
                 try:
                     cmd = msg.getbody()
                     self._commandsInfo[cmd.cmdID] = {"cmd":cmd,
@@ -53,10 +57,10 @@ class BESSController(object):
                     elif cmd.cmdType == CMD_TYPE_GET_VNFI_STATUS:
                         self._getVNFIStatus(cmd)
                     else:
-                        logging.error("Unkonwn bess command type.")
+                        self.logger.error("Unkonwn bess command type.")
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL
                 except ValueError as err:
-                    logging.error('bess cmd processing error: ' + repr(err))
+                    self.logger.error('bess cmd processing error: ' + repr(err))
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 finally:
                     rplyMsg = SAMMessage(MSG_TYPE_SSF_CONTROLLER_CMD_REPLY,
@@ -67,7 +71,7 @@ class BESSController(object):
             elif msg.getMessageType() == None:
                 pass
             else:
-                logging.error("Unknown msg type.")
+                self.logger.error("Unknown msg type.")
 
     def _addSFCinBESS(self,cmd):
         sfc = cmd.attributes['sfc']
@@ -207,7 +211,7 @@ class BESSController(object):
 
     def _checkResponse(self,response):
         if response.error.code != 0:
-            logging.error( str(response.error) )
+            self.logger.error( str(response.error) )
             raise ValueError('bess cmd failed.')
 
     def _addDataPathRule(self,bessServerUrl,vnfi):
@@ -221,7 +225,7 @@ class BESSController(object):
             gatePort = self._getAvailableEmPort(
                 self._serverSet[bessServerIP]["BessState"] )
             for ip in vnfi.serverDatapathNICIP:
-                logging.debug("sffController.serverSet.bessState.ExactMatch.matchfield = ip:%s, gatePort:%d." %(ip, gatePort) )
+                self.logger.debug("sffController.serverSet.bessState.ExactMatch.matchfield = ip:%s, gatePort:%d." %(ip, gatePort) )
                 argument.Pack( module_msg_pb2.ExactMatchCommandAddArg(
                     gate=gatePort, fields=[
                         {"value_bin":self._sc.aton(ip)}] ) )
@@ -455,7 +459,7 @@ class BESSController(object):
             bessServerIP = bessServerUrl.split(":")[0]
             gatePort = self._getAvailableEmPort( self._serverSet[bessServerIP]["BessState"] )
             for ip in vnfi.serverDatapathNICIP:
-                logging.debug("sffController.serverSet.bessState.ExactMatch.matchfield = ip:%s, gatePort:%d." %(ip, gatePort) )
+                self.logger.debug("sffController.serverSet.bessState.ExactMatch.matchfield = ip:%s, gatePort:%d." %(ip, gatePort) )
                 argument.Pack(module_msg_pb2.ExactMatchCommandDeleteArg(
                     fields=[{"value_bin":self._sc.aton(ip)}]
                     ))
@@ -470,6 +474,5 @@ class BESSController(object):
         pass
 
 if __name__=="__main__":
-    logging.basicConfig(level=logging.INFO)
     sffController = BESSController()
     sffController.startBESSController()
