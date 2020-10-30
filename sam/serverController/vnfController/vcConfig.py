@@ -26,4 +26,10 @@ class VCConfig:
     LB_IMAGE_CLICK = 'fastclick-vnf'
     LB_APP_CLICK = './click-conf/lb.click'
 
+    MON_IMAGE_CLICK = 'fastclick-vnf'
+    MON_APP_CLICK = './click-conf/monitor.click'
+    MON_TCP_PORT = 8888  # maybe unsafe
+
+        
+
 vcConfig = VCConfig()

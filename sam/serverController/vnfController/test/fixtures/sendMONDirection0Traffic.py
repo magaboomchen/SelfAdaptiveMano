@@ -4,12 +4,12 @@ import logging
 import time
 from sam.base.socketConverter import *
 from sam.test.testBase import *
-from sam.serverController.vnfController.test.test_vnfControllerAddLB import *
+from sam.serverController.vnfController.test.test_vnfControllerAddMON import *
 
 def sendDirection0Traffic():
     data = "Hello World"
     ether = Ether(src=TESTER_SERVER_DATAPATH_MAC, dst=SFF0_DATAPATH_MAC)
-    ip1 = IP(src=CLASSIFIER_DATAPATH_IP,dst=LB_VNFI1_0_IP)
+    ip1 = IP(src=CLASSIFIER_DATAPATH_IP,dst=MON_VNFI1_0_IP)
     ip2 = IP(src=OUTTER_CLIENT_IP,dst=WEBSITE_REAL_IP)
     tcp = TCP(sport=1234,dport=80)
     frame = ether / ip1 / ip2 / tcp /Raw(load=data)

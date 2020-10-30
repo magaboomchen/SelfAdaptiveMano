@@ -8,16 +8,19 @@ from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.command import *
 from sam.base.server import *
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.vnfController.vcConfig import vcConfig
 from sam.serverController.vnfController.vnfiAdder import *
 from sam.serverController.vnfController.vnfiDeleter import *
 from sam.serverController.vnfController.vnfMaintainer import *
 from sam.serverController.vnfController.sourceAllocator import *
 
-
 class VNFController(object):
     def __init__(self):
-        logging.info('Initialize vnf controller.')
+        logConf = LoggerConfigurator(__name__, './log', 'vnfController.log',
+            level='debug')
+        self.logger = logConf.getLogger()
+        self.logger.info('Initialize vnf controller.')
 
         self._commandsInfo = {}
 
@@ -39,7 +42,7 @@ class VNFController(object):
             if msgType == None:
                 pass
             elif msgType == MSG_TYPE_VNF_CONTROLLER_CMD:
-                logging.info('VNF controller get a command.')
+                self.logger.info('Got a command.')
                 cmd = msg.getbody()
                 self._commandsInfo[cmd.cmdID] = {'cmd':cmd, 'state':CMD_STATE_PROCESSING}
                 if cmd.cmdType == CMD_TYPE_ADD_SFCI:
@@ -55,17 +58,17 @@ class VNFController(object):
                     else:
                         self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_FAIL
                 else:
-                    logging.error("Unsupported cmd type for vnf controller: %s." % cmd.cmdType)
+                    self.logger.error("Unsupported cmd type for vnf controller: %s." % cmd.cmdType)
                     self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_FAIL
                 rplyMsg = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD_REPLY,
                     CommandReply(cmd.cmdID, self._commandsInfo[cmd.cmdID]['state']))
                 self._messageAgent.sendMsg(MEDIATOR_QUEUE, rplyMsg)
             else:
-                logging.error('Unsupported msg type for vnf controller: %s.' % msg.getMessageType())
+                self.logger.error('Unsupported msg type for vnf controller: %s.' % msg.getMessageType())
 
     def _sfciAddHandler(self, cmd):
         sfciID = cmd.attributes['sfci'].SFCIID
-        logging.info('vnf controller add sfci %s' % sfciID)
+        self.logger.info('Adding sfci %s.' % sfciID)
         # TODO: if sfciID in vnfMaintainer?
         self._vnfiMaintainer.addSFCI(sfciID)
         vnfSeq = cmd.attributes['sfci'].VNFISequence
@@ -74,7 +77,7 @@ class VNFController(object):
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):
                     # TODO: if vnfi in vnfMaintainer?
-                    logging.info('vnf controller add vnfi')
+                    self.logger.info('Adding vnfi %s.' % vnfi.VNFIID)
                     self._vnfiMaintainer.addVNFI(sfciID, vnfi)
 
                     # get vioAllocator of server
@@ -92,7 +95,7 @@ class VNFController(object):
                         self._vnfiMaintainer.setVNFIVIOStart(sfciID, vnfi, vioStart)
                         self._vnfiMaintainer.setVNFICPUStart(sfciID, vnfi, cpuStart)
                     except Exception as exp:
-                        logging.info('error occurs in vnf controller when adding vnfi: %s' % exp)
+                        self.logger.error('Error occurs when adding vnfi: %s' % exp)
                         self._vnfiMaintainer.setVNFIState(sfciID, vnfi, VNFI_STATE_FAILED)
                         self._vnfiMaintainer.setVNFIError(sfciID, vnfi, exp)    
                         success = False
@@ -100,11 +103,11 @@ class VNFController(object):
 
     def _sfciDeleteHandler(self, cmd):
         sfciID = cmd.attributes['sfci'].SFCIID
-        logging.info('vnf controller del sfci %s' % sfciID)
+        self.logger.info('Deleting sfci %s.' % sfciID)
         try:
             sfciState = self._vnfiMaintainer.getSFCI(sfciID)
         except Exception as e:
-            logging.error('SFCI %s not maintained in vnf controller.' % sfciID)
+            self.logger.error('SFCI %s not maintained in vnf controller.' % sfciID)
             return False
         success = True
         for vnfiID in sfciState.keys():
@@ -115,7 +118,7 @@ class VNFController(object):
                 self._vnfiDeleter.deleteVNFI(sfciState[vnfiID], vioAllo, cpuAllo)
                 self._vnfiMaintainer.deleteVNFI(sfciID, vnfiID)
             except Exception as e:
-                logging.info('error occurs in vnf controller when deleting vnfi: %s' % e)
+                self.logger.error('Error occurs when deleting vnfi: %s' % e)
                 success = False
         if success:
             self._vnfiMaintainer.deleteSFCI(sfciID)
@@ -123,6 +126,5 @@ class VNFController(object):
 
 
 if __name__=="__main__":
-    logging.basicConfig(level=logging.INFO)
     vc = VNFController()
     vc.startVNFController()
