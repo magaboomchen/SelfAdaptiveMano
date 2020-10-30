@@ -9,6 +9,7 @@ from sam.measurement.dcnInfoBaseMaintainer import *
 from sam.orchestration.oDcnInfoRetriever import *
 from sam.orchestration.oSFCAdder import *
 from sam.orchestration.oSFCDeleter import *
+from sam.base.loggerConfigurator import LoggerConfigurator
 
 LANIPPrefix = 27
 

@@ -6,20 +6,24 @@ import logging
 
 import psutil
 
+from sam.base.loggerConfigurator import LoggerConfigurator
 
 class ShellProcessor(object):
     def __init__(self):
         logging.getLogger("psutil").setLevel(logging.ERROR)
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'shellProcessor.log', level='debug')
+        self.logger = logConfigur.getLogger()
 
     def listRunningProcess(self):
-        logging.info("List running process.")
+        self.logger.info("List running process.")
         for p in psutil.process_iter(attrs=['pid', 'name']):
-            logging.info(p)
+            self.logger.info(p)
 
     def isProcessRun(self,processName):
         for p in psutil.process_iter(attrs=['pid', 'name']):
             if processName in p.info['name']:
-                logging.info(processName + " has already running.")
+                self.logger.info(processName + " has already running.")
                 return True
         return False
 
@@ -40,7 +44,7 @@ class ShellProcessor(object):
 
     def isPythonScriptRun(self,moduleName):
         for p in psutil.process_iter(attrs=['pid', 'name', 'cmdline']):
-            logging.info(p)
+            self.logger.info(p)
             if p.info['name'] == "python":
                 for cmdline in p.info['cmdline']:
                     if cmdline.count(moduleName) > 0:

@@ -2,15 +2,18 @@
 # -*- coding: UTF-8 -*-
 
 import subprocess
-import logging
 import time
 
-from sam.serverController.vnfController.vcConfig import vcConfig
 from sam.base.shellProcessor import ShellProcessor
+from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.serverController.vnfController.vcConfig import vcConfig
 
 
 class DockerConfigurator(object):
     def __init__(self):
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'dockerConfigurator.log', level='info')
+        self.logger = logConfigur.getLogger()
         self.sP = ShellProcessor()
         self.checkOperateSystem()
 
@@ -60,4 +63,4 @@ class DockerConfigurator(object):
             message = template.format(type(ex).__name__, ex.args)
 
         results = self.sP.runShellCommand("ps aux |grep dockerd")
-        logging.info("check docker port:\n{0}".format(results))
+        self.logger.info("check docker port:\n{0}".format(results))

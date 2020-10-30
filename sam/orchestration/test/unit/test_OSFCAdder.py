@@ -9,6 +9,7 @@ from sam.base.link import *
 from sam.test.testBase import *
 from sam.orchestration.oSFCAdder import *
 from sam.measurement.dcnInfoBaseMaintainer import *
+from sam.base.loggerConfigurator import LoggerConfigurator
 
 logging.basicConfig(level=logging.INFO)
 

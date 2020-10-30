@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import copy
-import logging
 
 from sam.base.server import Server
 from sam.base.messageAgent import *

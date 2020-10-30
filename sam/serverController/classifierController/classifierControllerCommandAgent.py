@@ -3,7 +3,6 @@
 
 from __future__ import print_function
 import grpc
-import logging
 
 import sam.serverController.builtin_pb.service_pb2 as service_pb2
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
@@ -16,6 +15,7 @@ from sam.base.messageAgent import *
 from sam.base.sfc import *
 from sam.base.command import *
 from sam.base.path import *
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.classifierController.cibMaintainer import *
 from sam.serverController.classifierController.classifierSFCIAdder import *
 from sam.serverController.classifierController.classifierSFCIDeleter import *

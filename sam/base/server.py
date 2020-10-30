@@ -107,8 +107,7 @@ class Server(object):
         res = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True)
         result = str(res.stdout.readlines())
         if result.find("Port 0: ")==-1:
-            logging.error("get data path nic mac address error, maybe run out of hugepages?")
-            exit(1)
+            raise ValueError("get data path nic mac address error, maybe run out of hugepages?")
         final = result.split(' ')[2][0:17]
         return final
 

@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 from __future__ import print_function
-import logging
 
 from google.protobuf.any_pb2 import Any
 import grpc
