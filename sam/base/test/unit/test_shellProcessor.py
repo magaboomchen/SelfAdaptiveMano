@@ -6,6 +6,7 @@ import logging
 import pytest
 
 from sam.base.shellProcessor import *
+from sam.base.test.unit.fixtures import tmpScript
 
 MANUAL_TEST = True
 
@@ -36,20 +37,20 @@ class TestShellProcessorClass(object):
         pass
     
     def test_runPythonScript(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/base/test/unit/fixtures/tmpScript.py"
+        filePath = tmpScript.__file__
         self.sp.runPythonScript(filePath)
         out_bytes = subprocess.check_output(
             ["ps -ef | grep tmpScript.py"], shell=True)
         assert out_bytes.count("tmpScript") >= 3
 
     def test_isPythonScriptRun(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/base/test/unit/fixtures/tmpScript.py"
+        filePath = tmpScript.__file__
         subprocess.Popen(
             ["python " + filePath], shell=True)
         assert self.sp.isPythonScriptRun("tmpScript.py") == True
 
     def test_killPythonScript(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/base/test/unit/fixtures/tmpScript.py"
+        filePath = tmpScript.__file__
         self.sp.runPythonScript(filePath)
         self.sp.killPythonScript("tmpScript.py")
         out_bytes = subprocess.check_output(

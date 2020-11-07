@@ -16,6 +16,7 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
 from sam.test.fixtures.vnfControllerStub import *
 from sam.test.testBase import *
+from sam.serverController.sffController import sffControllerCommandAgent
 
 MANUAL_TEST = True
 
@@ -48,7 +49,7 @@ class TestSFFSFCIDeleterClass(TestBase):
         self.killSFFController()
 
     def runSFFController(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/sffController/sffControllerCommandAgent.py"
+        filePath = sffControllerCommandAgent.__file__
         self.sP.runPythonScript(filePath)
 
     def killSFFController(self):

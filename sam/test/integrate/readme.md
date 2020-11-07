@@ -36,23 +36,6 @@ python ./serverAgent.py 0000:00:08.0 ens3 nfvi 2.2.0.70
 python ./serverAgent.py 0000:00:08.0 ens3 nfvi 2.2.0.98
 ```
 
-# 启动各种控制器
-## classifierController
-
-```
-smith@ubuntu-click-server:~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController$ python ./classifierControllerCommandAgent.py 
-```
-
-## sffController
-```
-smith@ubuntu-click-server:~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/sffController$ python ./sffControllerCommandAgent.py 
-```
-
-## vnfController
-```
-smith@ubuntu-click-server:~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/vnfController$ python ./vnfController.py
-```
-
 # 启动MANO
 
 ### mediator
@@ -71,6 +54,21 @@ smith@ubuntu-click-server:~/HaoChen/Project/SelfAdaptiveMano/sam/measurement$ py
 smith@ubuntu-click-server:~/HaoChen/Project/SelfAdaptiveMano/sam/orchestration$ python ./orchestrator.py 
 ```
 
+# 启动各种控制器
+## classifierController
 
+```
+smith@ubuntu-click-server:~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController$ python ./classifierControllerCommandAgent.py 
+```
+
+## sffController
+```
+smith@ubuntu-click-server:~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/sffController$ python ./sffControllerCommandAgent.py 
+```
+
+## vnfController
+```
+smith@ubuntu-click-server:~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/vnfController$ python ./vnfController.py
+```
 
 

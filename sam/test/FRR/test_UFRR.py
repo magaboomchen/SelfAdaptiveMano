@@ -15,7 +15,7 @@ from sam.test.fixtures.vnfControllerStub import *
 from sam.test.FRR.testFRR import TestFRR
 
 logging.basicConfig(level=logging.INFO)
-
+logging.getLogger("pika").setLevel(logging.WARNING)
 
 class TestUFRRClass(TestFRR):
     @pytest.fixture(scope="function")
@@ -23,6 +23,7 @@ class TestUFRRClass(TestFRR):
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
+        self.killAllModule()
 
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genUniDirectionSFC(classifier)
@@ -53,6 +54,7 @@ class TestUFRRClass(TestFRR):
         self.delSFCI2Classifier()
         self.killClassifierController()
         self.killSFFController()
+        self.killVNFController()
 
     def addVNFI2Server(self):
         self.sendCmd(VNF_CONTROLLER_QUEUE,

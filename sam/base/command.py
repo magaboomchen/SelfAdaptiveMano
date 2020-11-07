@@ -97,6 +97,10 @@ class CommandMaintainer(object):
         cCmdID = self._commandsInfo[cmdID]['childCmdID'][childCmdName]
         return self._commandsInfo[cCmdID]['state']
 
+    def getChildCmd(self, cmdID, childCmdName):
+        cCmdID = self._commandsInfo[cmdID]['childCmdID'][childCmdName]
+        return self._commandsInfo[cCmdID]['cmd']
+
     def getCmdType(self, cmdID):
         return self._commandsInfo[cmdID]['cmd'].cmdType
     

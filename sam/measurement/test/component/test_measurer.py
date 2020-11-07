@@ -7,6 +7,7 @@ from sam.base.switch import *
 from sam.base.server import *
 from sam.base.link import *
 from sam.test.testBase import *
+from sam.measurement import measurer
 
 logging.basicConfig(level=logging.INFO)
 
@@ -62,7 +63,8 @@ class TestMeasurerClass(TestBase):
         return {'servers':serverList}
 
     def runMeasurer(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/measurement/measurer.py"
+        filePath = measurer.__file__
+        logging.error(filePath)
         self.sP.runPythonScript(filePath)
 
     def killMeasurer(self):

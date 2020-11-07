@@ -30,19 +30,24 @@ class Mediator(object):
         self._messageAgent.startRecvMsg(MEDIATOR_QUEUE)
 
     def startMediator(self):
-        while True:
-            msg = self._messageAgent.getMsg(MEDIATOR_QUEUE)
-            msgType = msg.getMessageType()
-            if msgType == None:
-                pass
-            else:
-                body = msg.getbody()
-                if self._messageAgent.isCommand(body):
-                    self._commandHandler(body)
-                elif self._messageAgent.isCommandReply(body):
-                    self._commandReplyHandler(body)
+        try:
+            while True:
+                msg = self._messageAgent.getMsg(MEDIATOR_QUEUE)
+                msgType = msg.getMessageType()
+                if msgType == None:
+                    pass
                 else:
-                    self.logger.error("Unknown massage body")
+                    body = msg.getbody()
+                    if self._messageAgent.isCommand(body):
+                        self._commandHandler(body)
+                    elif self._messageAgent.isCommandReply(body):
+                        self._commandReplyHandler(body)
+                    else:
+                        self.logger.error("Unknown massage body")
+        except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            self.logger.error("mediator occure error: {0}".format(message))
 
     def _commandHandler(self,cmd):
         self.logger.debug("Get a command")
@@ -52,10 +57,10 @@ class Mediator(object):
                 self._addSFCI2ClassifierController(cmd)
             self._addSFCI2NetworkController(cmd)
             self._addSFCI2BessController(cmd)
-            # wait for the cmdReply from bess sff
-            self._prepareChildCmd(cmd,MSG_TYPE_SERVER_MANAGER_CMD)
             # skip self._addSFCIs2Server(cmd), because we need install bess
             # before install vnf.
+            # prepare child cmd first
+            self._prepareChildCmd(cmd,MSG_TYPE_VNF_CONTROLLER_CMD)
         elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
             if self._mode['classifierType'] == 'Server':
                 self._delSFCI4ClassifierController(cmd)
@@ -111,14 +116,14 @@ class Mediator(object):
         self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _addSFCIs2Server(self,cmd):
-        cCmd = self._prepareChildCmd(cmd,MSG_TYPE_SERVER_MANAGER_CMD)
-        self.forwardCmd(cCmd,MSG_TYPE_SERVER_MANAGER_CMD,
+        cCmd = self._cm.getChildCmd(cmd.cmdID,MSG_TYPE_VNF_CONTROLLER_CMD)
+        self.forwardCmd(cCmd,MSG_TYPE_VNF_CONTROLLER_CMD,
             VNF_CONTROLLER_QUEUE)
         self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _delSFCIs4Server(self,cmd):
-        cCmd = self._prepareChildCmd(cmd,MSG_TYPE_SERVER_MANAGER_CMD)
-        self.forwardCmd(cCmd,MSG_TYPE_SERVER_MANAGER_CMD,
+        cCmd = self._prepareChildCmd(cmd,MSG_TYPE_VNF_CONTROLLER_CMD)
+        self.forwardCmd(cCmd,MSG_TYPE_VNF_CONTROLLER_CMD,
             SERVER_MANAGER_QUEUE)
         self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
@@ -182,12 +187,15 @@ class Mediator(object):
         cmd = self._cm.getCmd(cmdID)
         self.logger.debug("cmdRply attributes: {0}".format(
             cmdRply.attributes.keys()))
-        if  cmdRply.attributes.has_key('source'):
+        if cmdRply.attributes.has_key('source'):
             self.logger.debug(
                 "get cmd reply, cmdID:{0}, cmdType:{1}, source:{2}.".format(
                     cmdID, cmd.cmdType, cmdRply.attributes['source']))
         for keys, value in self._cm._commandsInfo.items():
-            self.logger.debug("self._cm: {0},{1}".format(keys, value['state']))
+            self.logger.debug(
+                "cmdID: {0}, cmdType:{1}, state: {2}, parentCmdID: {3}, childCmdID: {4}".format(
+                    keys, value['cmd'].cmdType,
+                    value['state'], value['parentCmdID'], value['childCmdID']))
         # execute state transfer action
         self._exeCmdStateAction(cmdID)
 
@@ -204,6 +212,7 @@ class Mediator(object):
                 self._cm.getCmdState(cmdID) == CMD_STATE_FAIL:
                 # debug
                 cmdInfo = self._cm._commandsInfo[parentCmdID]
+                self.logger.debug("A command is failed. Here are details:")
                 for childCmdID in cmdInfo['childCmdID'].itervalues():
                     if self._cm.getCmdState(childCmdID) == CMD_STATE_FAIL:
                         self.logger.debug("childCmdID: {0}".format(childCmdID))
@@ -262,7 +271,6 @@ class Mediator(object):
         if self._cm.getCmdType(parentCmdID) == CMD_TYPE_ADD_SFCI:
             bessState = self._cm.getChildCmdState(parentCmdID,
                 MSG_TYPE_SSF_CONTROLLER_CMD)
-            self.logger.debug("wating check______")
             if bessState == CMD_STATE_SUCCESSFUL:
                 cmd = self._cm.getCmd(parentCmdID)
                 self._addSFCIs2Server(cmd)

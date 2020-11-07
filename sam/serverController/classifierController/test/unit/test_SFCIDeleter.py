@@ -9,12 +9,13 @@ import pytest
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
-from sam.serverController.classifierController import *
 from sam.base.command import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
 from sam.test.testBase import *
+from sam.serverController.classifierController import *
+from sam.serverController.classifierController import classifierControllerCommandAgent
 
 MANUAL_TEST = True
 
@@ -43,10 +44,6 @@ class TestSFCIDeleterClass(TestBase):
         yield
         # teardown
         self.sP.killPythonScript("classifierControllerCommandAgent.py")
-
-    def runClassifierController(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/classifierControllerCommandAgent.py"
-        self.sP.runPythonScript(filePath)
 
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_delSFCI(self, setup_addSFCI):

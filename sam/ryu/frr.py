@@ -127,6 +127,10 @@ class FRR(BaseApp):
         self._add_flow(datapath,match,inst,table_id=IPv4_CLASSIFIER_TABLE,
             priority=3)
         # TODO: we need to add new cmd type: CMD_TYPE_DEL_SFC, to delete this route!
+        # However, before delete this route, we must check whether other SFC use the same matchFields.
+        # If yes, we can't delete this route.
+        # If no, we can delete this route.
+        # Maintain route info into self.ibm
         # self.ibm.addSFCIFlowTableEntry(SFCIID, dpid, IPv4_CLASSIFIER_TABLE, 
         #     matchFields)
 
@@ -136,7 +140,7 @@ class FRR(BaseApp):
         else:
             vnfID = VNF_TYPE_CLASSIFIER
         sfcID = sfci.SFCIID
-        ipNum = (10<<24) + ((sfcID & 0xFFF) << 12) + ((vnfID & 0xF) << 8) \
+        ipNum = (10<<24) + ((vnfID & 0xF) << 20) + ((sfcID & 0xFFF) << 8) \
             + (pathID & 0xFF)
         return self._sc.int2ip(ipNum)
 

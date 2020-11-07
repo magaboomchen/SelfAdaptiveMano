@@ -25,6 +25,11 @@ from sam.base.request import *
 
 threadLock = threading.Lock()
 
+# zone name
+MININET_ZONE = "MININET_ZONE"
+TURBONET_ZONE = "TURBONET_ZONE"
+SIMULATOR_ZONE = "SIMULATOR_ZONE"
+
 # formal queue type
 REQUEST_PROCESSOR_QUEUE = "REQUEST_PROCESSOR_QUEUE"
 DCN_INFO_RECIEVER_QUEUE = "DCN_INFO_RECIEVER_QUEUE"
@@ -198,7 +203,7 @@ class MessageAgent(object):
             else:
                 msg =  SAMMessage(None,None)
         else:
-            self.logger.error("No such msg queue.")
+            self.logger.error("No such msg queue. QueueName:{0}".format(srcQueueName))
             msg =  SAMMessage(None,None)
         threadLock.release()
         return msg

@@ -17,6 +17,10 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
 from sam.test.fixtures.vnfControllerStub import *
 from sam.test.testBase import *
+from sam.serverController.sffController import sffControllerCommandAgent
+from sam.serverController.sffController.test.unit.fixtures import sendArpRequest
+from sam.serverController.sffController.test.unit.fixtures import sendDirection0Traffic
+from sam.serverController.sffController.test.unit.fixtures import sendDirection1Traffic
 
 MANUAL_TEST = True
 
@@ -48,7 +52,7 @@ class TestSFFSFCIAdderClass(TestBase):
         self.killSFFController()
 
     def runSFFController(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/sffController/sffControllerCommandAgent.py"
+        filePath = sffControllerCommandAgent.__file__
         self.sP.runPythonScript(filePath)
 
     def killSFFController(self):
@@ -89,7 +93,7 @@ class TestSFFSFCIAdderClass(TestBase):
         self._checkArpRespond(inIntf="toVNF1")
 
     def _sendArpRequest(self, requestIP):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/sffController/test/unit/fixtures/sendArpRequest.py"
+        filePath = sendArpRequest.__file__
         self.sP.runPythonScript(filePath)
 
     def _checkArpRespond(self,inIntf):
@@ -109,7 +113,7 @@ class TestSFFSFCIAdderClass(TestBase):
         self._checkEncapsulatedTraffic(inIntf="toVNF1")
 
     def _sendDirection0Traffic2SFF(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/sffController/test/unit/fixtures/sendDirection0Traffic.py"
+        filePath = sendDirection0Traffic.__file__
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
@@ -133,7 +137,7 @@ class TestSFFSFCIAdderClass(TestBase):
         self._checkDecapsulatedTraffic(inIntf="toVNF1")
 
     def _sendDirection1Traffic2SFF(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/sffController/test/unit/fixtures/sendDirection1Traffic.py"
+        filePath = sendDirection1Traffic.__file__
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):

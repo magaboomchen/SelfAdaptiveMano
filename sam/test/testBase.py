@@ -17,14 +17,24 @@ from sam.base.path import *
 from sam.base.switch import *
 from sam.base.server import *
 from sam.base.link import *
-from sam.serverController.classifierController import *
-from sam.serverAgent.serverAgent import ServerAgent
-from sam.serverController.serverManager.serverManager import *
 from sam.base.command import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
 from sam.test.fixtures.orchestrationStub import *
+from sam.toolkit import cleanAllLogFile
+from sam.toolkit import clearAllSAMQueue
+from sam.toolkit import killAllSAMPythonScripts
+from sam.serverController.classifierController import *
+from sam.serverAgent.serverAgent import ServerAgent
+from sam.serverController.serverManager.serverManager import *
+from sam.serverController.classifierController import classifierControllerCommandAgent
+from sam.serverController.sffController import sffControllerCommandAgent
+from sam.serverController.vnfController import vnfController
+from sam.serverController.serverManager import serverManager
+from sam.orchestration import orchestrator
+from sam.mediator import mediator
+from sam.measurement import measurer
 
 OUTTER_CLIENT_IP = "1.1.1.1"
 WEBSITE_REAL_IP = "2.2.0.34"
@@ -36,16 +46,17 @@ CLASSIFIER_DATAPATH_MAC = "52:54:00:05:4D:7D"
 CLASSIFIER_CONTROL_IP = "192.168.122.34"
 CLASSIFIER_SERVERID = 10001
 
-VNFI1_0_IP = "10.0.17.1"
-VNFI1_1_IP = "10.0.17.128"
-FW_VNFI1_0_IP = "10.0.18.1"
-FW_VNFI1_1_IP = "10.0.18.128"
-LB_VNFI1_0_IP = "10.0.21.1"
-LB_VNFI1_1_IP = "10.0.21.128"
-MON_VNFI1_0_IP = "10.0.20.1"
-MON_VNFI1_1_IP = "10.0.20.128"
-SFCI1_0_EGRESS_IP = "10.0.16.1"
-SFCI1_1_EGRESS_IP = "10.0.16.128"
+VNFI1_0_IP = "10.16.1.1"
+VNFI1_1_IP = "10.16.1.128"
+FW_VNFI1_0_IP = "10.32.1.1"
+FW_VNFI1_1_IP = "10.32.1.128"
+MON_VNFI1_0_IP = "10.64.1.1"
+MON_VNFI1_1_IP = "10.64.1.128"
+LB_VNFI1_0_IP = "10.80.1.1"
+LB_VNFI1_1_IP = "10.80.1.128"
+SFCI1_0_EGRESS_IP = "10.0.0.1"
+SFCI1_1_EGRESS_IP = "10.0.0.128"
+
 
 SFF1_DATAPATH_IP = "2.2.0.69"
 SFF1_DATAPATH_MAC = "52:54:00:9D:F4:F4"
@@ -90,25 +101,41 @@ class TestBase(object):
         return server
 
     def runClassifierController(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/classifierControllerCommandAgent.py"
+        filePath = classifierControllerCommandAgent.__file__
         self.sP.runPythonScript(filePath)
 
     def killClassifierController(self):
         self.sP.killPythonScript("classifierControllerCommandAgent.py")
 
     def runSFFController(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/sffController/sffControllerCommandAgent.py"
+        filePath = sffControllerCommandAgent.__file__
         self.sP.runPythonScript(filePath)
 
     def killSFFController(self):
         self.sP.killPythonScript("sffControllerCommandAgent.py")
 
     def runVNFController(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/vnfController/vnfController.py"
+        filePath = vnfController.__file__
         self.sP.runPythonScript(filePath)
 
     def killVNFController(self):
         self.sP.killPythonScript("vnfController.py")
+
+    def runOrchestrator(self):
+        filePath = orchestrator.__file__
+        self.sP.runPythonScript(filePath)
+
+    def runMeasurer(self):
+        filePath = measurer.__file__
+        self.sP.runPythonScript(filePath)
+
+    def runMediator(self):
+        filePath = mediator.__file__
+        self.sP.runPythonScript(filePath)
+
+    def runServerManager(self):
+        filePath = serverManager.__file__
+        self.sP.runPythonScript(filePath)
 
     def genUniDirectionSFC(self, classifier):
         sfcUUID = uuid.uuid1()
@@ -376,10 +403,13 @@ class TestBase(object):
         del messageAgentTmp
 
     def clearQueue(self):
-        self.sP.runShellCommand("python ../../../toolkit/clearAllSAMQueue.py")
+        self.sP.runShellCommand("python " + clearAllSAMQueue.__file__)
 
     def cleanLog(self):
-        self.sP.runShellCommand("python ../../../toolkit/cleanAllLogFile.py")
+        self.sP.runShellCommand("python " + cleanAllLogFile.__file__)
+
+    def killAllModule(self):
+        self.sP.runShellCommand("sudo python " + killAllSAMPythonScripts.__file__)
 
     def genSwitchList(self, num, switchType, 
             switchLANNetlist, switchIDList):
@@ -414,6 +444,11 @@ class TestBase(object):
     def genAddSFCIRequest(self, sfc):
         sfc.backupInstanceNumber = 3
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
+            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'zone':""})
+        return request
+    
+    def genDelSFCIRequest(self, sfc):
+        request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,
             REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'zone':""})
         return request
 

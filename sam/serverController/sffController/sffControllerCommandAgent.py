@@ -15,11 +15,12 @@ from sam.serverController.sffController.sibMaintainer import *
 from sam.serverController.sffController.sffSFCIAdder import *
 from sam.serverController.sffController.sffSFCIDeleter import *
 from sam.serverController.sffController.sffMonitor import *
+from sam.serverController.sffController.argParser import ArgParser
 
 # TODO: finish sfci monitor
 
 class SFFControllerCommandAgent(object):
-    def __init__(self):
+    def __init__(self, zoneName=""):
         self._commandsInfo = {}
         logConfigur = LoggerConfigurator(__name__, './log',
             'sffController.log', level='debug')
@@ -32,7 +33,8 @@ class SFFControllerCommandAgent(object):
         self.sffMonitor = SFFMonitor(self.sibms, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
-        self._messageAgent.startRecvMsg(SFF_CONTROLLER_QUEUE)
+        queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, zoneName)
+        self._messageAgent.startRecvMsg(queueName)
 
     def startSFFControllerCommandAgent(self):
         while True:
@@ -74,5 +76,7 @@ class SFFControllerCommandAgent(object):
                 self.logger.error("Unknown msg type.")
 
 if __name__=="__main__":
-    sC = SFFControllerCommandAgent()
+    argParser = ArgParser()
+    zoneName = argParser.getArgs()['zoneName']   # example: None parameter
+    sC = SFFControllerCommandAgent(zoneName)
     sC.startSFFControllerCommandAgent()

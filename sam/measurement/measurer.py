@@ -25,7 +25,7 @@ from sam.measurement.dcnInfoBaseMaintainer import *
 class Measurer(object):
     def __init__(self):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'measurer.log', level='info')
+            'measurer.log', level='warning')
         self.logger = logConfigur.getLogger()
 
         self._dib = DCNInfoBaseMaintainer()
@@ -96,6 +96,7 @@ class Measurer(object):
                     self.logger.error("measurer occure error: {0}".format(message))
 
     def _requestHandler(self, request):
+        self.logger.info("Recv a request")
         if request.requestType == REQUEST_TYPE_GET_DCN_INFO:
             attributes = self.getTopoAttributes()
             rply = Reply(request.requestID,
@@ -118,7 +119,7 @@ class Measurer(object):
         self._messageAgent.sendMsg(queueName, msg)
 
     def _commandReplyHandler(self, cmdRply):
-        self.logger.info("Get command reply")
+        self.logger.info("Get a command reply")
         self.logger.debug(cmdRply)
         zoneName = cmdRply.attributes['zone']
         for key,value in cmdRply.attributes.items():

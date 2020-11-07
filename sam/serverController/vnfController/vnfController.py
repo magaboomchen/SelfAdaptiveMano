@@ -14,9 +14,10 @@ from sam.serverController.vnfController.vnfiAdder import *
 from sam.serverController.vnfController.vnfiDeleter import *
 from sam.serverController.vnfController.vnfMaintainer import *
 from sam.serverController.vnfController.sourceAllocator import *
+from sam.serverController.vnfController.argParser import ArgParser
 
 class VNFController(object):
-    def __init__(self):
+    def __init__(self, zoneName=""):
         logConf = LoggerConfigurator(__name__, './log', 'vnfController.log',
             level='debug')
         self.logger = logConf.getLogger()
@@ -33,7 +34,8 @@ class VNFController(object):
         self._cpuManager = {}  # serverID: sourceAllocator for CPU
 
         self._messageAgent = MessageAgent()
-        self._messageAgent.startRecvMsg(VNF_CONTROLLER_QUEUE)
+        queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, zoneName)
+        self._messageAgent.startRecvMsg(queueName)
 
     def startVNFController(self):
         while True:
@@ -126,5 +128,7 @@ class VNFController(object):
 
 
 if __name__=="__main__":
-    vc = VNFController()
+    argParser = ArgParser()
+    zoneName = argParser.getArgs()['zoneName']   # example: None parameter
+    vc = VNFController(zoneName)
     vc.startVNFController()

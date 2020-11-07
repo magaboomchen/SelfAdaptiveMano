@@ -25,7 +25,15 @@ sudo python -m pytest ./test_UFRR.py -s
 ```
 
 
-根据提示，在mininet中输入0启动UFRR测试；输入cli进入命令行模式
+根据提示，在mininet中输入0启动UFRR测试；
+
+输入cli进入命令行模式，常用命令：
+
+```
+h1 ping h2
+link s1 s2 down
+s2 ip link set dev eth2 down 
+```
 
 <br />
 
