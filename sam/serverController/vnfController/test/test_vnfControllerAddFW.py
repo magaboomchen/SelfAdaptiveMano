@@ -25,7 +25,7 @@ TESTER_SERVER_DATAPATH_MAC = "52:54:00:a8:b0:a1"
 
 SFF0_DATAPATH_IP = "2.2.0.200"
 SFF0_DATAPATH_MAC = "52:54:00:5a:14:f0"
-SFF0_CONTROLNIC_IP = "192.168.0.158"
+SFF0_CONTROLNIC_IP = "192.168.0.201"
 SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 
 logging.basicConfig(level=logging.INFO)
@@ -37,7 +37,7 @@ class TestVNFAddFW(TestBase):
         # setup
         self.resetRabbitMQConf(
             "/home/t1/Projects/SelfAdaptiveMano/sam/base/rabbitMQConf.conf",
-            "192.168.0.201", "mq", "123456")
+            "192.168.0.158", "mq", "123456")
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_FW])
         self.sfci = self.genBiDirection10BackupSFCI()
