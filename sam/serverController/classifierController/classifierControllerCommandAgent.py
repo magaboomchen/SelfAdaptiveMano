@@ -62,8 +62,10 @@ class ClassifierControllerCommandAgent(object):
                     self.logger.error("Classifier Controller occure error: {0}".format(message))
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 finally:
+                    cmdRply = CommandReply(cmd.cmdID, self._commandsInfo[cmd.cmdID]["state"])
+                    cmdRply.attributes["source"] = {"classifierController"}
                     rplyMsg = SAMMessage(MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY, 
-                        CommandReply(cmd.cmdID,self._commandsInfo[cmd.cmdID]["state"]))
+                        cmdRply)
                     self._messageAgent.sendMsg(MEDIATOR_QUEUE,rplyMsg)
             elif msg.getMessageType() == None:
                 pass

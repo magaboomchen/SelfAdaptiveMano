@@ -22,30 +22,25 @@ We need to discuss together and then work it out.
 
 # BUG LIST
 
-messageAgent send message failed when idle time is too long. (debugged)
-
-test_OSFCAdder.py: server's data structure in setup is wrong! This unit test can't pass.
-
-orchestrator
+Refactor datapath: encoding format error. "VNFID+SFCID+PATHID"
 
 # TODO LIST
 
-test orchestrator
-
-Modify emulation physical topology: keep it real, portable to TurboNet
-
-Modify NetworkController's add SFCI cmd function. (add match filed with inport into IPv4_CLASSIFIER_TABLE); add delete SFC cmd function (delete the match entry in IPv4_CLASSIFIER_TABLE)
-
 Add zone to all controller
+* Simulator as Zone_Simulation
+* Mininet as Zone_Mininet
+* Turbonet as Zone_Turbonet
 
-Modify mediator: add zone
+Orchestrator
+* del sfci request
 
-Simulator as Zone_Simulation; Mininet as Zone_Mininet;
+Measurer
+* add self.sendGetSFCIStateCmd()
 
-Refactor datapath: encoding format error. "VNFID+SFCID+PATHID"
+SFFController
+* add getSFCIStatus
 
-Add getSFCIStatus in sffController; measurer: add self.sendGetSFCIStateCmd()
-
-Add sfci deleter in ufrr (optional)
+NetworkController
+* (Optional) ryuCommandAgentUFRR/ryuCommandAgentNotVia: add CMD_TYPE_DEL_SFC handler (delete route2Classifier)
 
 # FEATURE REQUEST LIST

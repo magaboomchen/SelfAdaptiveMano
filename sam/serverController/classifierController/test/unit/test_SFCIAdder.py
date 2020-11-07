@@ -15,6 +15,7 @@ from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
 from sam.test.testBase import *
+from sam.serverController.classifierController.test.unit.fixtures import sendArpRequest, sendInboundTraffic, sendOutSFCDomainTraffic
 
 MANUAL_TEST = True
 
@@ -41,7 +42,7 @@ class TestSFCIAdderClass(TestBase):
         self.killClassifierController()
 
     def runClassifierController(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/classifierControllerCommandAgent.py"
+        filePath = classifierControllerCommandAgent.__file__
         self.sP.runPythonScript(filePath)
 
     def killClassifierController(self):
@@ -64,7 +65,7 @@ class TestSFCIAdderClass(TestBase):
         self._checkArpRespond(inIntf="toClassifier")
 
     def _sendArpRequest(self, requestIP):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/test/unit/fixtures/sendArpRequest.py"
+        filePath = sendArpRequest.__file__
         self.sP.runPythonScript(filePath)
 
     def _checkArpRespond(self,inIntf):
@@ -83,7 +84,7 @@ class TestSFCIAdderClass(TestBase):
         self._checkEncapsulatedTraffic(inIntf="toClassifier")
 
     def _sendInboundTraffic2Classifier(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/test/unit/fixtures/sendInboundTraffic.py"
+        filePath = sendInboundTraffic.__file__
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
@@ -107,7 +108,7 @@ class TestSFCIAdderClass(TestBase):
         self._checkDecapsulatedTraffic(inIntf="toClassifier")
 
     def _sendOutSFCDomainTraffic2Classifier(self):
-        filePath = "~/HaoChen/Project/SelfAdaptiveMano/sam/serverController/classifierController/test/unit/fixtures/sendOutSFCDomainTraffic.py"
+        filePath = sendOutSFCDomainTraffic.__file__
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):

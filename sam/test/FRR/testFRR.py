@@ -16,17 +16,6 @@ from sam.test.fixtures.vnfControllerStub import *
 logging.basicConfig(level=logging.INFO)
 
 class TestFRR(TestBase):
-    def clearQueue(self):
-        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue NETWORK_CONTROLLER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue SFF_CONTROLLER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue SERVER_CLASSIFIER_CONTROLLER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue MININET_TESTER_QUEUE")
-
     def addSFCI2Classifier(self):
         logging.info("setup add SFCI to classifier")
         self.addSFCICmd.cmdID = uuid.uuid1()

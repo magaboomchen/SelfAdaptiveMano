@@ -16,6 +16,7 @@ from sam.serverAgent.argParser import ArgParser
 from sam.serverAgent.systemChecker import SystemChecker
 from sam.serverAgent.bessStarter import BessStarter
 from sam.serverAgent.dockerConfigurator import DockerConfigurator
+from sam.serverAgent.dpdkConfigurator import DPDKConfigurator
 from sam.base.server import Server
 from sam.base.messageAgent import *
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -39,8 +40,9 @@ class ServerAgent(object):
         self._server.updateIfSet()
 
         self.grpcUrl = self._server.getControlNICIP() + ":10514"
-        self.bS = BessStarter(self.grpcUrl, NICPCIAddress)
+        self.bS = BessStarter(self.grpcUrl)
         self.bS.killBessd() # must kill bessd first
+        DPDKConfigurator(NICPCIAddress)
         self._server.updateDataPathNICMAC() # Then we can guarantee huge page
         self.bS.startBESSD()
 

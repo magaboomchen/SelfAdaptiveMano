@@ -12,7 +12,7 @@ class ShellProcessor(object):
     def __init__(self):
         logging.getLogger("psutil").setLevel(logging.ERROR)
         logConfigur = LoggerConfigurator(__name__, './log',
-            'shellProcessor.log', level='debug')
+            'shellProcessor.log', level='warning')
         self.logger = logConfigur.getLogger()
 
     def listRunningProcess(self):
