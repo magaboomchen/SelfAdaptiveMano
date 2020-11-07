@@ -242,9 +242,9 @@ class ClassifierInitializer(BessControlPlane):
             # rule 2
             # ipv4 traffic to gate 1
             argument = Any()
-            dstIPMask = self._sc.ipPrefix2Mask(32)
-            dstIPMask = self._sc.aton(dstIPMask)
-            classifierDatapathIP = classifier.getDatapathNICIP()
+            # dstIPMask = self._sc.ipPrefix2Mask(32)
+            # dstIPMask = self._sc.aton(dstIPMask)
+            # classifierDatapathIP = classifier.getDatapathNICIP()
             arg = module_msg_pb2.WildcardMatchCommandAddArg(gate=1,
                 values=[
                     {"value_bin":b'\x00'},
@@ -256,7 +256,7 @@ class ClassifierInitializer(BessControlPlane):
                 masks=[
                     {'value_bin':b'\x00'},
                     {'value_bin':b'\x00\x00\x00\x00'},
-                    {'value_bin':b'\x0F\x00\x0F\x00'},
+                    {'value_bin':b'\x0F\xF0\x00\x00'},
                     {'value_bin':b'\x00\x00'},
                     {'value_bin':b'\x00\x00'}
                 ]

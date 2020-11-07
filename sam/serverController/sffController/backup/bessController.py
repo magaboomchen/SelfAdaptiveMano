@@ -356,7 +356,7 @@ class BESSController(object):
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
     def _getUpdateValue(self,SFCID,nextVNFID):
-        return ((SFCID & 0xFFF) << 4) + (nextVNFID & 0XF)
+        return ((nextVNFID & 0XF) << 12) + (SFCID & 0xFFF)
 
     def _delSFCinBESS(self,cmd):
         sfc = cmd.attributes['sfc']

@@ -82,7 +82,7 @@ class BessControlPlane(object):
         return [values,masks]
 
     def _genIP4SVPIDs(self,sfcID,vnfID,pathID):
-        ipNum = (10<<24) + ((sfcID & 0xFFF) << 12) + ((vnfID & 0xF) << 8) \
+        ipNum = (10<<24) + ((vnfID & 0xF) << 20) + ((sfcID & 0xFFF) << 8) \
             + (pathID & 0xFF)
         return self._sc.int2ip(ipNum)
 

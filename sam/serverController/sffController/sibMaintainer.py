@@ -75,7 +75,7 @@ class SIBMaintainer(BessInfoBaseMaintainer):
                     return VNF_TYPE_CLASSIFIER
 
     def getUpdateValue(self,SFCIID,nextVNFID):
-        value = ((SFCIID & 0xFFF) << 4) + (nextVNFID & 0XF)
+        value = (SFCIID & 0xFFF) + ((nextVNFID & 0XF) << 12)
         return value
 
     def assignSFFWM2OGate(self,VNFID,directionID):
@@ -85,7 +85,7 @@ class SIBMaintainer(BessInfoBaseMaintainer):
         return oGateNum
 
     def getSFFWM2MatchValue(self,SFCIID,VNFID,directionID):
-        value = (10<<24) + ((SFCIID & 0xFFF) << 12) + ((VNFID & 0XF)<<8) + ((directionID & 0x1) <<7)
+        value = (10<<24) + ((VNFID & 0XF)<<20) + ((SFCIID & 0xFFF) << 8) + ((directionID & 0x1) <<7)
         return value
     
     def show(self):
