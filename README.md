@@ -22,20 +22,24 @@ We need to discuss together and then work it out.
 
 # BUG LIST
 
-Refactor datapath: encoding format error. "VNFID+SFCID+PATHID"
-
 # TODO LIST
 
 Add zone to all controller
-* Simulator as Zone_Simulation
-* Mininet as Zone_Mininet
-* Turbonet as Zone_Turbonet
+* Simulator as SIMULATOR_ZONE
+* Mininet as MININET_ZONE
+* Turbonet as TURBONET_ZONE
 
 Orchestrator
-* del sfci request
+* add ADD_SFC_REQUEST, ADD_SFCI_REQUEST, DEL_SFCI_REQUEST, DEL_SFC_REQUEST
 
 Measurer
 * add self.sendGetSFCIStateCmd()
+
+Adaptive
+* give a design
+
+Request Processor
+* give a design
 
 SFFController
 * add getSFCIStatus

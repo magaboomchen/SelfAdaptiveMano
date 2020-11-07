@@ -13,19 +13,23 @@ from sam.base.server import Server
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import *
 from sam.base.command import *
+from sam.serverController.serverManager.argParser import ArgParser
 
 SERVER_TIMEOUT = 10
 TIMEOUT_CLEANER_INTERVAL = 5
 SERVERID_OFFSET = 10001
 
 class SeverManager(object):
-    def __init__(self):
+    def __init__(self, zoneName=""):
         logConfigur = LoggerConfigurator(__name__, './log',
             'serverManager.log', level='debug')
         self.logger = logConfigur.getLogger()
         self.logger.info('Init ServerManager')
+
         self._messageAgent = MessageAgent(self.logger)
-        self._messageAgent.startRecvMsg(SERVER_MANAGER_QUEUE)
+        queueName = self._messageAgent.genQueueName(SERVER_MANAGER_QUEUE, zoneName)
+        self._messageAgent.startRecvMsg(queueName)
+
         self.serverSet = {}
         self._timeoutCleaner()
         self._listener()
@@ -152,4 +156,6 @@ class TimeoutCleaner(threading.Thread):
         return difference.days * seconds_in_day + difference.seconds
 
 if __name__=="__main__":
-    severManager = SeverManager()
+    argParser = ArgParser()
+    zoneName = argParser.getArgs()['zoneName']   # example: None parameter
+    severManager = SeverManager(zoneName)

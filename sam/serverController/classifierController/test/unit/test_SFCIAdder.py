@@ -41,10 +41,6 @@ class TestSFCIAdderClass(TestBase):
         # teardown
         self.killClassifierController()
 
-    def runClassifierController(self):
-        filePath = classifierControllerCommandAgent.__file__
-        self.sP.runPythonScript(filePath)
-
     def killClassifierController(self):
         self.sP.killPythonScript("classifierControllerCommandAgent.py")
 

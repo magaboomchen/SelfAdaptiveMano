@@ -19,11 +19,12 @@ from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.classifierController.cibMaintainer import *
 from sam.serverController.classifierController.classifierSFCIAdder import *
 from sam.serverController.classifierController.classifierSFCIDeleter import *
+from sam.serverController.classifierController.argParser import ArgParser
 
 class ClassifierControllerCommandAgent(object):
-    def __init__(self):
+    def __init__(self, zoneName=""):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'classifierController.log', level='warning')
+            'classifierController.log', level='info')
         self.logger = logConfigur.getLogger()
         self.logger.info("Initialize classifier controller command agent.")
         self._commandsInfo = {}
@@ -34,7 +35,8 @@ class ClassifierControllerCommandAgent(object):
         self.clsfSFCIDeleter = ClassifierSFCIDeleter(self.cibms, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
-        self._messageAgent.startRecvMsg(SERVER_CLASSIFIER_CONTROLLER_QUEUE)
+        queueName = self._messageAgent.genQueueName(SERVER_CLASSIFIER_CONTROLLER_QUEUE, zoneName)
+        self._messageAgent.startRecvMsg(queueName)
 
     def startClassifierControllerCommandAgent(self):
         while True:
@@ -73,5 +75,7 @@ class ClassifierControllerCommandAgent(object):
                 self.logger.error("Unknown msg type.")
 
 if __name__=="__main__":
-    cC = ClassifierControllerCommandAgent()
+    argParser = ArgParser()
+    zoneName = argParser.getArgs()['zoneName']   # example: None parameter
+    cC = ClassifierControllerCommandAgent(zoneName)
     cC.startClassifierControllerCommandAgent()

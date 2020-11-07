@@ -45,10 +45,6 @@ class TestSFCIDeleterClass(TestBase):
         # teardown
         self.sP.killPythonScript("classifierControllerCommandAgent.py")
 
-    def runClassifierController(self):
-        filePath = classifierControllerCommandAgent.__file__
-        self.sP.runPythonScript(filePath)
-
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_delSFCI(self, setup_addSFCI):
         # exercise
