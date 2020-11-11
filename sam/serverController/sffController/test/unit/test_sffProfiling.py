@@ -20,13 +20,14 @@ from sam.test.testBase import *
 from sam.serverController.classifierController import *
 
 MANUAL_TEST = True
-TESTER_SERVER_DATAPATH_IP = "2.2.0.199"
-TESTER_SERVER_DATAPATH_MAC = "52:54:00:a8:b0:a1"
+TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
+TESTER_SERVER_DATAPATH_MAC = "f4:e9:d4:a3:53:a0"
 
-SFF0_DATAPATH_IP = "2.2.0.200"
-SFF0_DATAPATH_MAC = "52:54:00:5a:14:f0"
-SFF0_CONTROLNIC_IP = "192.168.0.201"
-SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
+SFF0_DATAPATH_IP = "2.2.0.38"
+SFF0_DATAPATH_MAC = "00:1b:21:c0:8f:98"
+
+SFF0_CONTROLNIC_IP = "192.168.0.173"
+SFF0_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
 
 logging.basicConfig(level=logging.INFO)
 
@@ -35,37 +36,27 @@ class TestVNFAddFW(TestBase):
     @pytest.fixture(scope="function")
     def setup_addFW(self):
         # setup
-        self.resetRabbitMQConf(
-            "/home/t1/Projects/SelfAdaptiveMano/sam/base/rabbitMQConf.conf",
-            "192.168.0.158", "mq", "123456")
+        self.clearQueue()
+        self.sP = ShellProcessor()
+
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_FW])
         self.sfci = self.genBiDirection10BackupSFCI()
-        self.mediator = MediatorStub()
-        self.sP = ShellProcessor()
-        self.clearQueue()
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
             TESTER_SERVER_DATAPATH_MAC)
-
-        self.runSFFController()
+        self.mediator = MediatorStub()
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.addSFCI2SFF()
 
         # setup
         self.runVNFController()
+        self.runSFFController()
 
         yield
         # teardown
         self.delVNFI4Server()
         self.killSFFController()
         self.killVNFController()
-
-    def resetRabbitMQConf(self, filePath, serverIP,
-            serverUser, serverPasswd):
-        with open(filePath, 'w') as f:
-            f.write("RABBITMQSERVERIP = '{0}'\n".format(serverIP))
-            f.write("RABBITMQSERVERUSER = '{0}'\n".format(serverUser))
-            f.write("RABBITMQSERVERPASSWD = '{0}'\n".format(serverPasswd))
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
@@ -94,12 +85,6 @@ class TestVNFAddFW(TestBase):
         rules.append(ACLTuple(ACL_ACTION_DENY))
         return rules
 
-    def runSFFController(self):
-        filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/sffController/sffControllerCommandAgent.py"
-        self.sP.runPythonScript(filePath)
-
-    def killSFFController(self):
-        self.sP.killPythonScript("sffControllerCommandAgent.py")
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")
@@ -110,30 +95,8 @@ class TestVNFAddFW(TestBase):
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-    def runVNFController(self):
-        filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/vnfController/vnfController.py"
-        self.sP.runPythonScript(filePath)
-
-    def killVNFController(self):
-        self.sP.killPythonScript("vnfController.py")
-    '''
-    def addVNFI2Server(self):
-        logging.info("setup add SFCI to server")
-        try:
-            # In normal case, there should be a timeout error!
-            shellCmdRply = self.vC.installVNF("t1", "t1@netlab325", "192.168.0.156",
-                self.sfci.VNFISequence[0][0].VNFIID)
-            logging.info(
-                "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
-                None,
-                shellCmdRply['stdout'].read().decode('utf-8'),
-                shellCmdRply['stderr'].read().decode('utf-8')))
-        except:
-            logging.info("If raise IOError: reading from stdin while output is captured")
-            logging.info("Then pytest should use -s option!")
-    '''
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
+        logging.warning("DeletingÂ VNFI")
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
@@ -147,13 +110,14 @@ class TestVNFAddFW(TestBase):
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE,
             MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
+        self.verifyCmdRply()
 
         # verifiy
         time.sleep(10)
-        self.verifyDirection0Traffic()
-        self.verifyDirection1Traffic()
-        self.verifyCmdRply()
-
+        # self.verifyDirection0Traffic()
+        # self.verifyDirection1Traffic()
+        logging.info("please press any key to quit.")
+        raw_input()
 
     def verifyDirection0Traffic(self):
         self._sendDirection0Traffic2SFF()
@@ -178,7 +142,6 @@ class TestVNFAddFW(TestBase):
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
         assert innerPkt[IP].dst == WEBSITE_REAL_IP
-
 
     def verifyDirection1Traffic(self):
         self._sendDirection1Traffic2SFF()

@@ -17,8 +17,8 @@ class LoggerConfigurator(object):
 
     def __init__(self, loggerName, directory=None, filename=None,
             level='info',
-            fmt='%(asctime)s - %(pathname)s[line:%(lineno)d]' \
-                '- %(levelname)s:\n%(message)s',
+            fmt='%(asctime)s - %(filename)s[line:%(lineno)d]' \
+                '- %(levelname)s:\t%(message)s',
             when='D', interval=1, backCount=7):
 
         if directory != None and not os.path.exists(directory):

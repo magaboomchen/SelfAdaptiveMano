@@ -50,7 +50,7 @@ class SFFInitializer(BessControlPlane):
             # NIC
             # PMDPort()
             argument = Any()
-            argument.Pack( port_msg_pb2.PMDPortArg(loopback=True,port_id=0,
+            argument.Pack( port_msg_pb2.PMDPortArg(loopback=False,port_id=0,
                 vlan_offload_rx_strip=False,vlan_offload_rx_filter=False,
                 vlan_offload_rx_qinq =False
                 ))

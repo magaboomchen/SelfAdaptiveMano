@@ -33,8 +33,7 @@ class TestSFCIDeleterClass(TestBase):
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
         self.sP = ShellProcessor()
-        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
-        self.sP.runShellCommand("sudo rabbitmqctl purge_queue SERVER_CLASSIFIER_CONTROLLER_QUEUE")
+        self.clearQueue()
         self.server = self.genTesterServer("192.168.123.1","fe:54:00:05:4d:7d")
         self.runClassifierController()
         addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
@@ -43,7 +42,7 @@ class TestSFCIDeleterClass(TestBase):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         yield
         # teardown
-        self.sP.killPythonScript("classifierControllerCommandAgent.py")
+        self.killClassifierController()
 
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_delSFCI(self, setup_addSFCI):

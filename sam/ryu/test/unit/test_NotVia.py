@@ -43,13 +43,7 @@ class TestNotViaClass(TestBase):
         self.mediator = MediatorStub()
         self.vC = VNFControllerStub()
         self.sP = ShellProcessor()
-        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue NETWORK_CONTROLLER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue SFF_CONTROLLER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue SERVER_CLASSIFIER_CONTROLLER_QUEUE")
+        self.clearQueue()
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc,self.sfci)
 
         # add SFCI to classifier
@@ -130,13 +124,7 @@ class TestNotViaClass(TestBase):
         self.mediator = MediatorStub()
         self.vC = VNFControllerStub()
         self.sP = ShellProcessor()
-        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue NETWORK_CONTROLLER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue SFF_CONTROLLER_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue SERVER_CLASSIFIER_CONTROLLER_QUEUE")
+        self.clearQueue()
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc,self.sfci)
 
         # add SFCI to classifier

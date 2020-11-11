@@ -18,7 +18,7 @@ from sam.test.fixtures.mediatorStub import *
 from sam.test.fixtures.vnfControllerStub import *
 from sam.test.testBase import *
 from sam.serverController.sffController import sffControllerCommandAgent
-from sam.serverController.sffController.test.unit.fixtures import sendArpRequest
+from sam.test.fixtures import sendArpRequest
 from sam.serverController.sffController.test.unit.fixtures import sendDirection0Traffic
 from sam.serverController.sffController.test.unit.fixtures import sendDirection1Traffic
 
@@ -38,9 +38,7 @@ class TestSFFSFCIAdderClass(TestBase):
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
         self.sP = ShellProcessor()
-        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
-        self.sP.runShellCommand(
-                "sudo rabbitmqctl purge_queue SFF_CONTROLLER_QUEUE")
+        self.clearQueue()
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
             TESTER_SERVER_DATAPATH_MAC)
         self.vC = VNFControllerStub()
@@ -54,9 +52,6 @@ class TestSFFSFCIAdderClass(TestBase):
     def runSFFController(self):
         filePath = sffControllerCommandAgent.__file__
         self.sP.runPythonScript(filePath)
-
-    def killSFFController(self):
-        self.sP.killPythonScript("sffControllerCommandAgent.py")
 
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_addSFCI(self, setup_addSFCI):
@@ -89,12 +84,14 @@ class TestSFFSFCIAdderClass(TestBase):
         self.verifyDirection1Traffic()
 
     def verifyArpResponder(self):
-        self._sendArpRequest(requestIP=SFF1_DATAPATH_IP)
+        self._sendArpRequest(interface="toVNF1", requestIP=SFF1_DATAPATH_IP)
         self._checkArpRespond(inIntf="toVNF1")
 
-    def _sendArpRequest(self, requestIP):
+    def _sendArpRequest(self, interface, requestIP):
         filePath = sendArpRequest.__file__
-        self.sP.runPythonScript(filePath)
+        self.sP.runPythonScript(filePath \
+            + " -i " + interface \
+            + " -dip " + requestIP)
 
     def _checkArpRespond(self,inIntf):
         logging.info("_checkArpRespond: wait for packet")

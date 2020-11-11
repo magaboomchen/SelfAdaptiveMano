@@ -15,7 +15,7 @@ from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
 from sam.test.testBase import *
-from sam.serverController.classifierController.test.unit.fixtures import sendArpRequest, sendInboundTraffic, sendOutSFCDomainTraffic
+from sam.test.fixtures import sendArpRequest, sendInboundTraffic, sendOutSFCDomainTraffic
 
 MANUAL_TEST = True
 
@@ -33,16 +33,12 @@ class TestSFCIAdderClass(TestBase):
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
         self.sP = ShellProcessor()
-        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
-        self.sP.runShellCommand("sudo rabbitmqctl purge_queue SERVER_CLASSIFIER_CONTROLLER_QUEUE")
-        self.server = self.genTesterServer("192.168.123.1","fe:54:00:05:4d:7d")
+        self.clearQueue()
+        self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP, TESTER_SERVER_DATAPATH_MAC)
         self.runClassifierController()
         yield
         # teardown
         self.killClassifierController()
-
-    def killClassifierController(self):
-        self.sP.killPythonScript("classifierControllerCommandAgent.py")
 
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_addSFCI(self, setup_addSFCI):
@@ -51,10 +47,10 @@ class TestSFCIAdderClass(TestBase):
         self.sendCmd(SERVER_CLASSIFIER_CONTROLLER_QUEUE,
             MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, self.addSFCICmd)
         # verify
+        self.verifyCmdRply()
         self.verifyArpResponder()
         self.verifyInboundTraffic()
         self.verifyOutSFCDomainTraffic()
-        self.verifyCmdRply()
 
     def verifyArpResponder(self):
         self._sendArpRequest(requestIP=CLASSIFIER_DATAPATH_IP)
@@ -62,7 +58,7 @@ class TestSFCIAdderClass(TestBase):
 
     def _sendArpRequest(self, requestIP):
         filePath = sendArpRequest.__file__
-        self.sP.runPythonScript(filePath)
+        self.sP.runPythonScript(filePath + " -dip " + requestIP)
 
     def _checkArpRespond(self,inIntf):
         logging.info("_checkArpRespond: wait for packet")
