@@ -82,8 +82,9 @@ class VNFIAdder(object):
             command = command + ' && ./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
             #logging.info(command)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
+            #ulimit = docker.types.Ulimit(name='stack', soft=268435456, hard=268435456)
             container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
-                volumes=volumes, detach=True)
+                volumes=volumes, detach=True) #, ulimits=[ulimit])
         except Exception as e:
             # free allocated CPU and virtioID
             cpuAllo.freeSource(startCPU, vnfi.maxCPUNum)
