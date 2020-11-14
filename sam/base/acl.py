@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import sys
+
 ACL_PROTO_TCP = 6
 ACL_PROTO_UDP = 17
 ACL_PROTO_ICMP = 1
@@ -115,4 +117,9 @@ if __name__ == '__main__':
     acl5 = ACLTuple(0, None, None, None, (1024, None), None)
     print(acl5.genFWLine())
     '''
-    parseACLFile('/home/t1/Projects/Classbench/fw4_10k')
+    fileName = sys.argv[1]
+    acls = parseACLFile(fileName)
+    with open('statelessFW', 'w') as f:
+        for each in acls:
+            f.write(each.genFWLine())
+            f.write('\n')
