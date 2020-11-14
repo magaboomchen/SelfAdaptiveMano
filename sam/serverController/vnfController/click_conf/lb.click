@@ -16,8 +16,8 @@ class_right :: Classifier(12/0806 20/0001,  // ARP query
                          12/0800);          // IP
 
 
-in0 -> Print() -> class_left;
-in1 -> Print() -> class_right;
+in0 -> class_left;
+in1 -> class_right;
 
 // free for arp
 class_left[0] -> out1;
@@ -31,9 +31,9 @@ ipip_right :: IPFilter(allow ipip);
 class_left[2] -> Strip(14) -> CheckIPHeader2() -> ipip_left;
 class_right[2] -> Strip(14) -> CheckIPHeader2() -> ipip_right;
 
-ipip_left -> IPPrint(Left-Outer) -> StripIPHeader() -> CheckIPHeader2() -> IPPrint(Left-Inner) -> lb;
-ipip_right -> IPPrint(Right-Outer) -> StripIPHeader() -> CheckIPHeader2() -> IPPrint(Right-Inner) -> lb_reverse;
+ipip_left -> StripIPHeader() -> CheckIPHeader2() -> lb;
+ipip_right -> StripIPHeader() -> CheckIPHeader2() -> lb_reverse;
 
 // restore and send out. (TODO: Here Unstrip(34 = 14 ether header + 20 ip header), but ip header may not be 20.)
-lb -> IPPrint(After-LB) -> Unstrip(34) -> out1;
-lb_reverse -> IPPrint(After-LB-REVERSE) -> Unstrip(34) -> out0;
+lb -> Unstrip(34) -> out1;
+lb_reverse -> Unstrip(34) -> out0;
