@@ -76,14 +76,20 @@ class VNFIAdder(object):
         appName = vcConfig.FW_APP_CLICK
         containerName = 'vnf-%s' % vnfi.VNFIID 
         try:
-            command = 'mkdir %s' % vcConfig.FW_RULE_DIR
-            for rule in ACL:
-                command = command + ' && echo \"%s\" >> %s' % (rule.genFWLine(), vcConfig.FW_RULE_PATH)
-            command = command + ' && ./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
-            #logging.info(command)
-            volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
+            if not vcConfig.USING_PRECONFIG:
+                command = 'mkdir %s' % vcConfig.FW_RULE_DIR
+                for rule in ACL:
+                    command = command + ' && echo \"%s\" >> %s' % (rule.genFWLine(), vcConfig.FW_RULE_PATH)
+                command = command + ' && ./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+                #logging.info(command)
+                volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
+                #ulimit = docker.types.Ulimit(name='stack', soft=268435456, hard=268435456)
+            else:
+                command = './fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+                volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}, vcConfig.PRECONFIG_PATH: {'bind': vcConfig.FW_RULE_DIR, 'mode': 'rw'}}
             container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
-                volumes=volumes, detach=True)
+                volumes=volumes, detach=True) #, ulimits=[ulimit])
+
         except Exception as e:
             # free allocated CPU and virtioID
             cpuAllo.freeSource(startCPU, vnfi.maxCPUNum)
