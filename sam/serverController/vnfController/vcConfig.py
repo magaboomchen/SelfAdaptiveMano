@@ -13,7 +13,7 @@ class VCConfig:
     DEFAULT_FASTCLICK = True
 
     USING_PRECONFIG = True  # whether to use the pre-config firewall rules 
-    PRECONFIG_PATH = '/home/t1/rule'
+    PRECONFIG_PATH = '/home/server0/HaoChen/rule'
 
     FWD_IMAGE_DPDK = 'dpdk-app-testpmd'
     FWD_APP_DPDK = './x86_64-native-linuxapp-gcc/app/testpmd'

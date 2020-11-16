@@ -82,6 +82,13 @@ class TestBase(object):
     MAXSFCIID = 0
     logging.getLogger("pika").setLevel(logging.WARNING)
 
+    def resetRabbitMQConf(self, filePath, serverIP,
+            serverUser, serverPasswd):
+        with open(filePath, 'w') as f:
+            f.write("RABBITMQSERVERIP = '{0}'\n".format(serverIP))
+            f.write("RABBITMQSERVERUSER = '{0}'\n".format(serverUser))
+            f.write("RABBITMQSERVERPASSWD = '{0}'\n".format(serverPasswd))
+
     def assignSFCIID(self):
         TestBase.MAXSFCIID = TestBase.MAXSFCIID + 1
         return TestBase.MAXSFCIID
