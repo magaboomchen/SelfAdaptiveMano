@@ -6,3 +6,4 @@
 *.o
 ~$*
 log/
+sam/base/rabbitMQConf.conf
