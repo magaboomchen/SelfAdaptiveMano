@@ -41,6 +41,9 @@ WEBSITE_REAL_IP = "2.2.0.34"
 
 TEST_SERVERID = 19999
 
+TESTER_SERVER_DATAPATH_IP = "192.168.123.1"
+TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"
+
 CLASSIFIER_DATAPATH_IP = "2.2.0.36"
 CLASSIFIER_DATAPATH_MAC = "52:54:00:05:4D:7D"
 CLASSIFIER_CONTROL_IP = "192.168.122.34"
@@ -78,6 +81,13 @@ logging.basicConfig(level=logging.INFO)
 class TestBase(object):
     MAXSFCIID = 0
     logging.getLogger("pika").setLevel(logging.WARNING)
+
+    def resetRabbitMQConf(self, filePath, serverIP,
+            serverUser, serverPasswd):
+        with open(filePath, 'w') as f:
+            f.write("RABBITMQSERVERIP = '{0}'\n".format(serverIP))
+            f.write("RABBITMQSERVERUSER = '{0}'\n".format(serverUser))
+            f.write("RABBITMQSERVERPASSWD = '{0}'\n".format(serverPasswd))
 
     def assignSFCIID(self):
         TestBase.MAXSFCIID = TestBase.MAXSFCIID + 1

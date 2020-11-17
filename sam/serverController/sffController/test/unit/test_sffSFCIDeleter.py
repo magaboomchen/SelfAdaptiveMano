@@ -34,9 +34,7 @@ class TestSFFSFCIDeleterClass(TestBase):
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
         self.sP = ShellProcessor()
-        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
-        self.sP.runShellCommand(
-                "sudo rabbitmqctl purge_queue SFF_CONTROLLER_QUEUE")
+        self.clearQueue()
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
             TESTER_SERVER_DATAPATH_MAC)
         self.vC = VNFControllerStub()
@@ -51,9 +49,6 @@ class TestSFFSFCIDeleterClass(TestBase):
     def runSFFController(self):
         filePath = sffControllerCommandAgent.__file__
         self.sP.runPythonScript(filePath)
-
-    def killSFFController(self):
-        self.sP.killPythonScript("sffControllerCommandAgent.py")
 
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_delSFCI(self, setup_delSFCI):

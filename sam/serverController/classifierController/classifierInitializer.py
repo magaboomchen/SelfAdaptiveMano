@@ -51,13 +51,19 @@ class ClassifierInitializer(BessControlPlane):
             # NICs
             # PMDPort()
             argument = Any()
-            arg = port_msg_pb2.PMDPortArg(loopback=True,port_id=0,
+            arg = port_msg_pb2.PMDPortArg(
+                loopback=False,
+                port_id=0,
                 vlan_offload_rx_strip=False,vlan_offload_rx_filter=False,
-                vlan_offload_rx_qinq =False)
+                vlan_offload_rx_qinq =False
+                )
             argument.Pack(arg)
             response = stub.CreatePort(bess_msg_pb2.CreatePortRequest(
-                name="DatapathNICPort",driver="PMDPort",num_inc_q=1,
-                num_out_q=1, size_inc_q=0, size_out_q=0, arg=argument))
+                name="DatapathNICPort",driver="PMDPort",
+                num_inc_q=1,
+                num_out_q=1, 
+                size_inc_q=0, size_out_q=0, 
+                arg=argument))
             self._checkResponse(response)
             # QueueInc()
             argument = Any()

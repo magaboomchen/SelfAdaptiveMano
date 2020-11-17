@@ -27,7 +27,7 @@ class ShellProcessor(object):
                 return True
         return False
 
-    def runProcess(self,filePath):
+    def runProcess(self,filePath, root=False):
         if root == True:
             user = "sudo "
         else:

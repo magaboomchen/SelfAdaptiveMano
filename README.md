@@ -10,6 +10,34 @@ Python2.7
 
 Ubuntu 16.04 LTS
 
+# Dependency
+
+## python
+```
+psutil
+pika
+netifaces
+getmac
+pytest
+```
+
+# Installation
+## Set SAM python environment
+```
+Manual:
+cd /usr/local/lib/python2.7/dist-packages
+sudo vim selfAdaptiveMano.pth
+(write) PATH_TO_SELFADAPTIVEMANO
+
+Auto:
+python environmentSetter.py
+```
+
+## Set SAM DPDK environment
+```
+export $RTE_SDK to your dpdk installation path
+for example: export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
+```
 # FYI
 
 Please read files in "/doc/SoftwareRequirements/", "/doc/SoftwareDesign/" (Ignore the TODO sections)

@@ -35,6 +35,8 @@ class VNFIAdder(object):
     def _addFWD(self, vnfi, client, vioAllo, cpuAllo, useFastClick=vcConfig.DEFAULT_FASTCLICK, debug=vcConfig.DEBUG):
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
+        startCPU = 1
+        endCPU = 2
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
@@ -67,6 +69,8 @@ class VNFIAdder(object):
         ACL = vnfi.config['ACL']        
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
+        startCPU = 1
+        endCPU = 2
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
@@ -101,6 +105,8 @@ class VNFIAdder(object):
         LB = vnfi.config['LB']
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
+        startCPU = 1
+        endCPU = 2
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
@@ -130,6 +136,8 @@ class VNFIAdder(object):
     def _addMON(self, vnfi, client, vioAllo, cpuAllo, debug=vcConfig.DEBUG):
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
+        startCPU = 1
+        endCPU = 2
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
