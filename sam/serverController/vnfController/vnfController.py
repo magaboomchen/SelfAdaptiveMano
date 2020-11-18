@@ -88,7 +88,7 @@ class VNFController(object):
                         self._vioManager[serverID] = SourceAllocator(serverID, vcConfig.MAX_VIO_NUM)
                     vioAllo = self._vioManager[serverID]
                     if serverID not in self._cpuManager:
-                        self._cpuManager[serverID] = SourceAllocator(serverID, vcConfig.MAX_CPU_NUM)
+                        self._cpuManager[serverID] = SourceAllocator(serverID, vcConfig.MAX_CPU_NUM, start=vcConfig.CPU_START)
                     cpuAllo = self._cpuManager[serverID]
                     try:
                         containerID, cpuStart, vioStart = self._vnfiAdder.addVNFI(vnfi, vioAllo, cpuAllo)
