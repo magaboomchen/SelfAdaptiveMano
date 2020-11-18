@@ -8,10 +8,10 @@ Source (virtio ID or CPU) allocator for servers.
 import logging
 
 class SourceAllocator(object):
-    def __init__(self, serverID, maxNum):
+    def __init__(self, serverID, maxNum, start=0):
         self._serverID = serverID
         self._maxNum = maxNum
-        self._unallocatedList = [[0, self._maxNum]]  # simple implementation
+        self._unallocatedList = [[start, self._maxNum]]  # simple implementation
 
     def allocateSource(self, num):
         for i in range(len(self._unallocatedList)):
