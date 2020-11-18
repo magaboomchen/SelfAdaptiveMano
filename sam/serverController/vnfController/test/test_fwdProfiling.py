@@ -38,7 +38,6 @@ class TestVNFSFCIAdderClass(TestBase):
         self.sP = ShellProcessor()
         self.clearQueue()
 
-
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier)
         self.sfci = self.genBiDirection10BackupSFCI()
@@ -91,7 +90,6 @@ class TestVNFSFCIAdderClass(TestBase):
         assert cmdRply.cmdID == self.delSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-
     def test_addSFCI(self, setup_addSFCI):
         # exercise
         logging.info("exercise")
@@ -103,7 +101,8 @@ class TestVNFSFCIAdderClass(TestBase):
         self.verifyCmdRply()
         # self.verifyDirection0Traffic()
         # self.verifyDirection1Traffic()
-        logging.info("please press any key to quit.")
+        logging.info("please start performance profiling" \
+            "after profiling, press any key to quit.")
         raw_input()
 
     def verifyDirection0Traffic(self):
@@ -129,7 +128,6 @@ class TestVNFSFCIAdderClass(TestBase):
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
         assert innerPkt[IP].dst == WEBSITE_REAL_IP
-
 
     def verifyDirection1Traffic(self):
         self._sendDirection1Traffic2SFF()

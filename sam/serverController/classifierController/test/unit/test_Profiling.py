@@ -20,8 +20,8 @@ from sam.test.fixtures import sendArpRequest, sendInboundTraffic, sendOutSFCDoma
 MANUAL_TEST = True
 
 TESTER_SERVER_DATAPATH_IP = "2.2.0.33"
-TESTER_SERVER_DATAPATH_MAC = "f4:e9:d4:a3:53:a0"
-TESTER_SERVER_INTERFACE = "enp5s0f0"
+TESTER_SERVER_DATAPATH_MAC = "18:66:da:86:4c:16" #"f4:e9:d4:a3:53:a0"
+TESTER_SERVER_INTERFACE = "eno2" #"enp5s0f0"
 
 CLASSIFIER_DATAPATH_MAC = "00:1b:21:c0:8f:98"
 
@@ -102,7 +102,7 @@ class TestSFCIAdderClass(TestBase):
         self.verifyInboundTraffic()
         self.verifyOutSFCDomainTraffic()
         logging.info("please start performance profiling" \
-            "after profling, press any key to quit.")
+            "after profiling, press any key to quit.")
         raw_input()
 
     def verifyArpResponder(self):
