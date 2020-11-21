@@ -34,9 +34,10 @@ python environmentSetter.py
 ```
 
 ## Set SAM DPDK environment
-```
-export $RTE_SDK to your dpdk installation path
-for example: export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
+export $RTE_SDK to the directory of dpdk in bess, for example:
+``` 
+export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
+export RTE_TARGET=x86_64-native-linuxapp-gcc
 ```
 # FYI
 
@@ -49,6 +50,8 @@ Yuxuan Zhang needs to give a design of P4 controller according to our requiremen
 We need to discuss together and then work it out.
 
 # BUG LIST
+
+vnfController will get stuck when delete vnfi if vnfi has existed
 
 # TODO LIST
 

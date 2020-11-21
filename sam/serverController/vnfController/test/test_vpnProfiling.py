@@ -45,6 +45,7 @@ VPN_AuthKey = "11FF0183A9471ABE01FFFA04103BB202"
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
 
+
 class TestVNFAddVPN(TestBase):
     @pytest.fixture(scope="function")
     def setup_addVPN(self):
@@ -89,7 +90,8 @@ class TestVNFAddVPN(TestBase):
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 config = {}
-                config['VPN'] = VPNTuple(VPN_TunnelSrcIP,VPN_TunnelDstIP, VPN_EncryptKey, VPN_AuthKey)
+                config['VPN'] = VPNTuple(VPN_TunnelSrcIP,VPN_TunnelDstIP,
+                    VPN_EncryptKey, VPN_AuthKey)
                 vnfi = VNFI(VNF_TYPE_VPN, VNFType=VNF_TYPE_VPN, 
                     VNFIID=uuid.uuid1(), config=config, node=server)
                 VNFISequence[index].append(vnfi)
@@ -125,6 +127,9 @@ class TestVNFAddVPN(TestBase):
         self.verifyDirection0Traffic()
         # TODO: reverse direction - we need send back pkt in another thread
         # self.verifyDirection1Traffic()
+        logging.info("please start performance profiling" \
+            "after profiling, press any key to quit.")
+        raw_input()
 
     def verifyDirection0Traffic(self):
         self._sendDirection0Traffic2SFF()

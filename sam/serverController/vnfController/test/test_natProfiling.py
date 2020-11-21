@@ -6,14 +6,13 @@ from scapy.all import *
 import time
 
 import pytest
-from scapy.all import *
 
 from sam.base import server
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
 from sam.base.command import *
-from sam.base.vpn import *
+from sam.base.nat import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
@@ -23,57 +22,42 @@ from sam.serverController.classifierController import *
 
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
-TESTER_SERVER_DATAPATH_MAC = "18:66:da:86:4c:16"
-TESTER_DATAPATH_INTERFACE = "eno2"
+TESTER_SERVER_DATAPATH_MAC = "f4:e9:d4:a3:53:a0"
 
 SFF0_DATAPATH_IP = "2.2.0.38"
 SFF0_DATAPATH_MAC = "00:1b:21:c0:8f:98"
 SFF0_CONTROLNIC_IP = "192.168.0.173"
 SFF0_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
 
-VPN_VNFI1_0_IP = "10.128.1.1"
-VPN_VNFI1_1_IP = "10.128.1.128"
-
-VPN_STARTPOINT_IP = "3.3.3.3"
-VPN_ENDPOINT_IP = "4.4.4.4"
-
-VPN_TunnelSrcIP = "3.3.3.3/32"
-VPN_TunnelDstIP = "4.4.4.4"
-VPN_EncryptKey = "11FF0183A9471ABE01FFFA04103BB102"
-VPN_AuthKey = "11FF0183A9471ABE01FFFA04103BB202"
+NAT_PIP = "8.0.8.8"
+NAT_MIN_PORT = 2048
+NAT_MAX_PORT = 65530
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
 
-class TestVNFAddVPN(TestBase):
+class TestVNFAddNAT(TestBase):
     @pytest.fixture(scope="function")
-    def setup_addVPN(self):
+    def setup_addNAT(self):
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
 
-        rabbitMQFilePath = server.__file__.split("server.py")[0] \
-            + "rabbitMQConf.conf"
-        logging.info(rabbitMQFilePath)
-        self.resetRabbitMQConf(rabbitMQFilePath, "192.168.0.194",
-            "mq", "123456")
-
-        self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
-            TESTER_SERVER_DATAPATH_MAC)
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_VPN])
+        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_NAT])
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
+        self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
+            TESTER_SERVER_DATAPATH_MAC)
 
         self.runSFFController()
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.addSFCI2SFF()
-
         self.runVNFController()
 
         yield
         # teardown
-        self.delVNFI4Server()   
+        self.delVNFI4Server()
         self.killSFFController()
         self.killVNFController()
 
@@ -89,8 +73,8 @@ class TestVNFAddVPN(TestBase):
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 config = {}
-                config['VPN'] = VPNTuple(VPN_TunnelSrcIP,VPN_TunnelDstIP, VPN_EncryptKey, VPN_AuthKey)
-                vnfi = VNFI(VNF_TYPE_VPN, VNFType=VNF_TYPE_VPN, 
+                config['NAT'] = NATTuple(NAT_PIP, NAT_MIN_PORT, NAT_MAX_PORT)
+                vnfi = VNFI(VNF_TYPE_NAT, VNFType=VNF_TYPE_NAT, 
                     VNFIID=uuid.uuid1(), config=config, node=server)
                 VNFISequence[index].append(vnfi)
         return VNFISequence
@@ -105,15 +89,14 @@ class TestVNFAddVPN(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
+        logging.warning("DeletingÂ VNFI")
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
-        self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD,
-            self.delSFCICmd)
+        self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.delSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-    def test_addVPN(self, setup_addVPN):
+    def test_addNAT(self, setup_addNAT):
         # exercise
         logging.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
@@ -122,24 +105,18 @@ class TestVNFAddVPN(TestBase):
 
         # verifiy
         self.verifyCmdRply()
-        self.verifyDirection0Traffic()
-        # TODO: reverse direction - we need send back pkt in another thread
+        # self.verifyDirection0Traffic()
         # self.verifyDirection1Traffic()
+        logging.info("please start performance profiling" \
+            "after profiling, press any key to quit.")
+        raw_input()
 
     def verifyDirection0Traffic(self):
         self._sendDirection0Traffic2SFF()
-        self._checkEncapsulatedTraffic(inIntf=TESTER_DATAPATH_INTERFACE)
+        self._checkEncapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection0Traffic2SFF(self):
-        filePath = "./fixtures/sendSFCTraffic.py -i " \
-            + TESTER_DATAPATH_INTERFACE \
-            + " -smac " + TESTER_SERVER_DATAPATH_MAC \
-            + " -dmac " + SFF0_DATAPATH_MAC \
-            + " -osip " + CLASSIFIER_DATAPATH_IP \
-            + " -odip " + VPN_VNFI1_0_IP \
-            + " -isip " + OUTTER_CLIENT_IP \
-            + " -idip " + WEBSITE_REAL_IP \
-            + " -pl HELLO_WORLD1234"
+        filePath = "./fixtures/sendNATDirection0Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
@@ -156,25 +133,15 @@ class TestVNFAddVPN(TestBase):
         assert condition
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].dst == VPN_ENDPOINT_IP and \
-            innerPkt[IP].src == VPN_STARTPOINT_IP
-        self.reverseTraffic = frame
+        assert innerPkt[IP].src == '8.0.8.8'
 
     def verifyDirection1Traffic(self):
         self._sendDirection1Traffic2SFF()
-        self._checkDecapsulatedTraffic(inIntf=TESTER_DATAPATH_INTERFACE)
+        self._checkDecapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection1Traffic2SFF(self):
-        self.reverseTraffic[Ether].src = TESTER_SERVER_DATAPATH_MAC
-        self.reverseTraffic[Ether].dst = SFF0_DATAPATH_MAC
-        outterPkt = self.reverseTraffic.getlayer('IP')[0]
-        outterPkt[IP].src = CLASSIFIER_DATAPATH_IP
-        outterPkt[IP].dst = VPN_VNFI1_1_IP
-        innerPkt = self.reverseTraffic.getlayer('IP')[1]
-        innerPkt[IP].src = VPN_ENDPOINT_IP
-        innerPkt[IP].dst = VPN_STARTPOINT_IP
-        self.reverseTraffic.show()
-        sendp(self.reverseTraffic, iface=TESTER_DATAPATH_INTERFACE)
+        filePath = "./fixtures/sendNATDirection1Traffic.py"
+        self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
         logging.info("_checkDecapsulatedTraffic: wait for packet")
@@ -189,8 +156,7 @@ class TestVNFAddVPN(TestBase):
         assert condition == True
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].src == OUTTER_CLIENT_IP and \
-            innerPkt[IP].dst == WEBSITE_REAL_IP
+        assert innerPkt[IP].dst == '3.0.0.4'
 
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
