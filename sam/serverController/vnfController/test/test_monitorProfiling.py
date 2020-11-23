@@ -110,7 +110,8 @@ class TestVNFAddMON(TestBase):
 
         # verifiy
         self.verifyCmdRply()
-        logging.info("please press any key to quit.")
+        logging.info("please start performance profiling" \
+            "after profiling, press any key to quit.")
         raw_input()
         # self.verifyDirection0Traffic()
         # self.verifyDirection1Traffic()

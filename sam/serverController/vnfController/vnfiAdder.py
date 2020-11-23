@@ -33,6 +33,8 @@ class VNFIAdder(object):
             return self._addMON(vnfi, client, vioAllo, cpuAllo)
         elif vnfiType == VNF_TYPE_NAT:
             return self._addNAT(vnfi, client, vioAllo, cpuAllo)
+        elif vnfiType == VNF_TYPE_VPN:
+            return self._addVPN(vnfi, client, vioAllo, cpuAllo)
 
     def _addFWD(self, vnfi, client, vioAllo, cpuAllo, useFastClick=vcConfig.DEFAULT_FASTCLICK, debug=vcConfig.DEBUG):
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
@@ -182,7 +184,38 @@ class VNFIAdder(object):
             #volumes['/home/t1/bess/deps/click-conf'] = {'bind': '/home/t1/bess/deps/click-conf', 'mode': 'rw'}
             #ports = {'8080/tcp': 32775}
             container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
-                volumes=volumes, detach=True} #, ports=ports)
+                volumes=volumes, detach=True) #, ports=ports)
+        except Exception as e:
+            # free allocated CPU and virtioID
+            cpuAllo.freeSource(startCPU, vnfi.maxCPUNum)
+            vioAllo.freeSource(vioStart, 2)
+            raise e
+        return container.id, startCPU, vioStart
+
+    def _addVPN(self, vnfi, client, vioAllo, cpuAllo, debug=vcConfig.DEBUG):
+        VPN = vnfi.config['VPN']
+        startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
+        endCPU = startCPU + vnfi.maxCPUNum - 1
+        vioStart = vioAllo.allocateSource(2)
+        _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
+        _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
+        vdev0 = '%s,path=%s' % ('net_virtio_user%d' % vioStart, _vdev0[1][6:])
+        vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
+        imageName = vcConfig.VPN_IMAGE_CLICK
+        appName = vcConfig.VPN_APP_CLICK
+        # command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+        declLine = "%s 0 234 \\\\\\\\<%s> \\\\\\\\<%s> 300 64," % (VPN.tunnelSrcIP, VPN.encryptKey, VPN.authKey)
+        command = "sed -i \"3i %s\" %s" % (declLine, vcConfig.VPN_APP_CLICK)
+        declLine = "0.0.0.0/0 %s 1 234 \\\\\\\\<%s> \\\\\\\\<%s> 300 64" % (VPN.tunnelDstIP, VPN.encryptKey, VPN.authKey)
+        command = command + " && sed -i \"4i %s\" %s" % (declLine, vcConfig.VPN_APP_CLICK)
+        # command = command + " && cat ./click-conf/vpn.click "
+        command = command + ' && ./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+        containerName = 'vnf-%s' % vnfi.VNFIID
+        try:
+            volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
+            container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
+                volumes=volumes, detach=True)
+            #logging.info(container.logs())
         except Exception as e:
             # free allocated CPU and virtioID
             cpuAllo.freeSource(startCPU, vnfi.maxCPUNum)

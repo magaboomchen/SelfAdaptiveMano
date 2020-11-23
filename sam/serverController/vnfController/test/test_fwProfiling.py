@@ -120,7 +120,8 @@ class TestVNFAddFW(TestBase):
         self.verifyCmdRply()
         # self.verifyDirection0Traffic()
         # self.verifyDirection1Traffic()
-        logging.info("please press any key to quit.")
+        logging.info("please start performance profiling" \
+            "after profiling, press any key to quit.")
         raw_input()
 
     def verifyDirection0Traffic(self):
