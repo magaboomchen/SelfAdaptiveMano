@@ -3,7 +3,7 @@
 
 class VCConfig:
     MAX_VIO_NUM = 65536 # max num of XX in virtioXX.
-    MAX_CPU_NUM = 12 # max num of CPU in each server; TODO: may be replaced by server.CPUNum in the future.    
+    MAX_CPU_NUM = 4 # max num of CPU in each server; TODO: may be replaced by server.CPUNum in the future.    
     
     DOCKER_TCP_PORT = 5982  # maybe unsafe
 
@@ -12,7 +12,7 @@ class VCConfig:
 
     DEFAULT_FASTCLICK = True
 
-    USING_PRECONFIG = True  # whether to use the pre-config firewall rules 
+    USING_PRECONFIG = False  # whether to use the pre-config firewall rules 
     PRECONFIG_PATH = '/home/server0/HaoChen/rule'
 
     FWD_IMAGE_DPDK = 'dpdk-app-testpmd'

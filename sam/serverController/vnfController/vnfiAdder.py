@@ -39,6 +39,7 @@ class VNFIAdder(object):
     def _addFWD(self, vnfi, client, vioAllo, cpuAllo, useFastClick=vcConfig.DEFAULT_FASTCLICK, debug=vcConfig.DEBUG):
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
+        _, cpuStr = mapCpuCores(startCPU, endCPU)
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
@@ -47,13 +48,13 @@ class VNFIAdder(object):
         if not useFastClick:
             imageName = vcConfig.FWD_IMAGE_DPDK
             appName = vcConfig.FWD_APP_DPDK
-            command = "%s -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s " % (appName, startCPU, endCPU, vnfi.maxMem, vdev0, vdev1) +\
+            command = "%s -l %s -n 1 -m %d --no-pci --vdev=%s --vdev=%s " % (appName, cpuStr, vnfi.maxMem, vdev0, vdev1) +\
                   '--file-prefix=virtio --log-level=8 -- --txqflags=0xf00 --disable-hw-vlan ' +\
                   '--forward-mode=io --port-topology=chained --total-num-mbufs=2048 -a' 
         else:
             imageName = vcConfig.FWD_IMAGE_CLICK
             appName = vcConfig.FWD_APP_CLICK
-            command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+            command = "./fastclick/bin/click --dpdk -l %s -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (cpuStr, vnfi.maxMem, vdev0, vdev1, appName)
         containerName = 'vnf-%s' % vnfi.VNFIID 
         try:
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
@@ -71,6 +72,7 @@ class VNFIAdder(object):
         ACL = vnfi.config['ACL']        
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
+        _, cpuStr = mapCpuCores(startCPU, endCPU)
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
@@ -84,12 +86,12 @@ class VNFIAdder(object):
                 command = 'mkdir %s' % vcConfig.FW_RULE_DIR
                 for rule in ACL:
                     command = command + ' && echo \"%s\" >> %s' % (rule.genFWLine(), vcConfig.FW_RULE_PATH)
-                command = command + ' && ./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+                command = command + ' && ./fastclick/bin/click --dpdk -l %s -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (cpuStr, vnfi.maxMem, vdev0, vdev1, appName)
                 #logging.info(command)
                 volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
                 #ulimit = docker.types.Ulimit(name='stack', soft=268435456, hard=268435456)
             else:
-                command = './fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+                command = './fastclick/bin/click --dpdk -l %s -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (cpuStr, vnfi.maxMem, vdev0, vdev1, appName)
                 volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}, vcConfig.PRECONFIG_PATH: {'bind': vcConfig.FW_RULE_DIR, 'mode': 'rw'}}
             container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
                 volumes=volumes, detach=True) #, ulimits=[ulimit])
@@ -105,6 +107,7 @@ class VNFIAdder(object):
         LB = vnfi.config['LB']
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
+        _, cpuStr = mapCpuCores(startCPU, endCPU)
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
@@ -119,8 +122,8 @@ class VNFIAdder(object):
                 declLine = declLine + ', DST %s' % dst
             declLine = 'lb :: IPLoadBalancer(%s)' % declLine
             command = 'sed -i \"1i\\%s\" %s' % (declLine, vcConfig.LB_APP_CLICK)
-            command = command + ' && ./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
-            #logging.info(command)
+            command = command + ' && ./fastclick/bin/click --dpdk -l %s -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (cpuStr, vnfi.maxMem, vdev0, vdev1, appName)
+            #print(command)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
             container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
                 volumes=volumes, detach=True)
@@ -134,6 +137,7 @@ class VNFIAdder(object):
     def _addMON(self, vnfi, client, vioAllo, cpuAllo, debug=vcConfig.DEBUG):
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
+        _, cpuStr = mapCpuCores(startCPU, endCPU)
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
@@ -142,7 +146,7 @@ class VNFIAdder(object):
         imageName = vcConfig.MON_IMAGE_CLICK
         appName = vcConfig.MON_APP_CLICK
         containerName = 'vnf-%s' % vnfi.VNFIID 
-        command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+        command = "./fastclick/bin/click --dpdk -l %s -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (cpuStr, vnfi.maxMem, vdev0, vdev1, appName)
         volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
         ports = {'%d/tcp' % vcConfig.MON_TCP_PORT: None}
         try:
@@ -164,8 +168,9 @@ class VNFIAdder(object):
 
     def _addNAT(self, vnfi, client, vioAllo, cpuAllo, debug=vcConfig.DEBUG):
         NAT = vnfi.config['NAT']
-        startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
-        endCPU = startCPU + vnfi.maxCPUNum - 1
+        startCPU = cpuAllo.allocateSource(1)
+        endCPU = startCPU 
+        _, cpuStr = mapCpuCores(startCPU, endCPU)
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
@@ -177,7 +182,7 @@ class VNFIAdder(object):
         try:
             declLine = 'nat :: IPRewriterPatterns(NAT %s %d-%d - -)' % (NAT.pubIP, NAT.minPort, NAT.maxPort)
             command = 'sed -i \"1i\\%s\" %s' % (declLine, vcConfig.NAT_APP_CLICK)
-            command = command + ' && ./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+            command = command + ' && ./fastclick/bin/click --dpdk -l %s -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (cpuStr, vnfi.maxMem, vdev0, vdev1, appName)
             #logging.info(command)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
             # for test
@@ -187,7 +192,7 @@ class VNFIAdder(object):
                 volumes=volumes, detach=True) #, ports=ports)
         except Exception as e:
             # free allocated CPU and virtioID
-            cpuAllo.freeSource(startCPU, vnfi.maxCPUNum)
+            cpuAllo.freeSource(startCPU, 1)
             vioAllo.freeSource(vioStart, 2)
             raise e
         return container.id, startCPU, vioStart
@@ -196,6 +201,7 @@ class VNFIAdder(object):
         VPN = vnfi.config['VPN']
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
+        _, cpuStr = mapCpuCores(startCPU, endCPU)
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
@@ -209,7 +215,7 @@ class VNFIAdder(object):
         declLine = "0.0.0.0/0 %s 1 234 \\\\\\\\<%s> \\\\\\\\<%s> 300 64" % (VPN.tunnelDstIP, VPN.encryptKey, VPN.authKey)
         command = command + " && sed -i \"4i %s\" %s" % (declLine, vcConfig.VPN_APP_CLICK)
         # command = command + " && cat ./click-conf/vpn.click "
-        command = command + ' && ./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+        command = command + ' && ./fastclick/bin/click --dpdk -l %s -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s' % (cpuStr, vnfi.maxMem, vdev0, vdev1, appName)
         containerName = 'vnf-%s' % vnfi.VNFIID
         try:
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}

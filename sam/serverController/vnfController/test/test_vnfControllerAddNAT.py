@@ -61,7 +61,7 @@ class TestVNFAddNAT(TestBase):
 
         yield
         # teardown
-        #self.delVNFI4Server()
+        self.delVNFI4Server()
         self.killSFFController()
         self.killVNFController()
 
