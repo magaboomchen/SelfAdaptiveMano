@@ -52,6 +52,7 @@ class ServerAgent(object):
             # send server info to server controller
             self._server.updateIfSet()
             self._server.updateResource()
+            self.logger.info(self._server)
             self._sendServerInfo()
             time.sleep(HEAT_BEAT_TIME)
 

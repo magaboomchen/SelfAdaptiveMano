@@ -55,6 +55,10 @@ vnfController will get stuck when delete vnfi if vnfi has existed
 
 # TODO LIST
 
+vnfController
+* numa node support: numa cpu core and mem allocation
+* independent dpdk apps: set different --file-prefix for differenct vnfi
+
 Add zone to all controller
 * Simulator as SIMULATOR_ZONE
 * Mininet as MININET_ZONE
