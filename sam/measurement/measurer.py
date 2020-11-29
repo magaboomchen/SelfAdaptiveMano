@@ -25,7 +25,7 @@ from sam.measurement.dcnInfoBaseMaintainer import *
 class Measurer(object):
     def __init__(self):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'measurer.log', level='warning')
+            'measurer.log', level='info')
         self.logger = logConfigur.getLogger()
 
         self._dib = DCNInfoBaseMaintainer()

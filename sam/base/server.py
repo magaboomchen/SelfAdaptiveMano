@@ -137,6 +137,9 @@ class Server(object):
         self._updateHugepagesFree()
         self._updateHugepagesSize()
 
+    def getMemoryDesign(self):
+        return self._memoryDesign
+
     def _updateMemDesign(self):
         rv = subprocess.check_output("lscpu | grep -i numa | grep 'NUMA node(s):'", shell=True)
         rv = int(rv.strip("\n").split(":")[1])

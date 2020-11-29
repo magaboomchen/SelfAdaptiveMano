@@ -39,9 +39,6 @@ class VNFIAdder(object):
     def _addFWD(self, vnfi, client, vioAllo, cpuAllo, useFastClick=vcConfig.DEFAULT_FASTCLICK, debug=vcConfig.DEBUG):
         startCPU = cpuAllo.allocateSource(vnfi.maxCPUNum)
         endCPU = startCPU + vnfi.maxCPUNum - 1
-        cpuCoreList = [2,4,6,8,10,1,3,5,7,9,11]
-        startCPU = cpuCoreList[startCPU-1]
-        endCPU = startCPU
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
@@ -57,14 +54,22 @@ class VNFIAdder(object):
             imageName = vcConfig.FWD_IMAGE_CLICK
             appName = vcConfig.FWD_APP_CLICK
             filePrefix = "fwd" + str(startCPU/2.0)
-            if startCPU%2 == 0:
-                numa0mem = vnfi.maxMem
-                numa1mem = 0
+            if vnfi.node._memoryDesign == None or \
+                vnfi.node._memoryDesign == "SMP":
+                command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+            elif vnfi.node._memoryDesign == "NUMA":
+                cpuCoreList = [2,4,6,8,10,1,3,5,7,9,11]
+                startCPU = cpuCoreList[startCPU-1]
+                endCPU = startCPU
+                if startCPU%2 == 0:
+                    numa0mem = vnfi.maxMem
+                    numa1mem = 0
+                else:
+                    numa0mem = 0
+                    numa1mem = vnfi.maxMem
+                command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 --socket-mem %d,%d --file-prefix %s --no-pci --vdev=%s --vdev=%s  -- %s" % (startCPU, endCPU, numa0mem, numa1mem, filePrefix, vdev0, vdev1, appName)
             else:
-                numa0mem = 0
-                numa1mem = vnfi.maxMem
-            command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 --socket-mem %d,%d --file-prefix %s --no-pci --vdev=%s --vdev=%s  -- %s" % (startCPU, endCPU, numa0mem, numa1mem, filePrefix, vdev0, vdev1, appName)
-            # command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+                pass
         containerName = 'vnf-%s' % vnfi.VNFIID
         try:
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}

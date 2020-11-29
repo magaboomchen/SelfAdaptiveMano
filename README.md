@@ -39,6 +39,7 @@ export $RTE_SDK to the directory of dpdk in bess, for example:
 export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
 export RTE_TARGET=x86_64-native-linuxapp-gcc
 ```
+
 # FYI
 
 Please read files in "/doc/SoftwareRequirements/", "/doc/SoftwareDesign/" (Ignore the TODO sections)
@@ -51,13 +52,10 @@ We need to discuss together and then work it out.
 
 # BUG LIST
 
-vnfController will get stuck when delete vnfi if vnfi has existed
+vnfcontroller
+* it will get stuck when delete vnfi if vnfi has existed
 
 # TODO LIST
-
-vnfController
-* numa node support: numa cpu core and mem allocation
-* independent dpdk apps: set different --file-prefix for differenct vnfi
 
 Add zone to all controller
 * Simulator as SIMULATOR_ZONE
@@ -67,17 +65,25 @@ Add zone to all controller
 Orchestrator
 * add ADD_SFC_REQUEST, ADD_SFCI_REQUEST, DEL_SFCI_REQUEST, DEL_SFC_REQUEST
 
+Request Processor
+* give a design
+
 Measurer
 * add self.sendGetSFCIStateCmd()
 
 Adaptive
 * give a design
 
-Request Processor
-* give a design
-
 SFFController
 * add getSFCIStatus
+
+ClassifierController
+* add addSFCCmd
+* add delSFCCmd
+
+vnfController
+* numa node support: numa cpu core and mem allocation
+* independent dpdk apps: set different --file-prefix for differenct vnfi
 
 NetworkController
 * (Optional) ryuCommandAgentUFRR/ryuCommandAgentNotVia: add CMD_TYPE_DEL_SFC handler (delete route2Classifier)

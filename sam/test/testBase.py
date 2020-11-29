@@ -84,6 +84,7 @@ logging.basicConfig(level=logging.INFO)
 
 class TestBase(object):
     MAXSFCIID = 0
+    sfciCounter = 0
     logging.getLogger("pika").setLevel(logging.WARNING)
 
     def resetRabbitMQConf(self, filePath, serverIP,
@@ -455,14 +456,28 @@ class TestBase(object):
         return "02:00:00:%02x:%02x:%02x" % (random.randint(0, 255),
             random.randint(0, 255), random.randint(0, 255))
 
-    def genAddSFCIRequest(self, sfc):
+    def genAddSFCRequest(self, sfc):
         sfc.backupInstanceNumber = 3
-        request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
-            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'zone':""})
-        return request
-    
-    def genDelSFCIRequest(self, sfc):
-        request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,
+        request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFC,
             REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'zone':""})
         return request
 
+    def genAddSFCIRequest(self, sfc, sfci):
+        sfc.backupInstanceNumber = 3
+        request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
+            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'sfci':sfci, 'zone':""})
+        return request
+
+    def genDelSFCRequest(self, sfc):
+        request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFC,
+            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'zone':""})
+        return request
+
+    def genDelSFCIRequest(self, sfc, sfci):
+        request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,
+            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'sfci':sfci, 'zone':""})
+        return request
+
+    def _genSFCIID(self):
+        TestBase.sfciCounter = TestBase.sfciCounter + 1
+        return TestBase.sfciCounter

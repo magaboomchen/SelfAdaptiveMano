@@ -53,10 +53,10 @@ class FRR(BaseApp):
         self.logger.setLevel(logging.DEBUG)
         self.logger.info("FRR App is running !")
 
-    def _addRoute2Classifier(self, sfc, sfci):
+    def _addRoute2Classifier(self, sfc):
         # install route to classifier
         for direction in sfc.directions:
-            dpid = self._getFirstSwitchIDInSFCI(sfci,direction)
+            dpid = self._getSwitchByClassifier(direction['ingress'])
             datapath = self.dpset.get(int(str(dpid), 0))
             source = direction['source']
             if source == None:
@@ -69,7 +69,21 @@ class FRR(BaseApp):
                 raise ValueError("_addRoute2Classifier: invalid source")
             classifierMAC = direction['ingress'].getDatapathNICMac()
             self._installRoute4Switch2Classifier(
-                sfci.SFCIID, datapath, inPortNum, classifierMAC)
+                datapath, inPortNum, classifierMAC)
+
+    def _getSwitchByClassifier(self, classifier):
+        # dpid = classifier.getServerID()
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.debug("in _getSwitchByClassifier ")
+        datapathNICIP = classifier.getDatapathNICIP()
+        self.logger.debug("datapathNICIP:{0}".format(datapathNICIP))
+        for dpid in self._switchConfs.keys():
+            net = self._getLANNet(dpid)
+            self.logger.debug("net:{0}".format(net))
+            if self._isLANIP(datapathNICIP, net):
+                return dpid
+        else:
+            raise ValueError("Can not find switch by classifier")
 
     def _getFirstSwitchIDInSFCI(self, sfci, direction):
         FPSet = sfci.ForwardingPathSet
@@ -107,7 +121,7 @@ class FRR(BaseApp):
                 continue
         return port
 
-    def _installRoute4Switch2Classifier(self, SFCIID, datapath, inPortNum,
+    def _installRoute4Switch2Classifier(self, datapath, inPortNum,
             classifierMAC):
         dpid = datapath.id
         ofproto = datapath.ofproto
@@ -131,7 +145,7 @@ class FRR(BaseApp):
         # If yes, we can't delete this route.
         # If no, we can delete this route.
         # Maintain route info into self.ibm
-        # self.ibm.addSFCIFlowTableEntry(SFCIID, dpid, IPv4_CLASSIFIER_TABLE, 
+        # self.ibm.addSFCIFlowTableEntry(dpid, IPv4_CLASSIFIER_TABLE, 
         #     matchFields)
 
     def getSFCIStageDstIP(self, sfci, stageCount, pathID):

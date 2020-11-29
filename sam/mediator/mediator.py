@@ -7,6 +7,7 @@ import uuid
 import subprocess
 import struct
 import copy
+import logging
 
 import pickle
 
@@ -24,6 +25,8 @@ class Mediator(object):
             'mediator.log', level='debug')
         self.logger = logConfigur.getLogger()
         self.logger.info("Init mediator.")
+        self.logger.setLevel(logging.DEBUG)
+
         self._cm = CommandMaintainer()
         self._mode = mode
         self._messageAgent = MessageAgent(self.logger)
@@ -52,7 +55,11 @@ class Mediator(object):
     def _commandHandler(self,cmd):
         self.logger.debug("Get a command")
         self._cm.addCmd(cmd)
-        if cmd.cmdType == CMD_TYPE_ADD_SFCI:
+        if cmd.cmdType == CMD_TYPE_ADD_SFC:
+            if self._mode['classifierType'] == 'Server':
+                self._addSFC2ClassifierController(cmd)
+            self._addSFC2NetworkController(cmd)
+        elif cmd.cmdType == CMD_TYPE_ADD_SFCI:
             if self._mode['classifierType'] == 'Server':
                 self._addSFCI2ClassifierController(cmd)
             self._addSFCI2NetworkController(cmd)
@@ -67,6 +74,10 @@ class Mediator(object):
             self._delSFCI4BessController(cmd)
             self._delSFCI4NetworkController(cmd)
             self._delSFCIs4Server(cmd)
+        elif cmd.cmdType == CMD_TYPE_DEL_SFC:
+            if self._mode['classifierType'] == 'Server':
+                self._delSFC4ClassifierController(cmd)
+            self._delSFC4BessController(cmd)
         elif cmd.cmdType == CMD_TYPE_GET_SERVER_SET:
             self.logger.debug("Get CMD_TYPE_GET_SERVER_SET")
             self._getServerSet4ServerManager(cmd)
@@ -97,10 +108,22 @@ class Mediator(object):
         msg = SAMMessage(msgType, cmd)
         self._messageAgent.sendMsg(queue,msg)
 
+    def _addSFC2ClassifierController(self,cmd):
+        cCmd = self._prepareChildCmd(cmd,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
+        self.forwardCmd(cCmd,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
+            SERVER_CLASSIFIER_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
+
     def _addSFCI2ClassifierController(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
             SERVER_CLASSIFIER_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
+
+    def _addSFC2NetworkController(self,cmd):
+        cCmd = self._prepareChildCmd(cmd,MSG_TYPE_NETWORK_CONTROLLER_CMD)
+        self.forwardCmd(cCmd,MSG_TYPE_NETWORK_CONTROLLER_CMD,
+            NETWORK_CONTROLLER_QUEUE)
         self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _addSFCI2NetworkController(self,cmd):
@@ -117,9 +140,15 @@ class Mediator(object):
 
     def _addSFCIs2Server(self,cmd):
         cCmd = self._cm.getChildCmd(cmd.cmdID,MSG_TYPE_VNF_CONTROLLER_CMD)
-        self.forwardCmd(cCmd,MSG_TYPE_VNF_CONTROLLER_CMD,
-            VNF_CONTROLLER_QUEUE)
-        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
+        state = self._cm.getCmdState(cCmd.cmdID)
+        if state == CMD_STATE_WAITING:
+            cCmd.attributes['source'] = "unkown"
+            self.logger.debug("send a cmd to vnfController.")
+            self.forwardCmd(cCmd,MSG_TYPE_VNF_CONTROLLER_CMD,
+                VNF_CONTROLLER_QUEUE)
+            self._cm.changeCmdState(cCmd.cmdID,CMD_STATE_PROCESSING)
+        else:
+            self.logger("state: {0}".format(state))
 
     def _delSFCIs4Server(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_VNF_CONTROLLER_CMD)
@@ -127,10 +156,22 @@ class Mediator(object):
             SERVER_MANAGER_QUEUE)
         self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
+    def _delSFC4NetworkController(self,cmd):
+        cCmd = self._prepareChildCmd(cmd,MSG_TYPE_NETWORK_CONTROLLER_CMD)
+        self.forwardCmd(cCmd,MSG_TYPE_NETWORK_CONTROLLER_CMD,
+            NETWORK_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
+
     def _delSFCI4NetworkController(self,cmd):
         cCmd = self._prepareChildCmd(cmd,MSG_TYPE_NETWORK_CONTROLLER_CMD)
         self.forwardCmd(cCmd,MSG_TYPE_NETWORK_CONTROLLER_CMD,
             NETWORK_CONTROLLER_QUEUE)
+        self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
+
+    def _delSFC4ClassifierController(self,cmd):
+        cCmd = self._prepareChildCmd(cmd,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
+        self.forwardCmd(cCmd,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
+            SERVER_CLASSIFIER_CONTROLLER_QUEUE)
         self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
 
     def _delSFCI4ClassifierController(self,cmd):
@@ -253,11 +294,13 @@ class Mediator(object):
     def _sendParentCmdRply(self,cmdRply):
         # Decide the queue
         cmdRplyType = self._cm.getCmdType(cmdRply.cmdID)
-        if cmdRplyType == CMD_TYPE_ADD_SFCI or \
-            cmdRplyType == CMD_TYPE_DEL_SFCI:
+        if cmdRplyType == CMD_TYPE_ADD_SFC or \
+            cmdRplyType == CMD_TYPE_ADD_SFCI or \
+            cmdRplyType == CMD_TYPE_DEL_SFCI or\
+            cmdRplyType == CMD_TYPE_DEL_SFC :
             queue = ORCHESTRATOR_QUEUE
-        elif cmdRplyType == CMD_TYPE_GET_SERVER_SET or\
-            cmdRplyType == CMD_TYPE_GET_TOPOLOGY or\
+        elif cmdRplyType == CMD_TYPE_GET_SERVER_SET or \
+            cmdRplyType == CMD_TYPE_GET_TOPOLOGY or \
             cmdRplyType == CMD_TYPE_GET_SFCI_STATE:
             queue = MEASURER_QUEUE
         else:

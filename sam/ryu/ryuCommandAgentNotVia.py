@@ -38,7 +38,9 @@ class RyuCommandAgent(BaseApp):
             if msg.getMessageType() == MSG_TYPE_NETWORK_CONTROLLER_CMD:
                 self.logger.info("Ryu command agent gets a ryu cmd.")
                 cmd = msg.getbody()
-                if cmd.cmdType == CMD_TYPE_ADD_SFCI:
+                if cmd.cmdType == CMD_TYPE_ADD_SFC:
+                    self.notVia._addSfcHandler(cmd)
+                elif cmd.cmdType == CMD_TYPE_ADD_SFCI:
                     self.notVia._addSfciHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
                     self.notVia._delSfciHandler(cmd)

@@ -163,7 +163,6 @@ class PathComputer(object):
                 multiStagePath[index].append(int(nodeID))
         return multiStagePath
 
-
     def mapBackupFP(self):
         backupPathSet = {}
         primaryFPLength = len(self.primaryFP)

@@ -38,6 +38,22 @@ class UFRR(FRR):
         self.ibm = UIBMaintainer()
         self.logger.info("UFRR App is running !")
 
+    def _addSfcHandler(self, cmd):
+        self.logger.debug(
+            '*** FRR App Received command={0}'.format(cmd)
+            )
+        try:
+            sfc = cmd.attributes['sfc']
+            self._addRoute2Classifier(sfc)
+            self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+        except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            self.logger.error("Ryu app UFRR occure error: {0}".format(message))
+            self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
+        finally:
+            pass
+
     def _addSfciHandler(self, cmd):
         self.logger.debug(
             '*** FRR App Received command={0}'.format(cmd)
@@ -45,7 +61,6 @@ class UFRR(FRR):
         try:
             sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
-            self._addRoute2Classifier(sfc,sfci)
             self._addSFCIRoute(sfc,sfci)
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
         except Exception as ex:

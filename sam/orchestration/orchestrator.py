@@ -10,13 +10,12 @@ from sam.orchestration.oDcnInfoRetriever import *
 from sam.orchestration.oSFCAdder import *
 from sam.orchestration.oSFCDeleter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-
-LANIPPrefix = 27
+from sam.orchestration.oConfig import *
 
 
 class Orchestrator(object):
     def __init__(self):
-        time.sleep(6)   # wait for other basic module boot
+        time.sleep(15)   # wait for other basic module boot
 
         logConfigur = LoggerConfigurator(__name__, './log',
             'orchestrator.log', level='debug')
@@ -52,8 +51,11 @@ class Orchestrator(object):
     def _requestHandler(self, request):
         try:
             if request.requestType == REQUEST_TYPE_ADD_SFC:
-                # TODO
-                pass
+                self._addRequest2DB(request)
+                self._odir.getDCNInfo()
+                cmd = self._osa.genAddSFCCmd(request)
+                self._cm.addCmd(cmd)
+                self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
                 self._addRequest2DB(request)
                 self._odir.getDCNInfo()
@@ -61,10 +63,12 @@ class Orchestrator(object):
                 self._cm.addCmd(cmd)
                 self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
+                self._addRequest2DB(request)
                 cmd = self._osd.genDelSFCICmd(request)
                 self._cm.addCmd(cmd)
                 self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_DEL_SFC:
+                self._addRequest2DB(request)
                 cmd = self._osd.genDelSFCCmd(request)
                 self._cm.addCmd(cmd)
                 self.sendCmd(cmd)
@@ -78,10 +82,6 @@ class Orchestrator(object):
         #     self.logger.error(
         #         "Orchestrator request handler error: {0}".format(message)
         #         )
-        #     rplyMsg = SAMMessage(MSG_TYPE_REPLY, 
-        #             Reply(request.requestID, REQUEST_STATE_FAILED))
-        #     self._messageAgent.sendMsg(request.requestSrcQueue, rplyMsg)
-        #     # TODO: update request
         finally:
             pass
 

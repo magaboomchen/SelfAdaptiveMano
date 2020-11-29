@@ -13,6 +13,7 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
         self._switches = {}
         self._links = {}
         self._vnfis = {}
+        # TODO: add reservation info for each elements, e.g. reserved cpu core for a server
 
     def updateServersInAllZone(self, servers):
         self._servers = servers

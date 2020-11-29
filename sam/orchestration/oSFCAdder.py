@@ -15,6 +15,7 @@ from sam.base.command import *
 from sam.base.socketConverter import SocketConverter
 from sam.orchestration.pathComputer import *
 from sam.orchestration.orchestrator import *
+from sam.orchestration.oConfig import *
 
 
 class OSFCAdder(object):
@@ -22,7 +23,22 @@ class OSFCAdder(object):
         self._dib = dib
         self.logger = logger
         self._sc = SocketConverter()
-        self.sfciCounter = 0
+
+    def genAddSFCCmd(self, request):
+        self.request = request
+        self._checkRequest()
+
+        self.sfc = self.request.attributes['sfc']
+        self.zoneName = self.sfc.attributes["zone"]
+
+        self._mapIngressEgress()
+        self.logger.debug("sfc:{0}".format(self.sfc))
+
+        cmd = Command(CMD_TYPE_ADD_SFC, uuid.uuid1(), attributes={
+            'sfc':self.sfc, 'zone':self.zoneName
+        })
+
+        return cmd
 
     def genAddSFCICmd(self, request):
         self.request = request
@@ -30,8 +46,7 @@ class OSFCAdder(object):
 
         self.sfc = self.request.attributes['sfc']
         self.zoneName = self.sfc.attributes["zone"]
-        self.sfci = SFCI(self._genSFCIID(), [],
-            ForwardingPathSet=ForwardingPathSet({},"UFRR",{}))
+        self.sfci = self.request.attributes['sfci']
 
         self._mapIngressEgress()
         self.logger.debug("sfc:{0}".format(self.sfc))
@@ -51,10 +66,6 @@ class OSFCAdder(object):
     def _checkRequest(self):
         if 'sfc' not in self.request.attributes:
             raise ValueError("Request missing sfc")
-
-    def _genSFCIID(self):
-        self.sfciCounter = self.sfciCounter + 1
-        return self.sfciCounter
 
     def _mapIngressEgress(self):
         for direction in self.sfc.directions:
@@ -139,5 +150,5 @@ class OSFCAdder(object):
         self._pC = PathComputer(self._dib, self.request, self.sfci,
             self.logger)
         self._pC.mapPrimaryFP()
-        self._pC.mapBackupFP()
-
+        if self.sfci.ForwardingPathSet.frrType != None:
+            self._pC.mapBackupFP()

@@ -23,7 +23,7 @@ class RyuCommandAgent(BaseApp):
         self.ufrr = lookup_service_brick("UFRR")
         self.notVia = lookup_service_brick("NotVia")
         self.tC = lookup_service_brick('TopoCollector')
-        self.logger.setLevel(logging.WARNING)
+        self.logger.setLevel(logging.DEBUG)
 
     def start(self):
         super(RyuCommandAgent, self).start()
@@ -41,7 +41,9 @@ class RyuCommandAgent(BaseApp):
             if msg.getMessageType() == MSG_TYPE_NETWORK_CONTROLLER_CMD:
                 self.logger.info("Ryu command agent gets a ryu cmd.")
                 cmd = msg.getbody()
-                if cmd.cmdType == CMD_TYPE_ADD_SFCI:
+                if cmd.cmdType == CMD_TYPE_ADD_SFC:
+                    self.ufrr._addSfcHandler(cmd)
+                elif cmd.cmdType == CMD_TYPE_ADD_SFCI:
                     self.ufrr._addSfciHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
                     self.ufrr._delSfciHandler(cmd)
