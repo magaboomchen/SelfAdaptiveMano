@@ -21,10 +21,11 @@ from sam.serverController.classifierController.classifierSFCIAdder import *
 from sam.serverController.classifierController.classifierSFCIDeleter import *
 from sam.serverController.classifierController.argParser import ArgParser
 
+
 class ClassifierControllerCommandAgent(object):
     def __init__(self, zoneName=""):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'classifierController.log', level='info')
+            'classifierController.log', level='debug')
         self.logger = logConfigur.getLogger()
         self.logger.info("Initialize classifier controller command agent.")
         self.logger.setLevel(logging.DEBUG)
@@ -35,6 +36,7 @@ class ClassifierControllerCommandAgent(object):
         self.clsfSFCAdder = ClassifierSFCAdder(self.cibms, self.logger)
         self.clsfSFCIAdder = ClassifierSFCIAdder(self.cibms, self.logger)
         self.clsfSFCIDeleter = ClassifierSFCIDeleter(self.cibms, self.logger)
+        self.clsfSFCDeleter = ClassifierSFCDeleter(self.cibms, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
         queueName = self._messageAgent.genQueueName(
@@ -57,6 +59,8 @@ class ClassifierControllerCommandAgent(object):
                         self.clsfSFCIAdder.addSFCIHandler(cmd)
                     elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
                         self.clsfSFCIDeleter.delSFCIHandler(cmd)
+                    elif cmd.cmdType == CMD_TYPE_DEL_SFC:
+                        self.clsfSFCDeleter.delSFCHandler(cmd)
                     else:
                         self.logger.error("Unkonwn classifier command type.")
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL

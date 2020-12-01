@@ -44,6 +44,8 @@ class RyuCommandAgent(BaseApp):
                     self.notVia._addSfciHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
                     self.notVia._delSfciHandler(cmd)
+                elif cmd.cmdType == CMD_TYPE_DEL_SFC:
+                    self.notVia._delSfcHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
                     self.tC.get_topology_handler(cmd)
                 else:

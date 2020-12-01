@@ -51,37 +51,40 @@ class Orchestrator(object):
     def _requestHandler(self, request):
         try:
             if request.requestType == REQUEST_TYPE_ADD_SFC:
-                self._addRequest2DB(request)
                 self._odir.getDCNInfo()
                 cmd = self._osa.genAddSFCCmd(request)
                 self._cm.addCmd(cmd)
+                self._addRequest2DB(request, cmd.cmdID)
                 self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
-                self._addRequest2DB(request)
                 self._odir.getDCNInfo()
                 cmd = self._osa.genAddSFCICmd(request)
                 self._cm.addCmd(cmd)
+                self._addRequest2DB(request, cmd.cmdID)
                 self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
-                self._addRequest2DB(request)
                 cmd = self._osd.genDelSFCICmd(request)
+                self.logger.debug("orchestrator classifier's serverID: {0}".format(
+                    cmd.attributes['sfc'].directions[0]['ingress'].getServerID()
+                ))
                 self._cm.addCmd(cmd)
+                self._addRequest2DB(request, cmd.cmdID)
                 self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_DEL_SFC:
-                self._addRequest2DB(request)
                 cmd = self._osd.genDelSFCCmd(request)
                 self._cm.addCmd(cmd)
+                self._addRequest2DB(request, cmd.cmdID)
                 self.sendCmd(cmd)
             else:
                 self.logger.warning(
                     "Unknown request:{0}".format(request.requestType)
                     )
-        # except Exception as ex:
-        #     template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-        #     message = template.format(type(ex).__name__, ex.args)
-        #     self.logger.error(
-        #         "Orchestrator request handler error: {0}".format(message)
-        #         )
+        except Exception as ex:
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            self.logger.error(
+                "Orchestrator request handler error: {0}".format(message)
+                )
         finally:
             pass
 
@@ -107,18 +110,23 @@ class Orchestrator(object):
 
         # find the request by sfcUUID in cmd
         cmd = self._cm.getCmd(cmdID)
-        request = self._getRequestFromDB(cmd.attributes['sfc'].sfcUUID)
+        cmdType = self._cm.getCmdType(cmdID)
+        if cmdType == CMD_TYPE_ADD_SFC or cmdType == CMD_TYPE_DEL_SFC:
+            request = self._getRequestFromDB(cmd.cmdID)
+        elif cmdType == CMD_TYPE_ADD_SFCI or cmdType == CMD_TYPE_DEL_SFCI:
+            request = self._getRequestFromDB(cmd.cmdID)
+        else:
+            raise ValueError("Unkonw cmd type: {0}".format(cmdType))
 
         # update request state
         self._updateRequest2DB(request, state)
-
         self._cm.delCmdwithChildCmd(cmdID)
 
-    def _addRequest2DB(self, request):
+    def _addRequest2DB(self, request, cmdID):
         # TODO
         pass
 
-    def _getRequestFromDB(self, sfcUUID):
+    def _getRequestFromDB(self, cmdID):
         # TODO
         pass
         return 0

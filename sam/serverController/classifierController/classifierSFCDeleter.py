@@ -13,11 +13,26 @@ import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
 
 from sam.serverController.bessControlPlane import *
 
+
 class ClassifierSFCDeleter(BessControlPlane):
     def __init__(self,cibms,logger):
         super(ClassifierSFCDeleter,self).__init__()
         self.cibms = cibms
         self.logger = logger
+
+    def delSFCHandler(self,cmd):
+        sfc = cmd.attributes['sfc']
+        sfcUUID = sfc.sfcUUID
+        for direction in sfc.directions:
+            classifier = direction['ingress']
+            serverID = classifier.getServerID()
+            if not self.cibms.hasCibm(serverID):
+                continue
+            cibm = self.cibms.getCibm(serverID)
+            if not cibm.hasSFCDirection(sfcUUID,direction['ID']):
+                continue
+            if cibm.canDeleteSFCDirection(sfcUUID,direction["ID"]) == True:
+                self.delSFC(sfc,direction)
 
     def delSFC(self,sfc,direction):
         sfcUUID = sfc.sfcUUID

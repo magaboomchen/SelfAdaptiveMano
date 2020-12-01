@@ -68,7 +68,7 @@ class FRR(BaseApp):
             else:
                 raise ValueError("_addRoute2Classifier: invalid source")
             classifierMAC = direction['ingress'].getDatapathNICMac()
-            self._installRoute4Switch2Classifier(
+            self._installRoute4Switch2Classifier(sfc.sfcUUID,
                 datapath, inPortNum, classifierMAC)
 
     def _getSwitchByClassifier(self, classifier):
@@ -121,7 +121,7 @@ class FRR(BaseApp):
                 continue
         return port
 
-    def _installRoute4Switch2Classifier(self, datapath, inPortNum,
+    def _installRoute4Switch2Classifier(self, sfcUUID, datapath, inPortNum,
             classifierMAC):
         dpid = datapath.id
         ofproto = datapath.ofproto
@@ -140,13 +140,8 @@ class FRR(BaseApp):
         ]
         self._add_flow(datapath,match,inst,table_id=IPv4_CLASSIFIER_TABLE,
             priority=3)
-        # TODO: we need to add new cmd type: CMD_TYPE_DEL_SFC, to delete this route!
-        # However, before delete this route, we must check whether other SFC use the same matchFields.
-        # If yes, we can't delete this route.
-        # If no, we can delete this route.
-        # Maintain route info into self.ibm
-        # self.ibm.addSFCIFlowTableEntry(dpid, IPv4_CLASSIFIER_TABLE, 
-        #     matchFields)
+        self.ibm.addSFCFlowTableEntry(sfcUUID, dpid,
+            IPv4_CLASSIFIER_TABLE, matchFields)
 
     def getSFCIStageDstIP(self, sfci, stageCount, pathID):
         if stageCount<len(sfci.VNFISequence):
@@ -164,11 +159,7 @@ class FRR(BaseApp):
             'ipv4_dst':dstIP}
         if self.ibm.hasSFCIFlowTable(SFCIID, currentSwitchID,
             matchFields):
-            self.logger.warning(
-                "\n___________________________\n"
-                "Duplicate Flow Table Entry!"
-                "\n___________________________\n"
-                )
+            self.logger.warning("Duplicate Flow Table Entry!")
             return True
         else:
             return False
@@ -294,13 +285,41 @@ class FRR(BaseApp):
                 self._del_flow(datapath, match, table_id=tableID, priority=1)
                 if entry.has_key("groupID"):
                     groupID = entry["groupID"]
-                    self._delUFRRSFCIGroupTable(datapath, groupID)
-                    self.ibm.delGroupID(dpid,groupID)
+                    self._delSFCIGroupTable(datapath, groupID)
+                    self.ibm.delGroupID(dpid, groupID)
         self.ibm.delSFCIFlowTableEntry(sfci.SFCIID)
 
-    def _delUFRRSFCIGroupTable(self, datapath, groupID):
+    def _delSFCIGroupTable(self, datapath, groupID):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         req = parser.OFPGroupMod(datapath, ofproto.OFPGC_DELETE, 
             ofproto.OFPGT_FF, groupID)
         datapath.send_msg(req)
+
+    def _delSfcHandler(self, cmd):
+        self.logger.info('*** FRR App Received command={0}'.format(cmd))
+        sfc = cmd.attributes['sfc']
+        self._delRoute2Classifier(sfc)
+        self._sendCmdRply(cmd.cmdID, CMD_STATE_SUCCESSFUL)
+
+    def _delRoute2Classifier(self, sfc):
+        # delete route to classifier
+        for direction in sfc.directions:
+            dpid = self._getSwitchByClassifier(direction['ingress'])
+            datapath = self.dpset.get(int(str(dpid), 0))
+            self._deleteRoute4Switch2Classifier(sfc.sfcUUID, datapath)
+
+    def _deleteRoute4Switch2Classifier(self, sfcUUID, datapath):
+        dpid = datapath.id
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+        matchFields={'eth_type':ether_types.ETH_TYPE_IP, 'in_port':inPortNum}
+        match = parser.OFPMatch(**matchFields)
+        # Before delete this route, we must check whether other SFC use the same matchFields.
+        count = self.ibm.countFlowTable(dpid, matchFields)
+        if count == 1: # If no, we can delete this route.
+            self._del_flow(datapath, match, table_id=IPv4_CLASSIFIER_TABLE,
+                priority=3)
+        else: # If yes, we can't delete this route.
+            pass
+        self.ibm.delSFCFlowTableEntry(sfcUUID)

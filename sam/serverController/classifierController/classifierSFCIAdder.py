@@ -29,11 +29,15 @@ class ClassifierSFCIAdder(BessControlPlane):
         sfci = cmd.attributes['sfci']
         sfcUUID = sfc.sfcUUID
         SFCIID = sfci.SFCIID
+        self.logger.debug("addSFCI sfcUUID:{0}, SFCIID:{1}".format(
+            sfcUUID, SFCIID
+        ))
         for direction in sfc.directions:
             classifier = direction['ingress']
             serverID = classifier.getServerID()
             if not self.cibms.hasCibm(serverID):
                 self.clsfSFCInitializer.initClassifier(direction)
+            self.logger.debug("addSFCIHandler serverID:{0}".format(serverID))
             cibm = self.cibms.getCibm(serverID)
             if not cibm.hasSFCDirection(sfcUUID,direction["ID"]):
                 self.clsfSFCAdder.addSFC(sfcUUID,direction)

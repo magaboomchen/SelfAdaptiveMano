@@ -28,6 +28,10 @@ class TestSFCIDeleterClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addSFCI(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'TestOrchestratorClass.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier)
         self.sfci = self.genBiDirection10BackupSFCI()
@@ -45,15 +49,31 @@ class TestSFCIDeleterClass(TestBase):
         self.killClassifierController()
 
     # @pytest.mark.skip(reason='Skip temporarily')
-    def test_delSFCI(self, setup_addSFCI):
+    def test_delSFCAndSFCI(self, setup_addSFCI):
         # exercise
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(SERVER_CLASSIFIER_CONTROLLER_QUEUE,
             MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, self.delSFCICmd)
         # verify
-        self.verifyCmdRply()
+        self.verifyDelSFCICmdRply()
 
-    def verifyCmdRply(self):
+        self.logger.info("press any key to send del sfc cmd.")
+        raw_input()
+        self.logger.info("send cmd")
+
+        # exercise
+        self.delSFCCmd = self.mediator.genCMDDelSFC(self.sfc)
+        self.sendCmd(SERVER_CLASSIFIER_CONTROLLER_QUEUE,
+            MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, self.delSFCCmd)
+        # verify
+        self.verifyDelSFCCmdRply()
+
+    def verifyDelSFCICmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.delSFCICmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+
+    def verifyDelSFCCmdRply(self):
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.delSFCCmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL

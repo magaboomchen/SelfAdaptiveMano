@@ -67,14 +67,16 @@ class TestOrchestratorClass(TestBase):
         raw_input()
         self.logger.info("send requests")
 
-        pass
+        self.delSFCIRequest = self.genDelSFCIRequest(self.sfc, self.sfci)
+        self.sendRequest(ORCHESTRATOR_QUEUE, self.delSFCIRequest)
 
         # exercise
         self.logger.info("press any key to send del sfc requests.")
         raw_input()
         self.logger.info("send requests")
 
-        pass
+        self.delSFCRequest = self.genDelSFCRequest(self.sfc)
+        self.sendRequest(ORCHESTRATOR_QUEUE, self.delSFCRequest)
 
         self.logger.info("press any key to quit.")
         raw_input()

@@ -94,6 +94,12 @@ class CommandMaintainer(object):
     def changeCmdState(self, cmdID, state):
         self._commandsInfo[cmdID]['state'] = state
 
+    def transitCmdState(self, cmdID, statePrev, stateNext):
+        if self.hasCmd(cmdID):
+            state = self._commandsInfo[cmdID]['state']
+            if state == statePrev:
+                self._commandsInfo[cmdID]['state'] = stateNext
+
     def getChildCmdState(self, cmdID, childCmdName):
         cCmdID = self._commandsInfo[cmdID]['childCmdID'][childCmdName]
         return self._commandsInfo[cCmdID]['state']

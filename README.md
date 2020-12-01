@@ -53,7 +53,10 @@ We need to discuss together and then work it out.
 # BUG LIST
 
 vnfcontroller
-* it will get stuck when delete vnfi if vnfi has existed
+* (not sure) it will get stuck when delete vnfi if vnfi has existed
+
+integration
+* Null
 
 # TODO LIST
 
@@ -62,11 +65,33 @@ Add zone to all controller
 * Mininet as MININET_ZONE
 * Turbonet as TURBONET_ZONE
 
-Orchestrator
-* add ADD_SFC_REQUEST, ADD_SFCI_REQUEST, DEL_SFCI_REQUEST, DEL_SFC_REQUEST
+Add traceback.print_exc() to all except code blocks
+```
+import traceback
+except Exception, e:
+    print 'str(Exception):\t', str(Exception)
+    print 'str(e):\t\t', str(e)
+    print 'repr(e):\t', repr(e)
+    print 'e.message:\t', e.message
+    print 'traceback.print_exc():'; traceback.print_exc()
+    print 'traceback.format_exc():\n%s' % traceback.format_exc()
+```
+
+Base
+* link adds bandwidth, traffic rate
+* add routing/addressing scheme name to sfci's attributes
+* change MSG_TYPE_SSF_CONTROLLER_CMD to MSG_TYPE_SFF_CONTROLLER_CMD
+
+Dashboard
+* give a design
+* user can add new routing scheme, stores it to database, sends it to control layer's module
 
 Request Processor
 * give a design
+* select routing/addressing scheme
+
+Orchestrator
+* UFRR mapping: check vnfi in VNFISequence, delete duplicate vnfi in same server
 
 Measurer
 * add self.sendGetSFCIStateCmd()
@@ -78,14 +103,16 @@ SFFController
 * add getSFCIStatus
 
 ClassifierController
-* add addSFCCmd
-* add delSFCCmd
+* Null
 
 vnfController
 * numa node support: numa cpu core and mem allocation
 * independent dpdk apps: set different --file-prefix for differenct vnfi
 
 NetworkController
-* (Optional) ryuCommandAgentUFRR/ryuCommandAgentNotVia: add CMD_TYPE_DEL_SFC handler (delete route2Classifier)
+* Null
+
+Database Agent
+* add database agent to orchestrator, measurer, request processor
 
 # FEATURE REQUEST LIST

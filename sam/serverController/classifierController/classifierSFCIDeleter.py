@@ -15,33 +15,40 @@ from sam.serverController.bessControlPlane import *
 from sam.serverController.bessInfoBaseMaintainer import *
 from sam.serverController.classifierController.classifierSFCDeleter import *
 
+
 class ClassifierSFCIDeleter(BessControlPlane):
     def __init__(self, cibms, logger):
         super(ClassifierSFCIDeleter,self).__init__()
         self.cibms = cibms
         self.logger = logger
-        self.clsfSFCDeleter = ClassifierSFCDeleter(self.cibms, logger)
+        # self.clsfSFCDeleter = ClassifierSFCDeleter(self.cibms, logger)
 
     def delSFCIHandler(self,cmd):
         sfc = cmd.attributes['sfc']
         sfci = cmd.attributes['sfci']
         sfcUUID = sfc.sfcUUID
         SFCIID = sfci.SFCIID
+        self.logger.debug("delSFCI sfcUUID:{0}, SFCIID:{1}".format(
+            sfcUUID, SFCIID
+        ))
         for direction in sfc.directions:
             classifier = direction['ingress']
             serverID = classifier.getServerID()
+            self.logger.debug("delSFCIHandler serverID:{0}".format(serverID))
             if not self.cibms.hasCibm(serverID):
-                return
+                self.logger.warning("not self.cibms.hasCibm(serverID)")
+                continue
             cibm = self.cibms.getCibm(serverID)
             if not cibm.hasSFCDirection(sfcUUID,direction['ID']):
-                return
+                self.logger.warning("not cibm.hasSFCDirection(sfcUUID,direction['ID'])")
+                continue
             self._delLinks(sfcUUID,sfci,direction)
             self._delRules(sfcUUID,sfci,direction)
             self._delModules(sfcUUID,sfci,direction)
             cibm.delSFCIDirection(sfcUUID,direction['ID'],SFCIID)
-            
-            if cibm.canDeleteSFCDirection(sfcUUID,direction["ID"]) == True:
-                self.clsfSFCDeleter.delSFC(sfc,direction)
+
+            # if cibm.canDeleteSFCDirection(sfcUUID,direction["ID"]) == True:
+            #     self.clsfSFCDeleter.delSFC(sfc,direction)
 
     def _delLinks(self,sfcUUID,sfci,direction):
         classifier = direction['ingress']

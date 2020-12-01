@@ -10,6 +10,7 @@ class UIBMaintainer(XInfoBaseMaintainer):
     def __init__(self, *args, **kwargs):
         super(UIBMaintainer, self).__init__(*args, **kwargs)
         self.groupIDSets = {}
+        self.sfcRIB = {}
         self.sfciRIB = {}
         logConfigur = LoggerConfigurator('uibmaintainer', level='info')
         self.logger = logConfigur.getLogger()
@@ -25,6 +26,39 @@ class UIBMaintainer(XInfoBaseMaintainer):
 
     def delGroupID(self, dpid, groupID):
         self.groupIDSets[dpid].remove(groupID)
+
+    def addSFCFlowTableEntry(self, sfcUUID, dpid, tableID, matchFields):
+        if not self.sfcRIB.has_key(sfcUUID):
+            self.sfcRIB[sfcUUID] = {}
+        if not self.sfcRIB[sfcUUID].has_key(dpid):
+            self.sfcRIB[sfcUUID][dpid] = []
+        self.sfcRIB[sfcUUID][dpid].append(
+            {"tableID":tableID, "match":matchFields})
+
+    def delSFCFlowTableEntry(self, sfcUUID):
+        del self.sfcRIB[sfcUUID]
+
+    def getSFCFlowTable(self, sfcUUID):
+        return self.sfcRIB[sfcUUID]
+
+    def hasSFCFlowTable(self, sfcUUID, dpid, matchFields):
+        if not self.sfcRIB.has_key(sfcUUID):
+            return False
+        if not self.sfcRIB[sfcUUID].has_key(dpid):
+            return False
+        for entry in self.sfcRIB[sfcUUID][dpid]:
+            if entry["match"] == matchFields:
+                return True
+        else:
+            return False
+
+    def countFlowTable(self, dpid, matchFields):
+        count = 0
+        for sfcUUID in self.sfcRIB.keys():
+            for dictItem in self.sfcRIB[sfcUUID][dpid]:
+                if dictItem["match"] == matchFields:
+                    count = count + 1
+        return count
 
     def addSFCIFlowTableEntry(self, SFCIID, dpid, tableID, matchFields,
         groupID=None):
