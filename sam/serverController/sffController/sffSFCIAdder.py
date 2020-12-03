@@ -114,26 +114,6 @@ class SFFSFCIAdder(BessControlPlane):
                     name=nameQueueOut,mclass="QueueOut",arg=argument))
                 self._checkResponse(response)
 
-                # Update
-                # nameUpdate = sibm.getModuleName("Update",VNFIID,directionID)
-                # SFCIID = sfci.SFCIID
-                # srcIPValue = self._sc.ip2int(server.getDatapathNICIP())
-                # nextVNFID = sibm.getNextVNFID(sfci,vnfi,directionID)
-                # if nextVNFID == VNF_TYPE_CLASSIFIER:
-                #     egress = direction['egress']
-                #     dstIPValue = self._sc.ip2int(egress.getDatapathNICIP())
-                #     argument = Any()
-                #     argument.Pack( module_msg_pb2.UpdateArg( fields=[
-                #         {"offset":26, "size":4, "value":srcIPValue},
-                #         {"offset":30, "size":4, "value":dstIPValue}
-                #         ]))
-                # else:
-                #     dstIPValue = sibm.getUpdateValue(SFCIID,nextVNFID)
-                #     argument = Any()
-                #     argument.Pack( module_msg_pb2.UpdateArg( fields=[
-                #         {"offset":26, "size":4, "value":srcIPValue},
-                #         {"offset":31, "size":2, "value":dstIPValue}
-                #         ]))
                 nameUpdate = sibm.getModuleName("Update",VNFIID,directionID)
                 SFCIID = sfci.SFCIID
                 srcIPValue = self._sc.ip2int(server.getDatapathNICIP())
@@ -176,7 +156,7 @@ class SFFSFCIAdder(BessControlPlane):
                 directionID = direction["ID"]
                 # add rule to wm2
 
-                oGate = sibm.assignSFFWM2OGate(VNFID,directionID)
+                oGate = sibm.assignSFFWM2OGate(VNFIID,directionID)
                 value = sibm.getSFFWM2MatchValue(SFCIID,VNFID,directionID)
                 value = self._sc.int2Bytes(value,4)
                 argument = Any()
@@ -216,7 +196,7 @@ class SFFSFCIAdder(BessControlPlane):
 
                 # connection
                 # wm2 -> nameQueueOut
-                oGate = sibm.getModuleOGate("wm2",(VNFID,directionID))
+                oGate = sibm.getModuleOGate("wm2",(VNFIID,directionID))
                 response = stub.ConnectModules(
                     bess_msg_pb2.ConnectModulesRequest(
                     m1="wm2",m2=nameQueueOut,ogate=oGate,igate=0))

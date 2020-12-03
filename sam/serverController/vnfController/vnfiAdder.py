@@ -54,8 +54,17 @@ class VNFIAdder(object):
         else:
             imageName = vcConfig.FWD_IMAGE_CLICK
             appName = vcConfig.FWD_APP_CLICK
-            command = "./fastclick/bin/click --dpdk -l %s -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (cpuStr, vnfi.maxMem, vdev0, vdev1, appName)
-        containerName = 'vnf-%s' % vnfi.VNFIID 
+
+            filePrefix = "fwd" + str(startCPU/2.0)
+            if startCPU%2 == 0:
+                numa0mem = vnfi.maxMem
+                numa1mem = 0
+            else:
+                numa0mem = 0
+                numa1mem = vnfi.maxMem
+            command = "./fastclick/bin/click --dpdk -l %s -n 1 --socket-mem %d,%d --file-prefix %s --no-pci --vdev=%s --vdev=%s  -- %s" % (cpuStr, numa0mem, numa1mem, filePrefix, vdev0, vdev1, appName)
+            # command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+        containerName = 'vnf-%s' % vnfi.VNFIID
         try:
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
             container = client.containers.run(imageName, command, tty=True, remove=not debug, privileged=True, name=containerName, 

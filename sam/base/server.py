@@ -32,11 +32,13 @@ class Server(object):
         self._serverDatapathNICMAC = None
         self._ifSet = {}
 
-        self._CPUNum = None
-        self._CPUUtil = None
-        self._hugepagesTotal = None
-        self._hugepagesFree = None
-        self._hugepageSize = None
+        self._memoryDesign = None # "SMP", "NUMA"
+        self._cpuSocketsNum = None
+        self._CPUNum = None # list of int, e.g. [6,6] for two numa nodes
+        self._CPUUtil = None # list of float, e.g. [100.0, 0.0, ..., 100.0]
+        self._hugepagesTotal = None # list of int, e.g. [14,13] for two numa nodes
+        self._hugepagesFree = None # list of int
+        self._hugepageSize = None # unit: kB
 
     def setServerID(self, id):
         self._serverID = id
@@ -112,9 +114,6 @@ class Server(object):
         return final
 
     def _getHwAddrInKernel(self, ifName):
-        # s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # info = fcntl.ioctl(s.fileno(), 0x8927,  struct.pack('256s', ifName[:15]))
-        # return ':'.join(['%02x' % ord(char) for char in info[18:24]])
         ethMac = get_mac_address(interface=ifName)
         return ethMac
 
@@ -130,25 +129,58 @@ class Server(object):
             logging.info(psutil.cpu_percent(interval=1, percpu=True))
 
     def updateResource(self):
+        self._updateMemDesign()
+        self._updateSocketsNum()
         self._updateCpuCount()
         self._updateCpuUtil()
         self._updateHugepagesTotal()
         self._updateHugepagesFree()
         self._updateHugepagesSize()
 
+    def _updateMemDesign(self):
+        rv = subprocess.check_output("lscpu | grep -i numa | grep 'NUMA node(s):'", shell=True)
+        rv = int(rv.strip("\n").split(":")[1])
+        if rv <= 1:
+            self._memoryDesign = "SMP"
+        else:
+            self._memoryDesign = "NUMA"
+
+    def _updateSocketsNum(self):
+        self._cpuSocketsNum =  int(subprocess.check_output('cat /proc/cpuinfo | grep "physical id" | sort -u | wc -l', shell=True))
+
     def _updateCpuCount(self):
-        self._CPUNum = len(psutil.cpu_percent(percpu=True))
+        self._CPUNum = []
+        for nodeIndex in range(self._cpuSocketsNum):
+            regexp = "'NUMA node{0} CPU(s):'".format(nodeIndex)
+            cmd = "lscpu | grep -i numa | grep {0}".format(regexp)
+            print(cmd)
+            rv = subprocess.check_output([cmd], shell=True)
+            rv = rv.strip("\n").split(":")[1].split(",")
+            coreNum = len(rv)
+            self._CPUNum.append(coreNum)
 
     def _updateCpuUtil(self):
-        self._CPUUtil = sum(psutil.cpu_percent(percpu=True))/len(psutil.cpu_percent(percpu=True))
+        self._CPUUtil = psutil.cpu_percent(percpu=True)
 
     def _updateHugepagesTotal(self):
-        out_bytes = subprocess.check_output(['grep Huge /proc/meminfo | grep HugePages_Total'], shell=True)
-        self._hugepagesTotal = int(out_bytes.split(':')[1])
+        self._hugepagesTotal = []
+        for nodeIndex in range(self._cpuSocketsNum):
+            regexp = "'Node {0} HugePages_Total:'".format(nodeIndex)
+            cmd = "cat /sys/devices/system/node/node*/meminfo | fgrep Huge | grep {0}".format(regexp)
+            print(cmd)
+            rv = subprocess.check_output([cmd], shell=True)
+            rv = int(rv.strip("\n").split(":")[1])
+            self._hugepagesTotal.append(rv)
 
     def _updateHugepagesFree(self):
-        out_bytes = subprocess.check_output(['grep Huge /proc/meminfo | grep HugePages_Free'], shell=True)
-        self._hugepagesFree = int(out_bytes.split(':')[1])
+        self._hugepagesFree = []
+        for nodeIndex in range(self._cpuSocketsNum):
+            regexp = "'Node {0} HugePages_Free:'".format(nodeIndex)
+            cmd = "cat /sys/devices/system/node/node*/meminfo | fgrep Huge | grep {0}".format(regexp)
+            print(cmd)
+            rv = subprocess.check_output([cmd], shell=True)
+            rv = int(rv.strip("\n").split(":")[1])
+            self._hugepagesFree.append(rv)
 
     def _updateHugepagesSize(self):
         out_bytes = subprocess.check_output(['grep Huge /proc/meminfo | grep Hugepagesize'], shell=True)

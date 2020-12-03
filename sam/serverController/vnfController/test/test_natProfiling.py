@@ -76,6 +76,7 @@ class TestVNFAddNAT(TestBase):
                 config['NAT'] = NATTuple(NAT_PIP, NAT_MIN_PORT, NAT_MAX_PORT)
                 vnfi = VNFI(VNF_TYPE_NAT, VNFType=VNF_TYPE_NAT, 
                     VNFIID=uuid.uuid1(), config=config, node=server)
+                vnfi.maxCPUNum = 1
                 VNFISequence[index].append(vnfi)
         return VNFISequence
 
@@ -105,58 +106,9 @@ class TestVNFAddNAT(TestBase):
 
         # verifiy
         self.verifyCmdRply()
-        # self.verifyDirection0Traffic()
-        # self.verifyDirection1Traffic()
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
         raw_input()
-
-    def verifyDirection0Traffic(self):
-        self._sendDirection0Traffic2SFF()
-        self._checkEncapsulatedTraffic(inIntf="ens8")
-
-    def _sendDirection0Traffic2SFF(self):
-        filePath = "./fixtures/sendNATDirection0Traffic.py"
-        self.sP.runPythonScript(filePath)
-
-    def _checkEncapsulatedTraffic(self,inIntf):
-        logging.info("_checkEncapsulatedTraffic: wait for packet")
-        filterRE = "ether dst " + str(self.server.getDatapathNICMac())
-        sniff(filter=filterRE,
-            iface=inIntf, prn=self.encap_callback,count=1,store=0)
-
-    def encap_callback(self,frame):
-        frame.show()
-        condition = (frame[IP].src == SFF0_DATAPATH_IP and \
-            frame[IP].dst == SFCI1_0_EGRESS_IP and \
-            frame[IP].proto == 0x04)
-        assert condition
-        outterPkt = frame.getlayer('IP')[0]
-        innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].src == '8.0.8.8'
-
-    def verifyDirection1Traffic(self):
-        self._sendDirection1Traffic2SFF()
-        self._checkDecapsulatedTraffic(inIntf="ens8")
-
-    def _sendDirection1Traffic2SFF(self):
-        filePath = "./fixtures/sendNATDirection1Traffic.py"
-        self.sP.runPythonScript(filePath)
-
-    def _checkDecapsulatedTraffic(self,inIntf):
-        logging.info("_checkDecapsulatedTraffic: wait for packet")
-        sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
-            iface=inIntf, prn=self.decap_callback,count=1,store=0)
-
-    def decap_callback(self,frame):
-        frame.show()
-        condition = (frame[IP].src == SFF0_DATAPATH_IP and \
-            frame[IP].dst == SFCI1_1_EGRESS_IP and \
-            frame[IP].proto == 0x04)
-        assert condition == True
-        outterPkt = frame.getlayer('IP')[0]
-        innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].dst == '3.0.0.4'
 
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
