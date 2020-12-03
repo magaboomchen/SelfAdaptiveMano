@@ -82,6 +82,7 @@ class TestVNFAddFW(TestBase):
                 config['ACL'] = self.genTestFWRules()
                 vnfi = VNFI(VNF_TYPE_FW, VNFType=VNF_TYPE_FW, 
                     VNFIID=uuid.uuid1(), config=config, node=server)
+                vnfi.maxCPUNum = 1
                 VNFISequence[index].append(vnfi)
         return VNFISequence
 

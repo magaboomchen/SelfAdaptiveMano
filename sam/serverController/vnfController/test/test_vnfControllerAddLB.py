@@ -86,6 +86,7 @@ class TestVNFAddLB(TestBase):
                 config['LB'] = LBTuple(LB_VIP, LB_DST)
                 vnfi = VNFI(VNF_TYPE_LB, VNFType=VNF_TYPE_LB, 
                     VNFIID=uuid.uuid1(), config=config, node=server)
+                vnfi.maxCPUNum = 1
                 VNFISequence[index].append(vnfi)
         return VNFISequence
 

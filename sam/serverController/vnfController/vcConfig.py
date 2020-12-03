@@ -3,7 +3,7 @@
 
 class VCConfig:
     MAX_VIO_NUM = 65536 # max num of XX in virtioXX.
-    MAX_CPU_NUM = 4 # max num of CPU in each server; TODO: may be replaced by server.CPUNum in the future.    
+    MAX_CPU_NUM = 12 # max num of CPU in each server; TODO: may be replaced by server.CPUNum in the future.    
     
     DOCKER_TCP_PORT = 5982  # maybe unsafe
 
@@ -29,7 +29,7 @@ class VCConfig:
     FW_RULE_PATH = '/rule/statelessFW'
 
     LB_IMAGE_CLICK = 'release/fastclick-vnf'
-    #LB_IMAGE_CLICK = 'fastclick-vnf/disable-batch'
+    #LB_IMAGE_CLICK = 'fastclick-vnf'
     LB_APP_CLICK = './click-conf/lb.click'
 
     MON_IMAGE_CLICK = 'release/fastclick-vnf'

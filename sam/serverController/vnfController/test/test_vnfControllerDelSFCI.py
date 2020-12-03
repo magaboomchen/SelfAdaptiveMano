@@ -75,6 +75,7 @@ class TestVNFSFCIDeleterClass(TestBase):
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 vnfi = VNFI(VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD, 
                     VNFIID=uuid.uuid1(), node=server)
+                vnfi.maxCPUNum = 1
                 VNFISequence[index].append(vnfi)
         return VNFISequence
 
