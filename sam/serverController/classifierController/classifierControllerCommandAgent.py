@@ -16,6 +16,7 @@ from sam.base.sfc import *
 from sam.base.command import *
 from sam.base.path import *
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.serverController.classifierController.cibMaintainer import *
 from sam.serverController.classifierController.classifierSFCIAdder import *
 from sam.serverController.classifierController.classifierSFCIDeleter import *
@@ -63,16 +64,15 @@ class ClassifierControllerCommandAgent(object):
                         self.clsfSFCDeleter.delSFCHandler(cmd)
                     else:
                         self.logger.error("Unkonwn classifier command type.")
+                        raise ValueError("Unkonwn classifier command type.")
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL
                 except ValueError as err:
                     self.logger.error('classifier command processing error: ' +
                         repr(err))
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 except Exception as ex:
-                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                    message = template.format(type(ex).__name__, ex.args)
-                    self.logger.error(
-                        "Classifier Controller occure error: {0}".format(message))
+                    ExceptionProcessor(self.logger).logException(ex,
+                        " Classifier Controller ")
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 finally:
                     cmdRply = CommandReply(cmd.cmdID, self._commandsInfo[cmd.cmdID]["state"])

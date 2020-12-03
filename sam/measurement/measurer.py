@@ -17,6 +17,7 @@ from sam.base.sfc import *
 from sam.base.command import *
 from sam.base.request import *
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.measurement.dcnInfoBaseMaintainer import *
 
 # TODO: database agent, multiple zones
@@ -91,9 +92,8 @@ class Measurer(object):
                     else:
                         self.logger.error("Unknown massage body")
                 except Exception as ex:
-                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                    message = template.format(type(ex).__name__, ex.args)
-                    self.logger.error("measurer occure error: {0}".format(message))
+                    ExceptionProcessor(self.logger).logException(ex,
+                        "measurer")
 
     def _requestHandler(self, request):
         self.logger.info("Recv a request")

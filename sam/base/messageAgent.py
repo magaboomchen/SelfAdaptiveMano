@@ -19,9 +19,10 @@ import pika
 from pika.exceptions import ChannelClosed
 from pika.exceptions import ReentrancyError
 
-from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.command import *
 from sam.base.request import *
+from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.exceptionProcessor import ExceptionProcessor
 
 threadLock = threading.Lock()
 
@@ -158,10 +159,8 @@ class MessageAgent(object):
                 self.logger.debug(" [x] Sent %r" % message)
                 channel.close()
             except Exception as ex:
-                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                message = template.format(type(ex).__name__, ex.args)
-                self.logger.error(
-                    "MessageAgent sendMsg failed!: {0}".format(message))
+                ExceptionProcessor(self.logger).logException(ex,
+                    "MessageAgent sendMsg failed")
             finally:
                 if self._publisherConnection.is_open:
                     self._publisherConnection.close()
@@ -294,9 +293,8 @@ class QueueReciever(threading.Thread):
                     "Used by BlockingConnection/BlockingChannel.")
                 return None
             except Exception as ex:
-                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                message = template.format(type(ex).__name__, ex.args)
-                self.logger.error("MessageAgent recvMsg failed! occure error: {0}".format(message))
+                ExceptionProcessor(self.logger).logException(ex,
+                    "MessageAgent recvMsg failed")
 
     def callback(self,ch, method, properties, body):
         self.logger.debug(" [x] Received %r" % body)

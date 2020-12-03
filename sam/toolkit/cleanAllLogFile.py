@@ -4,6 +4,7 @@
 import logging
 
 from sam.base.shellProcessor import *
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.orchestration import orchestrator
 from sam.mediator import mediator
 from sam.measurement import measurer
@@ -17,11 +18,6 @@ def getFileDirectory(filePath):
     index = filePath.rfind('/')
     directoryPath = filePath[0:index]
     return directoryPath
-
-def errorHandler(ex):
-    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-    message = template.format(type(ex).__name__, ex.args)
-    logging.error("error: {0}".format(message))
 
 if __name__ == "__main__":
     fileList = [
@@ -42,7 +38,7 @@ if __name__ == "__main__":
             logging.info("clean logs:" + directoryPath + "/log/")
             sP.runShellCommand("sudo rm -rf " + directoryPath + "/log/")
         except Exception as ex:
-            errorHandler(ex)
+            ExceptionProcessor(self.logger).logException(ex)
 
     try:
         directoryPath = getFileDirectory(orchestrator.__file__)
@@ -50,4 +46,4 @@ if __name__ == "__main__":
         sP.runShellCommand("sudo rm -rf " + directoryPath
             + "/test/integrate/log")
     except Exception as ex:
-        errorHandler(ex)
+        ExceptionProcessor(self.logger).logException(ex)

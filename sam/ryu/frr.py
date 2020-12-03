@@ -28,6 +28,7 @@ from sam.base.path import *
 from sam.base.socketConverter import *
 from sam.base.vnf import *
 from sam.serverController.serverManager.serverManager import *
+from sam.base.exceptionProcessor import ExceptionProcessor
 
 
 class FRR(BaseApp):
@@ -267,12 +268,17 @@ class FRR(BaseApp):
             else:
                 return None
 
-    def _delSfciHandler(self, cmd):
+    def _delSFCIHandler(self, cmd):
         self.logger.info('*** FRR App Received command={0}'.format(cmd))
-        sfc = cmd.attributes['sfc']
-        sfci = cmd.attributes['sfci']
-        self._delSFCIRoute(sfc,sfci)
-        self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+        try:
+            sfc = cmd.attributes['sfc']
+            sfci = cmd.attributes['sfci']
+            self._delSFCIRoute(sfc,sfci)
+            self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex,
+                "frr _delSFCIHandler")
+            self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
 
     def _delSFCIRoute(self, sfc, sfci):
         for dpid,entrys in self.ibm.getSFCIFlowTable(sfci.SFCIID).items():
@@ -296,11 +302,16 @@ class FRR(BaseApp):
             ofproto.OFPGT_FF, groupID)
         datapath.send_msg(req)
 
-    def _delSfcHandler(self, cmd):
+    def _delSFCHandler(self, cmd):
         self.logger.info('*** FRR App Received command={0}'.format(cmd))
-        sfc = cmd.attributes['sfc']
-        self._delRoute2Classifier(sfc)
-        self._sendCmdRply(cmd.cmdID, CMD_STATE_SUCCESSFUL)
+        try:
+            sfc = cmd.attributes['sfc']
+            self._delRoute2Classifier(sfc)
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_SUCCESSFUL)
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex,
+                "frr _delSFCHandler")
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_FAIL)
 
     def _delRoute2Classifier(self, sfc):
         # delete route to classifier
@@ -313,7 +324,8 @@ class FRR(BaseApp):
         dpid = datapath.id
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        matchFields={'eth_type':ether_types.ETH_TYPE_IP, 'in_port':inPortNum}
+        matchFields = self.ibm.getSFCFlowTableEntryMatchFields(sfcUUID,
+            dpid, IPv4_CLASSIFIER_TABLE)
         match = parser.OFPMatch(**matchFields)
         # Before delete this route, we must check whether other SFC use the same matchFields.
         count = self.ibm.countFlowTable(dpid, matchFields)

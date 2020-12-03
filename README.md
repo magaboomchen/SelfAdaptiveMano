@@ -40,6 +40,12 @@ export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
 export RTE_TARGET=x86_64-native-linuxapp-gcc
 ```
 
+## Set mysql database
+```
+add user dbAgent with password 123
+add databases Orchestrator, RequestProcessor, Measurer
+```
+
 # FYI
 
 Please read files in "/doc/SoftwareRequirements/", "/doc/SoftwareDesign/" (Ignore the TODO sections)
@@ -65,22 +71,11 @@ Add zone to all controller
 * Mininet as MININET_ZONE
 * Turbonet as TURBONET_ZONE
 
-Add traceback.print_exc() to all except code blocks
-```
-import traceback
-except Exception, e:
-    print 'str(Exception):\t', str(Exception)
-    print 'str(e):\t\t', str(e)
-    print 'repr(e):\t', repr(e)
-    print 'e.message:\t', e.message
-    print 'traceback.print_exc():'; traceback.print_exc()
-    print 'traceback.format_exc():\n%s' % traceback.format_exc()
-```
-
 Base
 * link adds bandwidth, traffic rate
 * add routing/addressing scheme name to sfci's attributes
 * change MSG_TYPE_SSF_CONTROLLER_CMD to MSG_TYPE_SFF_CONTROLLER_CMD
+* rename ForwardingPathSet, VNFISequence, SFCIID in class SFCI(object)
 
 Dashboard
 * give a design
@@ -89,9 +84,11 @@ Dashboard
 Request Processor
 * give a design
 * select routing/addressing scheme
+* validate SFCIID selection
 
 Orchestrator
 * UFRR mapping: check vnfi in VNFISequence, delete duplicate vnfi in same server
+* store reservation of resource for each elements in information base
 
 Measurer
 * add self.sendGetSFCIStateCmd()

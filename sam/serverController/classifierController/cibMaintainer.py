@@ -30,7 +30,7 @@ class CIBMaintainer(BessInfoBaseMaintainer):
     '''Classifiers Information Base Maintainer'''
     def __init__(self, *args, **kwargs):
         super(CIBMaintainer, self).__init__(*args, **kwargs)
-        self._sfcSet = {}   # {sfcUUID:[sfciid]}
+        self._sfcSet = {}   # {sfcUUID:[sfciID]}
 
     def addSFCDirection(self,sfcUUID,directionID):
         self._sfcSet[(sfcUUID,directionID)] = []

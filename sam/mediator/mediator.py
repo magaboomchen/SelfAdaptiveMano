@@ -17,6 +17,7 @@ from sam.base.switch import *
 from sam.base.sfc import *
 from sam.base.command import *
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.exceptionProcessor import ExceptionProcessor
 
 
 class Mediator(object):
@@ -48,9 +49,8 @@ class Mediator(object):
                     else:
                         self.logger.error("Unknown massage body")
         except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            self.logger.error("mediator occure error: {0}".format(message))
+            ExceptionProcessor(self.logger).logException(ex,
+                "mediator")
 
     def _commandHandler(self,cmd):
         self.logger.debug("Get a command")
@@ -77,7 +77,7 @@ class Mediator(object):
         elif cmd.cmdType == CMD_TYPE_DEL_SFC:
             if self._mode['classifierType'] == 'Server':
                 self._delSFC4ClassifierController(cmd)
-            self._delSFC4SFFController(cmd)
+            self._delSFC4NetworkController(cmd)
         elif cmd.cmdType == CMD_TYPE_GET_SERVER_SET:
             self.logger.debug("Get CMD_TYPE_GET_SERVER_SET")
             self._getServerSet4ServerManager(cmd)
@@ -112,7 +112,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
             SERVER_CLASSIFIER_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -122,7 +121,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
             SERVER_CLASSIFIER_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -132,7 +130,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD,
             NETWORK_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID, CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -142,7 +139,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD,
             NETWORK_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -152,7 +148,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SSF_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_SSF_CONTROLLER_CMD,
             SFF_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -166,7 +161,6 @@ class Mediator(object):
             self.logger.debug("send a cmd to vnfController.")
             self.forwardCmd(cCmd,MSG_TYPE_VNF_CONTROLLER_CMD,
                 VNF_CONTROLLER_QUEUE)
-            # self._cm.changeCmdState(cCmd.cmdID,CMD_STATE_PROCESSING)
             self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
                 CMD_STATE_PROCESSING)
             self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -179,7 +173,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_VNF_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_VNF_CONTROLLER_CMD,
             VNF_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -189,7 +182,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD,
             NETWORK_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -199,7 +191,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD,
             NETWORK_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -209,7 +200,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
             SERVER_CLASSIFIER_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -219,7 +209,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
             SERVER_CLASSIFIER_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -229,7 +218,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SSF_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_SSF_CONTROLLER_CMD,
             SFF_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -239,7 +227,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SERVER_MANAGER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_SERVER_MANAGER_CMD,
             SERVER_MANAGER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -249,7 +236,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD,
             NETWORK_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID,CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -259,7 +245,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SSF_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_SSF_CONTROLLER_CMD,
             SFF_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID, CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -269,7 +254,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SSF_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_SSF_CONTROLLER_CMD,
             SFF_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID, CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -278,7 +262,6 @@ class Mediator(object):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
         self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD,
             NETWORK_CONTROLLER_QUEUE)
-        # self._cm.changeCmdState(cmd.cmdID, CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -322,7 +305,7 @@ class Mediator(object):
                 self._cm.getCmdState(cmdID) == CMD_STATE_FAIL:
                 # debug
                 cmdInfo = self._cm._commandsInfo[parentCmdID]
-                self.logger.debug("A command is failed. Here are details:")
+                self.logger.debug("A command failed. Here are details:")
                 for childCmdID in cmdInfo['childCmdID'].itervalues():
                     if self._cm.getCmdState(childCmdID) == CMD_STATE_FAIL:
                         self.logger.debug("childCmdID: {0}".format(childCmdID))

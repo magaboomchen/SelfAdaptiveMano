@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.xibMaintainer import *
+from sam.base.xibMaintainer import XInfoBaseMaintainer
 
 # TODO: test
 
@@ -78,6 +78,13 @@ class UIBMaintainer(XInfoBaseMaintainer):
 
     def getSFCIFlowTable(self, SFCIID):
         return self.sfciRIB[SFCIID]
+
+    def getSFCFlowTableEntryMatchFields(self, sfcUUID, dpid, tableID):
+        for entry in self.sfcRIB[sfcUUID][dpid]:
+            if entry["tableID"] == tableID:
+                return entry["match"]
+        else:
+            return None
 
     def hasSFCIFlowTable(self, SFCIID, dpid, matchFields):
         if not self.sfciRIB.has_key(SFCIID):

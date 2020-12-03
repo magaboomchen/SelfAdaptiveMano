@@ -22,6 +22,7 @@ import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
 from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.server import *
+from sam.base.exceptionProcessor import ExceptionProcessor
 
 
 class BessControlPlane(object):
@@ -40,7 +41,8 @@ class BessControlPlane(object):
                     response = stub.GetVersion(bess_msg_pb2.EmptyRequest())
                 return True
             except Exception as ex:
-                # if type(ex).__name__ == "_InactiveRpcError":
+                ExceptionProcessor(self.logger).logException(ex,
+                    " isBESSAlive ")
                 count = count - 1
         return False
 

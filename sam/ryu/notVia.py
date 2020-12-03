@@ -28,6 +28,7 @@ from sam.base.command import *
 from sam.base.path import *
 from sam.base.socketConverter import *
 from sam.base.vnf import *
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.serverController.serverManager.serverManager import *
 
 
@@ -44,20 +45,19 @@ class NotVia(FRR):
         self.ibm = NIBMaintainer()
         self.logger.info("NotVia App is running !")
 
-    def _addSfcHandler(self, cmd):
+    def _addSFCHandler(self, cmd):
         self.logger.debug('*** NotVia App Received command= %s', cmd)
         try:
             sfc = cmd.attributes['sfc']
             self._addRoute2Classifier(sfc)
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
         except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            self.logger.error("Ryu app NotVia occure error: {0}".format(message))
+            ExceptionProcessor(self.logger).logException(ex,
+                "Ryu app NotVia _addSFCHandler ")
             self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
 
 
-    def _addSfciHandler(self, cmd):
+    def _addSFCIHandler(self, cmd):
         self.logger.debug('*** NotVia App Received command= %s', cmd)
         try:
             sfc = cmd.attributes['sfc']
@@ -65,9 +65,8 @@ class NotVia(FRR):
             self._addSFCIRoute(sfc,sfci)
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
         except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            self.logger.error("Ryu app NotVia occure error: {0}".format(message))
+            ExceptionProcessor(self.logger).logException(ex,
+                "Ryu app NotVia _addSFCIHandler ")
             self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
 
     def _addSFCIRoute(self, sfc, sfci):

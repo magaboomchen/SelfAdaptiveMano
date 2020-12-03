@@ -40,7 +40,7 @@ class SIBMaintainer(BessInfoBaseMaintainer):
     '''SFF Information Base Maintainer'''
     def __init__(self, *args, **kwargs):
         super(SIBMaintainer, self).__init__(*args, **kwargs)
-        self._sfcSet = {}   # {sfcUUID:[sfciid]}
+        self._sfcSet = {}   # {sfcUUID:[sfciID]}
 
     def addLogger(self, logger):
         self.logger = logger

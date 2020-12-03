@@ -28,6 +28,7 @@ from sam.base.command import *
 from sam.base.path import *
 from sam.base.socketConverter import *
 from sam.base.vnf import *
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.serverController.serverManager.serverManager import *
 
 
@@ -38,7 +39,7 @@ class UFRR(FRR):
         self.ibm = UIBMaintainer()
         self.logger.info("UFRR App is running !")
 
-    def _addSfcHandler(self, cmd):
+    def _addSFCHandler(self, cmd):
         self.logger.debug(
             '*** FRR App Received command={0}'.format(cmd)
             )
@@ -47,14 +48,13 @@ class UFRR(FRR):
             self._addRoute2Classifier(sfc)
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
         except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            self.logger.error("Ryu app UFRR occure error: {0}".format(message))
+            ExceptionProcessor(self.logger).logException(ex,
+                "Ryu app UFRR _addSFCHandler ")
             self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
         finally:
             pass
 
-    def _addSfciHandler(self, cmd):
+    def _addSFCIHandler(self, cmd):
         self.logger.debug(
             '*** FRR App Received command={0}'.format(cmd)
             )
@@ -64,9 +64,8 @@ class UFRR(FRR):
             self._addSFCIRoute(sfc,sfci)
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
         except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            self.logger.error("Ryu app UFRR occure error: {0}".format(message))
+            ExceptionProcessor(self.logger).logException(ex,
+                "Ryu app UFRR _addSFCIHandler ")
             self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
         finally:
             pass

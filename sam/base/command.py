@@ -1,6 +1,9 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from sam.base.xibMaintainer import XInfoBaseMaintainer
+
+
 CMD_STATE_WAITING = "CMD_STATE_WAITING"
 CMD_STATE_PROCESSING = "CMD_STATE_PROCESSING"
 CMD_STATE_SUCCESSFUL = "CMD_STATE_SUCCESSFUL"
@@ -49,8 +52,9 @@ class CommandReply(object):
         return str(self)
 
 
-class CommandMaintainer(object):
+class CommandMaintainer(XInfoBaseMaintainer):
     def __init__(self):
+        super(CommandMaintainer, self).__init__()
         self._commandsInfo = {}
 
     def addCmd(self, cmd):

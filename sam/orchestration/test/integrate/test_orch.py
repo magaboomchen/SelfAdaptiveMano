@@ -7,6 +7,7 @@ import logging
 
 from sam.test.testBase import *
 from sam.base.request import *
+from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 logging.basicConfig(level=logging.INFO)
 
@@ -24,6 +25,10 @@ class TestOrchestratorClass(TestBase):
         self.cleanLog()
         self.sP.runShellCommand("rm -rf ./log")
         self.killAllModule()
+        self.oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
+        self.oib.dbA.dropTable("Request")
+        self.oib.dbA.dropTable("SFC")
+        self.oib.dbA.dropTable("SFCI")
 
         self.runServerManager()
         self.runMediator()

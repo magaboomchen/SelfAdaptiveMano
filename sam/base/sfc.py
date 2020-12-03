@@ -4,6 +4,7 @@
 from sam.base.slo import *
 from sam.base.vnf import *
 
+
 SFC_DOMAIN_PREFIX = "10.0.0.0"
 SFC_DOMAIN_PREFIX_LENGTH = 8    # DO NOT MODIFY THIS VALUE,
     # otherwise BESS will incurr error
@@ -13,6 +14,14 @@ APP_TYPE_NORTHSOUTH_WEBSITE = "APP_TYPE_NORTHSOUTH_WEBSITE"
 
 MANUAL_SCALE = 0
 ADAPTIVE_SCALE = 1
+
+STATE_IN_PROCESSING = "STATE_IN_PROCESSING"
+STATE_ACTIVE = "STATE_ACTIVE"
+STATE_INACTIVE = "STATE_INACTIVE"   # There maybe some resource used in DCN
+STATE_DELETED = "STATE_DELETED" # All resource of this sfc/sfci has been released
+# Delete an sfc/sfci will not release SFCIID
+# To get back SFCIID, please prune sfc/sfci from database
+
 
 class SFCI(object):
     def __init__(self, SFCIID, VNFISequence, sloRealTimeValue=None,

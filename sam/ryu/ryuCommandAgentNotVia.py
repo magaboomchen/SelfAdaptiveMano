@@ -39,13 +39,13 @@ class RyuCommandAgent(BaseApp):
                 self.logger.info("Ryu command agent gets a ryu cmd.")
                 cmd = msg.getbody()
                 if cmd.cmdType == CMD_TYPE_ADD_SFC:
-                    self.notVia._addSfcHandler(cmd)
+                    self.notVia._addSFCHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_ADD_SFCI:
-                    self.notVia._addSfciHandler(cmd)
+                    self.notVia._addSFCIHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
-                    self.notVia._delSfciHandler(cmd)
+                    self.notVia._delSFCIHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_DEL_SFC:
-                    self.notVia._delSfcHandler(cmd)
+                    self.notVia._delSFCHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
                     self.tC.get_topology_handler(cmd)
                 else:

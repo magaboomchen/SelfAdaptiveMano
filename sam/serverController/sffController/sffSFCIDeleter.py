@@ -68,7 +68,7 @@ class SFFSFCIDeleter(BessControlPlane):
 
                 # connection
                 # wm2 -> nameQueueOut
-                oGate = sibm.getModuleOGate("wm2",(VNFID,directionID))
+                oGate = sibm.getModuleOGate("wm2",(VNFIID,directionID))
                 response = stub.DisconnectModules(
                     bess_msg_pb2.DisconnectModulesRequest(
                     name="wm2",ogate=oGate))
@@ -115,7 +115,7 @@ class SFFSFCIDeleter(BessControlPlane):
                 response = stub.ModuleCommand(bess_msg_pb2.CommandRequest(
                     name="wm2",cmd="delete",arg=argument))
                 self._checkResponse(response)
-                sibm.delModuleOGate("wm2",(VNFID,directionID))
+                sibm.delModuleOGate("wm2",(VNFIID,directionID))
 
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
