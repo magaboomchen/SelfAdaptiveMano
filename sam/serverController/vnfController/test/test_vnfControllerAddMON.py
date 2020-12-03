@@ -82,6 +82,7 @@ class TestVNFAddMON(TestBase):
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 vnfi = VNFI(VNF_TYPE_MONITOR, VNFType=VNF_TYPE_MONITOR, 
                     VNFIID=uuid.uuid1(), node=server)
+                vnfi.maxCPUNum = 1
                 VNFISequence[index].append(vnfi)
         return VNFISequence
 
