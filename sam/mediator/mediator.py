@@ -55,6 +55,11 @@ class Mediator(object):
     def _commandHandler(self,cmd):
         self.logger.debug("Get a command")
         self._cm.addCmd(cmd)
+        # special case: simulator zone
+        if cmd.attributes['zone'] == SIMULATOR_ZONE:
+            self._forwardCmd2Simulator(cmd)
+            return
+
         if cmd.cmdType == CMD_TYPE_ADD_SFC:
             if self._mode['classifierType'] == 'Server':
                 self._addSFC2ClassifierController(cmd)
@@ -108,10 +113,20 @@ class Mediator(object):
         msg = SAMMessage(msgType, cmd)
         self._messageAgent.sendMsg(queue,msg)
 
+    def _forwardCmd2Simulator(self, cmd):
+        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SIMULATOR_CMD)
+        self.forwardCmd(cCmd, MSG_TYPE_SIMULATOR_CMD, SIMULATOR_QUEUE)
+        self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
+            CMD_STATE_PROCESSING)
+        self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
+            CMD_STATE_PROCESSING)
+
     def _addSFC2ClassifierController(self,cmd):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
-            SERVER_CLASSIFIER_CONTROLLER_QUEUE)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            SERVER_CLASSIFIER_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -119,8 +134,10 @@ class Mediator(object):
 
     def _addSFCI2ClassifierController(self,cmd):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
-            SERVER_CLASSIFIER_CONTROLLER_QUEUE)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            SERVER_CLASSIFIER_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -128,8 +145,10 @@ class Mediator(object):
 
     def _addSFC2NetworkController(self,cmd):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD,
-            NETWORK_CONTROLLER_QUEUE)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            NETWORK_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -137,17 +156,21 @@ class Mediator(object):
 
     def _addSFCI2NetworkController(self,cmd):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD,
-            NETWORK_CONTROLLER_QUEUE)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            NETWORK_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
 
     def _addSFCI2SFFController(self,cmd):
-        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SSF_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_SSF_CONTROLLER_CMD,
-            SFF_CONTROLLER_QUEUE)
+        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SFF_CONTROLLER_CMD)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            SFF_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_SFF_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -155,12 +178,14 @@ class Mediator(object):
 
     def _addSFCIs2Server(self,cmd):
         cCmd = self._cm.getChildCmd(cmd.cmdID, MSG_TYPE_VNF_CONTROLLER_CMD)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            VNF_CONTROLLER_QUEUE, zoneName)
         state = self._cm.getCmdState(cCmd.cmdID)
         if state == CMD_STATE_WAITING:
             cCmd.attributes['source'] = "unkown"
             self.logger.debug("send a cmd to vnfController.")
-            self.forwardCmd(cCmd,MSG_TYPE_VNF_CONTROLLER_CMD,
-                VNF_CONTROLLER_QUEUE)
+            self.forwardCmd(cCmd,MSG_TYPE_VNF_CONTROLLER_CMD, queueName)
             self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
                 CMD_STATE_PROCESSING)
             self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -171,8 +196,10 @@ class Mediator(object):
 
     def _delSFCIs4Server(self,cmd):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_VNF_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_VNF_CONTROLLER_CMD,
-            VNF_CONTROLLER_QUEUE)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            VNF_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_VNF_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -180,8 +207,10 @@ class Mediator(object):
 
     def _delSFC4NetworkController(self,cmd):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD,
-            NETWORK_CONTROLLER_QUEUE)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            NETWORK_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -189,8 +218,10 @@ class Mediator(object):
 
     def _delSFCI4NetworkController(self,cmd):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD,
-            NETWORK_CONTROLLER_QUEUE)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            NETWORK_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -198,8 +229,10 @@ class Mediator(object):
 
     def _delSFC4ClassifierController(self,cmd):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
-            SERVER_CLASSIFIER_CONTROLLER_QUEUE)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            SERVER_CLASSIFIER_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -207,17 +240,21 @@ class Mediator(object):
 
     def _delSFCI4ClassifierController(self,cmd):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
-            SERVER_CLASSIFIER_CONTROLLER_QUEUE)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            SERVER_CLASSIFIER_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
 
     def _delSFCI4SFFController(self,cmd):
-        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SSF_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_SSF_CONTROLLER_CMD,
-            SFF_CONTROLLER_QUEUE)
+        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SFF_CONTROLLER_CMD)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            SFF_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_SFF_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -225,8 +262,10 @@ class Mediator(object):
 
     def _getServerSet4ServerManager(self,cmd):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SERVER_MANAGER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_SERVER_MANAGER_CMD,
-            SERVER_MANAGER_QUEUE)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            SERVER_MANAGER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_SERVER_MANAGER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -234,34 +273,42 @@ class Mediator(object):
 
     def _getTopo4NetworkController(self,cmd):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD,
-            NETWORK_CONTROLLER_QUEUE)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            NETWORK_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
 
     def _getSFCIStatus4SFF(self, cmd):
-        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SSF_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_SSF_CONTROLLER_CMD,
-            SFF_CONTROLLER_QUEUE)
+        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SFF_CONTROLLER_CMD)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            SFF_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_SFF_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
 
     def _getSFCIStatus4SFFP4(self,cmd):
-        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SSF_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_SSF_CONTROLLER_CMD,
-            SFF_CONTROLLER_QUEUE)
+        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_SFF_CONTROLLER_CMD)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            SFF_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_SFF_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
 
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
-        self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD,
-            NETWORK_CONTROLLER_QUEUE)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            NETWORK_CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -365,7 +412,7 @@ class Mediator(object):
     def _waitingParentCmdHandler(self,parentCmdID):
         if self._cm.getCmdType(parentCmdID) == CMD_TYPE_ADD_SFCI:
             sffState = self._cm.getChildCmdState(parentCmdID,
-                MSG_TYPE_SSF_CONTROLLER_CMD)
+                MSG_TYPE_SFF_CONTROLLER_CMD)
             if sffState == CMD_STATE_SUCCESSFUL:
                 cmd = self._cm.getCmd(parentCmdID)
                 self._addSFCIs2Server(cmd)

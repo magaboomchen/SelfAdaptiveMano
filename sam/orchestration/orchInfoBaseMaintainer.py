@@ -98,7 +98,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         (request.requestState, sfcState, sfciState) = \
             self._genRequestSFCAndSFCIState(request, cmdState)
 
-        self._updateRequestState2DB(request, request.requestState)
+        self.updateRequestState2DB(request, request.requestState)
 
         sfcUUID = request.attributes['sfc'].sfcUUID
         if request.requestType == REQUEST_TYPE_ADD_SFC or \
@@ -178,7 +178,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
         self.dbA.insert("Request", fields, values)
 
-    def _updateRequestState2DB(self, request, state):
+    def updateRequestState2DB(self, request, state):
         request.requestState = state
         self.dbA.update("Request", 
             " PICKLE = '{0}' ".format(self._encodeObject2Pickle(request)),

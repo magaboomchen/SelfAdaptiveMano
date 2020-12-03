@@ -109,7 +109,7 @@ class TestVNFSFCIAdderClass(TestBase):
             addSFCICmd = self.addSFCICmdList[sfciIndex]
             addSFCICmd.cmdID = uuid.uuid1()
             self.sendCmd(SFF_CONTROLLER_QUEUE,
-                MSG_TYPE_SSF_CONTROLLER_CMD , addSFCICmd)
+                MSG_TYPE_SFF_CONTROLLER_CMD , addSFCICmd)
             cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
             assert cmdRply.cmdID == addSFCICmd.cmdID
             assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL

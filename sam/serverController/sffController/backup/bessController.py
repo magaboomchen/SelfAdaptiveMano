@@ -44,7 +44,7 @@ class BESSController(object):
     def startBESSController(self):
         while True:
             msg = self._messageAgent.getMsg(SFF_CONTROLLER_QUEUE)
-            if msg.getMessageType() == MSG_TYPE_SSF_CONTROLLER_CMD:
+            if msg.getMessageType() == MSG_TYPE_SFF_CONTROLLER_CMD:
                 self.logger.info("BESS controller get a bess cmd.")
                 try:
                     cmd = msg.getbody()
@@ -63,7 +63,7 @@ class BESSController(object):
                     self.logger.error('bess cmd processing error: ' + repr(err))
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 finally:
-                    rplyMsg = SAMMessage(MSG_TYPE_SSF_CONTROLLER_CMD_REPLY,
+                    rplyMsg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD_REPLY,
                         CommandReply(cmd.cmdID,
                         self._commandsInfo[cmd.cmdID]["state"]) )
                     self._messageAgent.sendMsg(ORCHESTRATOR_QUEUE,

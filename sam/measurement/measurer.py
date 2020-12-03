@@ -18,6 +18,7 @@ from sam.base.command import *
 from sam.base.request import *
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
 from sam.measurement.dcnInfoBaseMaintainer import *
 
 # TODO: database agent, multiple zones
@@ -26,10 +27,12 @@ from sam.measurement.dcnInfoBaseMaintainer import *
 class Measurer(object):
     def __init__(self):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'measurer.log', level='info')
+            'measurer.log', level='debug')
         self.logger = logConfigur.getLogger()
 
         self._dib = DCNInfoBaseMaintainer()
+        self._dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent",
+            "123")
 
         self._messageAgent = MessageAgent(self.logger)
         self.queueName = self._messageAgent.genQueueName(MEASURER_QUEUE)
@@ -46,7 +49,7 @@ class Measurer(object):
         # start a new thread to send command
         threadID = len(self._threadSet)
         thread = MeasurerCommandSender(threadID, self._messageAgent,
-            self.logger)
+            self.logger, self._dashib)
         self._threadSet[threadID] = thread
         thread.setDaemon(True)
         thread.start()
@@ -138,36 +141,42 @@ class Measurer(object):
         self.logger.debug("dib:{0}".format(self._dib))
 
 class MeasurerCommandSender(threading.Thread):
-    def __init__(self, threadID, messageAgent, logger):
+    def __init__(self, threadID, messageAgent, logger, dashib):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self._messageAgent = messageAgent
         self.logger = logger
+        self._dashib = dashib
 
     def run(self):
         self.logger.debug("thread MeasurerCommandSender.run().")
-        while True:
-            self.sendGetTopoCmd()
-            self.sendGetServersCmd()
-            # TODO
-            # self.sendGetSFCIStateCmd()
-            time.sleep(5)
+        try:
+            while True:
+                zoneNameList = self._dashib.getAllZone()
+                for zoneName in zoneNameList:
+                    self.logger.debug("zoneName: {0}".format(zoneName))
+                    self.sendGetTopoCmd(zoneName)
+                    self.sendGetServersCmd(zoneName)
+                    # TODO: self.sendGetSFCIStateCmd(zoneName)
+                time.sleep(5)
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex)
 
-    def sendGetTopoCmd(self):
+    def sendGetTopoCmd(self, zoneName):
         getTopoCmd = Command(CMD_TYPE_GET_TOPOLOGY, uuid.uuid1(),
-            {"zone":""})
+            {"zone":zoneName})
         msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getTopoCmd)
         self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
 
-    def sendGetServersCmd(self):
+    def sendGetServersCmd(self, zoneName):
         getServersCmd = Command(CMD_TYPE_GET_SERVER_SET, uuid.uuid1(),
-            {"zone":""})
+            {"zone":zoneName})
         msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getServersCmd)
         self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
 
-    def sendGetSFCIStateCmd(self):
+    def sendGetSFCIStateCmd(self, zoneName):
         getSFCIStateCmd = Command(CMD_TYPE_GET_SFCI_STATE, uuid.uuid1(),
-            {"zone":""})
+            {"zone":zoneName})
         msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getSFCIStateCmd)
         self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
 

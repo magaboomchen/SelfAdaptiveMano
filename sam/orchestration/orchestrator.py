@@ -83,6 +83,7 @@ class Orchestrator(object):
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
                 "orchestrator _requestHandler")
+            self._oib.updateRequestState2DB(request, REQUEST_STATE_FAILED)
         finally:
             pass
 

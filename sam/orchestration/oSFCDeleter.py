@@ -66,4 +66,4 @@ class OSFCDeleter(object):
             if 'sfc' not in self.request.attributes:
                 raise ValueError("Request missing sfc")
         else:
-            pass
+            raise ValueError("Unknown request type.")

@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 from sam.base.messageAgent import *
 from sam.base.command import *
 from sam.test.fixtures.orchestrationStub import *

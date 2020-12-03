@@ -70,19 +70,17 @@ Add zone to all controller
 * Simulator as SIMULATOR_ZONE
 * Mininet as MININET_ZONE
 * Turbonet as TURBONET_ZONE
+* "" as DEFAULT_ZONE
 
 Base
 * link adds bandwidth, traffic rate
 * add routing/addressing scheme name to sfci's attributes
-* change MSG_TYPE_SSF_CONTROLLER_CMD to MSG_TYPE_SFF_CONTROLLER_CMD
 * rename ForwardingPathSet, VNFISequence, SFCIID in class SFCI(object)
 
 Dashboard
-* give a design
+* give requirements
+* ask Weilin Zhou to give a design
 * user can add new routing scheme, stores it to database, sends it to control layer's module
-
-Request Processor
-* give a design
 * select routing/addressing scheme
 * validate SFCIID selection
 
@@ -97,7 +95,7 @@ Adaptive
 * give a design
 
 SFFController
-* add getSFCIStatus
+* (optional) add getSFCIStatus
 
 ClassifierController
 * Null
@@ -110,6 +108,6 @@ NetworkController
 * Null
 
 Database Agent
-* add database agent to orchestrator, measurer, request processor
+* add database agent to orchestrator, measurer, dashboard
 
 # FEATURE REQUEST LIST

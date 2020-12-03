@@ -40,7 +40,7 @@ class SFFControllerCommandAgent(object):
     def startSFFControllerCommandAgent(self):
         while True:
             msg = self._messageAgent.getMsg(SFF_CONTROLLER_QUEUE)
-            if msg.getMessageType() == MSG_TYPE_SSF_CONTROLLER_CMD:
+            if msg.getMessageType() == MSG_TYPE_SFF_CONTROLLER_CMD:
                 self.logger.info("SFF controller get a command.")
                 try:
                     cmd = msg.getbody()
@@ -67,7 +67,7 @@ class SFFControllerCommandAgent(object):
                     cmdRply = CommandReply(
                         cmd.cmdID,self._commandsInfo[cmd.cmdID]["state"])
                     cmdRply.attributes["source"] = {"sffController"}
-                    rplyMsg = SAMMessage(MSG_TYPE_SSF_CONTROLLER_CMD_REPLY,
+                    rplyMsg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD_REPLY,
                         cmdRply)
                     self._messageAgent.sendMsg(MEDIATOR_QUEUE,rplyMsg)
             elif msg.getMessageType() == None:

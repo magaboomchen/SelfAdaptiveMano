@@ -41,7 +41,7 @@ class TestSFFSFCIDeleterClass(TestBase):
         self.runSFFController()
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SSF_CONTROLLER_CMD , self.addSFCICmd)
+            MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
         yield
         # teardown
         self.killSFFController()
@@ -56,7 +56,7 @@ class TestSFFSFCIDeleterClass(TestBase):
         self.verifyAddSFCICmdRply()
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SSF_CONTROLLER_CMD , self.delSFCICmd)
+            MSG_TYPE_SFF_CONTROLLER_CMD , self.delSFCICmd)
 
         # verify
         self.verifyDelSFCICmdRply()

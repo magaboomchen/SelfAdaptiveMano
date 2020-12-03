@@ -21,7 +21,6 @@ class ODCNInfoRetriever(object):
     def _requestDCNInfo(self):
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_GET_DCN_INFO,
             DCN_INFO_RECIEVER_QUEUE)
-            # ORCHESTRATOR_QUEUE) # it seems that this should be DCN_INFO_RECIEVER_QUEUE, may be delete this comment later
         msg = SAMMessage(MSG_TYPE_REQUEST, request)
         self._messageAgent.sendMsg(MEASURER_QUEUE, msg)
 

@@ -113,7 +113,7 @@ class TestOIBMClass(TestBase):
         request = self.oib.getRequestByRequestUUID(self.addSFCRequest.requestID)
         assert request.requestState == REQUEST_STATE_INITIAL
 
-        self.oib._updateRequestState2DB(self.addSFCRequest,
+        self.oib.updateRequestState2DB(self.addSFCRequest,
             REQUEST_STATE_SUCCESSFUL)
         
         request = self.oib.getRequestByRequestUUID(self.addSFCRequest.requestID)

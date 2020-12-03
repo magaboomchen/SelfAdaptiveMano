@@ -48,7 +48,7 @@ class OSFCAdder(object):
         self.zoneName = self.sfc.attributes["zone"]
         self.sfci = self.request.attributes['sfci']
 
-        self._mapIngressEgress()
+        self._mapIngressEgress()    # TODO: get sfc from database
         self.logger.debug("sfc:{0}".format(self.sfc))
 
         self._mapVNFI()
@@ -64,8 +64,18 @@ class OSFCAdder(object):
         return cmd
 
     def _checkRequest(self):
-        if 'sfc' not in self.request.attributes:
-            raise ValueError("Request missing sfc")
+        if self.request.requestType  == REQUEST_TYPE_ADD_SFCI or\
+            self.request.requestType  == REQUEST_TYPE_DEL_SFCI:
+            if 'sfc' not in self.request.attributes:
+                raise ValueError("Request missing sfc")
+            if 'sfci' not in self.request.attributes:
+                raise ValueError("Request missing sfci")
+        elif self.request.requestType  == REQUEST_TYPE_ADD_SFC or\
+            self.request.requestType  == REQUEST_TYPE_DEL_SFC:
+            if 'sfc' not in self.request.attributes:
+                raise ValueError("Request missing sfc")
+        else:
+            raise ValueError("Unknown request type.")
 
     def _mapIngressEgress(self):
         for direction in self.sfc.directions:

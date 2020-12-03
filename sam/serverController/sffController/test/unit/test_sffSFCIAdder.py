@@ -58,7 +58,7 @@ class TestSFFSFCIAdderClass(TestBase):
         # exercise
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SSF_CONTROLLER_CMD , self.addSFCICmd)
+            MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
 
         # verify
         self.verifyArpResponder()
