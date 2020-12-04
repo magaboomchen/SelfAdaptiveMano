@@ -43,7 +43,7 @@ export RTE_TARGET=x86_64-native-linuxapp-gcc
 ## Set mysql database
 ```
 add user dbAgent with password 123
-add databases Orchestrator, RequestProcessor, Measurer
+add databases Orchestrator, Dashboard, Measurer
 ```
 
 # FYI
@@ -69,6 +69,7 @@ integration
 Base
 * link adds bandwidth, traffic rate
 * add routing/addressing scheme name to sfci's attributes
+* refactor server memory collector
 * rename VNFID, VNFIID, VNFType in Class VNF
 
 Dashboard

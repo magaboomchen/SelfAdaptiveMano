@@ -37,7 +37,7 @@ PS：
 
 1.2）在docker中运行testpmd：
 
-    ./build/app/testpmd -l 0-1 -n 1 -m 1024 --no-pci \
+    ./x86_64-native-linuxapp-gcc/app/testpmd -l 0-1 -n 1 -m 1024 --no-pci \
     --vdev=net_virtio_user0,path=/tmp/vsock0_FW1 \
     --vdev=net_virtio_user0,path=/tmp/vsock1_FW1 \
     --file-prefix=virtio --log-level=8 -- \
@@ -113,7 +113,7 @@ vnfController部署VNF与人工部署的区别：
 
 在步骤1.2）在vnf中运行testpmd命令
 
-    ./build/app/testpmd -m 1024 --no-pci \
+    ./x86_64-native-linuxapp-gcc/app/testpmd -m 1024 --no-pci \
     --vdev=net_virtio_user0,path=/tmp/vsock0_FW1 \
     --vdev=net_virtio_user0,path=/tmp/vsock1_FW1 \
     --file-prefix=virtio --log-level=8 -- \
@@ -146,7 +146,7 @@ vnfCmd中给出了每个VNF的UUID。
 FROM ubuntu:xenial
 WORKDIR /home/t1/bess/deps/dpdk-17.11
 COPY .  /home/t1/bess/deps/dpdk-17.11
-ENV PATH "$PATH: /home/t1/bess/deps/dpdk-17.11/build/app/"
+ENV PATH "$PATH: /home/t1/bess/deps/dpdk-17.11/x86_64-native-linuxapp-gcc/app/"
 RUN apt-get update && apt-get install -y \
     numactl \
     libnuma-dev

@@ -32,7 +32,7 @@ class Server(object):
         self._serverDatapathNICMAC = None
         self._ifSet = {}
 
-        self._memoryDesign = None # "SMP", "NUMA"
+        self._memoryAccess = None # "SMP", "NUMA"
         self._cpuSocketsNum = None
         self._CPUNum = None # list of int, e.g. [6,6] for two numa nodes
         self._CPUUtil = None # list of float, e.g. [100.0, 0.0, ..., 100.0]
@@ -137,16 +137,16 @@ class Server(object):
         self._updateHugepagesFree()
         self._updateHugepagesSize()
 
-    def getMemoryDesign(self):
-        return self._memoryDesign
+    def getMemoryAccess(self):
+        return self._memoryAccess
 
     def _updateMemDesign(self):
         rv = subprocess.check_output("lscpu | grep -i numa | grep 'NUMA node(s):'", shell=True)
         rv = int(rv.strip("\n").split(":")[1])
         if rv <= 1:
-            self._memoryDesign = "SMP"
+            self._memoryAccess = "SMP"
         else:
-            self._memoryDesign = "NUMA"
+            self._memoryAccess = "NUMA"
 
     def _updateSocketsNum(self):
         self._cpuSocketsNum =  int(subprocess.check_output('cat /proc/cpuinfo | grep "physical id" | sort -u | wc -l', shell=True))
@@ -169,7 +169,7 @@ class Server(object):
         self._hugepagesTotal = []
         for nodeIndex in range(self._cpuSocketsNum):
             regexp = "'Node {0} HugePages_Total:'".format(nodeIndex)
-            cmd = "cat /sys/devices/system/node/node*/meminfo | fgrep Huge | grep {0}".format(regexp)
+            cmd = "cat /sys/devices/system/node/node*/meminfo | fgrep Huge | grep {0}".format(regexp)                                                `
             print(cmd)
             rv = subprocess.check_output([cmd], shell=True)
             rv = int(rv.strip("\n").split(":")[1])
