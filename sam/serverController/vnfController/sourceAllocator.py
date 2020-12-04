@@ -6,7 +6,7 @@ Source (virtio ID or CPU) allocator for servers.
 '''
 
 import logging
-
+from sam.serverController.vnfController.vcConfig import vcConfig
 class SourceAllocator(object):
     def __init__(self, serverID, maxNum, start=0):
         self._serverID = serverID
@@ -45,3 +45,19 @@ class SourceAllocator(object):
                 del(self._unallocatedList[i + 1])
                 break
 
+def mapCpuCores(start, end):
+    res = []
+    for i in range(start, end + 1):
+        if i * 2 < vcConfig.MAX_CPU_NUM:
+            res.append(i * 2)
+        else:
+            res.append(2 * i - vcConfig.MAX_CPU_NUM + 1)
+    resStr = ''
+    for i in res:
+        resStr = resStr + '%d,' % i
+    resStr = resStr[:-1]
+    return res, resStr
+
+if __name__ == '__main__':
+    print(mapCpuCores(1,2))
+    print(mapCpuCores(5,7))

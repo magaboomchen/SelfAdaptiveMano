@@ -12,7 +12,7 @@ class VCConfig:
 
     DEFAULT_FASTCLICK = True
 
-    USING_PRECONFIG = True  # whether to use the pre-config firewall rules 
+    USING_PRECONFIG = False  # whether to use the pre-config firewall rules 
     PRECONFIG_PATH = '/home/server0/HaoChen/rule'
 
     FWD_IMAGE_DPDK = 'dpdk-app-testpmd'
@@ -29,7 +29,7 @@ class VCConfig:
     FW_RULE_PATH = '/rule/statelessFW'
 
     LB_IMAGE_CLICK = 'release/fastclick-vnf'
-    #LB_IMAGE_CLICK = 'fastclick-vnf/disable-batch'
+    #LB_IMAGE_CLICK = 'fastclick-vnf'
     LB_APP_CLICK = './click-conf/lb.click'
 
     MON_IMAGE_CLICK = 'release/fastclick-vnf'
