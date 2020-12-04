@@ -45,7 +45,7 @@ class PathComputer(object):
 
         multiStagePath = self._transPath2MultiStagePath(path)
         self.primaryFP = multiStagePath
-        self.sfci.ForwardingPathSet.primaryForwardingPath[1] = self.primaryFP
+        self.sfci.forwardingPathSet.primaryForwardingPath[1] = self.primaryFP
         self.logger.info("PathComputer, primayFP:{0}".format(self.primaryFP))
 
     def _genMultiLayerGraph(self):
@@ -84,7 +84,7 @@ class PathComputer(object):
         return G
 
     def _addEdgeSwitch2Server(self, G, vnfiStage, layerStage):
-        vnfiList = self.sfci.VNFISequence[vnfiStage]
+        vnfiList = self.sfci.vnfiSequence[vnfiStage]
         for vnfi in vnfiList:
             node = vnfi.node
             if isinstance(node, Server):
@@ -125,7 +125,7 @@ class PathComputer(object):
         serverIP = server.getDatapathNICIP()
         switchList = self._dib.getSwitchesByZone(self.zoneName)
         for switch in switchList:
-            lanNet = switch.LanNet
+            lanNet = switch.lanNet
             if self._sc.isLANIP(serverIP, lanNet):
                 return switch
         else:
@@ -136,7 +136,7 @@ class PathComputer(object):
 
     def _connectLayers(self, mLG):
         for stage in range(self.sfcLength):
-            vnfiList = self.sfci.VNFISequence[stage]
+            vnfiList = self.sfci.vnfiSequence[stage]
             for vnfi in vnfiList:
                 node = vnfi.node
                 if isinstance(node, Server):
@@ -196,7 +196,7 @@ class PathComputer(object):
             backupForwardingPath[(int(currentNodeID), int(nextNodeID),
                 pathID)] = value
             pathID = pathID + 1
-        self.sfci.ForwardingPathSet.backupForwardingPath[1]\
+        self.sfci.forwardingPathSet.backupForwardingPath[1]\
             = backupForwardingPath
         self.logger.info("PathComputer, backupFP:{0}".format(backupForwardingPath))
 

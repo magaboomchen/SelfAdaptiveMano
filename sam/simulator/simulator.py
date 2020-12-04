@@ -14,6 +14,7 @@ from sam.base.command import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintainer
 
 
 class Simulator(object):
@@ -25,6 +26,8 @@ class Simulator(object):
         self.logger.info("Init simulator.")
 
         self._cm = CommandMaintainer()
+
+        self._sib = SimulatorInfoBaseMaintainer()
 
         self._messageAgent = MessageAgent(self.logger)
         # please install rabbitmq in your VM

@@ -27,8 +27,8 @@ class SeverManager(object):
         self.logger.info('Init ServerManager')
 
         self._messageAgent = MessageAgent(self.logger)
-        queueName = self._messageAgent.genQueueName(SERVER_MANAGER_QUEUE, zoneName)
-        self._messageAgent.startRecvMsg(queueName)
+        self.queueName = self._messageAgent.genQueueName(SERVER_MANAGER_QUEUE, zoneName)
+        self._messageAgent.startRecvMsg(self.queueName)
 
         self.serverSet = {}
         self._timeoutCleaner()
@@ -36,7 +36,7 @@ class SeverManager(object):
 
     def _listener(self):
         while True:
-            msg = self._messageAgent.getMsg(SERVER_MANAGER_QUEUE)
+            msg = self._messageAgent.getMsg(self.queueName)
             self.logger.debug("msgType:".format(msg.getMessageType()))
             time.sleep(1)
             if msg.getMessageType() == MSG_TYPE_SERVER_REPLY:

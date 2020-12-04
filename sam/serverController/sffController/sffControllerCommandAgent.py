@@ -20,6 +20,7 @@ from sam.serverController.sffController.argParser import ArgParser
 
 # TODO: finish sfci monitor
 
+
 class SFFControllerCommandAgent(object):
     def __init__(self, zoneName=""):
         self._commandsInfo = {}
@@ -34,12 +35,12 @@ class SFFControllerCommandAgent(object):
         self.sffMonitor = SFFMonitor(self.sibms, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
-        queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, zoneName)
-        self._messageAgent.startRecvMsg(queueName)
+        self.queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, zoneName)
+        self._messageAgent.startRecvMsg(self.queueName)
 
     def startSFFControllerCommandAgent(self):
         while True:
-            msg = self._messageAgent.getMsg(SFF_CONTROLLER_QUEUE)
+            msg = self._messageAgent.getMsg(self.queueName)
             if msg.getMessageType() == MSG_TYPE_SFF_CONTROLLER_CMD:
                 self.logger.info("SFF controller get a command.")
                 try:

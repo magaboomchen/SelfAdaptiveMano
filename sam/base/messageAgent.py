@@ -192,7 +192,7 @@ class MessageAgent(object):
                 threadLock.release()
                 return result
 
-    def getMsg(self,srcQueueName, throughput=1000):
+    def getMsg(self, srcQueueName, throughput=1000):
         # poll-mode: we need to trade-off between 
         # cpu utilization and performance
         time.sleep(1/float(throughput))    # throughput pps msg

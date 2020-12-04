@@ -87,12 +87,13 @@ class FRR(BaseApp):
             raise ValueError("Can not find switch by classifier")
 
     def _getFirstSwitchIDInSFCI(self, sfci, direction):
-        FPSet = sfci.ForwardingPathSet
+        forwardingPathSet = sfci.forwardingPathSet
+        primaryForwardingPath = forwardingPathSet.primaryForwardingPath
         directionID = direction["ID"]
         if directionID == 0:
-            firstPath = FPSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET][0]
+            firstPath = primaryForwardingPath[DIRECTION1_PATHID_OFFSET][0]
         else:
-            firstPath = FPSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET][0]
+            firstPath = primaryForwardingPath[DIRECTION2_PATHID_OFFSET][0]
         firstSwitchID = firstPath[1]
         # the first node is a server, the second node is a switch
         return firstSwitchID
@@ -145,20 +146,20 @@ class FRR(BaseApp):
             IPv4_CLASSIFIER_TABLE, matchFields)
 
     def getSFCIStageDstIP(self, sfci, stageCount, pathID):
-        if stageCount<len(sfci.VNFISequence):
-            vnfID = sfci.VNFISequence[stageCount][0].VNFID
+        if stageCount<len(sfci.vnfiSequence):
+            vnfID = sfci.vnfiSequence[stageCount][0].VNFID
         else:
             vnfID = VNF_TYPE_CLASSIFIER
-        sfcID = sfci.SFCIID
+        sfcID = sfci.sfciID
         ipNum = (10<<24) + ((vnfID & 0xF) << 20) + ((sfcID & 0xFFF) << 8) \
             + (pathID & 0xFF)
         return self._sc.int2ip(ipNum)
 
-    def _canSkipPrimaryPathFlowInstallation(self, SFCIID, dstIP,
+    def _canSkipPrimaryPathFlowInstallation(self, sfciID, dstIP,
         currentSwitchID):
         matchFields = {'eth_type':ether_types.ETH_TYPE_IP,
             'ipv4_dst':dstIP}
-        if self.ibm.hasSFCIFlowTable(SFCIID, currentSwitchID,
+        if self.ibm.hasSFCIFlowTable(sfciID, currentSwitchID,
             matchFields):
             self.logger.warning("Duplicate Flow Table Entry!")
             return True
@@ -173,7 +174,7 @@ class FRR(BaseApp):
         return pathID
 
     def _getPrimaryPath(self, sfci, pathID):
-        primaryFP = sfci.ForwardingPathSet.primaryForwardingPath[pathID]
+        primaryFP = sfci.forwardingPathSet.primaryForwardingPath[pathID]
         return primaryFP
 
     def _getSrcDstServerInStage(self, stage):
@@ -230,7 +231,7 @@ class FRR(BaseApp):
         return False
 
     def _getBackupPaths(self,sfci,primaryPathID):
-        return sfci.ForwardingPathSet.backupForwardingPath[primaryPathID]
+        return sfci.forwardingPathSet.backupForwardingPath[primaryPathID]
 
     def _getNextHopActionFields(self, sfci, direction, currentDpid,
             nextDpid):
@@ -252,7 +253,7 @@ class FRR(BaseApp):
 
     def getServerByServerID(self, sfci, direction, nextDpid):
         self.logger.debug("getServerByServerID")
-        for vnf in sfci.VNFISequence:
+        for vnf in sfci.vnfiSequence:
             for vnfi in vnf:
                 node = vnfi.node
                 if isinstance(node,Server) and \
@@ -275,13 +276,14 @@ class FRR(BaseApp):
             sfci = cmd.attributes['sfci']
             self._delSFCIRoute(sfc,sfci)
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+            self.ibm.printUIBM()
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
                 "frr _delSFCIHandler")
             self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
 
     def _delSFCIRoute(self, sfc, sfci):
-        for dpid,entrys in self.ibm.getSFCIFlowTable(sfci.SFCIID).items():
+        for dpid,entrys in self.ibm.getSFCIFlowTable(sfci.sfciID).items():
             for entry in entrys:
                 datapath = self.dpset.get(int(str(dpid), 0))
                 parser = datapath.ofproto_parser
@@ -293,7 +295,7 @@ class FRR(BaseApp):
                     groupID = entry["groupID"]
                     self._delSFCIGroupTable(datapath, groupID)
                     self.ibm.delGroupID(dpid, groupID)
-        self.ibm.delSFCIFlowTableEntry(sfci.SFCIID)
+        self.ibm.delSFCIFlowTableEntry(sfci.sfciID)
 
     def _delSFCIGroupTable(self, datapath, groupID):
         ofproto = datapath.ofproto
@@ -308,6 +310,7 @@ class FRR(BaseApp):
             sfc = cmd.attributes['sfc']
             self._delRoute2Classifier(sfc)
             self._sendCmdRply(cmd.cmdID, CMD_STATE_SUCCESSFUL)
+            self.ibm.printUIBM()
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
                 "frr _delSFCHandler")

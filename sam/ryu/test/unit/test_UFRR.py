@@ -62,7 +62,7 @@ class TestUFRRClass(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
-                self.sfci.VNFISequence[0][0].VNFIID)
+                self.sfci.vnfiSequence[0][0].VNFIID)
             logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
@@ -73,7 +73,7 @@ class TestUFRRClass(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.208",
-                self.sfci.VNFISequence[0][1].VNFIID)
+                self.sfci.vnfiSequence[0][1].VNFIID)
             logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
@@ -84,9 +84,9 @@ class TestUFRRClass(TestBase):
 
     def delVNFI4Server(self):
         self.vC.uninstallVNF("t1", "123", "192.168.122.134",
-                    self.sfci.VNFISequence[0][0].VNFIID)
+                    self.sfci.vnfiSequence[0][0].VNFIID)
         self.vC.uninstallVNF("t1", "123", "192.168.122.208",
-                    self.sfci.VNFISequence[0][1].VNFIID)
+                    self.sfci.vnfiSequence[0][1].VNFIID)
         time.sleep(10)
         # Here has a unstable bug
         # In sometimes, we can't delete VNFI, you should delete it manually
@@ -204,8 +204,8 @@ class TestUFRRClass(TestBase):
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-    def printVNFISequence(self, VNFISequence):
-        for vnf in VNFISequence:
+    def printVNFISequence(self, vnfiSequence):
+        for vnf in vnfiSequence:
             for vnfi in vnf:
                 logging.info(
                     "VNFID:{0},VNFIID:{1}".format(

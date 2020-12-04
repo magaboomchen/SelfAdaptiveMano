@@ -69,9 +69,9 @@ class TestVNFAddLB(TestBase):
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
-        VNFISequence = []
+        vnfiSequence = []
         for index in range(SFCLength):
-            VNFISequence.append([])
+            vnfiSequence.append([])
             for iN in range(1):
                 server = Server("ens3", SFF0_DATAPATH_IP, SERVER_TYPE_NORMAL)
                 server.setServerID(SERVERID_OFFSET + 1)
@@ -82,8 +82,8 @@ class TestVNFAddLB(TestBase):
                 config['LB'] = LBTuple(LB_VIP, LB_DST)
                 vnfi = VNFI(VNF_TYPE_LB, VNFType=VNF_TYPE_LB, 
                     VNFIID=uuid.uuid1(), config=config, node=server)
-                VNFISequence[index].append(vnfi)
-        return VNFISequence
+                vnfiSequence[index].append(vnfi)
+        return vnfiSequence
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")

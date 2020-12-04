@@ -63,9 +63,9 @@ class TestVNFAddNAT(TestBase):
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
-        VNFISequence = []
+        vnfiSequence = []
         for index in range(SFCLength):
-            VNFISequence.append([])
+            vnfiSequence.append([])
             for iN in range(1):
                 server = Server("ens3", SFF0_DATAPATH_IP, SERVER_TYPE_NORMAL)
                 server.setServerID(SERVERID_OFFSET + 1)
@@ -77,8 +77,8 @@ class TestVNFAddNAT(TestBase):
                 vnfi = VNFI(VNF_TYPE_NAT, VNFType=VNF_TYPE_NAT, 
                     VNFIID=uuid.uuid1(), config=config, node=server)
                 vnfi.maxCPUNum = 1
-                VNFISequence[index].append(vnfi)
-        return VNFISequence
+                vnfiSequence[index].append(vnfi)
+        return vnfiSequence
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")

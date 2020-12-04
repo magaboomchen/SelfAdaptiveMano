@@ -12,6 +12,7 @@ from sam.serverController.bessInfoBaseMaintainer import *
 
 # TODO: need test
 
+
 class SIBMS(object):
     def __init__(self, logger):
         self._sibms = {} # {serverID:SIBMaintainer}
@@ -36,6 +37,7 @@ class SIBMS(object):
             self.logger.info("{0}'s sibm:".format(key))
             self._sibms[key].show()
 
+
 class SIBMaintainer(BessInfoBaseMaintainer):
     '''SFF Information Base Maintainer'''
     def __init__(self, *args, **kwargs):
@@ -56,26 +58,26 @@ class SIBMaintainer(BessInfoBaseMaintainer):
         return  "net_vhost" + suffix + ",iface=/tmp/vsock" + suffix
 
     def getNextVNFID(self,sfci,vnf,directionID):
-        VNFISequence = copy.deepcopy(sfci.VNFISequence)
+        vnfiSequence = copy.deepcopy(sfci.vnfiSequence)
         if directionID == 0:
             pass
         elif directionID == 1:
-            VNFISequence.reverse()
+            vnfiSequence.reverse()
         else:
             raise ValueError('Invalid direction ID.')
 
-        sfcLen = len(VNFISequence)
+        sfcLen = len(vnfiSequence)
         VNFID = vnf.VNFID
         for i in range(sfcLen):
-            currentVNF = VNFISequence[i][0]
+            currentVNF = vnfiSequence[i][0]
             if currentVNF.VNFID == VNFID:
                 if i != (sfcLen-1):
-                    return VNFISequence[i+1][0].VNFID
+                    return vnfiSequence[i+1][0].VNFID
                 else:
                     return VNF_TYPE_CLASSIFIER
 
-    def getUpdateValue(self,SFCIID,nextVNFID):
-        value = (SFCIID & 0xFFF) + ((nextVNFID & 0XF) << 12)
+    def getUpdateValue(self,sfciID,nextVNFID):
+        value = (sfciID & 0xFFF) + ((nextVNFID & 0XF) << 12)
         return value
 
     def assignSFFWM2OGate(self,VNFID,directionID):
@@ -84,12 +86,11 @@ class SIBMaintainer(BessInfoBaseMaintainer):
         self.addOGate2Module("wm2",(VNFID,directionID),oGateNum)
         return oGateNum
 
-    def getSFFWM2MatchValue(self,SFCIID,VNFID,directionID):
-        value = (10<<24) + ((VNFID & 0XF)<<20) + ((SFCIID & 0xFFF) << 8) + ((directionID & 0x1) <<7)
+    def getSFFWM2MatchValue(self,sfciID,VNFID,directionID):
+        value = (10<<24) + ((VNFID & 0XF)<<20) + ((sfciID & 0xFFF) << 8) + ((directionID & 0x1) <<7)
         return value
     
     def show(self):
         self.logger.info("sfcSet:{0}".format(self._sfcSet))
         self.logger.info("modules:{0}".format(self._modules))
         self.logger.info("links:{0}".format(self._links))
-

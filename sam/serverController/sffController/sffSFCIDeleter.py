@@ -15,6 +15,7 @@ from sam.serverController.sffController.sffInitializer import *
 from sam.serverController.sffController.sibMaintainer import *
 from sam.base.server import *
 
+
 class SFFSFCIDeleter(BessControlPlane):
     def __init__(self,sibms,logger):
         super(SFFSFCIDeleter, self).__init__()
@@ -24,8 +25,8 @@ class SFFSFCIDeleter(BessControlPlane):
     def delSFCIHandler(self,cmd):
         sfc = cmd.attributes['sfc']
         sfci = cmd.attributes['sfci']
-        self._checkVNFISequence(sfci.VNFISequence)
-        for vnf in sfci.VNFISequence:
+        self._checkVNFISequence(sfci.vnfiSequence)
+        for vnf in sfci.vnfiSequence:
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):
                     server = vnfi.node
@@ -41,7 +42,7 @@ class SFFSFCIDeleter(BessControlPlane):
                     self._delLinks(server,sfc.directions,vnfi)
                     self._delRules(server,sfci,sfc.directions,vnfi)
                     self._delModules(server,sfc.directions,sfci,vnfi)
-                    # self.sibms.show()
+                    self.sibms.show()
                 else:
                     continue
 
@@ -89,7 +90,7 @@ class SFFSFCIDeleter(BessControlPlane):
                 stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
     def _delRules(self,server,sfci,directions,vnfi):
-        SFCIID = sfci.SFCIID
+        sfciID = sfci.sfciID
         VNFIID = vnfi.VNFIID
         VNFID = vnfi.VNFID
         serverID = server.getServerID()
@@ -104,7 +105,7 @@ class SFFSFCIDeleter(BessControlPlane):
                 directionID = direction["ID"]
                 # add rule to wm2
 
-                value = sibm.getSFFWM2MatchValue(SFCIID,VNFID,directionID)
+                value = sibm.getSFFWM2MatchValue(sfciID,VNFID,directionID)
                 value = self._sc.int2Bytes(value,4)
                 argument = Any()
                 arg = module_msg_pb2.WildcardMatchCommandDeleteArg(

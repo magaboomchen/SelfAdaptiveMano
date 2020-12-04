@@ -45,7 +45,7 @@ class OSFCDeleter(object):
         self.sfcUUID = self.request.attributes['sfc'].sfcUUID
         self.sfc = self._oib.getSFC4DB(self.sfcUUID)
         self.zoneName = self.sfc.attributes["zone"]
-        self.sfciID = self.request.attributes['sfci'].SFCIID
+        self.sfciID = self.request.attributes['sfci'].sfciID
         self.sfci = self._oib.getSFCI4DB(self.sfciID)
 
         cmd = Command(CMD_TYPE_DEL_SFCI, uuid.uuid1(), attributes={

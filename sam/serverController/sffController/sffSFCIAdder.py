@@ -15,6 +15,7 @@ from sam.serverController.sffController.sffInitializer import *
 from sam.serverController.sffController.sibMaintainer import *
 from sam.base.server import *
 
+
 class SFFSFCIAdder(BessControlPlane):
     def __init__(self,sibms, logger):
         super(SFFSFCIAdder, self).__init__()
@@ -25,8 +26,8 @@ class SFFSFCIAdder(BessControlPlane):
     def addSFCIHandler(self,cmd):
         sfc = cmd.attributes['sfc']
         sfci = cmd.attributes['sfci']
-        self._checkVNFISequence(sfci.VNFISequence)
-        for vnf in sfci.VNFISequence:
+        self._checkVNFISequence(sfci.vnfiSequence)
+        for vnf in sfci.vnfiSequence:
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):
                     server = vnfi.node
@@ -115,10 +116,10 @@ class SFFSFCIAdder(BessControlPlane):
                 self._checkResponse(response)
 
                 nameUpdate = sibm.getModuleName("Update",VNFIID,directionID)
-                SFCIID = sfci.SFCIID
+                sfciID = sfci.sfciID
                 srcIPValue = self._sc.ip2int(server.getDatapathNICIP())
                 nextVNFID = sibm.getNextVNFID(sfci,vnfi,directionID)
-                dstIPValue = sibm.getUpdateValue(SFCIID,nextVNFID)
+                dstIPValue = sibm.getUpdateValue(sfciID,nextVNFID)
                 argument = Any()
                 argument.Pack( module_msg_pb2.UpdateArg( fields=[
                     {"offset":26, "size":4, "value":srcIPValue},
@@ -141,7 +142,7 @@ class SFFSFCIAdder(BessControlPlane):
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
     def _addRules(self,server,sfci,directions,vnfi):
-        SFCIID = sfci.SFCIID
+        sfciID = sfci.sfciID
         VNFIID = vnfi.VNFIID
         VNFID = vnfi.VNFID
         serverID = server.getServerID()
@@ -157,7 +158,7 @@ class SFFSFCIAdder(BessControlPlane):
                 # add rule to wm2
 
                 oGate = sibm.assignSFFWM2OGate(VNFIID,directionID)
-                value = sibm.getSFFWM2MatchValue(SFCIID,VNFID,directionID)
+                value = sibm.getSFFWM2MatchValue(sfciID,VNFID,directionID)
                 value = self._sc.int2Bytes(value,4)
                 argument = Any()
                 arg = module_msg_pb2.WildcardMatchCommandAddArg(gate=oGate,

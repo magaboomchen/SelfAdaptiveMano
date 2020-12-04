@@ -66,16 +66,10 @@ integration
 
 # TODO LIST
 
-Add zone to all controller
-* Simulator as SIMULATOR_ZONE
-* Mininet as MININET_ZONE
-* Turbonet as TURBONET_ZONE
-* "" as DEFAULT_ZONE
-
 Base
 * link adds bandwidth, traffic rate
 * add routing/addressing scheme name to sfci's attributes
-* rename ForwardingPathSet, VNFISequence, SFCIID in class SFCI(object)
+* rename VNFID, VNFIID, VNFType in Class VNF
 
 Dashboard
 * give requirements
@@ -85,7 +79,7 @@ Dashboard
 * validate SFCIID selection
 
 Orchestrator
-* UFRR mapping: check vnfi in VNFISequence, delete duplicate vnfi in same server
+* UFRR mapping: check vnfi in vnfiSequence, delete duplicate vnfi in same server
 * store reservation of resource for each elements in information base
 
 Measurer
@@ -103,6 +97,7 @@ ClassifierController
 vnfController
 * numa node support: numa cpu core and mem allocation
 * independent dpdk apps: set different --file-prefix for differenct vnfi
+* test chain deployment in one server
 
 NetworkController
 * Null

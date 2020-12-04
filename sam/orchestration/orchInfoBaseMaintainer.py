@@ -83,7 +83,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         self._addRequest2DB(request, cmd)
 
         sfci = cmd.attributes['sfci']
-        sfciID = sfci.SFCIID
+        sfciID = sfci.sfciID
         self._updateSFCIState(sfciID, STATE_IN_PROCESSING)
 
     def delSFCRequestHandler(self, request, cmd):
@@ -105,11 +105,11 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             request.requestType == REQUEST_TYPE_DEL_SFC:
             self._updateSFCState(sfcUUID, sfcState)
         elif request.requestType == REQUEST_TYPE_ADD_SFCI:
-            sfciID = request.attributes['sfci'].SFCIID
+            sfciID = request.attributes['sfci'].sfciID
             self._updateSFCIState(sfciID, sfciState)
             self._addSFCI2SFCInDB(sfcUUID, sfciID)
         elif request.requestType == REQUEST_TYPE_DEL_SFCI:
-            sfciID = request.attributes['sfci'].SFCIID
+            sfciID = request.attributes['sfci'].sfciID
             self._updateSFCIState(sfciID, sfciState)
             self._delSFCI4SFCInDB(sfcUUID, sfciID)
         else:
@@ -172,7 +172,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             request.requestType == REQUEST_TYPE_DEL_SFCI:
             sfci = cmd.attributes['sfci']
             fields = fields + " SFCIID "
-            values = values + " '{0}' ".format(sfci.SFCIID)
+            values = values + " '{0}' ".format(sfci.sfciID)
         else:
             raise ValueError("Unkown request type. ")
 
@@ -215,11 +215,11 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             state = None
         return state
 
-    def _addSFCI2SFCInDB(self, sfcUUID, SFCIID):
+    def _addSFCI2SFCInDB(self, sfcUUID, sfciID):
         results = self.dbA.query("SFC", " SFCIID_LIST ",
             " SFC_UUID = '{0}' ".format(sfcUUID))
         sfciIDList = results[0][0]
-        sfciIDList = sfciIDList + "{0},".format(SFCIID)
+        sfciIDList = sfciIDList + "{0},".format(sfciID)
         self.dbA.update("SFC", " SFCIID_LIST = '{0}' ".format(sfciIDList),
             " SFC_UUID = '{0}' ".format(sfcUUID))
 
@@ -233,7 +233,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def _addSFCI2DB(self, sfci):
         self.dbA.insert("SFCI", " SFCIID, STATE, PICKLE ", 
-            " '{0}', '{1}', '{2}' ".format(sfci.SFCIID, STATE_IN_PROCESSING, 
+            " '{0}', '{1}', '{2}' ".format(sfci.sfciID, STATE_IN_PROCESSING, 
             self._encodeObject2Pickle(sfci)))
 
     def getSFCI4DB(self, sfciID):

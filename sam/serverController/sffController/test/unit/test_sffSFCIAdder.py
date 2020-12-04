@@ -46,7 +46,7 @@ class TestSFFSFCIAdderClass(TestBase):
         yield
         # teardown
         self.vC.uninstallVNF("t1", "123", "192.168.122.134",
-            self.sfci.VNFISequence[0][0].VNFIID)
+            self.sfci.vnfiSequence[0][0].VNFIID)
         self.killSFFController()
 
     def runSFFController(self):
@@ -68,7 +68,7 @@ class TestSFFSFCIAdderClass(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
-                self.sfci.VNFISequence[0][0].VNFIID)
+                self.sfci.vnfiSequence[0][0].VNFIID)
             logging.info(
                 "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,

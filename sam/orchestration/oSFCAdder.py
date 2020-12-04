@@ -55,7 +55,7 @@ class OSFCAdder(object):
         self.logger.debug("sfci:{0}".format(self.sfci))
 
         self._mapForwardingPath()
-        self.logger.debug("ForwardingPath:{0}".format(self.sfci.ForwardingPathSet))
+        self.logger.debug("ForwardingPath:{0}".format(self.sfci.forwardingPathSet))
 
         cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
             'sfc':self.sfc, 'sfci':self.sfci, 'zone':self.zoneName
@@ -130,8 +130,8 @@ class OSFCAdder(object):
             if serverType == SERVER_TYPE_CLASSIFIER:
                 self.logger.debug(
                     "server type is classifier " \
-                    "ip:{0}, switchLanNet:{1}".format(ip, switch.LanNet))
-            if self._sc.isLANIP(ip, switch.LanNet) and \
+                    "ip:{0}, switch.lanNet:{1}".format(ip, switch.lanNet))
+            if self._sc.isLANIP(ip, switch.lanNet) and \
                 serverType == SERVER_TYPE_CLASSIFIER:
                 return server
         else:
@@ -145,7 +145,7 @@ class OSFCAdder(object):
             vnfType = self.sfc.vNFTypeSequence[stage]
             vnfiList = self._roundRobinSelectServers(vnfType, iNum)
             vSeq.append(vnfiList)
-        self.sfci.VNFISequence = vSeq
+        self.sfci.vnfiSequence = vSeq
 
     def _roundRobinSelectServers(self, vnfType, iNum):
         vnfiList = []
@@ -160,5 +160,5 @@ class OSFCAdder(object):
         self._pC = PathComputer(self._dib, self.request, self.sfci,
             self.logger)
         self._pC.mapPrimaryFP()
-        if self.sfci.ForwardingPathSet.frrType != None:
+        if self.sfci.forwardingPathSet.frrType != None:
             self._pC.mapBackupFP()

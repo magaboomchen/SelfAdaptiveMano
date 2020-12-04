@@ -70,15 +70,15 @@ class TestVNFSFCIAdderClass(TestBase):
         for sfciIndex in range(MAX_SFCI):
             sfci = self.sfciList[sfciIndex]
             addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, sfci)
-            logging.info("sfci id: {0}".format(sfci.SFCIID))
+            logging.info("sfci id: {0}".format(sfci.sfciID))
             self.addSFCICmdList.append(addSFCICmd)
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
         logging.info("use override function")
-        VNFISequence = []
+        vnfiSequence = []
         for index in range(SFCLength):
-            VNFISequence.append([])
+            vnfiSequence.append([])
             for iN in range(1):
                 server = Server("ens3", SFF0_DATAPATH_IP, SERVER_TYPE_NORMAL)
                 server.setServerID(SERVERID_OFFSET + 1)
@@ -89,8 +89,8 @@ class TestVNFSFCIAdderClass(TestBase):
                 vnfi = VNFI(VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD, 
                     VNFIID=uuid.uuid1(), node=server)
                 vnfi.maxCPUNum = 1
-                VNFISequence[index].append(vnfi)
-        return VNFISequence
+                vnfiSequence[index].append(vnfi)
+        return vnfiSequence
 
     def test_addSFCI(self, setup_addSFCI):
         # exercise

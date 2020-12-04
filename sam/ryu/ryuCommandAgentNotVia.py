@@ -16,7 +16,11 @@ from sam.ryu.baseApp import BaseApp
 class RyuCommandAgent(BaseApp):
     def __init__(self, *args, **kwargs):
         super(RyuCommandAgent, self).__init__(*args, **kwargs)
-        self._messageAgent.startRecvMsg(NETWORK_CONTROLLER_QUEUE)
+        self.zoneName = ZONE_NAME
+        self.queueName = self._messageAgent.genQueueName(
+            NETWORK_CONTROLLER_QUEUE, self.zoneName)
+        self._messageAgent.startRecvMsg(self.queueName)
+
         self.ufrr = lookup_service_brick("UFRR")
         self.notVia = lookup_service_brick("NotVia")
         self.tC = lookup_service_brick('TopoCollector')
@@ -34,7 +38,7 @@ class RyuCommandAgent(BaseApp):
                 self.ufrr = lookup_service_brick("UFRR")
             if self.notVia == None:
                 self.notVia = lookup_service_brick("NotVia")
-            msg = self._messageAgent.getMsg(NETWORK_CONTROLLER_QUEUE)
+            msg = self._messageAgent.getMsg(self.queueName)
             if msg.getMessageType() == MSG_TYPE_NETWORK_CONTROLLER_CMD:
                 self.logger.info("Ryu command agent gets a ryu cmd.")
                 cmd = msg.getbody()

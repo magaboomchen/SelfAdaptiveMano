@@ -66,7 +66,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         classifier = self.genClassifier("2.2.0.36")
         self.sfc = self.genUniDirectionSFC(classifier)
         self.sfci = SFCI(self._genSFCIID(), [],
-            ForwardingPathSet=ForwardingPathSet({},"UFRR",{}))
+            forwardingPathSet=ForwardingPathSet({},"UFRR",{}))
         zoneName = self.sfc.attributes['zone']
         self.logger.info("zoneName:{0}".format(zoneName))
         self.addSFCRequest = self.genAddSFCRequest(self.sfc)
@@ -99,9 +99,9 @@ class TestOSFCAdderDeleterClass(TestBase):
         # exercise
         cmd = self.oA.genAddSFCICmd(self.addSFCIRequest)
         sfci = cmd.attributes['sfci']
-        ForwardingPathSet = sfci.ForwardingPathSet
-        primaryForwardingPath = ForwardingPathSet.primaryForwardingPath
-        backupForwardingPath = ForwardingPathSet.backupForwardingPath
+        forwardingPathSet = sfci.forwardingPathSet
+        primaryForwardingPath = forwardingPathSet.primaryForwardingPath
+        backupForwardingPath = forwardingPathSet.backupForwardingPath
 
         # verify
         assert primaryForwardingPath == {1: [[10001, 1, 2, 10003], [10003, 2, 1, 10001]]}
@@ -116,7 +116,7 @@ class TestOSFCAdderDeleterClass(TestBase):
 
         # verify
         assert sfc.sfcUUID == self.sfc.sfcUUID
-        assert sfci.SFCIID == self.sfci.SFCIID
+        assert sfci.sfciID == self.sfci.sfciID
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_genDelSFCCmd(self, setup_collectDCNInfo):

@@ -70,9 +70,9 @@ class TestVNFSFCIAdderClass(TestBase):
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
-        VNFISequence = []
+        vnfiSequence = []
         for index in range(SFCLength):
-            VNFISequence.append([])
+            vnfiSequence.append([])
             for iN in range(1):
                 server = Server("ens3", SFF0_DATAPATH_IP, SERVER_TYPE_NORMAL)
                 server.setServerID(SERVERID_OFFSET + 1)
@@ -81,8 +81,8 @@ class TestVNFSFCIAdderClass(TestBase):
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 vnfi = VNFI(VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD, 
                     VNFIID=uuid.uuid1(), node=server)
-                VNFISequence[index].append(vnfi)
-        return VNFISequence
+                vnfiSequence[index].append(vnfi)
+        return vnfiSequence
 
     # def runSFFController(self):
     #     filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/sffController/sffControllerCommandAgent.py"
@@ -112,7 +112,7 @@ class TestVNFSFCIAdderClass(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "t1@netlab325", "192.168.0.156",
-                self.sfci.VNFISequence[0][0].VNFIID)
+                self.sfci.vnfiSequence[0][0].VNFIID)
             logging.info(
                 "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,

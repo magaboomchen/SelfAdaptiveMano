@@ -17,8 +17,8 @@ logging.basicConfig(level=logging.INFO)
 
 class TestNotViaClass(TestBase):
     def genUniDirection10BackupSFCI(self):
-        VNFISequence = self.gen10BackupVNFISequence()
-        return SFCI(self.assignSFCIID(),VNFISequence, None,
+        vnfiSequence = self.gen10BackupVNFISequence()
+        return SFCI(self.assignSFCIID(),vnfiSequence, None,
             self.genUniDirection10BackupForwardingPathSet())
 
     def genUniDirection10BackupForwardingPathSet(self):
@@ -80,7 +80,7 @@ class TestNotViaClass(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
-                self.sfci.VNFISequence[0][0].VNFIID)
+                self.sfci.vnfiSequence[0][0].VNFIID)
             logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
@@ -91,7 +91,7 @@ class TestNotViaClass(TestBase):
 
     def delVNFI4Server(self):
         self.vC.uninstallVNF("t1", "123", "192.168.122.134",
-                    self.sfci.VNFISequence[0][0].VNFIID)
+                    self.sfci.vnfiSequence[0][0].VNFIID)
         # Here has a unstable bug
         # In sometimes, we can't delete VNFI, you should delete it manually
         # Command: sudo docker stop name1

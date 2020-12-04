@@ -35,7 +35,7 @@ class TestOIBMClass(TestBase):
         cls.classifier = cls.testBase.genClassifier("2.2.0.36")
         cls.sfc = cls.testBase.genUniDirectionSFC(cls.classifier)
         cls.sfci = SFCI(cls.testBase._genSFCIID(), [],
-            ForwardingPathSet=ForwardingPathSet({},"UFRR",{}))
+            forwardingPathSet=ForwardingPathSet({},"UFRR",{}))
 
         cls.zoneName = ""
 
@@ -138,33 +138,33 @@ class TestOIBMClass(TestBase):
         results = self.oib.dbA.query("SFC", " SFCIID_LIST ",
             " SFC_UUID = '{0}' ".format(self.sfc.sfcUUID))
         assert results[0][0] == ""
-        self.oib._addSFCI2SFCInDB(self.sfc.sfcUUID, self.sfci.SFCIID)
+        self.oib._addSFCI2SFCInDB(self.sfc.sfcUUID, self.sfci.sfciID)
         results = self.oib.dbA.query("SFC", " SFCIID_LIST ",
             " SFC_UUID = '{0}' ".format(self.sfc.sfcUUID))
-        assert results[0][0] == str(self.sfci.SFCIID) + ","
+        assert results[0][0] == str(self.sfci.sfciID) + ","
 
     def test_delSFCI4SFCInDB(self):
         results = self.oib.dbA.query("SFC", " SFCIID_LIST ",
             " SFC_UUID = '{0}' ".format(self.sfc.sfcUUID))
-        assert results[0][0] == str(self.sfci.SFCIID) + ","
-        self.oib._delSFCI4SFCInDB(self.sfc.sfcUUID, self.sfci.SFCIID)
+        assert results[0][0] == str(self.sfci.sfciID) + ","
+        self.oib._delSFCI4SFCInDB(self.sfc.sfcUUID, self.sfci.sfciID)
         results = self.oib.dbA.query("SFC", " SFCIID_LIST ",
             " SFC_UUID = '{0}' ".format(self.sfc.sfcUUID))
         assert results[0][0] == ""
 
     def test_addSFCI2DB(self):
         self.oib._addSFCI2DB(self.sfci)
-        sfci = self.oib.getSFCI4DB(self.sfci.SFCIID)
-        assert sfci.SFCIID == self.sfci.SFCIID
+        sfci = self.oib.getSFCI4DB(self.sfci.sfciID)
+        assert sfci.sfciID == self.sfci.sfciID
 
     def test_updateSFCIState(self):
-        self.oib._updateSFCIState(self.sfci.SFCIID, STATE_DELETED)
-        assert self.oib._getSFCIState(self.sfci.SFCIID) == STATE_DELETED
+        self.oib._updateSFCIState(self.sfci.sfciID, STATE_DELETED)
+        assert self.oib._getSFCIState(self.sfci.sfciID) == STATE_DELETED
 
     def test_pruneSFC4DB(self):
         self.oib._pruneSFC4DB(self.sfc.sfcUUID)
         assert self.oib.getSFC4DB(self.sfc.sfcUUID) == None
 
     def test_pruneSFCI4DB(self):
-        self.oib._pruneSFCI4DB(self.sfci.SFCIID)
-        assert self.oib.getSFC4DB(self.sfci.SFCIID) == None
+        self.oib._pruneSFCI4DB(self.sfci.sfciID)
+        assert self.oib.getSFC4DB(self.sfci.sfciID) == None

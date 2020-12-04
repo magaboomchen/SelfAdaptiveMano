@@ -34,6 +34,9 @@ class ClassifierSFCDeleter(BessControlPlane):
             if cibm.canDeleteSFCDirection(sfcUUID,direction["ID"]) == True:
                 self.delSFC(sfc,direction)
 
+            sfcSet = cibm.getSFCSet()
+            self.logger.debug("After delete SFC, cibm:{0}".format(sfcSet))
+
     def delSFC(self,sfc,direction):
         sfcUUID = sfc.sfcUUID
         classifier = direction['ingress']

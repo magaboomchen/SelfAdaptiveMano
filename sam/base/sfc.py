@@ -24,12 +24,12 @@ STATE_DELETED = "STATE_DELETED" # All resource of this sfc/sfci has been release
 
 
 class SFCI(object):
-    def __init__(self, SFCIID, VNFISequence, sloRealTimeValue=None,
-        ForwardingPathSet=None):
-        self.SFCIID = SFCIID
-        self.VNFISequence = VNFISequence    # only show the direction1
+    def __init__(self, sfciID, vnfiSequence, sloRealTimeValue=None,
+        forwardingPathSet=None):
+        self.sfciID = sfciID
+        self.vnfiSequence = vnfiSequence    # only show the direction1
         self.sloRealTimeValue = sloRealTimeValue
-        self.ForwardingPathSet = ForwardingPathSet
+        self.forwardingPathSet = forwardingPathSet
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

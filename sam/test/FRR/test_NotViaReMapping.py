@@ -26,9 +26,9 @@ class TestNotViaAndReMappingClass(TestFRR):
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genUniDirectionSFC(classifier)
         self.sfci = self.genUniDirection12BackupSFCI()
-        self.SFCIID = self.sfci.SFCIID
-        self.VNFISequence = self.sfci.VNFISequence
-        self.newSfci = self.genReMappingUniDirection12BackupSFCI(self.SFCIID, self.VNFISequence)
+        self.sfciID = self.sfci.sfciID
+        self.vnfiSequence = self.sfci.vnfiSequence
+        self.newSfci = self.genReMappingUniDirection12BackupSFCI(self.sfciID, self.vnfiSequence)
 
         self.mediator = MediatorStub()
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
@@ -65,8 +65,8 @@ class TestNotViaAndReMappingClass(TestFRR):
         return ForwardingPathSet(primaryForwardingPath, frrType,
             backupForwardingPath)
 
-    def genReMappingUniDirection12BackupSFCI(self, SFCIID, VNFISequence):
-        return SFCI(SFCIID, VNFISequence, None,
+    def genReMappingUniDirection12BackupSFCI(self, sfciID, vnfiSequence):
+        return SFCI(sfciID, vnfiSequence, None,
             self.genNewUniDirection12BackupForwardingPathSet())
 
     def genNewUniDirection12BackupForwardingPathSet(self):

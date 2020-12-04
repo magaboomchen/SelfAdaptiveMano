@@ -19,6 +19,7 @@ from sam.base.command import *
 from sam.base.path import *
 from sam.serverController.bessControlPlane import *
 
+
 class ClassifierInitializer(BessControlPlane):
     def __init__(self,cibms,logger):
         super(ClassifierInitializer,self).__init__()

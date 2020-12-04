@@ -6,13 +6,15 @@ from sam.base.xibMaintainer import XInfoBaseMaintainer
 
 # TODO: test
 
+
 class UIBMaintainer(XInfoBaseMaintainer):
     def __init__(self, *args, **kwargs):
         super(UIBMaintainer, self).__init__(*args, **kwargs)
         self.groupIDSets = {}
         self.sfcRIB = {}
         self.sfciRIB = {}
-        logConfigur = LoggerConfigurator('uibmaintainer', level='info')
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'UIBMaintainer.log', level='debug')
         self.logger = logConfigur.getLogger()
 
     def assignGroupID(self, dpid):
@@ -60,24 +62,24 @@ class UIBMaintainer(XInfoBaseMaintainer):
                     count = count + 1
         return count
 
-    def addSFCIFlowTableEntry(self, SFCIID, dpid, tableID, matchFields,
+    def addSFCIFlowTableEntry(self, sfciID, dpid, tableID, matchFields,
         groupID=None):
-        if not self.sfciRIB.has_key(SFCIID):
-            self.sfciRIB[SFCIID] = {}
-        if not self.sfciRIB[SFCIID].has_key(dpid):
-            self.sfciRIB[SFCIID][dpid] = []
+        if not self.sfciRIB.has_key(sfciID):
+            self.sfciRIB[sfciID] = {}
+        if not self.sfciRIB[sfciID].has_key(dpid):
+            self.sfciRIB[sfciID][dpid] = []
         if groupID == None:
-            self.sfciRIB[SFCIID][dpid].append(
+            self.sfciRIB[sfciID][dpid].append(
                 {"tableID":tableID, "match":matchFields})
         else:
-            self.sfciRIB[SFCIID][dpid].append(
+            self.sfciRIB[sfciID][dpid].append(
                 {"tableID":tableID, "match":matchFields, "groupID":groupID})
 
-    def delSFCIFlowTableEntry(self, SFCIID):
-        del self.sfciRIB[SFCIID]
+    def delSFCIFlowTableEntry(self, sfciID):
+        del self.sfciRIB[sfciID]
 
-    def getSFCIFlowTable(self, SFCIID):
-        return self.sfciRIB[SFCIID]
+    def getSFCIFlowTable(self, sfciID):
+        return self.sfciRIB[sfciID]
 
     def getSFCFlowTableEntryMatchFields(self, sfcUUID, dpid, tableID):
         for entry in self.sfcRIB[sfcUUID][dpid]:
@@ -86,20 +88,26 @@ class UIBMaintainer(XInfoBaseMaintainer):
         else:
             return None
 
-    def hasSFCIFlowTable(self, SFCIID, dpid, matchFields):
-        if not self.sfciRIB.has_key(SFCIID):
+    def hasSFCIFlowTable(self, sfciID, dpid, matchFields):
+        if not self.sfciRIB.has_key(sfciID):
             return False
-        if not self.sfciRIB[SFCIID].has_key(dpid):
+        if not self.sfciRIB[sfciID].has_key(dpid):
             return False
-        self.printSFCIFlowTable(SFCIID, dpid)
-        for entry in self.sfciRIB[SFCIID][dpid]:
+        # self.printSFCIFlowTable(sfciID, dpid)
+        for entry in self.sfciRIB[sfciID][dpid]:
             if entry["match"] == matchFields:
                 return True
         else:
             return False
 
-    def printSFCIFlowTable(self, SFCIID, dpid):
-        for entry in self.sfciRIB[SFCIID][dpid]:
+    def printSFCIFlowTable(self, sfciID, dpid):
+        for entry in self.sfciRIB[sfciID][dpid]:
             self.logger.info(
                 "entry[match]={0}".format(entry["match"])
                 )
+    
+    def printUIBM(self):
+        self.logger.info("printUIBM")
+        self.logger.info("groupIDSets: {0}".format(self.groupIDSets))
+        self.logger.info("sfcRIB: {0}".format(self.sfcRIB))
+        self.logger.info("sfciRIB: {0}".format(self.sfciRIB))

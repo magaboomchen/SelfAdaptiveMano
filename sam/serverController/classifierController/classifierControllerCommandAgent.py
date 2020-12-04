@@ -40,14 +40,14 @@ class ClassifierControllerCommandAgent(object):
         self.clsfSFCDeleter = ClassifierSFCDeleter(self.cibms, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
-        queueName = self._messageAgent.genQueueName(
+        self.queueName = self._messageAgent.genQueueName(
             SERVER_CLASSIFIER_CONTROLLER_QUEUE, zoneName)
-        self.logger.info("listen on queueName: {0}".format(queueName))
-        self._messageAgent.startRecvMsg(queueName)
+        self._messageAgent.startRecvMsg(self.queueName)
+        self.logger.info("listen on queueName: {0}".format(self.queueName))
 
     def startClassifierControllerCommandAgent(self):
         while True:
-            msg = self._messageAgent.getMsg(SERVER_CLASSIFIER_CONTROLLER_QUEUE)
+            msg = self._messageAgent.getMsg(self.queueName)
             if msg.getMessageType() == MSG_TYPE_CLASSIFIER_CONTROLLER_CMD:
                 self.logger.info("Classifier controller get a command.")
                 try:

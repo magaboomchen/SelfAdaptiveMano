@@ -66,9 +66,9 @@ class TestVNFAddFW(TestBase):
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
-        VNFISequence = []
+        vnfiSequence = []
         for index in range(SFCLength):
-            VNFISequence.append([])
+            vnfiSequence.append([])
             for iN in range(1):
                 server = Server("ens3", SFF0_DATAPATH_IP, SERVER_TYPE_NORMAL)
                 server.setServerID(SERVERID_OFFSET + 1)
@@ -79,8 +79,8 @@ class TestVNFAddFW(TestBase):
                 config['ACL'] = self.genTestFWRules()
                 vnfi = VNFI(VNF_TYPE_FW, VNFType=VNF_TYPE_FW, 
                     VNFIID=uuid.uuid1(), config=config, node=server)
-                VNFISequence[index].append(vnfi)
-        return VNFISequence
+                vnfiSequence[index].append(vnfi)
+        return vnfiSequence
 
     def genTestFWRules(self):
         rules = []

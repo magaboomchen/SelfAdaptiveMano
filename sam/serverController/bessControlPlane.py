@@ -88,14 +88,14 @@ class BessControlPlane(object):
             + (pathID & 0xFF)
         return self._sc.int2ip(ipNum)
 
-    def getSFCIModuleSuffix(self,SFCIID,direction):
-        return '_' + str(SFCIID) + '_' + str(direction['ID'])
+    def getSFCIModuleSuffix(self,sfciID,direction):
+        return '_' + str(sfciID) + '_' + str(direction['ID'])
 
     def getSFCModuleSuffix(self,sfcUUID,direction):
         return '_' + str(sfcUUID) + '_' + str(direction['ID'])
 
-    def _checkVNFISequence(self, VNFISequence):
-        for vnf in VNFISequence:
+    def _checkVNFISequence(self, vnfiSequence):
+        for vnf in vnfiSequence:
             for i in range(len(vnf)-1):
                 for j in range(i+1,len(vnf)-1):
                     vnfi1 = vnf[i]

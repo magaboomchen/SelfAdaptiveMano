@@ -9,7 +9,7 @@ class Switch(object):
     def __init__(self, switchID, switchType, lanNet=None, programmable=False):
         self.switchID = switchID
         self.switchType = switchType
-        self.LanNet = lanNet
+        self.lanNet = lanNet
         self.programmable = programmable
 
     def __str__(self):

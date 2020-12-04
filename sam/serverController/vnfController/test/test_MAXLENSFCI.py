@@ -74,13 +74,13 @@ class TestVNFSFCIAdderClass(TestBase):
         for sfciIndex in range(MAX_SFCI_NUM):
             sfci = self.sfciList[sfciIndex]
             addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, sfci)
-            logging.info("sfci id: {0}".format(sfci.SFCIID))
+            logging.info("sfci id: {0}".format(sfci.sfciID))
             self.addSFCICmdList.append(addSFCICmd)
 
     def gen10BackupVNFISequence(self, SFCLength=7):
         # hard-code function
         logging.info("use override function")
-        VNFISequence = []
+        vnfiSequence = []
 
         server = Server("ens3", SFF0_DATAPATH_IP, SERVER_TYPE_NORMAL)
         server.setServerID(SERVERID_OFFSET + 1)
@@ -93,8 +93,8 @@ class TestVNFSFCIAdderClass(TestBase):
             VNFIID=uuid.uuid1(), node=server)
         vnfi.maxCPUNum = 1
         index = 0
-        VNFISequence.append([])
-        VNFISequence[index].append(vnfi)
+        vnfiSequence.append([])
+        vnfiSequence[index].append(vnfi)
 
         config = {}
         config['ACL'] = self.genTestFWRules()
@@ -102,46 +102,46 @@ class TestVNFSFCIAdderClass(TestBase):
             VNFIID=uuid.uuid1(), config=config, node=server)
         vnfi.maxCPUNum = 1
         index = 1
-        VNFISequence.append([])
-        VNFISequence[index].append(vnfi)
+        vnfiSequence.append([])
+        vnfiSequence[index].append(vnfi)
 
         # vnfi = VNFI(VNF_TYPE_IDS, VNFType=VNF_TYPE_IDS, 
         #     VNFIID=uuid.uuid1(), node=server)
         # vnfi.maxCPUNum = 1
         # index = 2
-        # VNFISequence.append([])
-        # VNFISequence[index].append(vnfi)
+        # vnfiSequence.append([])
+        # vnfiSequence[index].append(vnfi)
 
         # vnfi = VNFI(VNF_TYPE_MONITOR, VNFType=VNF_TYPE_MONITOR, 
         #     VNFIID=uuid.uuid1(), node=server)
         # vnfi.maxCPUNum = 1
         # index = 3
-        # VNFISequence.append([])
-        # VNFISequence[index].append(vnfi)
+        # vnfiSequence.append([])
+        # vnfiSequence[index].append(vnfi)
 
         # vnfi = VNFI(VNF_TYPE_LB, VNFType=VNF_TYPE_LB, 
         #     VNFIID=uuid.uuid1(), node=server)
         # vnfi.maxCPUNum = 1
         # index = 4
-        # VNFISequence.append([])
-        # VNFISequence[index].append(vnfi)
+        # vnfiSequence.append([])
+        # vnfiSequence[index].append(vnfi)
 
         # vnfi = VNFI(VNF_TYPE_NAT, VNFType=VNF_TYPE_NAT, 
         #     VNFIID=uuid.uuid1(), node=server)
         # vnfi.maxCPUNum = 1
         # index = 5
-        # VNFISequence.append([])
-        # VNFISequence[index].append(vnfi)
+        # vnfiSequence.append([])
+        # vnfiSequence[index].append(vnfi)
 
         # vnfi = VNFI(VNF_TYPE_VPN, VNFType=VNF_TYPE_VPN, 
         #     VNFIID=uuid.uuid1(), node=server)
         # vnfi.maxCPUNum = 1
         # index = 6
-        # VNFISequence.append([])
-        # VNFISequence[index].append(vnfi)
+        # vnfiSequence.append([])
+        # vnfiSequence[index].append(vnfi)
 
-        logging.info("VNFISequence: {0}".format(VNFISequence))
-        return VNFISequence
+        logging.info("vnfiSequence: {0}".format(vnfiSequence))
+        return vnfiSequence
 
     def genTestFWRules(self):
         rules = []

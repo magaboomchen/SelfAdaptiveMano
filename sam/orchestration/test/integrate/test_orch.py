@@ -41,7 +41,7 @@ class TestOrchestratorClass(TestBase):
         self.classifier = self.genClassifier("2.2.0.36")
         self.sfc = self.genUniDirectionSFC(self.classifier)
         self.sfci = SFCI(self._genSFCIID(), [],
-            ForwardingPathSet=ForwardingPathSet({},"UFRR",{}))
+            forwardingPathSet=ForwardingPathSet({},"UFRR",{}))
         zoneName = self.sfc.attributes['zone']
         self.logger.debug("zoneName: {0}".format(zoneName))
 

@@ -57,7 +57,7 @@ class TestFRR(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
-                self.sfci.VNFISequence[0][0].VNFIID)
+                self.sfci.vnfiSequence[0][0].VNFIID)
             logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
@@ -69,7 +69,7 @@ class TestFRR(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.208",
-                self.sfci.VNFISequence[0][1].VNFIID)
+                self.sfci.vnfiSequence[0][1].VNFIID)
             logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
@@ -81,7 +81,7 @@ class TestFRR(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.135",
-                self.sfci.VNFISequence[0][2].VNFIID)
+                self.sfci.vnfiSequence[0][2].VNFIID)
             logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
@@ -93,11 +93,11 @@ class TestFRR(TestBase):
     def delVNFI4Server(self):
         logging.info("teardown del SFCI from server")
         self.vC.uninstallVNF("t1", "123", "192.168.122.134",
-                    self.sfci.VNFISequence[0][0].VNFIID)
+                    self.sfci.vnfiSequence[0][0].VNFIID)
         self.vC.uninstallVNF("t1", "123", "192.168.122.208",
-                    self.sfci.VNFISequence[0][1].VNFIID)
+                    self.sfci.vnfiSequence[0][1].VNFIID)
         self.vC.uninstallVNF("t1", "123", "192.168.122.135",
-                    self.sfci.VNFISequence[0][2].VNFIID)
+                    self.sfci.vnfiSequence[0][2].VNFIID)
         time.sleep(10)
         # Here is a bug
         logging.info("Sometimes, we can't delete VNFI, you should delete it manually"
