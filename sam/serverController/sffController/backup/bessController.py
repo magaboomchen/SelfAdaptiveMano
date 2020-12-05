@@ -88,7 +88,7 @@ class BESSController(object):
                 index = sfc.VNFISeq.index(vnfiList)
                 nextVNFID = -1
                 if index < len(sfc.VNFISeq)-1:
-                    nextVNFID = sfc.VNFISeq[index+1][0].VNFID
+                    nextVNFID = sfc.VNFISeq[index+1][0].vnfID
                 self._addVNFDataPath(vnfi.serverControlNICIP + ":10514",
                     vnfi,sfc.SFCID,nextVNFID)
 
@@ -246,17 +246,17 @@ class BESSController(object):
             if not i in portList:
                 return i
 
-    def getVdevOfVNFOutputPMDPort(self,VNFIID):
-        return  "net_vhost0_" + str(VNFIID) +",iface=/tmp/vsock0_" + str(VNFIID)
+    def getVdevOfVNFOutputPMDPort(self,vnfiID):
+        return  "net_vhost0_" + str(vnfiID) +",iface=/tmp/vsock0_" + str(vnfiID)
 
-    def getVdevOfVNFInputPMDPort(self,VNFIID):
-        return "net_vhost1_" + str(VNFIID) +",iface=/tmp/vsock1_" + str(VNFIID)
+    def getVdevOfVNFInputPMDPort(self,vnfiID):
+        return "net_vhost1_" + str(vnfiID) +",iface=/tmp/vsock1_" + str(vnfiID)
 
-    def _getNameOfVNFOutputPMDPort(self,VNFIID):
-        return "vhost0_" + str(VNFIID)
+    def _getNameOfVNFOutputPMDPort(self,vnfiID):
+        return "vhost0_" + str(vnfiID)
 
-    def _getNameOfVNFInputPMDPort(self,VNFIID):
-        return "vhost1_" + str(VNFIID)
+    def _getNameOfVNFInputPMDPort(self,vnfiID):
+        return "vhost1_" + str(vnfiID)
 
     def _addVNFDataPath(self,bessServerUrl,vnfi,SFCID,nextVNFID):
         with grpc.insecure_channel(bessServerUrl) as channel:
@@ -265,8 +265,8 @@ class BESSController(object):
 
             # PMDPort
             # PMDPort()
-            vdevVNFPMDPORT0 = self.getVdevOfVNFOutputPMDPort(vnfi.VNFIID)
-            nameVNFPMDPort0 = self._getNameOfVNFOutputPMDPort(vnfi.VNFIID)
+            vdevVNFPMDPORT0 = self.getVdevOfVNFOutputPMDPort(vnfi.vnfiID)
+            nameVNFPMDPort0 = self._getNameOfVNFOutputPMDPort(vnfi.vnfiID)
             argument = Any()
             argument.Pack(port_msg_pb2.PMDPortArg(loopback=True,
                 vdev=vdevVNFPMDPORT0,vlan_offload_rx_strip=False,
@@ -276,8 +276,8 @@ class BESSController(object):
                 num_out_q=1, size_inc_q=0, size_out_q=0,arg=argument))
             self._checkResponse(response)
             # PMDPort()
-            vdevVNFPMDPORT1 = self._getVdevOfVNFInputPMDPort(vnfi.VNFIID)
-            nameVNFPMDPort1 = self._getNameOfVNFInputPMDPort(vnfi.VNFIID)
+            vdevVNFPMDPORT1 = self._getVdevOfVNFInputPMDPort(vnfi.vnfiID)
+            nameVNFPMDPort1 = self._getNameOfVNFInputPMDPort(vnfi.vnfiID)
             argument = Any()
             argument.Pack(port_msg_pb2.PMDPortArg(loopback=True,
                 vdev=vdevVNFPMDPORT1,vlan_offload_rx_strip=False,
@@ -288,7 +288,7 @@ class BESSController(object):
             self._checkResponse(response)
 
             # QueueInc()
-            nameQueueInc = "vhostpmd_in_" + str(vnfi.VNFIID)
+            nameQueueInc = "vhostpmd_in_" + str(vnfi.vnfiID)
             argument = Any()
             argument.Pack( module_msg_pb2.QueueIncArg(port=nameVNFPMDPort0,
                 qid=0))
@@ -296,7 +296,7 @@ class BESSController(object):
                 name=nameQueueInc,mclass="QueueInc",arg=argument))
             self._checkResponse(response)
             # QueueOut()
-            nameQueueOut = "vhostpmd_out_" + str(vnfi.VNFIID)
+            nameQueueOut = "vhostpmd_out_" + str(vnfi.vnfiID)
             argument = Any()
             argument.Pack( module_msg_pb2.QueueOutArg(port=nameVNFPMDPort1,
                 qid=0))
@@ -306,7 +306,7 @@ class BESSController(object):
 
             if nextVNFID != -1:
                 # Update
-                nameUpdate = "update_" + str(vnfi.VNFIID)
+                nameUpdate = "update_" + str(vnfi.vnfiID)
                 offset = 31
                 size = 2
                 value = self._getUpdateValue(SFCID,nextVNFID)
@@ -318,7 +318,7 @@ class BESSController(object):
                 self._checkResponse(response)
             else:
                 # GenericDecap
-                nameGenericDecap = "genericDecap_" + str(vnfi.VNFIID)
+                nameGenericDecap = "genericDecap_" + str(vnfi.vnfiID)
                 argument = Any()
                 argument.Pack( module_msg_pb2.GenericDecapArg( bytes=20 ))
                 response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
@@ -369,7 +369,7 @@ class BESSController(object):
                 index = sfc.VNFISeq.index(vnfiList)
                 nextVNFID = -1
                 if index < len(sfc.VNFISeq)-1:
-                    nextVNFID = sfc.VNFISeq[index+1][0].VNFID
+                    nextVNFID = sfc.VNFISeq[index+1][0].vnfID
                 self._delVNFDataPath(vnfi.serverControlNICIP + ":10514",vnfi,sfc.SFCID,nextVNFID)
                 # del rules in exactmatch
                 self._delDataPathRule(vnfi.serverControlNICIP + ":10514",vnfi)
@@ -379,10 +379,10 @@ class BESSController(object):
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())
 
-            nameQueueOut = "vhostpmd_out_" + str(vnfi.VNFIID)
-            nameQueueInc = "vhostpmd_in_" + str(vnfi.VNFIID)
-            nameUpdate = "update_" + str(vnfi.VNFIID)
-            nameGenericDecap = "genericDecap_" + str(vnfi.VNFIID)
+            nameQueueOut = "vhostpmd_out_" + str(vnfi.vnfiID)
+            nameQueueInc = "vhostpmd_in_" + str(vnfi.vnfiID)
+            nameUpdate = "update_" + str(vnfi.vnfiID)
+            nameGenericDecap = "genericDecap_" + str(vnfi.vnfiID)
 
             # disconnection
             # em -> nameQueueOut
@@ -435,14 +435,14 @@ class BESSController(object):
 
             # PMDPort
             # PMDPort()
-            vdevVNFPMDPORT0 = self.getVdevOfVNFOutputPMDPort(vnfi.VNFIID)
-            nameVNFPMDPort0 = self._getNameOfVNFOutputPMDPort(vnfi.VNFIID)
+            vdevVNFPMDPORT0 = self.getVdevOfVNFOutputPMDPort(vnfi.vnfiID)
+            nameVNFPMDPort0 = self._getNameOfVNFOutputPMDPort(vnfi.vnfiID)
             response = stub.DestroyPort(bess_msg_pb2.DestroyPortRequest(
                 name=nameVNFPMDPort0))
             self._checkResponse(response)
             # PMDPort()
-            vdevVNFPMDPORT1 = self._getVdevOfVNFInputPMDPort(vnfi.VNFIID)
-            nameVNFPMDPort1 = self._getNameOfVNFInputPMDPort(vnfi.VNFIID)
+            vdevVNFPMDPORT1 = self._getVdevOfVNFInputPMDPort(vnfi.vnfiID)
+            nameVNFPMDPort1 = self._getNameOfVNFInputPMDPort(vnfi.vnfiID)
             response = stub.DestroyPort(bess_msg_pb2.DestroyPortRequest(
                 name=nameVNFPMDPort1))
             self._checkResponse(response)

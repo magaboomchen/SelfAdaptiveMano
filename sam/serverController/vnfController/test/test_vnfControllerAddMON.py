@@ -80,8 +80,9 @@ class TestVNFAddMON(TestBase):
                 server.setControlNICIP(SFF0_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
-                vnfi = VNFI(VNF_TYPE_MONITOR, VNFType=VNF_TYPE_MONITOR, 
-                    VNFIID=uuid.uuid1(), node=server)
+                server.updateResource()
+                vnfi = VNFI(VNF_TYPE_MONITOR, vnfType=VNF_TYPE_MONITOR, 
+                    vnfiID=uuid.uuid1(), node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
@@ -113,7 +114,7 @@ class TestVNFAddMON(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "t1@netlab325", "192.168.0.156",
-                self.sfci.vnfiSequence[0][0].VNFIID)
+                self.sfci.vnfiSequence[0][0].vnfiID)
             logging.info(
                 "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,

@@ -1,3 +1,3 @@
 # 需求
-双向SFC，分配不同的SFCID，相同的VNFID，同样的PathID命名规则
+双向SFC，分配不同的SFCID，相同的vnfID，同样的PathID命名规则
 orchetrator维护双向SFC，包括双向SFCID对应关系，classifier规则

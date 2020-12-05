@@ -19,6 +19,7 @@ pika
 netifaces
 getmac
 pytest
+MySQL-python
 ```
 
 # Installation
@@ -69,8 +70,6 @@ integration
 Base
 * link adds bandwidth, traffic rate
 * add routing/addressing scheme name to sfci's attributes
-* refactor server memory collector
-* rename VNFID, VNFIID, VNFType in Class VNF
 
 Dashboard
 * give requirements

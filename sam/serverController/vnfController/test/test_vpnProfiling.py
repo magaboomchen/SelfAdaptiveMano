@@ -89,11 +89,12 @@ class TestVNFAddVPN(TestBase):
                 server.setControlNICIP(SFF0_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
+                server.updateResource()
                 config = {}
                 config['VPN'] = VPNTuple(VPN_TunnelSrcIP,VPN_TunnelDstIP,
                     VPN_EncryptKey, VPN_AuthKey)
-                vnfi = VNFI(VNF_TYPE_VPN, VNFType=VNF_TYPE_VPN, 
-                    VNFIID=uuid.uuid1(), config=config, node=server)
+                vnfi = VNFI(VNF_TYPE_VPN, vnfType=VNF_TYPE_VPN, 
+                    vnfiID=uuid.uuid1(), config=config, node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 

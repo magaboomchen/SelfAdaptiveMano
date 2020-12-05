@@ -79,7 +79,7 @@ class VNFController(object):
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):
                     # TODO: if vnfi in vnfMaintainer?
-                    self.logger.info('Adding vnfi %s.' % vnfi.VNFIID)
+                    self.logger.info('Adding vnfi %s.' % vnfi.vnfiID)
                     self._vnfiMaintainer.addVNFI(sfciID, vnfi)
 
                     # get vioAllocator of server

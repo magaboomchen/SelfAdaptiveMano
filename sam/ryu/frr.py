@@ -147,7 +147,7 @@ class FRR(BaseApp):
 
     def getSFCIStageDstIP(self, sfci, stageCount, pathID):
         if stageCount<len(sfci.vnfiSequence):
-            vnfID = sfci.vnfiSequence[stageCount][0].VNFID
+            vnfID = sfci.vnfiSequence[stageCount][0].vnfID
         else:
             vnfID = VNF_TYPE_CLASSIFIER
         sfcID = sfci.sfciID

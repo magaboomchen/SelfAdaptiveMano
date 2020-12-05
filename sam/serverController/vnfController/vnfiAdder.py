@@ -22,7 +22,7 @@ class VNFIAdder(object):
         docker_url = 'tcp://%s:%d' % (server.getControlNICIP(), self._dockerPort)
         client = docker.DockerClient(base_url=docker_url, timeout=5)
 
-        vnfiType = vnfi.VNFType
+        vnfiType = vnfi.vnfType
         if vnfiType == VNF_TYPE_FORWARD:  # add testpmd
             return self._addFWD(vnfi, client, vioAllo, cpuAllo)
         elif vnfiType == VNF_TYPE_FW:
@@ -41,8 +41,8 @@ class VNFIAdder(object):
         endCPU = startCPU + vnfi.maxCPUNum - 1
         cpus, cpuStr = mapCpuCores(startCPU, endCPU)
         vioStart = vioAllo.allocateSource(2)
-        _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
-        _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
+        _vdev0 = self._sibm.getVdev(vnfi.vnfiID, 0).split(',')
+        _vdev1 = self._sibm.getVdev(vnfi.vnfiID, 1).split(',')
         vdev0 = '%s,path=%s' % ('net_virtio_user%d' % vioStart, _vdev0[1][6:])
         vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
         if not useFastClick:
@@ -68,7 +68,7 @@ class VNFIAdder(object):
             dpdkInfo = 'DPDKInfo(NB_SOCKET_MBUF %d, NB_SOCKET_MBUF %d)' % (dpdkInfoBuf[0], dpdkInfoBuf[1])
             command = 'sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.FWD_APP_CLICK)
             command = command + " && ./fastclick/bin/click --dpdk -l %s -n 1 --socket-mem %d,%d --file-prefix %s --no-pci --vdev=%s --vdev=%s  -- %s" % (cpuStr, numa0mem, numa1mem, filePrefix, vdev0, vdev1, appName)
-        containerName = 'vnf-%s' % vnfi.VNFIID
+        containerName = 'vnf-%s' % vnfi.vnfiID
         try:
             #print(command)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
@@ -88,13 +88,13 @@ class VNFIAdder(object):
         endCPU = startCPU + vnfi.maxCPUNum - 1
         cpus, cpuStr = mapCpuCores(startCPU, endCPU)
         vioStart = vioAllo.allocateSource(2)
-        _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
-        _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
+        _vdev0 = self._sibm.getVdev(vnfi.vnfiID, 0).split(',')
+        _vdev1 = self._sibm.getVdev(vnfi.vnfiID, 1).split(',')
         vdev0 = '%s,path=%s' % ('net_virtio_user%d' % vioStart, _vdev0[1][6:])
         vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
         imageName = vcConfig.FW_IMAGE_CLICK
         appName = vcConfig.FW_APP_CLICK
-        containerName = 'vnf-%s' % vnfi.VNFIID 
+        containerName = 'vnf-%s' % vnfi.vnfiID 
         filePrefix = 'fw-%d' % (vioStart / 2)
         numa0mem = 0
         numa1mem = 0
@@ -136,13 +136,13 @@ class VNFIAdder(object):
         endCPU = startCPU + vnfi.maxCPUNum - 1
         cpus, cpuStr = mapCpuCores(startCPU, endCPU)
         vioStart = vioAllo.allocateSource(2)
-        _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
-        _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
+        _vdev0 = self._sibm.getVdev(vnfi.vnfiID, 0).split(',')
+        _vdev1 = self._sibm.getVdev(vnfi.vnfiID, 1).split(',')
         vdev0 = '%s,path=%s' % ('net_virtio_user%d' % vioStart, _vdev0[1][6:])
         vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
         imageName = vcConfig.LB_IMAGE_CLICK
         appName = vcConfig.LB_APP_CLICK
-        containerName = 'vnf-%s' % vnfi.VNFIID 
+        containerName = 'vnf-%s' % vnfi.vnfiID 
         filePrefix = 'LB-%d' % (vioStart / 2)
         numa0mem = 0
         numa1mem = 0
@@ -178,13 +178,13 @@ class VNFIAdder(object):
         endCPU = startCPU + vnfi.maxCPUNum - 1
         cpus, cpuStr = mapCpuCores(startCPU, endCPU)
         vioStart = vioAllo.allocateSource(2)
-        _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
-        _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
+        _vdev0 = self._sibm.getVdev(vnfi.vnfiID, 0).split(',')
+        _vdev1 = self._sibm.getVdev(vnfi.vnfiID, 1).split(',')
         vdev0 = '%s,path=%s' % ('net_virtio_user%d' % vioStart, _vdev0[1][6:])
         vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
         imageName = vcConfig.MON_IMAGE_CLICK
         appName = vcConfig.MON_APP_CLICK
-        containerName = 'vnf-%s' % vnfi.VNFIID 
+        containerName = 'vnf-%s' % vnfi.vnfiID 
         filePrefix = 'MON-%d' % (vioStart / 2)
         numa0mem = 0
         numa1mem = 0
@@ -223,13 +223,13 @@ class VNFIAdder(object):
         endCPU = startCPU 
         cpus, cpuStr = mapCpuCores(startCPU, endCPU)
         vioStart = vioAllo.allocateSource(2)
-        _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
-        _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
+        _vdev0 = self._sibm.getVdev(vnfi.vnfiID, 0).split(',')
+        _vdev1 = self._sibm.getVdev(vnfi.vnfiID, 1).split(',')
         vdev0 = '%s,path=%s' % ('net_virtio_user%d' % vioStart, _vdev0[1][6:])
         vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
         imageName = vcConfig.NAT_IMAGE_CLICK    
         appName = vcConfig.NAT_APP_CLICK
-        containerName = 'vnf-%s' % vnfi.VNFIID 
+        containerName = 'vnf-%s' % vnfi.vnfiID 
         filePrefix = 'NAT-%d' % (vioStart / 2)
         numa0mem = 0
         numa1mem = 0
@@ -263,8 +263,8 @@ class VNFIAdder(object):
         endCPU = startCPU + vnfi.maxCPUNum - 1
         cpus, cpuStr = mapCpuCores(startCPU, endCPU)
         vioStart = vioAllo.allocateSource(2)
-        _vdev0 = self._sibm.getVdev(vnfi.VNFIID, 0).split(',')
-        _vdev1 = self._sibm.getVdev(vnfi.VNFIID, 1).split(',')
+        _vdev0 = self._sibm.getVdev(vnfi.vnfiID, 0).split(',')
+        _vdev1 = self._sibm.getVdev(vnfi.vnfiID, 1).split(',')
         vdev0 = '%s,path=%s' % ('net_virtio_user%d' % vioStart, _vdev0[1][6:])
         vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
         imageName = vcConfig.VPN_IMAGE_CLICK
@@ -288,7 +288,7 @@ class VNFIAdder(object):
         # command = command + " && cat ./click-conf/vpn.click "
         command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.VPN_APP_CLICK)
         command = command + ' && ./fastclick/bin/click --dpdk -l %s -n 1 --socket-mem %d,%d --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (cpuStr, numa0mem, numa1mem, filePrefix, vdev0, vdev1, appName)
-        containerName = 'vnf-%s' % vnfi.VNFIID
+        containerName = 'vnf-%s' % vnfi.vnfiID
         try:
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
             container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 

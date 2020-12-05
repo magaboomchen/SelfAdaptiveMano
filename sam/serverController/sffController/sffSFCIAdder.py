@@ -47,7 +47,7 @@ class SFFSFCIAdder(BessControlPlane):
                     continue
 
     def _addModules(self,server,directions,sfci,vnfi):
-        VNFIID = vnfi.VNFIID
+        vnfiID = vnfi.vnfiID
         serverID = server.getServerID()
         sibm = self.sibms.getSibm(serverID)
         serverControlIP = server.getControlNICIP()
@@ -58,8 +58,8 @@ class SFFSFCIAdder(BessControlPlane):
 
             # PMDPort0
             # PMDPort()
-            vnfPMDPORT0Vdev = sibm.getVdev(VNFIID,0)
-            vnfPMDPort0Name = sibm.getModuleName("PMDPort",VNFIID,0)
+            vnfPMDPORT0Vdev = sibm.getVdev(vnfiID,0)
+            vnfPMDPort0Name = sibm.getModuleName("PMDPort",vnfiID,0)
             argument = Any()
             argument.Pack(port_msg_pb2.PMDPortArg(loopback=True,
                 vdev=vnfPMDPORT0Vdev,vlan_offload_rx_strip=False,
@@ -71,8 +71,8 @@ class SFFSFCIAdder(BessControlPlane):
 
             # PMDPort1
             # PMDPort()
-            vnfPMDPORT1Vdev = sibm.getVdev(VNFIID,1)
-            vnfPMDPort1Name = sibm.getModuleName("PMDPort",VNFIID,1)
+            vnfPMDPORT1Vdev = sibm.getVdev(vnfiID,1)
+            vnfPMDPort1Name = sibm.getModuleName("PMDPort",vnfiID,1)
             argument = Any()
             argument.Pack(port_msg_pb2.PMDPortArg(loopback=True,
                 vdev=vnfPMDPORT1Vdev,vlan_offload_rx_strip=False,
@@ -87,11 +87,11 @@ class SFFSFCIAdder(BessControlPlane):
 
                 # QueueInc()
                 if directionID in [0,1]:
-                    vnfPMDPortName = sibm.getModuleName("PMDPort",VNFIID,
+                    vnfPMDPortName = sibm.getModuleName("PMDPort",vnfiID,
                         1 - directionID)
                 else:
                     raise ValueError('Invalid direction ID.')
-                nameQueueInc = sibm.getModuleName("QueueInc",VNFIID,
+                nameQueueInc = sibm.getModuleName("QueueInc",vnfiID,
                     directionID)
                 argument = Any()
                 argument.Pack( module_msg_pb2.QueueIncArg(port=vnfPMDPortName,
@@ -102,11 +102,11 @@ class SFFSFCIAdder(BessControlPlane):
 
                 # QueueOut()
                 if directionID in [0,1]:
-                    vnfPMDPortName = sibm.getModuleName("PMDPort",VNFIID,
+                    vnfPMDPortName = sibm.getModuleName("PMDPort",vnfiID,
                         directionID)
                 else:
                     raise ValueError('Invalid direction ID.')
-                nameQueueOut = sibm.getModuleName("QueueOut",VNFIID,
+                nameQueueOut = sibm.getModuleName("QueueOut",vnfiID,
                     directionID)
                 argument = Any()
                 argument.Pack( module_msg_pb2.QueueOutArg(port=vnfPMDPortName,
@@ -115,7 +115,7 @@ class SFFSFCIAdder(BessControlPlane):
                     name=nameQueueOut,mclass="QueueOut",arg=argument))
                 self._checkResponse(response)
 
-                nameUpdate = sibm.getModuleName("Update",VNFIID,directionID)
+                nameUpdate = sibm.getModuleName("Update",vnfiID,directionID)
                 sfciID = sfci.sfciID
                 srcIPValue = self._sc.ip2int(server.getDatapathNICIP())
                 nextVNFID = sibm.getNextVNFID(sfci,vnfi,directionID)
@@ -131,7 +131,7 @@ class SFFSFCIAdder(BessControlPlane):
                 self._checkResponse(response)
 
                 # Checksum()
-                nameIPChecksum = sibm.getModuleName("IPChecksum",VNFIID,directionID)
+                nameIPChecksum = sibm.getModuleName("IPChecksum",vnfiID,directionID)
                 argument = Any()
                 argument.Pack( module_msg_pb2.IPChecksumArg( verify=0))
                 response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
@@ -143,8 +143,8 @@ class SFFSFCIAdder(BessControlPlane):
 
     def _addRules(self,server,sfci,directions,vnfi):
         sfciID = sfci.sfciID
-        VNFIID = vnfi.VNFIID
-        VNFID = vnfi.VNFID
+        vnfiID = vnfi.vnfiID
+        vnfID = vnfi.vnfID
         serverID = server.getServerID()
         sibm = self.sibms.getSibm(serverID)
         serverControlIP = server.getControlNICIP()
@@ -157,8 +157,8 @@ class SFFSFCIAdder(BessControlPlane):
                 directionID = direction["ID"]
                 # add rule to wm2
 
-                oGate = sibm.assignSFFWM2OGate(VNFIID,directionID)
-                value = sibm.getSFFWM2MatchValue(sfciID,VNFID,directionID)
+                oGate = sibm.assignSFFWM2OGate(vnfiID,directionID)
+                value = sibm.getSFFWM2MatchValue(sfciID,vnfID,directionID)
                 value = self._sc.int2Bytes(value,4)
                 argument = Any()
                 arg = module_msg_pb2.WildcardMatchCommandAddArg(gate=oGate,
@@ -173,8 +173,8 @@ class SFFSFCIAdder(BessControlPlane):
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
     def _addLinks(self,server,directions,vnfi):
-        VNFIID = vnfi.VNFIID
-        VNFID = vnfi.VNFID
+        vnfiID = vnfi.vnfiID
+        vnfID = vnfi.vnfID
         serverID = server.getServerID()
         sibm = self.sibms.getSibm(serverID)
         serverControlIP = server.getControlNICIP()
@@ -186,18 +186,18 @@ class SFFSFCIAdder(BessControlPlane):
             for direction in directions:
                 directionID = direction["ID"]
 
-                nameQueueInc = sibm.getModuleName("QueueInc",VNFIID,
+                nameQueueInc = sibm.getModuleName("QueueInc",vnfiID,
                     directionID)
-                nameQueueOut = sibm.getModuleName("QueueOut",VNFIID,
+                nameQueueOut = sibm.getModuleName("QueueOut",vnfiID,
                     directionID)
-                nameUpdate = sibm.getModuleName("Update",VNFIID,
+                nameUpdate = sibm.getModuleName("Update",vnfiID,
                     directionID)
-                nameIPChecksum = sibm.getModuleName("IPChecksum",VNFIID,
+                nameIPChecksum = sibm.getModuleName("IPChecksum",vnfiID,
                     directionID)
 
                 # connection
                 # wm2 -> nameQueueOut
-                oGate = sibm.getModuleOGate("wm2",(VNFIID,directionID))
+                oGate = sibm.getModuleOGate("wm2",(vnfiID,directionID))
                 response = stub.ConnectModules(
                     bess_msg_pb2.ConnectModulesRequest(
                     m1="wm2",m2=nameQueueOut,ogate=oGate,igate=0))

@@ -47,14 +47,14 @@ class SIBMaintainer(BessInfoBaseMaintainer):
     def addLogger(self, logger):
         self.logger = logger
 
-    def getModuleNameSuffix(self,VNFIID,directionID):
-        return "_" + str(VNFIID) + "_" + str(directionID)
+    def getModuleNameSuffix(self,vnfiID,directionID):
+        return "_" + str(vnfiID) + "_" + str(directionID)
 
-    def getModuleName(self,mclass,VNFIID,directionID):
-        return str(mclass) + self.getModuleNameSuffix(VNFIID,directionID)
+    def getModuleName(self,mclass,vnfiID,directionID):
+        return str(mclass) + self.getModuleNameSuffix(vnfiID,directionID)
 
-    def getVdev(self,VNFIID,directionID):
-        suffix = self.getModuleNameSuffix(VNFIID,directionID)
+    def getVdev(self,vnfiID,directionID):
+        suffix = self.getModuleNameSuffix(vnfiID,directionID)
         return  "net_vhost" + suffix + ",iface=/tmp/vsock" + suffix
 
     def getNextVNFID(self,sfci,vnf,directionID):
@@ -67,12 +67,12 @@ class SIBMaintainer(BessInfoBaseMaintainer):
             raise ValueError('Invalid direction ID.')
 
         sfcLen = len(vnfiSequence)
-        VNFID = vnf.VNFID
+        vnfID = vnf.vnfID
         for i in range(sfcLen):
             currentVNF = vnfiSequence[i][0]
-            if currentVNF.VNFID == VNFID:
+            if currentVNF.vnfID == vnfID:
                 if i != (sfcLen-1):
-                    return vnfiSequence[i+1][0].VNFID
+                    return vnfiSequence[i+1][0].vnfID
                 else:
                     return VNF_TYPE_CLASSIFIER
 
@@ -80,14 +80,14 @@ class SIBMaintainer(BessInfoBaseMaintainer):
         value = (sfciID & 0xFFF) + ((nextVNFID & 0XF) << 12)
         return value
 
-    def assignSFFWM2OGate(self,VNFID,directionID):
+    def assignSFFWM2OGate(self,vnfID,directionID):
         OGateList = self.getModuleOGateNumList("wm2")
         oGateNum = self.genAvailableMiniNum4List(OGateList)
-        self.addOGate2Module("wm2",(VNFID,directionID),oGateNum)
+        self.addOGate2Module("wm2",(vnfID,directionID),oGateNum)
         return oGateNum
 
-    def getSFFWM2MatchValue(self,sfciID,VNFID,directionID):
-        value = (10<<24) + ((VNFID & 0XF)<<20) + ((sfciID & 0xFFF) << 8) + ((directionID & 0x1) <<7)
+    def getSFFWM2MatchValue(self,sfciID,vnfID,directionID):
+        value = (10<<24) + ((vnfID & 0XF)<<20) + ((sfciID & 0xFFF) << 8) + ((directionID & 0x1) <<7)
         return value
     
     def show(self):

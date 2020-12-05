@@ -89,8 +89,8 @@ class TestVNFSFCIAdderClass(TestBase):
         server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
         server.updateResource()
 
-        vnfi = VNFI(VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD, 
-            VNFIID=uuid.uuid1(), node=server)
+        vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
+            vnfiID=uuid.uuid1(), node=server)
         vnfi.maxCPUNum = 1
         index = 0
         vnfiSequence.append([])
@@ -98,43 +98,43 @@ class TestVNFSFCIAdderClass(TestBase):
 
         config = {}
         config['ACL'] = self.genTestFWRules()
-        vnfi = VNFI(VNF_TYPE_FW, VNFType=VNF_TYPE_FW, 
-            VNFIID=uuid.uuid1(), config=config, node=server)
+        vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
+            vnfiID=uuid.uuid1(), config=config, node=server)
         vnfi.maxCPUNum = 1
         index = 1
         vnfiSequence.append([])
         vnfiSequence[index].append(vnfi)
 
-        # vnfi = VNFI(VNF_TYPE_IDS, VNFType=VNF_TYPE_IDS, 
-        #     VNFIID=uuid.uuid1(), node=server)
+        # vnfi = VNFI(VNF_TYPE_IDS, vnfType=VNF_TYPE_IDS, 
+        #     vnfiID=uuid.uuid1(), node=server)
         # vnfi.maxCPUNum = 1
         # index = 2
         # vnfiSequence.append([])
         # vnfiSequence[index].append(vnfi)
 
-        # vnfi = VNFI(VNF_TYPE_MONITOR, VNFType=VNF_TYPE_MONITOR, 
-        #     VNFIID=uuid.uuid1(), node=server)
+        # vnfi = VNFI(VNF_TYPE_MONITOR, vnfType=VNF_TYPE_MONITOR, 
+        #     vnfiID=uuid.uuid1(), node=server)
         # vnfi.maxCPUNum = 1
         # index = 3
         # vnfiSequence.append([])
         # vnfiSequence[index].append(vnfi)
 
-        # vnfi = VNFI(VNF_TYPE_LB, VNFType=VNF_TYPE_LB, 
-        #     VNFIID=uuid.uuid1(), node=server)
+        # vnfi = VNFI(VNF_TYPE_LB, vnfType=VNF_TYPE_LB, 
+        #     vnfiID=uuid.uuid1(), node=server)
         # vnfi.maxCPUNum = 1
         # index = 4
         # vnfiSequence.append([])
         # vnfiSequence[index].append(vnfi)
 
-        # vnfi = VNFI(VNF_TYPE_NAT, VNFType=VNF_TYPE_NAT, 
-        #     VNFIID=uuid.uuid1(), node=server)
+        # vnfi = VNFI(VNF_TYPE_NAT, vnfType=VNF_TYPE_NAT, 
+        #     vnfiID=uuid.uuid1(), node=server)
         # vnfi.maxCPUNum = 1
         # index = 5
         # vnfiSequence.append([])
         # vnfiSequence[index].append(vnfi)
 
-        # vnfi = VNFI(VNF_TYPE_VPN, VNFType=VNF_TYPE_VPN, 
-        #     VNFIID=uuid.uuid1(), node=server)
+        # vnfi = VNFI(VNF_TYPE_VPN, vnfType=VNF_TYPE_VPN, 
+        #     vnfiID=uuid.uuid1(), node=server)
         # vnfi.maxCPUNum = 1
         # index = 6
         # vnfiSequence.append([])

@@ -78,10 +78,11 @@ class TestVNFAddFW(TestBase):
                 server.setControlNICIP(SFF0_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
+                server.updateResource()
                 config = {}
                 config['ACL'] = self.genTestFWRules()
-                vnfi = VNFI(VNF_TYPE_FW, VNFType=VNF_TYPE_FW, 
-                    VNFIID=uuid.uuid1(), config=config, node=server)
+                vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
+                    vnfiID=uuid.uuid1(), config=config, node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
@@ -123,7 +124,7 @@ class TestVNFAddFW(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "t1@netlab325", "192.168.0.156",
-                self.sfci.vnfiSequence[0][0].VNFIID)
+                self.sfci.vnfiSequence[0][0].vnfiID)
             logging.info(
                 "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,

@@ -23,11 +23,11 @@ class VNFIStatus(object):
 
 
 class VNFI(object):
-    def __init__(self, VNFID=None, VNFType=None, VNFIID=None,
+    def __init__(self, vnfID=None, vnfType=None, vnfiID=None,
         config=None, node=None, vnfiStatus=None):
-        self.VNFID = VNFID
-        self.VNFType = VNFType
-        self.VNFIID = VNFIID
+        self.vnfID = vnfID
+        self.vnfType = vnfType
+        self.vnfiID = vnfiID
         self.config = config
         self.node = node # server or switch
         self.vnfiStatus = vnfiStatus
@@ -47,10 +47,10 @@ class VNFI(object):
 
 
 class VNFIRequest(object):
-    def __init__(self, userID, requestID, requestType, VNFIID, config=None):
+    def __init__(self, userID, requestID, requestType, vnfiID, config=None):
         self.userID =  userID # 0 is root
         self.requestID = requestID # uuid1()
         self.requestType = requestType # GETCONFIG/UPDATECONFIG/GETVNFI
-        self.VNFIID = VNFIID
+        self.vnfiID = vnfiID
         self.config = config
 

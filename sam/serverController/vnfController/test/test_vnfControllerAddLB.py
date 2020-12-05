@@ -82,10 +82,11 @@ class TestVNFAddLB(TestBase):
                 server.setControlNICIP(SFF0_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
+                server.updateResource()
                 config = {}
                 config['LB'] = LBTuple(LB_VIP, LB_DST)
-                vnfi = VNFI(VNF_TYPE_LB, VNFType=VNF_TYPE_LB, 
-                    VNFIID=uuid.uuid1(), config=config, node=server)
+                vnfi = VNFI(VNF_TYPE_LB, vnfType=VNF_TYPE_LB, 
+                    vnfiID=uuid.uuid1(), config=config, node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
@@ -117,7 +118,7 @@ class TestVNFAddLB(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "t1@netlab325", "192.168.0.156",
-                self.sfci.vnfiSequence[0][0].VNFIID)
+                self.sfci.vnfiSequence[0][0].vnfiID)
             logging.info(
                 "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,

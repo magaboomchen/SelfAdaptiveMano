@@ -23,18 +23,18 @@ class VNFControllerStub(object):
         msg = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, cmdRply)
         self.mA.sendMsg(MEDIATOR_QUEUE,msg)
 
-    def installVNF(self,sshUsrname,sshPassword,remoteIP,VNFIID):
+    def installVNF(self,sshUsrname,sshPassword,remoteIP,vnfiID):
         self.vnfBase[remoteIP] = {}
         self.vnfBase[remoteIP]["VNFAggCount"] = 0
-        command = self.genVNFInstallationCommand(remoteIP,VNFIID)
+        command = self.genVNFInstallationCommand(remoteIP,vnfiID)
         self.sshA = SSHAgent()
         self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
         shellCmdRply = self.sshA.runShellCommandWithSudo(command,1)
         return shellCmdRply
 
-    def genVNFInstallationCommand(self,remoteIP,VNFIID):
-        vdevs0 = self.sibm.getVdev(VNFIID,0).split(",")
-        vdevs1 = self.sibm.getVdev(VNFIID,1).split(",")
+    def genVNFInstallationCommand(self,remoteIP,vnfiID):
+        vdevs0 = self.sibm.getVdev(vnfiID,0).split(",")
+        vdevs1 = self.sibm.getVdev(vnfiID,1).split(",")
         vdev0 = vdevs0[0]
         path0 = vdevs0[1].split("iface=")[1]
         vdev1 = vdevs1[0]
@@ -48,18 +48,18 @@ class VNFControllerStub(object):
             + "--vdev=net_virtio_user1" + ",path=" + path1 + " " \
             + "--file-prefix=virtio --log-level=8 -- " \
             + "--txqflags=0xf00 --disable-hw-vlan --forward-mode=io --port-topology=chained --total-num-mbufs=2048 -a"
-        self.vnfBase[remoteIP][VNFIID] = {"name":name}
+        self.vnfBase[remoteIP][vnfiID] = {"name":name}
         return command
 
     def genVNFName(self,remoteIP):
         self.vnfBase[remoteIP]["VNFAggCount"] = self.vnfBase[remoteIP]["VNFAggCount"] + 1
         return "name"+str(self.vnfBase[remoteIP]["VNFAggCount"])
 
-    def getVNFName(self,remoteIP,VNFIID):
-        return self.vnfBase[remoteIP][VNFIID]["name"]
+    def getVNFName(self,remoteIP,vnfiID):
+        return self.vnfBase[remoteIP][vnfiID]["name"]
 
-    def uninstallVNF(self,sshUsrname,sshPassword,remoteIP,VNFIID):
-        command = self.genVNFUninstallationCommand(remoteIP,VNFIID)
+    def uninstallVNF(self,sshUsrname,sshPassword,remoteIP,vnfiID):
+        command = self.genVNFUninstallationCommand(remoteIP,vnfiID)
         self.sshA = SSHAgent()
         self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
         shellCmdRply = self.sshA.runShellCommandWithSudo(command,None)
@@ -68,11 +68,11 @@ class VNFControllerStub(object):
         #     None,
         #     shellCmdRply['stdout'].read().decode('utf-8'),
         #     shellCmdRply['stderr'].read().decode('utf-8')))
-        del self.vnfBase[remoteIP][VNFIID]
+        del self.vnfBase[remoteIP][vnfiID]
         return shellCmdRply
 
-    def genVNFUninstallationCommand(self,remoteIP,VNFIID):
-        name = self.getVNFName(remoteIP,VNFIID)
+    def genVNFUninstallationCommand(self,remoteIP,vnfiID):
+        name = self.getVNFName(remoteIP,vnfiID)
         command = "sudo -S docker stop "+name
         logging.info(command)
         return command

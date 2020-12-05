@@ -72,10 +72,11 @@ class TestVNFAddNAT(TestBase):
                 server.setControlNICIP(SFF0_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
+                server.updateResource()
                 config = {}
                 config['NAT'] = NATTuple(NAT_PIP, NAT_MIN_PORT, NAT_MAX_PORT)
-                vnfi = VNFI(VNF_TYPE_NAT, VNFType=VNF_TYPE_NAT, 
-                    VNFIID=uuid.uuid1(), config=config, node=server)
+                vnfi = VNFI(VNF_TYPE_NAT, vnfType=VNF_TYPE_NAT, 
+                    vnfiID=uuid.uuid1(), config=config, node=server)
                 vnfi.maxCPUNum = 1
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence

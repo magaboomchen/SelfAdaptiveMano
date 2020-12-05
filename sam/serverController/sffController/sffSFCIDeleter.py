@@ -47,8 +47,8 @@ class SFFSFCIDeleter(BessControlPlane):
                     continue
 
     def _delLinks(self,server,directions,vnfi):
-        VNFIID = vnfi.VNFIID
-        VNFID = vnfi.VNFID
+        vnfiID = vnfi.vnfiID
+        vnfID = vnfi.vnfID
         serverID = server.getServerID()
         sibm = self.sibms.getSibm(serverID)
         serverControlIP = server.getControlNICIP()
@@ -60,16 +60,16 @@ class SFFSFCIDeleter(BessControlPlane):
             for direction in directions:
                 directionID = direction["ID"]
 
-                nameQueueInc = sibm.getModuleName("QueueInc",VNFIID,
+                nameQueueInc = sibm.getModuleName("QueueInc",vnfiID,
                     directionID)
-                nameQueueOut = sibm.getModuleName("QueueOut",VNFIID,
+                nameQueueOut = sibm.getModuleName("QueueOut",vnfiID,
                     directionID)
-                nameUpdate = sibm.getModuleName("Update",VNFIID,
+                nameUpdate = sibm.getModuleName("Update",vnfiID,
                     directionID)
 
                 # connection
                 # wm2 -> nameQueueOut
-                oGate = sibm.getModuleOGate("wm2",(VNFIID,directionID))
+                oGate = sibm.getModuleOGate("wm2",(vnfiID,directionID))
                 response = stub.DisconnectModules(
                     bess_msg_pb2.DisconnectModulesRequest(
                     name="wm2",ogate=oGate))
@@ -91,8 +91,8 @@ class SFFSFCIDeleter(BessControlPlane):
 
     def _delRules(self,server,sfci,directions,vnfi):
         sfciID = sfci.sfciID
-        VNFIID = vnfi.VNFIID
-        VNFID = vnfi.VNFID
+        vnfiID = vnfi.vnfiID
+        vnfID = vnfi.vnfID
         serverID = server.getServerID()
         sibm = self.sibms.getSibm(serverID)
         serverControlIP = server.getControlNICIP()
@@ -105,7 +105,7 @@ class SFFSFCIDeleter(BessControlPlane):
                 directionID = direction["ID"]
                 # add rule to wm2
 
-                value = sibm.getSFFWM2MatchValue(sfciID,VNFID,directionID)
+                value = sibm.getSFFWM2MatchValue(sfciID,vnfID,directionID)
                 value = self._sc.int2Bytes(value,4)
                 argument = Any()
                 arg = module_msg_pb2.WildcardMatchCommandDeleteArg(
@@ -116,12 +116,12 @@ class SFFSFCIDeleter(BessControlPlane):
                 response = stub.ModuleCommand(bess_msg_pb2.CommandRequest(
                     name="wm2",cmd="delete",arg=argument))
                 self._checkResponse(response)
-                sibm.delModuleOGate("wm2",(VNFIID,directionID))
+                sibm.delModuleOGate("wm2",(vnfiID,directionID))
 
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
     def _delModules(self, server,directions,sfci,vnfi):
-        VNFIID = vnfi.VNFIID
+        vnfiID = vnfi.vnfiID
         serverID = server.getServerID()
         sibm = self.sibms.getSibm(serverID)
         serverControlIP = server.getControlNICIP()
@@ -134,7 +134,7 @@ class SFFSFCIDeleter(BessControlPlane):
                 directionID = direction["ID"]
 
                 # QueueInc()
-                nameQueueInc = sibm.getModuleName("QueueInc",VNFIID,
+                nameQueueInc = sibm.getModuleName("QueueInc",vnfiID,
                     directionID)
                 response = stub.DestroyModule(
                     bess_msg_pb2.DestroyModuleRequest(
@@ -142,7 +142,7 @@ class SFFSFCIDeleter(BessControlPlane):
                 self._checkResponse(response)
 
                 # QueueOut()
-                nameQueueOut = sibm.getModuleName("QueueOut",VNFIID,
+                nameQueueOut = sibm.getModuleName("QueueOut",vnfiID,
                     directionID)
                 response = stub.DestroyModule(
                     bess_msg_pb2.DestroyModuleRequest(
@@ -150,14 +150,14 @@ class SFFSFCIDeleter(BessControlPlane):
                 self._checkResponse(response)
 
                 # Update
-                nameUpdate = sibm.getModuleName("Update",VNFIID,directionID)
+                nameUpdate = sibm.getModuleName("Update",vnfiID,directionID)
                 response = stub.DestroyModule(
                     bess_msg_pb2.DestroyModuleRequest(
                     name=nameUpdate))
                 self._checkResponse(response)
 
                 # Checksum()
-                nameIPChecksum = sibm.getModuleName("IPChecksum",VNFIID,directionID)
+                nameIPChecksum = sibm.getModuleName("IPChecksum",vnfiID,directionID)
                 response = stub.DestroyModule(
                     bess_msg_pb2.DestroyModuleRequest(
                     name=nameIPChecksum))
@@ -165,14 +165,14 @@ class SFFSFCIDeleter(BessControlPlane):
 
             # PMDPort0
             # PMDPort()
-            vnfPMDPort0Name = sibm.getModuleName("PMDPort",VNFIID,0)
+            vnfPMDPort0Name = sibm.getModuleName("PMDPort",vnfiID,0)
             response = stub.DestroyPort(bess_msg_pb2.DestroyPortRequest(
                 name=vnfPMDPort0Name))
             self._checkResponse(response)
 
             # PMDPort1
             # PMDPort()
-            vnfPMDPort1Name = sibm.getModuleName("PMDPort",VNFIID,1)
+            vnfPMDPort1Name = sibm.getModuleName("PMDPort",vnfiID,1)
             response = stub.DestroyPort(bess_msg_pb2.DestroyPortRequest(
                 name=vnfPMDPort1Name))
             self._checkResponse(response)

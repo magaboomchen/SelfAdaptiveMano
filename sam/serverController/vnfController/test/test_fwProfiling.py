@@ -75,10 +75,11 @@ class TestVNFAddFW(TestBase):
                 server.setControlNICIP(SFF0_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
+                server.updateResource()
                 config = {}
                 config['ACL'] = self.genTestFWRules()
-                vnfi = VNFI(VNF_TYPE_FW, VNFType=VNF_TYPE_FW, 
-                    VNFIID=uuid.uuid1(), config=config, node=server)
+                vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
+                    vnfiID=uuid.uuid1(), config=config, node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 

@@ -86,8 +86,8 @@ class TestVNFSFCIAdderClass(TestBase):
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
-                vnfi = VNFI(VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD, 
-                    VNFIID=uuid.uuid1(), node=server)
+                vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
+                    vnfiID=uuid.uuid1(), node=server)
                 vnfi.maxCPUNum = 1
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence

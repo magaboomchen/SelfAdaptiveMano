@@ -225,8 +225,8 @@ class TestBase(object):
                 server.setControlNICIP(SFF1_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
-                vnfi = VNFI(VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
-                    VNFIID=uuid.uuid1(), node=server)
+                vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
+                    vnfiID=uuid.uuid1(), node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
@@ -241,8 +241,8 @@ class TestBase(object):
             server.setControlNICIP(SFF1_CONTROLNIC_IP)
             server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
-            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
-                VNFIID=uuid.uuid1(), node=server)
+            vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
+                vnfiID=uuid.uuid1(), node=server)
             vnfiSequence[index].append(vnfi)
 
             server = Server("ens3",SFF2_DATAPATH_IP,SERVER_TYPE_NORMAL)
@@ -250,8 +250,8 @@ class TestBase(object):
             server.setControlNICIP(SFF2_CONTROLNIC_IP)
             server.setControlNICMAC(SFF2_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF2_DATAPATH_MAC)
-            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
-                VNFIID=uuid.uuid1(), node=server)
+            vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
+                vnfiID=uuid.uuid1(), node=server)
             vnfiSequence[index].append(vnfi)
 
         return vnfiSequence
@@ -311,8 +311,8 @@ class TestBase(object):
             server.setControlNICIP(SFF1_CONTROLNIC_IP)
             server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
-            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD, 
-                VNFIID=uuid.uuid1(), node=server)
+            vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
+                vnfiID=uuid.uuid1(), node=server)
             vnfiSequence[index].append(vnfi)
 
             server = Server("ens3", SFF2_DATAPATH_IP, SERVER_TYPE_NORMAL)
@@ -320,8 +320,8 @@ class TestBase(object):
             server.setControlNICIP(SFF2_CONTROLNIC_IP)
             server.setControlNICMAC(SFF2_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF2_DATAPATH_MAC)
-            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
-                VNFIID=uuid.uuid1(), node=server)
+            vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
+                vnfiID=uuid.uuid1(), node=server)
             vnfiSequence[index].append(vnfi)
 
             server = Server("ens3", SFF3_DATAPATH_IP, SERVER_TYPE_NORMAL)
@@ -329,8 +329,8 @@ class TestBase(object):
             server.setControlNICIP(SFF3_CONTROLNIC_IP)
             server.setControlNICMAC(SFF3_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF3_DATAPATH_MAC)
-            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
-                VNFIID=uuid.uuid1(), node=server)
+            vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
+                vnfiID=uuid.uuid1(), node=server)
             vnfiSequence[index].append(vnfi)
 
         return vnfiSequence

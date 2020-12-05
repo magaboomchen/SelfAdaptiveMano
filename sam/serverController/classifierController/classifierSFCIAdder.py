@@ -75,12 +75,12 @@ class ClassifierSFCIAdder(BessControlPlane):
             argument = Any()
             tunnelSrcIP = self._sc.aton(classifier.getDatapathNICIP())
             if direction['ID'] == 0:
-                VNFID = sfc.vNFTypeSequence[0]
-                PathID = DIRECTION1_PATHID_OFFSET
+                vnfID = sfc.vNFTypeSequence[0]
+                pathID = DIRECTION1_PATHID_OFFSET
             else:
-                VNFID = sfc.vNFTypeSequence[0]
-                PathID = DIRECTION2_PATHID_OFFSET
-            tunnelDstIP = self._sc.aton(self._genIP4SVPIDs(sfciID,VNFID,PathID))
+                vnfID = sfc.vNFTypeSequence[0]
+                pathID = DIRECTION2_PATHID_OFFSET
+            tunnelDstIP = self._sc.aton(self._genIP4SVPIDs(sfciID,vnfID,pathID))
             arg = module_msg_pb2.SetMetadataArg(attrs=[
                 {'name':"ip_src", 'size':4, 'value_bin':tunnelSrcIP},
                 {'name':"ip_dst", 'size':4, 'value_bin':tunnelDstIP},
