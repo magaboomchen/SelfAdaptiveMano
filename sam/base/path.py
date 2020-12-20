@@ -21,7 +21,7 @@ class ForwardingPathSet(object):
         # direction1's pathID == 1
         # direction2's pathID == 128
 
-        self.frrType = frrType  # UFRR, NotVia, None
+        self.frrType = frrType  # UFRR, NotVia, E2EP, None
         self.backupForwardingPath = backupForwardingPath
         # {
         #   1:{(srcID,dstID,pathID):forwardingPath},

@@ -107,7 +107,8 @@ class OSFCAdder(object):
 
     def _getDCNGateway(self):
         dcnGateway = None
-        for switch in self._dib.getSwitchesByZone(self.zoneName):
+        switchDict = self._dib.getSwitchesByZone(self.zoneName)
+        for switch in switchDict.itervalues():
             # self.logger.debug(switch)
             if switch.switchType == SWITCH_TYPE_DCNGATEWAY:
                 # self.logger.debug(

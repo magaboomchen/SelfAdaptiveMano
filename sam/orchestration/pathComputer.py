@@ -62,8 +62,10 @@ class PathComputer(object):
         G = nx.DiGraph()
         e = []
 
-        linkList = self._dib.getLinksByZone(self.zoneName)
-        for link in linkList:
+        # linkList = self._dib.getLinksByZone(self.zoneName)
+        linkDict = self._dib.getLinksByZone(self.zoneName)
+        # for link in linkList:
+        for link in linkDict.itervalues():
             s = self._genNodeID(link.srcID, stage)
             d = self._genNodeID(link.dstID, stage)
             e.append((s,d,1))
@@ -123,8 +125,10 @@ class PathComputer(object):
 
     def _findSwitchByServer(self, server):
         serverIP = server.getDatapathNICIP()
-        switchList = self._dib.getSwitchesByZone(self.zoneName)
-        for switch in switchList:
+        # switchList = self._dib.getSwitchesByZone(self.zoneName)
+        switchDict = self._dib.getSwitchesByZone(self.zoneName)
+        # for switch in switchList:
+        for switch in switchDict.itervalues():
             lanNet = switch.lanNet
             if self._sc.isLANIP(serverIP, lanNet):
                 return switch

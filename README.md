@@ -34,17 +34,23 @@ Auto:
 python environmentSetter.py
 ```
 
-## Set SAM DPDK environment
-export $RTE_SDK to the directory of dpdk in bess, for example:
-``` 
-export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
-export RTE_TARGET=x86_64-native-linuxapp-gcc
+## RabbitMQ
+```
+install erlang 20.3.8.26-1 (please make sure the version number)
+rabbitmq3.7.0-1 (please make sure the version number)
 ```
 
 ## Set mysql database
 ```
 add user dbAgent with password 123
 add databases Orchestrator, Dashboard, Measurer
+```
+
+## Set SAM DPDK environment (Except for Controller server)
+export $RTE_SDK to the directory of dpdk in bess, for example:
+``` 
+export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
+export RTE_TARGET=x86_64-native-linuxapp-gcc
 ```
 
 # FYI
@@ -61,11 +67,18 @@ We need to discuss together and then work it out.
 
 vnfcontroller
 * (not sure) it will get stuck when delete vnfi if vnfi has existed
+* can't support multi-core click (maybe the problem of sff? fastclick use RSS to enable multi-core)
+
+sffController
+* vnf can't use multi-core, increase queue number in PMDPort(RSS)
 
 integration
 * Null
 
 # TODO LIST
+
+Readme.md
+* add rabbitmq setting
 
 Base
 * link adds bandwidth, traffic rate

@@ -4,13 +4,18 @@
 SWITCH_TYPE_TOR = "SWITCH_TYPE_TOR"
 SWITCH_TYPE_DCNGATEWAY = "SWITCH_TYPE_DCNGATEWAY"
 
+SWITCH_DEFAULT_TCAM_SIZE = 2000
+
 
 class Switch(object):
-    def __init__(self, switchID, switchType, lanNet=None, programmable=False):
+    def __init__(self, switchID, switchType, lanNet=None, programmable=False,
+        tcamSize=SWITCH_DEFAULT_TCAM_SIZE, tcamUsage=0):
         self.switchID = switchID
         self.switchType = switchType
         self.lanNet = lanNet
         self.programmable = programmable
+        self.tcamSize = tcamSize
+        self.tcamUsage = tcamUsage
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

@@ -168,6 +168,18 @@ class Server(object):
     def getHugepagesSize(self):
         return self._hugepageSize
 
+    def getMaxCores(self):
+        coreNum = 0
+        for item in self.getCoreNUMADistribution():
+            coreNum = coreNum + len(item)
+        return coreNum
+
+    def getMaxMemory(self):
+        hugepages = 0
+        for pages in self.getHugepagesTotal():
+            hugepages = hugepages + pages
+        return hugepages*self.getHugepagesSize()/1024/1024    # unit: GB
+
     def updateResource(self):
         self._updateMemAccessMode()
         self._updateSocketNum()

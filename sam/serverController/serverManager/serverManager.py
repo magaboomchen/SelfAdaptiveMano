@@ -19,6 +19,7 @@ SERVER_TIMEOUT = 10
 TIMEOUT_CLEANER_INTERVAL = 5
 SERVERID_OFFSET = 10001
 
+
 class SeverManager(object):
     def __init__(self, zoneName=""):
         logConfigur = LoggerConfigurator(__name__, './log',
@@ -27,10 +28,12 @@ class SeverManager(object):
         self.logger.info('Init ServerManager')
 
         self._messageAgent = MessageAgent(self.logger)
-        self.queueName = self._messageAgent.genQueueName(SERVER_MANAGER_QUEUE, zoneName)
+        self.queueName = self._messageAgent.genQueueName(SERVER_MANAGER_QUEUE,
+            zoneName)
         self._messageAgent.startRecvMsg(self.queueName)
 
         self.serverSet = {}
+        self.serverIDMappingTable = {}
         self._timeoutCleaner()
         self._listener()
 
@@ -56,12 +59,17 @@ class SeverManager(object):
             serverControlNICMac, server.getServerType()
         ))
         threadLock.acquire()
-        if serverControlNICMac in self.serverSet.iterkeys():
-            serverID = self.serverSet[serverControlNICMac]["server"].getServerID()
+        if serverControlNICMac in self.serverIDMappingTable.iterkeys():
+            serverID = self.serverIDMappingTable[serverControlNICMac]
         else:
             serverID = self._assignServerID()
+            self.serverIDMappingTable[serverControlNICMac] = serverID
+        # if serverControlNICMac in self.serverSet.iterkeys():
+        #     serverID = self.serverSet[serverControlNICMac]["server"].getServerID()
+        # else:
+        #     serverID = self._assignServerID()
         server.setServerID(serverID)
-        self.serverSet[serverControlNICMac] = {"server":server, 
+        self.serverSet[serverID] = {"server":server, 
             "Active": True, "timestamp":self._getCurrentTime()}
         threadLock.release()
 
@@ -125,6 +133,7 @@ class SeverManager(object):
             self._async_raise(thread.ident, KeyboardInterrupt)
             thread.join()
 
+
 class TimeoutCleaner(threading.Thread):
     def __init__(self, serverSet, logger):
         threading.Thread.__init__(self)
@@ -154,6 +163,7 @@ class TimeoutCleaner(threading.Thread):
         seconds_in_day = 24 * 60 * 60
         datetime.timedelta(0, 8, 562000)
         return difference.days * seconds_in_day + difference.seconds
+
 
 if __name__=="__main__":
     argParser = ArgParser()

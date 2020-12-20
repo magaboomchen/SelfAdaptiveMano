@@ -130,7 +130,8 @@ class TopoCollector(BaseApp):
         self._messageAgent.sendMsg(queue, rplyMsg)
 
     def _transSwitches(self, switches):
-        switchList = []
+        # switchList = []
+        switchDict = {}
         for switch in self.switches.values():
             # self._ls(switch.address)
             self.logger.info(
@@ -141,11 +142,14 @@ class TopoCollector(BaseApp):
             dpid = switch.dp.id
             sw = Switch(dpid, self._switchConfs[dpid].switchType,
                 self._switchConfs[dpid].lANNet)
-            switchList.append(sw)
-        return switchList
+            # switchList.append(sw)
+            switchDict[dpid] = sw
+        # return switchList
+        return switchDict
 
     def _transLinks(self, links):
-        linkList = []
+        # linkList = []
+        linkDict = {}
         for link in self.links.values():
             # self._ls(link)
             self.logger.info(
@@ -153,8 +157,11 @@ class TopoCollector(BaseApp):
                     link.src.dpid,link.dst.dpid
                     )
                 )
-            linkList.append(Link(link.src.dpid,link.dst.dpid))
-        return linkList
+            # linkList.append(Link(link.src.dpid,link.dst.dpid))
+            linkDict[(link.src.dpid,link.dst.dpid)] = Link(
+                link.src.dpid, link.dst.dpid)
+        # return linkList
+        return linkDict
 
     # def _transHosts(self, hosts):
     #     serverList = []

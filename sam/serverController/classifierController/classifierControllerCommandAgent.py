@@ -67,8 +67,8 @@ class ClassifierControllerCommandAgent(object):
                         raise ValueError("Unkonwn classifier command type.")
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL
                 except ValueError as err:
-                    self.logger.error('classifier command processing error: ' +
-                        repr(err))
+                    self.logger.error('classifier command processing error:' \
+                        + repr(err))
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 except Exception as ex:
                     ExceptionProcessor(self.logger).logException(ex,

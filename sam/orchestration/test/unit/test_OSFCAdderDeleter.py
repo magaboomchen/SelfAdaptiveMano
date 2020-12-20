@@ -11,6 +11,7 @@ from sam.orchestration.oSFCAdder import *
 from sam.orchestration.oSFCDeleter import *
 from sam.measurement.dcnInfoBaseMaintainer import *
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 logging.basicConfig(level=logging.INFO)
 
@@ -74,12 +75,15 @@ class TestOSFCAdderDeleterClass(TestBase):
         self.delSFCIRequest = self.genDelSFCIRequest(self.sfc, self.sfci)
         self.delSFCRequest = self.genDelSFCRequest(self.sfc)
 
-        self.oA = OSFCAdder(DCNInfoBaseMaintainer(), self.logger)
+        self._dib = DCNInfoBaseMaintainer()
+        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
+
+        self.oA = OSFCAdder(self._dib, self.logger)
         self.oA._dib.updateServersInAllZone(self.serverDict)
         self.oA._dib.updateSwitchesInAllZone(self.switches)
         self.oA._dib.updateLinksInAllZone(self.links)
 
-        self.oD = OSFCDeleter(DCNInfoBaseMaintainer(), self.logger)
+        self.oD = OSFCDeleter(self._dib, self._oib, self.logger)
 
         yield
         # teardown

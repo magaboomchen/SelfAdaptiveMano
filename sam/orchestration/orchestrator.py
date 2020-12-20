@@ -2,6 +2,11 @@
 # -*- coding: UTF-8 -*-
 
 import time
+import sys
+if sys.version > '3':
+    import queue as Queue
+else:
+    import Queue
 
 from sam.base.messageAgent import *
 from sam.base.request import Request, Reply
@@ -34,6 +39,9 @@ class Orchestrator(object):
         self._messageAgent = MessageAgent(self.logger)
         self._messageAgent.startRecvMsg(ORCHESTRATOR_QUEUE)
 
+        self._requestBatchQueue = Queue.Queue()
+        self._batchSize = BATCH_SIZE
+
     def startOrchestrator(self):
         while True:
             msg = self._messageAgent.getMsg(ORCHESTRATOR_QUEUE)
@@ -58,11 +66,21 @@ class Orchestrator(object):
                 self._oib.addSFCRequestHandler(request, cmd)
                 self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
-                self._odir.getDCNInfo()
-                cmd = self._osa.genAddSFCICmd(request)
-                self._cm.addCmd(cmd)
-                self._oib.addSFCIRequestHandler(request, cmd)
-                self.sendCmd(cmd)
+                if self._batchSize == 1:
+                    self._odir.getDCNInfo()
+                    cmd = self._osa.genAddSFCICmd(request)
+                    self._cm.addCmd(cmd)
+                    self._oib.addSFCIRequestHandler(request, cmd)
+                    self.sendCmd(cmd)
+                else:
+                    self._requestBatchQueue.put(request)
+                    if self._requestBatchQueue.qsize() >= self._batchSize:
+                        self._odir.getDCNInfo()
+                        cmdBatch = self._osa.genABatchOfAddSFCICmds(request)
+                        for cmd in cmdBatch:
+                            self._cm.addCmd(cmd)
+                            self._oib.addSFCIRequestHandler(request, cmd)
+                            self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 cmd = self._osd.genDelSFCICmd(request)
                 self.logger.debug("orchestrator classifier's serverID: {0}".format(
