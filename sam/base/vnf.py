@@ -10,6 +10,9 @@ VNF_TYPE_LB = 5
 VNF_TYPE_TRAFFICSHAPER = 6
 VNF_TYPE_NAT = 7
 VNF_TYPE_VPN = 8
+VNF_TYPE_WOC = 9    # WAN Optimization Controller
+VNF_TYPE_APPFW = 10 # http firewall
+VNF_TYPE_VOC = 11 # 
 
 VNFID_LENGTH = 4 # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 

@@ -8,4 +8,5 @@
 .pytest_cache/
 __pycache__/
 log/
+samSimulation/
 sam/base/rabbitMQConf.conf

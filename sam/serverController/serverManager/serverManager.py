@@ -9,10 +9,10 @@ import inspect
 
 import datetime
 
-from sam.base.server import Server
-from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.messageAgent import *
 from sam.base.command import *
+from sam.base.server import Server
+from sam.base.messageAgent import *
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.serverManager.argParser import ArgParser
 
 SERVER_TIMEOUT = 10

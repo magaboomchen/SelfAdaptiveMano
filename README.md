@@ -53,6 +53,11 @@ export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
 export RTE_TARGET=x86_64-native-linuxapp-gcc
 ```
 
+## Set RYU App path
+```
+RYU_APP_PATH=/usr/local/lib/python2.7/dist-packages/ryu/app
+```
+
 # FYI
 
 Please read files in "/doc/SoftwareRequirements/", "/doc/SoftwareDesign/" (Ignore the TODO sections)

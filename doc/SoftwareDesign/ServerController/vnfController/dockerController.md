@@ -134,7 +134,7 @@ vnfCmd中给出了每个VNF的UUID。
 
 使用方法：
 在192.168.0.150机器上运行：
-	sudo python -m pytest ./test_vnfControllerAddSFCI.py -s
+    sudo python -m pytest ./test_vnfControllerAddSFCI.py -s
 
 
 

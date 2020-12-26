@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
+import copy
 
 import networkx
 
@@ -13,9 +14,12 @@ from sam.base.server import *
 from sam.base.path import *
 from sam.base.command import *
 from sam.base.socketConverter import SocketConverter
+from sam.orchestration.oConfig import *
 from sam.orchestration.pathComputer import *
 from sam.orchestration.orchestrator import *
-from sam.orchestration.oConfig import *
+from sam.orchestration.algorithms.pSFC import *
+from sam.orchestration.algorithms.opSFC import *
+from sam.orchestration.algorithms.notVia import *
 
 
 class OSFCAdder(object):
@@ -55,7 +59,8 @@ class OSFCAdder(object):
         self.logger.debug("sfci:{0}".format(self.sfci))
 
         self._mapForwardingPath()
-        self.logger.debug("ForwardingPath:{0}".format(self.sfci.forwardingPathSet))
+        self.logger.debug("ForwardingPath:{0}".format(
+            self.sfci.forwardingPathSet))
 
         cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
             'sfc':self.sfc, 'sfci':self.sfci, 'zone':self.zoneName
@@ -163,3 +168,55 @@ class OSFCAdder(object):
         self._pC.mapPrimaryFP()
         if self.sfci.forwardingPathSet.frrType != None:
             self._pC.mapBackupFP()
+
+    def genABatchOfRequestAndAddSFCICmds(self, requestBatchQueue):
+        # while not requestBatchQueue.empty():
+        #     request = requestBatchQueue.get()
+        #     self.logger.info("request:{0}".format(request))
+        #     self.logger.info("sfci:{0}".format(request.attributes["sfci"]))
+
+        # self.logger.debug(requestBatchQueue)
+        # raw_input()
+
+        requestDict = self._divRequest(requestBatchQueue)
+        for frrType in requestDict.keys():
+            if frrType == 'FRR_TYPE_UFRR':
+                self.logger.info("ufrr")
+            elif frrType == 'FRR_TYPE_E2EP':
+                self.logger.info("e2ep")
+            elif frrType == 'FRR_TYPE_NOTVIA_PSFC':
+                self.logger.info("PSFC NotVia")
+
+                # self.logger.debug(requestDict['FRR_TYPE_NOTVIA_PSFC'])
+                # raw_input()
+
+                opSFC = OPSFC(self._dib, requestDict['FRR_TYPE_NOTVIA_PSFC'])
+                mapResults = opSFC.mapSFCI()
+
+                pSFC = PSFC(self._dib, requestDict['FRR_TYPE_NOTVIA_PSFC'],
+                    mapResults)
+                mapResults = pSFC.mapSFCI()
+
+                notVia = NotVia(self._dib, 
+                    requestDict['FRR_TYPE_NOTVIA_PSFC'], mapResults)
+                mapResults = notVia.mapSFCI()
+            else:
+                self.logger.error("Unknown frrType.")
+                raise ValueError("Unknown frrType.")
+
+        return mapResults
+
+    def _divRequest(self, requestBatchQueue):
+        requestDict = {}
+        while not requestBatchQueue.empty():
+            request = copy.deepcopy(requestBatchQueue.get())
+            # self.logger.debug(request)
+            # self.logger.debug("*****************")
+            # raw_input()
+            frrType = request.attributes['frrType']
+            if frrType not in requestDict.keys():
+                requestDict[frrType] = []
+            requestDict[frrType].append(request)
+            # self.logger.debug(requestDict[frrType])
+            # raw_input()
+        return requestDict

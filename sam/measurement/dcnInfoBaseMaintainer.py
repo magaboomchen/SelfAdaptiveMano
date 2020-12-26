@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 from sam.base.xibMaintainer import XInfoBaseMaintainer
+from sam.base.socketConverter import SocketConverter
 
 # TODO : test
 
@@ -13,11 +14,13 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
         self._switches = {}
         self._links = {}
         self._vnfis = {}
-        # TODO: add reservation info for each elements, e.g. reserved cpu core for a server
+
         self._serversReservedResources = {}
         self._switchesReservedResources = {}
         self._linksReservedResources = {}
         self._vnfisReservedResources = {}
+        
+        self._sc = SocketConverter()
 
     def updateServersInAllZone(self, servers):
         self._servers = servers
@@ -70,33 +73,34 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
     def getServer(self, serverID, zoneName):
         return self._servers[zoneName][serverID]
 
-    # def getServerMaxCores(self, serverID, zoneName):
-    #     server = self.getServer(serverID, zoneName)
-    #     coreNum = 0
-    #     for item in server.getCoreNUMADistribution():
-    #         coreNum = coreNum + len(item)
-    #     return coreNum
+    def getConnectedSwitch(self, serverID, zoneName):
+        for switchID,switch in self._switches[zoneName].items():
+            if self.isServerConnectSwitch(switchID, serverID, zoneName):
+                return switch
 
-    # def getServerMaxMemory(self, serverID, zoneName):
-    #     server = self.getServer(serverID, zoneName)
-    #     hugepages = 0
-    #     for pages in server.getHugepagesTotal():
-    #         hugepages = hugepages + pages
-    #     return hugepages*server.getHugepagesSize()/1024/1024    # unit: GB
+    def isServerConnectSwitch(self, switchID, serverID, zoneName):
+        switch = self._switches[zoneName][switchID]
+        lanNet = switch.lanNet
+        server = self._servers[zoneName][serverID]
+        # ctIP = server.getControlNICIP()
+        dpIP = server.getDatapathNICIP()
+        if self._sc.isLANIP(dpIP, lanNet):
+            return True
+        else:
+            return False
+
+    def getConnectedServers(self, switchID, zoneName):
+        servers = []
+        for serverID,server in self._servers[zoneName].items():
+            if self.isServerConnectSwitch(switchID, serverID, zoneName):
+                servers.append(server)
+        return servers
 
     def getSwitch(self, switchID, zoneName):
         return self._switches[zoneName][switchID]
 
-    # def getSwitchTcamSize(self, switchID, zoneName):
-    #     switch = self._switches[zoneName][switchID]
-    #     return switch.tcamSize
-
     def getLink(self, srcID, dstID, zoneName):
         return self._links[zoneName][(srcID, dstID)]
-
-    # def getLinkBandwidth(self, srcID, dstID, zoneName):
-    #     link = self._links[zoneName][(srcID, dstID)]
-    #     return link.bandwidth
 
     def reserveServerResources(self, serverID, reservedCores, reservedMemory,
         zoneName):
@@ -128,7 +132,47 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
             self._serversReservedResources[zoneName][serverID]["memory"] = memory \
                 - releaseMemory
 
-    def reserveSwitchResources(self, switchID, reservedTcamUsage, zoneName):
+    def getServerReservedResources(self, serverID, zoneName):
+        if not self._serversReservedResources.has_key(zoneName):
+            self._serversReservedResources[zoneName] = {}
+        if not self._serversReservedResources.has_key(serverID):
+            # raise ValueError("Unknown serverID:{0}".format(serverID))
+            self.reserveServerResources(serverID, 0, 0, zoneName)
+        cores = self._serversReservedResources[zoneName][serverID]["cores"]
+        memory = self._serversReservedResources[zoneName][serverID]["memory"]
+        return (cores, memory)
+
+    def getServersReservedResources(self, serverList, zoneName):
+        coresSum = 0
+        memorySum = 0
+        for server in serverList:
+            serverID = server.getServerID()
+            if not self._serversReservedResources.has_key(zoneName):
+                self._serversReservedResources[zoneName] = {}
+            if not self._serversReservedResources.has_key(serverID):
+                self.reserveServerResources(serverID, 0, 0, zoneName)
+            (cores, memory) = self.getServerReservedResources(
+                serverID, zoneName)
+            coresSum = coresSum + cores
+            memorySum = memorySum + memory
+        return (coresSum, memorySum)
+
+    def getServersResourcesCapacity(self, serverList, zoneName):
+        coresSum = 0
+        memorySum = 0
+        for server in serverList:
+            serverID = server.getServerID()
+            if not self._serversReservedResources.has_key(zoneName):
+                self._serversReservedResources[zoneName] = {}
+            if not self._serversReservedResources.has_key(serverID):
+                self.reserveServerResources(serverID, 0, 0, zoneName)
+            cores = server.getMaxCores()
+            memory = server.getMaxMemory()
+            coresSum = coresSum + cores
+            memorySum = memorySum + memory
+        return (coresSum, memorySum)
+
+    def reserveSwitchResource(self, switchID, reservedTcamUsage, zoneName):
         if not self._switchesReservedResources.has_key(zoneName):
             self._switchesReservedResources[zoneName] = {}
         if not self._switchesReservedResources[zoneName].has_key(switchID):
@@ -139,7 +183,7 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
             self._switchesReservedResources[zoneName][switchID]["tcamUsage"] = tcamUsage \
                 + reservedTcamUsage
 
-    def releaseSwitchResources(self, switchID, releaseTcamUsage, zoneName):
+    def releaseSwitchResource(self, switchID, releaseTcamUsage, zoneName):
         if not self._switchesReservedResources.has_key(zoneName):
             self._switchesReservedResources[zoneName] = {}
         if not self._switchesReservedResources[zoneName].has_key(switchID):
@@ -148,6 +192,14 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
             tcamUsage = self._switchesReservedResources[zoneName][switchID]["tcamUsage"]
             self._switchesReservedResources[zoneName][switchID]["tcamUsage"] = tcamUsage \
                 - releaseTcamUsage
+
+    def getSwitchReservedResource(self, switchID, zoneName):
+        if not self._switchesReservedResources.has_key(zoneName):
+            self._switchesReservedResources[zoneName] = {}
+        if not self._switchesReservedResources[zoneName].has_key(switchID):
+            # raise ValueError("Unknown switchID:{0}".format(switchID))
+            self.reserveSwitchResource(switchID, 0, zoneName)
+        return self._switchesReservedResources[zoneName][switchID]["tcamUsage"]
 
     def reserveLinkResource(self, srcID, dstID, reservedBandwidth, zoneName):
         if not self._linksReservedResources.has_key(zoneName):
@@ -172,6 +224,15 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
             self._linksReservedResources[zoneName][linkKey]["bandwidth"] = bandwidth \
                 - releaseBandwidth
 
+    def getLinkReservedResource(self, srcID, dstID, zoneName):
+        if not self._linksReservedResources.has_key(zoneName):
+            self._linksReservedResources[zoneName] = {}
+        linkKey = (srcID, dstID)
+        if not self._linksReservedResources[zoneName].has_key(linkKey):
+            # raise ValueError("Unknown linkKey:{0}".format(linkKey))
+            self.reserveLinkResource(srcID, dstID, 0, zoneName)
+        return self._linksReservedResources[zoneName][linkKey]["bandwidth"]
+
     def __str__(self):
         string = "{0}\n".format(self.__class__)
         for key,values in self.__dict__.items():
@@ -180,4 +241,3 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def __repr__(self):
         return str(self)
-

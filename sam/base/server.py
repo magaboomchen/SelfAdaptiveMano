@@ -23,20 +23,22 @@ SERVER_TYPE_TESTER = "tester"
 class Server(object):
     def __init__(self, controlIfName, datapathIfIP, serverType):
         # each server has at least two nic, one for control, another for data processing
-        self._serverID = None
+        self._serverID = None   # an uuid
         self._serverType = serverType
 
-        self._controlIfName = controlIfName
-        self._serverControlNICMAC = None
-        self._serverDatapathNICIP = datapathIfIP
-        self._serverDatapathNICMAC = None
-        self._ifSet = {}
+        self._controlIfName = controlIfName # string, e.g. "eno2"
+        self._serverControlNICMAC = None    # string, e.g. "2.2.0.35"
+        self._serverDatapathNICIP = datapathIfIP    # string, e.g. "2.2.0.36"
+        self._serverDatapathNICMAC = None   # string, e.g. "18:66:da:86:4c:16"
+        self._ifSet = {}    # self.updateIfSet()
+
+        self._vnfSupportSet = []    # see vnf.py, e.g. [VNF_TYPE_FW, VNF_TYPE_IDS]
 
         self._memoryAccessMode = None # "SMP", "NUMA"
         # There is a misunderstanding between socket and NUMA, we need discuss with DPDK community
-        self._socketNum = None
+        self._socketNum = None  # int
         self._coreSocketDistribution = None # list of int, e.g. [6,6] means socket 0 has 6 cores, socket 1 has 6 cores
-        self._numaNum = None
+        self._numaNum = None    # int
         self._coreNUMADistribution = None # list of list, e.g. [[0,2,4,6,8,10],[1,3,5,7,9,11]]
         self._coreUtilization = None # list of float, e.g. [100.0, 0.0, ..., 100.0]
         self._hugepagesTotal = None # list of int, e.g. [14,13] for two numa nodes
@@ -109,7 +111,8 @@ class Server(object):
 
     def _getHwAddrInDPDK(self):
         command = "echo -ne \'\n\' | sudo $RTE_SDK/build/app/testpmd | grep \"Port 0: \""
-        res = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True)
+        res = subprocess.Popen(command, shell=True, 
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
         result = res.stdout.readlines()
         outputText = str(result)
         if outputText.find("Port 0: ")==-1:
@@ -131,11 +134,14 @@ class Server(object):
         return ethMac
 
     def _getIPList(self, ifName):
-        addresses = [i['addr'] for i in ifaddresses(ifName).setdefault(AF_INET,[{'addr':'No IP addr'}])  ]
+        addresses = [i['addr'] for i in ifaddresses(ifName).setdefault(AF_INET,[{'addr':'No IP addr'}])]
         addList = []
         for add in addresses:
             addList.append( str(add) )
         return addList
+
+    def addVNFSupport(self, vnfType):
+        self._vnfSupportSet.append(vnfType)
 
     def printCpuUtil(self):
         for x in range(10):

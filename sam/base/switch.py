@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-SWITCH_TYPE_TOR = "SWITCH_TYPE_TOR"
+SWITCH_TYPE_FORWARD = "SWITCH_TYPE_FORWARD"
+SWITCH_TYPE_SFF = "SWITCH_TYPE_SFF"
+SWITCH_TYPE_TOR = "SWITCH_TYPE_TOR"    # TODO: 建议用SWITCH_TYPE_SFF代替它
 SWITCH_TYPE_DCNGATEWAY = "SWITCH_TYPE_DCNGATEWAY"
 
 SWITCH_DEFAULT_TCAM_SIZE = 2000
@@ -16,6 +18,8 @@ class Switch(object):
         self.programmable = programmable
         self.tcamSize = tcamSize
         self.tcamUsage = tcamUsage
+        self.supportNF = []
+        self.supportVNF = []
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

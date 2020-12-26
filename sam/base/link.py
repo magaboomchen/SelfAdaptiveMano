@@ -5,10 +5,12 @@ LINK_DEFAULT_BANDWIDTH = 1000   # Mbps
 
 
 class Link(object):
-    def __init__(self, srcID, dstID, bandwidth=LINK_DEFAULT_BANDWIDTH,
-        utilization=0):
+    def __init__(self, srcID, dstID, linkLength=1, 
+            bandwidth=LINK_DEFAULT_BANDWIDTH,
+            utilization=0):
         self.srcID = srcID
         self.dstID = dstID
+        self.linkLength = linkLength    # unit: meter
         self.bandwidth = bandwidth
         self.utilization = utilization
 
