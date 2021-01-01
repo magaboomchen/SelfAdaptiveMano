@@ -45,6 +45,8 @@ class Server(object):
         self._hugepagesFree = None # list of int, e.g. [10,13] for two numa nodes
         self._hugepageSize = None # unit: kB
 
+        self.nicBandwidth = 10 # unit: Gbps, default is 10 Gbps
+
     def setServerID(self, id):
         self._serverID = id
 
@@ -178,7 +180,7 @@ class Server(object):
         coreNum = 0
         for item in self.getCoreNUMADistribution():
             coreNum = coreNum + len(item)
-        return coreNum
+        return coreNum - 2  # reserve one core for OS and one core for BESS
 
     def getMaxMemory(self):
         hugepages = 0
@@ -267,6 +269,12 @@ class Server(object):
     def _updateHugepagesSize(self):
         out_bytes = subprocess.check_output(['grep Huge /proc/meminfo | grep Hugepagesize'], shell=True)
         self._hugepageSize = int(out_bytes.split(':')[1].split('kB')[0])
+
+    def setNICBandwidth(self, bandwidth):
+        self.nicBandwidth = bandwidth
+
+    def getNICBandwidth(self):
+        return self.nicBandwidth
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

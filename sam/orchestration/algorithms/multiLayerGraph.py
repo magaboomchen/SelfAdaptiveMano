@@ -32,13 +32,9 @@ class MultiLayerGraph(object):
         self._dib = dib
         self.request = request
         self.sfc = request.attributes['sfc']
-        self.sfcLength = self._getRequestSFCLength(request)
+        self.sfcLength = self.sfc.getSFCLength()
         self.zoneName = self.sfc.attributes['zone']
         self.weightType = weightType
-
-    def _getRequestSFCLength(self, request):
-        sfc = request.attributes['sfc']
-        return len(sfc.vNFTypeSequence)
 
     def trans2MLG(self):
         gList = []
@@ -64,13 +60,13 @@ class MultiLayerGraph(object):
             weight = self._getLinkWeight(link)
             # self.logger.debug(
             #     "resource link:{0}, node1:{1}, node2:{2}".format(
-            #         self._hasEnoughLinkResource(link, expectedBandwidth),
-            #         self._hasEnoughNodeResource(link.srcID, expectedTCAM),
-            #         self._hasEnoughNodeResource(link.dstID, expectedTCAM)
+            #         self._dib.hasEnoughLinkResource(link, expectedBandwidth),
+            #         self._dib.hasEnoughSwitchResource(link.srcID, expectedTCAM),
+            #         self._dib.hasEnoughSwitchResource(link.dstID, expectedTCAM)
             #     ))
-            if (self._hasEnoughLinkResource(link, expectedBandwidth) and 
-                self._hasEnoughNodeResource(link.srcID, expectedTCAM) and 
-                self._hasEnoughNodeResource(link.dstID, expectedTCAM)
+            if (self._dib.hasEnoughLinkResource(link, expectedBandwidth, self.zoneName) and 
+                self._dib.hasEnoughSwitchResource(link.srcID, expectedTCAM, self.zoneName) and 
+                self._dib.hasEnoughSwitchResource(link.dstID, expectedTCAM, self.zoneName)
                 ):
                 e.append((s,d,weight))
             else:
@@ -80,7 +76,7 @@ class MultiLayerGraph(object):
                     ))
         G.add_weighted_edges_from(e)
 
-        self.logger.debug("A layer graph nodes:{0}".format(G.nodes))
+        # self.logger.debug("A layer graph nodes:{0}".format(G.nodes))
         # self.logger.debug("A layer graph edges:{0}".format(G.edges))
         # self.logger.debug("edges number:{0}".format(len(G.edges)))
 
@@ -112,38 +108,8 @@ class MultiLayerGraph(object):
         return reservedBandwidth*1.0/bandwidth
 
     def _getLinkLatency(self, link, linkUtil):
-        lm = PerformanceModel()
-        return lm.getLatencyOfLink(link, linkUtil)
-
-    def _hasEnoughLinkResource(self, link, expectedBandwidth):
-        reservedBandwidth = self._dib.getLinkReservedResource(
-            link.srcID, link.dstID, self.zoneName)
-        bandwidth = link.bandwidth
-        residualBandwidth = bandwidth - reservedBandwidth
-        # self.logger.debug(
-        #     "link resource, bandwidth:{0}, reservedBandwidth:{1}, expectedBandwidth:{2}".format(
-        #         bandwidth, reservedBandwidth,expectedBandwidth
-        #     ))
-        if residualBandwidth > expectedBandwidth:
-            return True
-        else:
-            return False
-
-    def _hasEnoughNodeResource(self, nodeID, expectedTCAM):
-        # TCAM resources
-        switch = self._dib.getSwitch(nodeID, self.zoneName)
-        tCAMCapacity = switch.tcamSize
-        reservedTCAM = self._dib.getSwitchReservedResource(
-            nodeID, self.zoneName)
-        residualTCAM = tCAMCapacity - reservedTCAM
-        # self.logger.debug(
-        #     "node resource, tCAMCapacity:{0}, reservedTCAM:{1}, expectedTCAM:{2}".format(
-        #         tCAMCapacity, reservedTCAM, expectedTCAM
-        #     ))
-        if residualTCAM > expectedTCAM:
-            return True
-        else:
-            return False
+        pM = PerformanceModel()
+        return pM.getLatencyOfLink(link, linkUtil)
 
     def _connectLayersInMLG(self, mLG):
         for stage in range(self.sfcLength):
@@ -153,14 +119,14 @@ class MultiLayerGraph(object):
         switches = self._getSupportVNFSwitchesOfLayer(layer1Num)
         for switch in switches:
             nodeID = switch.switchID
-            (expectedCores, expectedMemory) = self._getExpectedServerResource(layer1Num)
-            # self.logger.debug("expected Cores:{0}, Memory:{1}".format(
-            #     expectedCores, expectedMemory
+            (expectedCores, expectedMemory, expectedBandwidth) = self._getExpectedServerResource(layer1Num)
+            # self.logger.debug("expected Cores:{0}, Memory:{1}, bandwdith:{2}".format(
+            #     expectedCores, expectedMemory, expectedBandwidth
             # ))
             s = self._genNodeID(nodeID, layer1Num)
             d = self._genNodeID(nodeID, layer2Num)
-            if self._hasEnoughServersResources(nodeID,
-                                            expectedCores, expectedMemory):
+            if self._dib.hasEnoughNPoPServersResources(
+                    nodeID, expectedCores, expectedMemory, expectedBandwidth, self.zoneName):
                 mLG.add_edge(s, d, weight=0)
 
     def _getSupportVNFSwitchesOfLayer(self, layerNum):
@@ -173,41 +139,68 @@ class MultiLayerGraph(object):
 
     def _getExpectedServerResource(self, layerNum):
         vnfType = self.sfc.vNFTypeSequence[layerNum]
-        resConRatio = self._getResourceConsumeRatio(vnfType)
         trafficDemand = self.sfc.slo.throughput
-        for index in range(len(resConRatio)):
-            resConRatio[index] = math.ceil(
-                resConRatio[index] * trafficDemand)
-        return resConRatio
+        pM = PerformanceModel()
+        return pM.getExpectedServerResource(vnfType, trafficDemand)
 
-    def _getResourceConsumeRatio(self, vnfType):
-        lm = PerformanceModel()
-        return lm.getResourceConsumeRatioOfVNF(vnfType)
+    def getPath(self, startLayer, startNodeID, endLayer, endNodeID):
+        startNodeInMLG = (startLayer, startNodeID)
+        endNodeInMLG = (endLayer, endNodeID)
 
-    def _hasEnoughServersResources(self, nodeID,
-                                    expectedCores, expectedMemory):
-        # cores and memory resources
-        switch = self._dib.getSwitch(nodeID, self.zoneName)
-        servers = self._dib.getConnectedServers(nodeID, self.zoneName)
-        (coresSum, memorySum) = self._dib.getServersReservedResources(
-            servers, self.zoneName)
-        (coreCapacity, memoryCapacity) = self._dib.getServersResourcesCapacity(
-            servers, self.zoneName)
-        residualCores = coreCapacity - coresSum
-        residualMemory = memoryCapacity - memorySum
-        # self.logger.debug(
-        #     "servers resource, residualCores:{0}, \
-        #        residualMemory:{1}".format(
-        #         residualCores, residualMemory
-        #     ))
-        if (residualCores > expectedCores 
-            and residualMemory > expectedMemory):
-            return True
+        path = nx.dijkstra_path(self.multiLayerGraph,
+            startNodeInMLG, endNodeInMLG)
+
+        # self.logger.debug("get path from {0}->{1}:{2}".format(
+        #     startNodeInMLG, endNodeInMLG, path))
+
+        return path
+
+    def catPath(self, firstHalfPath, secondHalfPath):
+        lastNode = firstHalfPath[-1]
+        firstNode = secondHalfPath[0]
+        if lastNode == firstNode:
+            concatenatedPath = firstHalfPath + secondHalfPath[1:]
+        else:
+            concatenatedPath = firstHalfPath + secondHalfPath
+        return concatenatedPath
+
+    def deLoop(self, path):
+        pathTmp = copy.deepcopy(path)
+        # self.logger.debug("path:{0}".format(path))
+        # raw_input()
+        while self.hasLoop(pathTmp):
+            deDuplicateFlag = False
+            for index in range(len(pathTmp)):
+                node = pathTmp[index]
+                searchList = range(index+1, len(pathTmp))
+                searchList.reverse()
+                for indexPoint in searchList:
+                    nodePoint = pathTmp[indexPoint]
+                    if nodePoint == node:
+                        deDuplicateFlag = True
+                        newPathTmp = pathTmp[0:index] + pathTmp[indexPoint:]
+                        # self.logger.debug("newPathTmp:{0}".format(newPathTmp))
+                        break
+                if deDuplicateFlag == True:
+                    pathTmp = copy.deepcopy(newPathTmp)
+                    break
+        return pathTmp
+
+    def hasLoop(self, path):
+        for node in path:
+            if path.count(node) > 1:
+                return True
         else:
             return False
 
-    def getPath(self, startLayer, startNode, endLayer, endNode):
-        pass
-
-    def catPath(self, pathFirstHalf, pathMiddleLink):
-        pass
+    def getVnfLayerNum(self, vnfType, sfc):
+        c = sfc.getSFCLength()
+        if vnfType == 0:
+            return 0
+        elif vnfType == -1:
+            return c+1
+        for index in range(c):
+            if vnfType == sfc.vNFTypeSequence[index]:
+                return index
+        else:
+            raise ValueError("_getVnfLayerNum: can't find vnf")

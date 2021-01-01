@@ -17,9 +17,9 @@ from sam.base.socketConverter import SocketConverter
 from sam.orchestration.oConfig import *
 from sam.orchestration.pathComputer import *
 from sam.orchestration.orchestrator import *
-from sam.orchestration.algorithms.pSFC import *
-from sam.orchestration.algorithms.opSFC import *
-from sam.orchestration.algorithms.notVia import *
+from sam.orchestration.algorithms.pSFC.pSFC import *
+from sam.orchestration.algorithms.oPSFC.oPSFC import *
+from sam.orchestration.algorithms.notVia.notVia import *
 
 
 class OSFCAdder(object):
@@ -60,7 +60,7 @@ class OSFCAdder(object):
 
         self._mapForwardingPath()
         self.logger.debug("ForwardingPath:{0}".format(
-            self.sfci.forwardingPathSet))
+            self.sfci.requestForwardingPathSet))
 
         cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
             'sfc':self.sfc, 'sfci':self.sfci, 'zone':self.zoneName
@@ -166,7 +166,7 @@ class OSFCAdder(object):
         self._pC = PathComputer(self._dib, self.request, self.sfci,
             self.logger)
         self._pC.mapPrimaryFP()
-        if self.sfci.forwardingPathSet.frrType != None:
+        if self.sfci.requestForwardingPathSet.frrType != None:
             self._pC.mapBackupFP()
 
     def genABatchOfRequestAndAddSFCICmds(self, requestBatchQueue):
@@ -191,20 +191,27 @@ class OSFCAdder(object):
                 # raw_input()
 
                 opSFC = OPSFC(self._dib, requestDict['FRR_TYPE_NOTVIA_PSFC'])
-                mapResults = opSFC.mapSFCI()
+                requestForwardingPathSet = opSFC.mapSFCI()
+                self.logger.debug(
+                    "requestForwardingPathSet:{0}".format(
+                        requestForwardingPathSet))
 
                 pSFC = PSFC(self._dib, requestDict['FRR_TYPE_NOTVIA_PSFC'],
-                    mapResults)
-                mapResults = pSFC.mapSFCI()
+                    requestForwardingPathSet)
+                requestForwardingPathSet = pSFC.mapSFCI()
 
                 notVia = NotVia(self._dib, 
-                    requestDict['FRR_TYPE_NOTVIA_PSFC'], mapResults)
-                mapResults = notVia.mapSFCI()
+                    requestDict['FRR_TYPE_NOTVIA_PSFC'], requestForwardingPathSet)
+                requestForwardingPathSet = notVia.mapSFCI()
             else:
                 self.logger.error("Unknown frrType.")
                 raise ValueError("Unknown frrType.")
 
-        return mapResults
+        # TODO: 
+        # cmdsList = self._requestForwardingPathSet2Cmd(requestForwardingPathSet)
+        cmdsList = []
+
+        return cmdsList
 
     def _divRequest(self, requestBatchQueue):
         requestDict = {}

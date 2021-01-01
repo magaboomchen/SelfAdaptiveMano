@@ -5,7 +5,7 @@ import math
 
 from sam.base.link import *
 
-SPEED_OF_LIGHT = 3.0*pow(10, 8)
+SPEED_OF_LIGHT = 3.0 * pow(10, 8)
 
 
 class PerformanceModel(object):
@@ -72,3 +72,13 @@ class PerformanceModel(object):
         }
 
         return vnfResConsRatioList[vnfType]
+
+    def getExpectedServerResource(self, vnfType, trafficDemand):
+        resConRatio = self.getResourceConsumeRatioOfVNF(vnfType)
+        for index in range(len(resConRatio)):
+            resConRatio[index] = math.ceil(
+                resConRatio[index] * trafficDemand)
+
+        resConRatio.append(trafficDemand)
+
+        return resConRatio

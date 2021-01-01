@@ -25,7 +25,7 @@ STATE_DELETED = "STATE_DELETED" # All resource of this sfc/sfci has been release
 
 class SFCI(object):
     def __init__(self, sfciID, vnfiSequence, sloRealTimeValue=None,
-        forwardingPathSet=None):
+            forwardingPathSet=None):
         self.sfciID = sfciID
         self.vnfiSequence = vnfiSequence    # only show the direction1
         self.sloRealTimeValue = sloRealTimeValue
@@ -43,8 +43,8 @@ class SFCI(object):
 
 class SFC(object):
     def __init__(self, sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-        backupInstanceNumber, applicationType, directions=None,
-        attributes={}, traffic=None, slo=None, scalingMode=MANUAL_SCALE, sFCIs=[]):
+            backupInstanceNumber, applicationType, directions=None,
+            attributes={}, traffic=None, slo=None, scalingMode=MANUAL_SCALE, sFCIs=[]):
         self.sfcUUID = sfcUUID
         self.vNFTypeSequence = vNFTypeSequence # [FW, LB]
         self.scalingMode = scalingMode
@@ -98,6 +98,9 @@ class SFC(object):
                             # different direction; 
                             # For bess, we use (src,dst) pair to distinguish
                             # different direction.
+
+    def getSFCLength(self):
+        return len(self.vNFTypeSequence)
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

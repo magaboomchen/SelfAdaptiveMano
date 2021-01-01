@@ -9,6 +9,7 @@ Low-Cost Service Function Chain
 
 import copy
 
+import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import *
@@ -21,37 +22,30 @@ from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.algorithms.multiLayerGraph import *
 
 
-class OPSFC(object):
-    def __init__(self, dib, requestBatchList):
+class OriginalPartialLP(object):
+    def __init__(self, dib, requestList):
         self._dib = dib
-        self.requestBatchList = requestBatchList
+        self.requestList = requestList
         self._sc = SocketConverter()
 
-        logConfigur = LoggerConfigurator(__name__, './log',
-            'OPSFC.log', level='debug')
+        logConfigur = LoggerConfigurator(__name__,
+            './log',
+            'OriginalPartialLP.log', level='warning')
         self.logger = logConfigur.getLogger()
 
-    def init(self):
-        self.requestList = copy.deepcopy(self.requestBatchList)
-        # self.logger.debug(self.requestBatchList)
-        # raw_input()
+    def mapSFCI(self):
+        self.logger.info("OriginalPartialLP mapSFCI")
+        self._init()
+        self._genVariablesAndConsts()
+        self._trans2LPAndSolve()
+
+    def _init(self):
         self.switches = {}
         self.requestVnf = {}
         self.phsicalLink = gp.tuplelist()
         self.virtualLink = {}
-        self.mapResults = {}
-
-    def mapSFCI(self):
-        self.logger.info("mapSFCI")
-        self.init()
-        self.opSFC()
-
-        return self.mapResults
-
-    def opSFC(self):
-        self._genVariablesAndConsts()
-        self._trans2LP()
-        self._randomizedRoundingAlgorithm()
+        self.requestIngSwitchID = {}
+        self.requestEgSwitchID = {}
 
     def _genVariablesAndConsts(self):
         # f^{r}_{0,mr,u,sr}
@@ -118,7 +112,8 @@ class OPSFC(object):
         for rIndex in range(len(self.requestList)):
             request = self.requestList[rIndex]
             sfc = request.attributes['sfc']
-            self.logger.debug("sfc.vNFTypeSequence:{0}".format(sfc.vNFTypeSequence))
+            self.logger.debug(
+                "sfc.vNFTypeSequence:{0}".format(sfc.vNFTypeSequence))
             m_r = sfc.vNFTypeSequence[0]
             n_r = sfc.vNFTypeSequence[-1]
             self.virtualLink[(rIndex, 0, m_r)] = 1
@@ -146,8 +141,8 @@ class OPSFC(object):
                         # self.logger.debug("rIndex:{0}, load:{1}".format(rIndex, load))
 
     def _genRequestIngAndEg(self):
-        self.requestIng = {}
-        self.requestEg = {}
+        self.requestIngSwitchID = {}
+        self.requestEgSwitchID = {}
         for rIndex in range(len(self.requestList)):
             request = self.requestList[rIndex]
             sfc = request.attributes['sfc']
@@ -163,38 +158,38 @@ class OPSFC(object):
             egSwitchID = egSwitch.switchID
             self.logger.debug("ingSwitchID:{0}, egSwitchID:{1}".format(
                 ingSwitchID,egSwitchID))
-            self.requestIng[rIndex] = ingSwitchID
-            self.requestEg[rIndex] = egSwitchID
-        self.logger.debug("self.requestIng:{0}".format(self.requestIng))
+            self.requestIngSwitchID[rIndex] = ingSwitchID
+            self.requestEgSwitchID[rIndex] = egSwitchID
+        self.logger.debug("self.requestIngSwitchID:{0}".format(self.requestIngSwitchID))
 
-    def _trans2LP(self):
+    def _trans2LPAndSolve(self):
         try:
             # Clear environment
             disposeDefaultEnv()
 
             # Create optimization model
-            m = gp.Model('opSFC')
+            m = gp.Model('OriginalPartialLP')
 
             # Create continuous variables
-            # help(Model.addVars)
-            flow = m.addVars(self.virtualLink, self.phsicalLink, vtype=GRB.CONTINUOUS, name="flow")
+            help(Model.addVars)
+            flow = m.addVars(self.virtualLink, self.phsicalLink, vtype=GRB.CONTINUOUS, name="flow", ub=1.0)
             k = m.addVar(vtype=GRB.CONTINUOUS, name="k")
-            a = m.addVars(self.requestVnf, self.switches, vtype=GRB.CONTINUOUS, name="deploy")
+            a = m.addVars(self.requestVnf, self.switches, vtype=GRB.CONTINUOUS, name="deploy", ub=1.0)
 
             # Create binary variables
-            # flow = m.addVars(self.virtualLink, self.phsicalLink, vtype=GRB.BINARY, name="flow")
+            # flow = m.addVars(self.virtualLink, self.phsicalLink, vtype=GRB.BINARY, name="flow", ub=1.0)
             # k = m.addVar(vtype=GRB.CONTINUOUS, name="k")    # k is CONTINUOUS
-            # a = m.addVars(self.requestVnf, self.switches, vtype=GRB.BINARY, name="deploy")
+            # a = m.addVars(self.requestVnf, self.switches, vtype=GRB.BINARY, name="deploy", ub=1.0)
 
             # Flow-conservation constraints
             m.addConstrs(
-                (flow.sum(rIndex, 0, '*', '*', self.requestIng[rIndex]) - flow.sum(rIndex, 0, '*', self.requestIng[rIndex], '*') == -1 * (1 - a.sum(rIndex, vnfJ, self.requestIng[rIndex]))
+                (flow.sum(rIndex, 0, '*', '*', self.requestIngSwitchID[rIndex]) - flow.sum(rIndex, 0, '*', self.requestIngSwitchID[rIndex], '*') == -1 * (1 - a.sum(rIndex, vnfJ, self.requestIngSwitchID[rIndex]))
                     # for rIndex in range(len(self.requestList))
                     for rIndex, vnfI, vnfJ in self.virtualLink if vnfI == 0
                     ), "srcNode")
 
             m.addConstrs(
-                (flow.sum(rIndex, '*', -1, '*', self.requestEg[rIndex]) - flow.sum(rIndex, '*', -1, self.requestEg[rIndex], '*') == 1 * (1 - a.sum(rIndex, vnfI, self.requestEg[rIndex]))
+                (flow.sum(rIndex, '*', -1, '*', self.requestEgSwitchID[rIndex]) - flow.sum(rIndex, '*', -1, self.requestEgSwitchID[rIndex], '*') == 1 * (1 - a.sum(rIndex, vnfI, self.requestEgSwitchID[rIndex]))
                     # for rIndex in range(len(self.requestList))
                     for rIndex, vnfI, vnfJ in self.virtualLink if vnfJ == -1
                     ), "dstNode")
@@ -202,7 +197,7 @@ class OPSFC(object):
             m.addConstrs(
                 (flow.sum(rIndex, vnfI, vnfJ, '*', w) - flow.sum(rIndex, vnfI, vnfJ, w, '*') == a.sum(rIndex, vnfJ, w) - a.sum(rIndex, vnfI, w)
                     for rIndex, vnfI, vnfJ in self.virtualLink
-                    # for w in self.switches if w != self.requestIng[rIndex] and w != self.requestEg[rIndex]
+                    # for w in self.switches if w != self.requestIngSwitchID[rIndex] and w != self.requestEgSwitchID[rIndex]
                     for w in self.switches
                     ), "middleNode")
 
@@ -220,10 +215,10 @@ class OPSFC(object):
             # fix the vnf 0 and vnf -1
             m.addConstrs(
                 (a.sum(rIndex, 0, w) == 1
-                for rIndex, w in self.requestIng.items()), "vnfDeployNode")
+                for rIndex, w in self.requestIngSwitchID.items()), "vnfDeployNode")
             m.addConstrs(
                 (a.sum(rIndex, -1, w) == 1
-                for rIndex, w in self.requestEg.items()), "vnfDeployNode")
+                for rIndex, w in self.requestEgSwitchID.items()), "vnfDeployNode")
 
             # Node capacity
             # we assume c_i == 1
@@ -241,9 +236,9 @@ class OPSFC(object):
                     for w in self.switches), "NPoPLoad")
 
             m.update()
-            m.write("./opSFC.mps")
-            m.write("./opSFC.prm")
-            m.write("./opSFC.lp")
+            m.write("./originalPartialLP.mps")
+            m.write("./originalPartialLP.prm")
+            m.write("./originalPartialLP.lp")
 
             # Add obj
             obj = k
@@ -286,74 +281,3 @@ class OPSFC(object):
         finally:
             # clean up gruobi environment
             disposeDefaultEnv()
-
-    def _randomizedRoundingAlgorithm(self):
-        self._initRRAlgorithmsValues()
-        for rIndex in range(len(self.requestList)):
-            self._initCandidatePathSet()
-            while self._existJointLinkLeq0():
-                jointLink = self._selectJointLink()
-                # self.logger.debug("jointLink:{0}".format(jointLink))
-                path = self._findCandidatePath(jointLink)
-                self._addCandidatePath(jointLink, path)
-                self._updateJointLinkValue(jointLink, path)
-            # TODO
-            path = self._selectPath4Candidates()
-            path = self._selectNPoPNodeAndServers(path)
-            self._addPath2Sfci(path)
-
-    def _initRRAlgorithmsValues(self):
-        self.jointLink = copy.deepcopy(self.jointLinkSolution)
-
-    def _initCandidatePathSet(self):
-        self._candidatePathSet = {} # "(rIndex, i, j, u, v)": pathSet
-
-    def _existJointLinkLeq0(self):
-        # self.logger.debug("number of jointLink:{0}".format(len(self.jointLink)))
-        for jointLink, value in self.jointLink.items():
-            # self.logger.debug("jointLink:{0}, value:{1}".format(jointLink, value))
-            if value > 0:
-                return True
-
-    def _selectJointLink(self):
-        jointLinkList = [(jointLink, value) for jointLink, value in self.jointLink.items() if value > 0]
-        return min(jointLinkList)
-
-    def _findCandidatePath(self, jointLink):
-        (rIndex, i, j, u, v) = jointLink[0]
-        mlg = MultiLayerGraph()
-        mlg.loadInstance4dibAndRequest(self._dib, self.requestList[rIndex], WEIGHT_TYPE_DELAY_MODEL)
-        mlg.trans2MLG()
-        self.logger.debug("_findCandidatePath")
-        # 目前构建的多层图居然是空的！
-        # 出现问题了，多层图构建，需要删除部分资源不足的有向边。
-        raw_input()
-        pathFirstHalf = mlg.getPath(0, ing, i, u)
-        pathMiddleLink = mlg.getPath(i, u, i, v)
-        c = self._getRequestSFCLength(self.requestList[rIndex])
-        pathLatterHalf = mlg.getPath(i, v, c, eg)
-        path = mlg.catPath(pathFirstHalf, pathMiddleLink)
-        path = mlg.catPath(path, pathLatterHalf)
-        return path
-
-    def _getRequestSFCLength(self, request):
-        sfc = request.attributes['sfc']
-        return len(sfc.vNFTypeSequence)
-
-    def _addCandidatePath(self, jointLink, path):
-        self._candidatePathSet[jointLink[0]] = path
-
-    def _updateJointLinkValue(self, jointLink):
-        minusValue = self.jointLink[jointLink[0]]
-        for jointLink, value in self.jointLink.items():
-            if value > 0:
-                self.jointLink[jointLink] = value - minusValue
-
-    def _selectPath4Candidates(self):
-        pass
-
-    def _selectNPoPNodeAndServers(self, path):
-        pass
-    
-    def _addPath2Sfci(self, path):
-        pass
