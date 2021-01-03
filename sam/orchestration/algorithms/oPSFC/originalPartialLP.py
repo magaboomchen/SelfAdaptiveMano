@@ -26,7 +26,6 @@ class OriginalPartialLP(object):
     def __init__(self, dib, requestList):
         self._dib = dib
         self.requestList = requestList
-        self._sc = SocketConverter()
 
         logConfigur = LoggerConfigurator(__name__,
             './log',
@@ -40,12 +39,17 @@ class OriginalPartialLP(object):
         self._trans2LPAndSolve()
 
     def _init(self):
-        self.switches = {}
         self.requestVnf = {}
-        self.phsicalLink = gp.tuplelist()
         self.virtualLink = {}
         self.requestIngSwitchID = {}
         self.requestEgSwitchID = {}
+
+        self.switches = {}
+
+        self.phsicalLink = gp.tuplelist()   # [(srcID, dstID)]
+        self.linkCapacity = {}  # {(srcID, dstID): capacity}
+
+        self.zoneName = self.requestList[0].attributes['zone']
 
     def _genVariablesAndConsts(self):
         # f^{r}_{0,mr,u,sr}
@@ -61,9 +65,10 @@ class OriginalPartialLP(object):
 
     def _genPhysicalLinksVar(self):
         self.links = {}
-        for key, link in self._dib.getLinksByZone(SIMULATOR_ZONE).items():
+        for key, link in self._dib.getLinksByZone(self.zoneName).items():
             (srcNodeID,dstNodeID) = key
-            self.links[(srcNodeID,dstNodeID)] = link.bandwidth
+            self.links[(srcNodeID,dstNodeID)] = self._dib.getLinkResidualResource(
+                srcNodeID, dstNodeID, self.zoneName)
 
         self.phsicalLink , self.linkCapacity = gp.multidict(self.links)
 
@@ -72,7 +77,7 @@ class OriginalPartialLP(object):
 
     def _genSwitchesVar(self):
         self.switches = {}
-        for switchID, switch in self._dib.getSwitchesByZone(SIMULATOR_ZONE).items():
+        for switchID, switch in self._dib.getSwitchesByZone(self.zoneName).items():
             self.switches[switchID] = [self._getServerClusterCapacity(switch)]
         self.switches, self.switchCapacity = gp.multidict(self.switches)
         self.logger.info("switches:{0}".format(self.switches))
@@ -80,21 +85,11 @@ class OriginalPartialLP(object):
     def _getServerClusterCapacity(self, switch):
         # for the sake of simplicity, we only use cpu core as capacity
         coreNum = 0
-        for serverID, server in self._dib.getServersByZone(SIMULATOR_ZONE).items():
-            if self._isServerUnderSwitch(switch, serverID) and \
-                server.getServerType() != SERVER_TYPE_CLASSIFIER:
-                coreNum = coreNum + server.getMaxCores()
+        for serverID, server in self._dib.getServersByZone(self.zoneName).items():
+            if (self._dib.isServerConnectSwitch(switch.switchID, serverID, self.zoneName)
+                and server.getServerType() != SERVER_TYPE_CLASSIFIER):
+                coreNum = coreNum + self._dib.getServerResidualResources(serverID, self.zoneName)[0] # server.getMaxCores()
         return coreNum
-
-    def _isServerUnderSwitch(self, switch, serverID):
-        # self.logger.debug(self.switches)
-        switchLanNet = switch.lanNet
-        server = self._dib.getServer(serverID, SIMULATOR_ZONE)
-        serverIP = server.getDatapathNICIP()
-        if self._sc.isLANIP(serverIP, switchLanNet):
-            return True
-        else:
-            return False
 
     def _genVnfVar(self):
         self.requestVnf = {}
@@ -130,7 +125,7 @@ class OriginalPartialLP(object):
         for rIndex in range(len(self.requestList)):
             request = self.requestList[rIndex]
             sfc = request.attributes['sfc']
-            load = sfc.slo.throughput
+            load = sfc.getSFCTrafficDemand()
             for items in self.virtualLink:
                 if items[0] == rIndex:
                     vnfI = items[1]
@@ -151,10 +146,10 @@ class OriginalPartialLP(object):
             # self.logger.debug("ingress:{0}".format(ingress))
             # raw_input()
             ingSwitch = self._dib.getConnectedSwitch(ingress.getServerID(),
-                SIMULATOR_ZONE)
+                self.zoneName)
             ingSwitchID = ingSwitch.switchID
             egSwitch = self._dib.getConnectedSwitch(egress.getServerID(),
-                SIMULATOR_ZONE)
+                self.zoneName)
             egSwitchID = egSwitch.switchID
             self.logger.debug("ingSwitchID:{0}, egSwitchID:{1}".format(
                 ingSwitchID,egSwitchID))
@@ -207,7 +202,7 @@ class OriginalPartialLP(object):
 
             # some switch only forward, can't provide vnf
             m.addConstrs(
-                (a.sum(rIndex, vnfI, [w for w in self.switches if vnfI in self._dib.getSwitch(w, SIMULATOR_ZONE).supportVNF ]) == 1 
+                (a.sum(rIndex, vnfI, [w for w in self.switches if vnfI in self._dib.getSwitch(w, self.zoneName).supportVNF ]) == 1 
                     for rIndex, vnfI in self.requestVnf.keys() if vnfI not in [0, -1]
                     ),
                     "vnfDeployNode")
@@ -231,6 +226,7 @@ class OriginalPartialLP(object):
                     for u,v in self.phsicalLink), "linkCapacity")
 
             # Node load K
+            # assume all r_i == 1
             m.addConstrs(
                 (a.sum('*', '*', w) - a.sum('*', [0, -1], w) <= k * self.switchCapacity[w]
                     for w in self.switches), "NPoPLoad")
@@ -272,6 +268,7 @@ class OriginalPartialLP(object):
                 self.logger.warning("model status: suboptimal")
             elif m.status == GRB.INFEASIBLE:
                 self.logger.warning("infeasible model")
+                raise ValueError("infeasible model")
             else:
                 self.logger.warning("unknown model status:{0}".format(m.status))
 

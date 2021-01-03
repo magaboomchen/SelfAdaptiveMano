@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import os
+import random
 import logging
 from logging import handlers
 
@@ -29,7 +30,9 @@ class LoggerConfigurator(object):
                 message = template.format(type(ex).__name__, ex.args)
                 logging.error("Logger occure error: {0}".format(message))
 
-        self.logger = logging.getLogger(loggerName)
+        self.loggerName = loggerName
+        self._appendLoggerNameSuffix()
+        self.logger = logging.getLogger(self.loggerName)
         self.logger.setLevel(self.level_relations.get(level))
 
         format_str = logging.Formatter(fmt)
@@ -55,6 +58,10 @@ class LoggerConfigurator(object):
 
     def getLogger(self):
         return self.logger
+
+    def _appendLoggerNameSuffix(self):
+        suffix = ''.join(random.sample(['z','y','x','w','v','u','t','s','r','q','p','o','n','m','l','k','j','i','h','g','f','e','d','c','b','a'], 5))
+        self.loggerName = self.loggerName + "_" + suffix
 
 
 if __name__ == '__main__':

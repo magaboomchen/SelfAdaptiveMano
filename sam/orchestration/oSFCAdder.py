@@ -182,27 +182,16 @@ class OSFCAdder(object):
         for frrType in requestDict.keys():
             if frrType == 'FRR_TYPE_UFRR':
                 self.logger.info("ufrr")
+                requestForwardingPathSet = self.ufrr(
+                    requestDict['FRR_TYPE_UFRR'])
             elif frrType == 'FRR_TYPE_E2EP':
                 self.logger.info("e2ep")
+                requestForwardingPathSet = self.e2eProtection(
+                    requestDict['FRR_TYPE_E2EP'])
             elif frrType == 'FRR_TYPE_NOTVIA_PSFC':
                 self.logger.info("PSFC NotVia")
-
-                # self.logger.debug(requestDict['FRR_TYPE_NOTVIA_PSFC'])
-                # raw_input()
-
-                opSFC = OPSFC(self._dib, requestDict['FRR_TYPE_NOTVIA_PSFC'])
-                requestForwardingPathSet = opSFC.mapSFCI()
-                self.logger.debug(
-                    "requestForwardingPathSet:{0}".format(
-                        requestForwardingPathSet))
-
-                pSFC = PSFC(self._dib, requestDict['FRR_TYPE_NOTVIA_PSFC'],
-                    requestForwardingPathSet)
-                requestForwardingPathSet = pSFC.mapSFCI()
-
-                notVia = NotVia(self._dib, 
-                    requestDict['FRR_TYPE_NOTVIA_PSFC'], requestForwardingPathSet)
-                requestForwardingPathSet = notVia.mapSFCI()
+                requestForwardingPathSet = self.notViaPSFC(
+                    requestDict['FRR_TYPE_NOTVIA_PSFC'])
             else:
                 self.logger.error("Unknown frrType.")
                 raise ValueError("Unknown frrType.")
@@ -212,6 +201,34 @@ class OSFCAdder(object):
         cmdsList = []
 
         return cmdsList
+
+    def notViaPSFC(self, requestBatchList):
+        # self.logger.debug(requestDict['FRR_TYPE_NOTVIA_PSFC'])
+        # raw_input()
+
+        opSFC = OPSFC(self._dib, requestBatchList)
+        requestForwardingPathSet = opSFC.mapSFCI()
+
+        pSFC = PSFC(self._dib, requestBatchList,
+            requestForwardingPathSet)
+        requestForwardingPathSet = pSFC.mapSFCI()
+
+        notVia = NotVia(self._dib, 
+            requestBatchList, requestForwardingPathSet)
+        requestForwardingPathSet = notVia.mapSFCI()
+
+        self.logger.debug(
+            "requestForwardingPathSet:{0}".format(
+                requestForwardingPathSet))
+        return requestForwardingPathSet
+
+    def e2eProtection(self, requestBatchList):
+        requestForwardingPathSet = None
+        return requestForwardingPathSet
+
+    def ufrr(self, requestBatchList):
+        requestForwardingPathSet = None
+        return requestForwardingPathSet
 
     def _divRequest(self, requestBatchQueue):
         requestDict = {}

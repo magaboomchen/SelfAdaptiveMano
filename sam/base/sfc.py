@@ -102,6 +102,9 @@ class SFC(object):
     def getSFCLength(self):
         return len(self.vNFTypeSequence)
 
+    def getSFCTrafficDemand(self):
+        return self.slo.throughput
+
     def __str__(self):
         string = "{0}\n".format(self.__class__)
         for key,values in self.__dict__.items():

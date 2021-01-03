@@ -3,6 +3,7 @@
 
 import copy
 import math
+import random
 
 import networkx as nx
 import gurobipy as gp
@@ -20,6 +21,7 @@ from sam.orchestration.algorithms.performanceModel import *
 
 WEIGHT_TYPE_CONST = "WEIGHT_TYPE_CONST"
 WEIGHT_TYPE_DELAY_MODEL = "WEIGHT_TYPE_DELAY_MODEL"
+WEIGHT_TYPE_01_UNIFORAM_MODEL = "WEIGHT_TYPE_01_UNIFORAM_MODEL"
 
 
 class MultiLayerGraph(object):
@@ -35,18 +37,28 @@ class MultiLayerGraph(object):
         self.sfcLength = self.sfc.getSFCLength()
         self.zoneName = self.sfc.attributes['zone']
         self.weightType = weightType
+        self.abandonNodeList = []
+        self.abandonLinkList = []
+
+    def addAbandonNodes(self, nodeIDList):
+        for nodeID in nodeIDList:
+            self.abandonNodeList = self.abandonNodeList + nodeIDList
+
+    def addAbandonLinks(self, linkIDList):
+        for link in linkIDList:
+            self.abandonLinkList = self.abandonLinkList + linkIDList
 
     def trans2MLG(self):
         gList = []
         for stage in range(self.sfcLength+1):
-            g = self._genOneLayer(stage)
+            g = self.genOneLayer(stage)
             gList.append(g)
 
         mLG = nx.compose_all(gList)
         self._connectLayersInMLG(mLG)
         self.multiLayerGraph = mLG
 
-    def _genOneLayer(self, stage):
+    def genOneLayer(self, stage):
         G = nx.DiGraph()
         e = []
 
@@ -64,11 +76,12 @@ class MultiLayerGraph(object):
             #         self._dib.hasEnoughSwitchResource(link.srcID, expectedTCAM),
             #         self._dib.hasEnoughSwitchResource(link.dstID, expectedTCAM)
             #     ))
-            if (self._dib.hasEnoughLinkResource(link, expectedBandwidth, self.zoneName) and 
-                self._dib.hasEnoughSwitchResource(link.srcID, expectedTCAM, self.zoneName) and 
-                self._dib.hasEnoughSwitchResource(link.dstID, expectedTCAM, self.zoneName)
+            if (self._dib.hasEnoughLinkResource(link, expectedBandwidth, self.zoneName) 
+                and self._dib.hasEnoughSwitchResource(link.srcID, expectedTCAM, self.zoneName)
+                and self._dib.hasEnoughSwitchResource(link.dstID, expectedTCAM, self.zoneName)
                 ):
-                e.append((s,d,weight))
+                if not self._isAbandonLink(link):
+                    e.append((s,d,weight))
             else:
                 self.logger.warning(
                     "Link {0}->{1} hasn't enough resource.".format(
@@ -83,7 +96,7 @@ class MultiLayerGraph(object):
         return G
 
     def _getExpectedBandwidth(self, stage):
-        trafficDemand = self.sfc.slo.throughput
+        trafficDemand = self.sfc.getSFCTrafficDemand()
         return (stage+1) * trafficDemand
 
     def _getExpectedTCAM(self, stage):
@@ -98,8 +111,21 @@ class MultiLayerGraph(object):
         elif self.weightType == WEIGHT_TYPE_DELAY_MODEL:
             linkUtil = self._getLinkUtil(link)
             return self._getLinkLatency(link, linkUtil)
+        elif self.weightType == WEIGHT_TYPE_01_UNIFORAM_MODEL:
+            # return 1
+            return random.random()
         else:
             raise ValueError("Unknown weight type.")
+
+    def _isAbandonLink(self, link):
+        srcID = link.srcID
+        dstID = link.dstID
+        if ( link in self.abandonLinkList
+            or srcID in self.abandonNodeList
+            or dstID in self.abandonNodeList):
+            return True
+        else:
+            return False
 
     def _getLinkUtil(self, link):
         reservedBandwidth = self._dib.getLinkReservedResource(
@@ -139,7 +165,7 @@ class MultiLayerGraph(object):
 
     def _getExpectedServerResource(self, layerNum):
         vnfType = self.sfc.vNFTypeSequence[layerNum]
-        trafficDemand = self.sfc.slo.throughput
+        trafficDemand = self.sfc.getSFCTrafficDemand()
         pM = PerformanceModel()
         return pM.getExpectedServerResource(vnfType, trafficDemand)
 
@@ -203,4 +229,33 @@ class MultiLayerGraph(object):
             if vnfType == sfc.vNFTypeSequence[index]:
                 return index
         else:
-            raise ValueError("_getVnfLayerNum: can't find vnf")
+            raise ValueError("getVnfLayerNum: can't find vnf")
+
+    def getVnfLayerNumOfBackupVNF(self, vnfIType, vnfJType, sfc):
+        c = sfc.getSFCLength()
+        if vnfIType == 0:
+            vnfType = vnfJType
+        elif vnfJType == -1:
+            vnfType = vnfIType
+
+        for index in range(c):
+            if vnfType == sfc.vNFTypeSequence[index]:
+                return index
+        else:
+            raise ValueError("getVnfLayerNumOfBackupVNF: can't find vnf")
+
+    def getStartAndEndlayerNum(self, Xp, sfc):
+        firstVNFType = Xp[0]
+        endVNFType = Xp[-1]
+
+        c = sfc.getSFCLength()
+        for index in range(c):
+            if firstVNFType == sfc.vNFTypeSequence[index]:
+                startLayerNum = index
+            if endVNFType == sfc.vNFTypeSequence[index]:
+                endLayerNum = index + 1
+
+        if (startLayerNum == None or endLayerNum == None):
+            raise ValueError("getVnfLayerNumOfBackupVNF: can't find vnf")
+
+        return (startLayerNum, endLayerNum)

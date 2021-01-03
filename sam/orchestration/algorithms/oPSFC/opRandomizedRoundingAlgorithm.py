@@ -17,24 +17,23 @@ from gurobipy import GRB
 from sam.base.path import *
 from sam.base.server import *
 from sam.base.messageAgent import *
-from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.serverController.serverManager.serverManager import *
 from sam.orchestration.algorithms.multiLayerGraph import *
+from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
 
 
-class OPRandomizedRoundingAlgorithm(object):
+class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase):
     def __init__(self, dib, requestList, opLP):
         self._dib = dib
         self.requestList = requestList
         self.opLP = opLP
-        self._sc = SocketConverter()
 
         logConfigur = LoggerConfigurator(__name__, './log',
             'OP-RRA.log', level='debug')
         self.logger = logConfigur.getLogger()
 
     def mapSFCI(self):
+        self.logger.info("OPRandomizedRoundingAlgorithm mapSFCI")
         self.init()
         self.randomizedRoundingAlgorithm()
 
@@ -47,13 +46,16 @@ class OPRandomizedRoundingAlgorithm(object):
     def randomizedRoundingAlgorithm(self):
         for rIndex in range(len(self.requestList)):
             self._initRequestCalculation(rIndex)
+            existedPathFlag = False
             while self._existJointLinkLeq0():
+                existedPathFlag = True
                 jointLink = self._selectJointLink()
                 # self.logger.debug("jointLink:{0}".format(jointLink))
                 path = self._findCandidatePath(jointLink)
                 # self.logger.debug("findCandidatePath:{0}".format(path))
                 self._addCandidatePath(jointLink, path)
                 self._updateJointLinkValue(jointLink)
+            self.logger.debug("existedPathFlag:{0}".format(existedPathFlag))
             path = self._selectPath4Candidates()
             path = self._selectNPoPNodeAndServers(path)
             self._addPath2Sfci(path)
@@ -63,8 +65,9 @@ class OPRandomizedRoundingAlgorithm(object):
         self.logger.debug(
             "randomizedRoundingAlgorithm for request:{0}".format(rIndex))
         self._rIndexInRRA = rIndex
-        self._reqeustInRRA = self.requestList[rIndex]
-        sfc = self._reqeustInRRA.attributes['sfc']
+        self._requestInRRA = self.requestList[rIndex]
+        self.request = self._requestInRRA
+        sfc = self._requestInRRA.attributes['sfc']
         self.zoneName = sfc.attributes['zone']
         self._candidatePathSet = {} # "(rIndex, i, j, u, v)": candidatePath
 
@@ -92,11 +95,13 @@ class OPRandomizedRoundingAlgorithm(object):
 
         mlg = MultiLayerGraph()
         mlg.loadInstance4dibAndRequest(self._dib, 
-            self._reqeustInRRA, WEIGHT_TYPE_CONST)
+            self._requestInRRA, WEIGHT_TYPE_01_UNIFORAM_MODEL)
+        mlg.addAbandonNodes([])
+        mlg.addAbandonLinks([])
         mlg.trans2MLG()
 
         ingSwitchID = self.requestIngSwitchID[rIndex]
-        sfc = self._reqeustInRRA.attributes['sfc']
+        sfc = self._requestInRRA.attributes['sfc']
         vnfLayerNum = mlg.getVnfLayerNum(i, sfc)
         firstHalfPath = mlg.getPath(0, ingSwitchID, vnfLayerNum, u)
 
@@ -111,6 +116,7 @@ class OPRandomizedRoundingAlgorithm(object):
         path = mlg.catPath(firstHalfPath, middleLinkPath)
         path = mlg.catPath(path, pathLatterHalf)
         path = mlg.deLoop(path)
+
         return path
 
     def _addCandidatePath(self, jointLink, path):
@@ -130,9 +136,9 @@ class OPRandomizedRoundingAlgorithm(object):
         pathNameList = []
         probabilityList = []
         pathNameMapTable = {}
-        # self.logger.debug("self._candidatePathSet:{0}".format(
-        #     self._candidatePathSet
-        # ))
+        self.logger.debug("self._candidatePathSet:{0}".format(
+            self._candidatePathSet
+        ))
         for jointLink,path in self._candidatePathSet.items():
             probability = jointLink[1]
             probabilityList.append(probability)
@@ -143,8 +149,8 @@ class OPRandomizedRoundingAlgorithm(object):
         pathTuple = tuple(pathNameList)
         probabilityList = tuple(probabilityList)
 
-        # self.logger.debug("pathTuple:{0}".format(pathTuple))
-        # self.logger.debug("probabilityList:{0}".format(probabilityList))
+        self.logger.debug("pathTuple:{0}".format(pathTuple))
+        self.logger.debug("probabilityList:{0}".format(probabilityList))
 
         norm = tuple([float(i)/sum(probabilityList) for i in probabilityList])
 
@@ -192,12 +198,12 @@ class OPRandomizedRoundingAlgorithm(object):
         # add ingress and egress
         ingID = self._getIngressID(request)
         egID = self._getEgressID(request)
-        dividedPath = self._addIngAndEg2Path(dividedPath, ingID, egID)
+        dividedPath = self._addStartNodeIDAndEndNodeID2Path(dividedPath, ingID, egID)
 
         # select a server for each stage
         serverList = self._selectServer4EachStage(dividedPath, request)
         dividedPath = self._addNFVI2Path(dividedPath, serverList)
-        self.logger.debug("ingID:{0}, egID:{1}, dividedPath:{2}".format(
+        self.logger.info("ingID:{0}, egID:{1}, dividedPath:{2}".format(
                 ingID, egID, dividedPath))
 
         return dividedPath
@@ -211,10 +217,10 @@ class OPRandomizedRoundingAlgorithm(object):
                 pathSegment[stage] = []
             pathSegment[stage].append(node)
 
-        stageNum = len(pathSegment.keys())
         dividedPath = []
-        for stage in range(stageNum):
+        for stage in pathSegment.keys():
             dividedPath.append(pathSegment[stage])
+        self.logger.debug("dividedPath:{0}".format(dividedPath))
         return dividedPath
 
     def _getIngressID(self, request):
@@ -227,14 +233,15 @@ class OPRandomizedRoundingAlgorithm(object):
         egress = sfc.directions[0]['egress']
         return egress.getServerID()
 
-    def _addIngAndEg2Path(self, dividedPath, ingID, egID):
-        dividedPath[0].insert(0, (0, ingID))
-        dividedPath[-1].append((len(dividedPath)-1, egID))
+    def _addStartNodeIDAndEndNodeID2Path(self, dividedPath, startNodeID, endNodeID):
+        dividedPath[0].insert(0, (0, startNodeID))
+        dividedPath[-1].append((len(dividedPath)-1, endNodeID))
+        self.logger.debug("add start and end node to dividedPath:{0}".format(dividedPath))
         return dividedPath
 
     def _selectServer4EachStage(self, dividedPath, request):
         sfc = request.attributes['sfc']
-        trafficDemand = sfc.slo.throughput
+        trafficDemand = sfc.getSFCTrafficDemand()
         c = sfc.getSFCLength()
         serverList = []
         for index in range(c):
@@ -278,45 +285,6 @@ class OPRandomizedRoundingAlgorithm(object):
         forwardingPath = path
         primaryForwardingPath = {1:forwardingPath}
         frrType = FRR_TYPE_NOTVIA_PSFC
-        backupForwardingPath = {}
+        backupForwardingPath = {1:{}}
         self.requestForwardingPathSet[self._rIndexInRRA] = ForwardingPathSet(
             primaryForwardingPath, frrType, backupForwardingPath)
-
-    def _updateResource(self, path):
-        # [[(0, 10024), (0, 15), (0, 6), (0, 0), (0, 4), (0, 13), (0, 10002)], [(1, 10002), (1, 13), (1, 5), (1, 2), (1, 9), (1, 16), (1, 10025)]]
-        self._updateServerResource(path)
-        self._updateSwitchResource(path)
-        self._updateLinkResource(path)
-
-    def _updateServerResource(self, path):
-        for index in range(1, len(path)):
-            serverID = path[index][0]
-
-            sfc = self._reqeustInRRA.attributes['sfc']
-            vnfType = sfc.vNFTypeSequence[index-1]
-            trafficDemand = sfc.slo.throughput
-
-            pM = PerformanceModel()
-            (expectedCores, expectedMemory, expectedBandwidth) = pM.getExpectedServerResource(
-                vnfType, trafficDemand)
-            self._dib.reserveServerResources(
-                serverID, expectedCores, expectedMemory, expectedBandwidth, self.zoneName)
-
-    def _updateSwitchResource(self, path):
-        for segPath in path:
-            for nodeID in segPath:
-                if self._isSwitch(nodeID):
-                    self._dib.reserveSwitchResource(nodeID, 1, self.zoneName)
-
-    def _isSwitch(self, nodeID):
-        return nodeID < SERVERID_OFFSET
-
-    def _updateLinkResource(self, path):
-        sfc = self._reqeustInRRA.attributes['sfc']
-        trafficDemand = sfc.slo.throughput
-        for segPath in path:
-            for index in range(1, len(segPath)-2):
-                currentNodeID = segPath[index]
-                nextNodeID = segPath[index+1]
-                self._dib.reserveLinkResource(
-                    currentNodeID, nextNodeID, trafficDemand, self.zoneName)
