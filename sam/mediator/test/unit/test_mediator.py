@@ -28,7 +28,7 @@ class TestMediatorClass(TestBase):
         self.sfci = self.genBiDirection10BackupSFCI()
         self.genTesterServer("192.168.123.1","fe:54:00:05:4d:7d")
         mode = {
-            'switchType': SWITCH_TYPE_TOR,
+            'switchType': SWITCH_TYPE_SFF,
             'classifierType': 'Server'  # 'Switch'/'Server'
         }
         self.mediator = Mediator(mode)

@@ -29,7 +29,7 @@ class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase):
         self.opLP = opLP
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'OP-RRA.log', level='debug')
+            'OP-RRA.log', level='warning')
         self.logger = logConfigur.getLogger()
 
     def mapSFCI(self):
@@ -96,8 +96,8 @@ class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase):
         mlg = MultiLayerGraph()
         mlg.loadInstance4dibAndRequest(self._dib, 
             self._requestInRRA, WEIGHT_TYPE_01_UNIFORAM_MODEL)
-        mlg.addAbandonNodes([])
-        mlg.addAbandonLinks([])
+        mlg.addAbandonNodeIDs([])
+        mlg.addAbandonLinkIDs([])
         mlg.trans2MLG()
 
         ingSwitchID = self.requestIngSwitchID[rIndex]

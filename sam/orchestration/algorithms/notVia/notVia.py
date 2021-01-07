@@ -23,7 +23,7 @@ class NotVia(MappingAlgorithmBase):
         self.requestForwardingPathSet = requestForwardingPathSet
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'NotVia.log', level='debug')
+            'NotVia.log', level='warning')
         self.logger = logConfigur.getLogger()
 
     def mapSFCI(self):
@@ -66,7 +66,7 @@ class NotVia(MappingAlgorithmBase):
             mlg = MultiLayerGraph()
             mlg.loadInstance4dibAndRequest(self._dib, self.request,
                 WEIGHT_TYPE_CONST)
-            mlg.addAbandonNodes([abandonNodeID])
+            mlg.addAbandonNodeIDs([abandonNodeID])
             graph = mlg.genOneLayer(0)
             path = nx.dijkstra_path(graph, startNode, endNode)
             path = self._modifyPathStage(path, stageNum)

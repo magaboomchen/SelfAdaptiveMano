@@ -66,8 +66,8 @@ class OriginalPartialLP(object):
     def _genPhysicalLinksVar(self):
         self.links = {}
         for key, link in self._dib.getLinksByZone(self.zoneName).items():
-            (srcNodeID,dstNodeID) = key
-            self.links[(srcNodeID,dstNodeID)] = self._dib.getLinkResidualResource(
+            (srcNodeID, dstNodeID) = key
+            self.links[(srcNodeID, dstNodeID)] = self._dib.getLinkResidualResource(
                 srcNodeID, dstNodeID, self.zoneName)
 
         self.phsicalLink , self.linkCapacity = gp.multidict(self.links)
@@ -78,18 +78,10 @@ class OriginalPartialLP(object):
     def _genSwitchesVar(self):
         self.switches = {}
         for switchID, switch in self._dib.getSwitchesByZone(self.zoneName).items():
-            self.switches[switchID] = [self._getServerClusterCapacity(switch)]
+            self.switches[switchID] = [self._dib.getNPoPServersCapacity(switchID,
+                self.zoneName)]
         self.switches, self.switchCapacity = gp.multidict(self.switches)
         self.logger.info("switches:{0}".format(self.switches))
-
-    def _getServerClusterCapacity(self, switch):
-        # for the sake of simplicity, we only use cpu core as capacity
-        coreNum = 0
-        for serverID, server in self._dib.getServersByZone(self.zoneName).items():
-            if (self._dib.isServerConnectSwitch(switch.switchID, serverID, self.zoneName)
-                and server.getServerType() != SERVER_TYPE_CLASSIFIER):
-                coreNum = coreNum + self._dib.getServerResidualResources(serverID, self.zoneName)[0] # server.getMaxCores()
-        return coreNum
 
     def _genVnfVar(self):
         self.requestVnf = {}
@@ -165,8 +157,11 @@ class OriginalPartialLP(object):
             # Create optimization model
             m = gp.Model('OriginalPartialLP')
 
+            # timeout setting
+            m.setParam('TimeLimit', 1000)
+
             # Create continuous variables
-            help(Model.addVars)
+            # help(Model.addVars)
             flow = m.addVars(self.virtualLink, self.phsicalLink, vtype=GRB.CONTINUOUS, name="flow", ub=1.0)
             k = m.addVar(vtype=GRB.CONTINUOUS, name="k")
             a = m.addVars(self.requestVnf, self.switches, vtype=GRB.CONTINUOUS, name="deploy", ub=1.0)
@@ -232,8 +227,8 @@ class OriginalPartialLP(object):
                     for w in self.switches), "NPoPLoad")
 
             m.update()
-            m.write("./originalPartialLP.mps")
-            m.write("./originalPartialLP.prm")
+            # m.write("./originalPartialLP.mps")
+            # m.write("./originalPartialLP.prm")
             m.write("./originalPartialLP.lp")
 
             # Add obj
@@ -276,5 +271,6 @@ class OriginalPartialLP(object):
             self.logger.error('Error reported')
 
         finally:
+            del m
             # clean up gruobi environment
             disposeDefaultEnv()

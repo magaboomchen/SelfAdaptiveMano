@@ -34,7 +34,7 @@ class TestOSFCAdderDeleterClass(TestBase):
                 ["2.2.0.32/27"], range(1,2))
         )
         self.switches[DEFAULT_ZONE].extend(
-            self.genSwitchList(2, SWITCH_TYPE_TOR,
+            self.genSwitchList(2, SWITCH_TYPE_SFF,
                 ["2.2.0.64/27", "2.2.0.96/27"], range(2,4))
         )
 

@@ -36,7 +36,7 @@ class PSFC(object):
         self._sc = SocketConverter()
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'PSFC.log', level='debug')
+            'PSFC.log', level='warning')
         self.logger = logConfigur.getLogger()
 
     def mapSFCI(self):

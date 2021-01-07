@@ -25,13 +25,14 @@ class DHCPServer(XInfoBaseMaintainer):
 
         minIP = self._getMinIP(lanNet)
         maxIP = self._getMaxIP(lanNet)
-        self.logger.debug("minIP:{0}, maxIP:{1}".format(minIP, maxIP))
+        self.logger.debug("minIP:{0}, maxIP:{1}".format(
+            self._sc.int2ip(minIP), self._sc.int2ip(maxIP)))
         for ip in range(minIP + 3, maxIP, 1): # exclude lanNet, gateway, classifier and broadcast
             if ip not in self._assignedIPPool[switchID]:
                 self._assignedIPPool[switchID].append(ip)
                 return self._sc.int2ip(ip)
         else:
-            return None
+            raise ValueError("can't assign ip address")
 
     def assignClassifierIP(self, switchID):
         if not self._assignedIPPool.has_key(switchID):
@@ -45,6 +46,15 @@ class DHCPServer(XInfoBaseMaintainer):
         if not ip in self._assignedIPPool[switchID]:
             self._assignedIPPool[switchID].append(ip)
             return self._sc.int2ip(ip)
+        else:
+            self.logIPPool(switchID)
+            raise ValueError("can't assign classifier ip address for server connect to switchID: {0}".format(
+                switchID))
+
+    def logIPPool(self, switchID):
+        self.logger.debug("switchID {0}'s ip pools:".format(switchID))
+        for ip in self._assignedIPPool[switchID]:
+            self.logger.debug("ip: {0}".format(self._sc.int2ip(ip)))
 
     def _getMinIP(self, lanNet):
         ipv4 = lanNet.split("/")[0]
@@ -56,7 +66,8 @@ class DHCPServer(XInfoBaseMaintainer):
         prefixLen = int(lanNet.split("/")[1])
         self.logger.debug("prefixLen:{0}".format(prefixLen))
         mask = (0xFFFFFFFF00000000 >> prefixLen) & 0xFFFFFFFF
-        self.logger.debug("mask:{0}, ~mask:{1}".format(mask, ~mask & 0xFFFFFFFF))
+        self.logger.debug("mask:{0}, ~mask:{1}".format(
+            self._sc.int2ip(mask), self._sc.int2ip(~mask & 0xFFFFFFFF)))
         ipv4Int = self._sc.ip2int(ipv4) & mask
         return ipv4Int | (~mask & 0xFFFFFFFF)
 

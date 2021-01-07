@@ -254,8 +254,11 @@ class PartialLP(OriginalPartialLP):
             # Create optimization model
             m = gp.Model('PartialLP')
 
+            # timeout setting
+            m.setParam('TimeLimit', 1000)
+
             # Create continuous variables
-            help(Model.addVars)
+            # help(Model.addVars)
             flow = m.addVars(self.virtualLink, self.phsicalLink, vtype=GRB.CONTINUOUS, name="flow", lb=0.0, ub=1.0)
             k = m.addVar(vtype=GRB.CONTINUOUS, name="k")
             a = m.addVars(self.partialPathVnf, self.switches, vtype=GRB.CONTINUOUS, name="deploy", lb=0.0, ub=1.0)
@@ -325,8 +328,8 @@ class PartialLP(OriginalPartialLP):
                     for w in self.switches), "NPoPLoad")
 
             m.update()
-            m.write("./partialLP.mps")
-            m.write("./partialLP.prm")
+            # m.write("./partialLP.mps")
+            # m.write("./partialLP.prm")
             m.write("./partialLP.lp")
 
             # Add obj
@@ -370,5 +373,6 @@ class PartialLP(OriginalPartialLP):
             self.logger.error('Error reported')
 
         finally:
+            del m
             # clean up gruobi environment
             disposeDefaultEnv()

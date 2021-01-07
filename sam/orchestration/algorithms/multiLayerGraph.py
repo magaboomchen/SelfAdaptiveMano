@@ -37,14 +37,14 @@ class MultiLayerGraph(object):
         self.sfcLength = self.sfc.getSFCLength()
         self.zoneName = self.sfc.attributes['zone']
         self.weightType = weightType
-        self.abandonNodeList = []
+        self.abandonNodeIDList = []
         self.abandonLinkList = []
 
-    def addAbandonNodes(self, nodeIDList):
+    def addAbandonNodeIDs(self, nodeIDList):
         for nodeID in nodeIDList:
-            self.abandonNodeList = self.abandonNodeList + nodeIDList
+            self.abandonNodeIDList = self.abandonNodeIDList + nodeIDList
 
-    def addAbandonLinks(self, linkIDList):
+    def addAbandonLinkIDs(self, linkIDList):
         for link in linkIDList:
             self.abandonLinkList = self.abandonLinkList + linkIDList
 
@@ -120,9 +120,9 @@ class MultiLayerGraph(object):
     def _isAbandonLink(self, link):
         srcID = link.srcID
         dstID = link.dstID
-        if ( link in self.abandonLinkList
-            or srcID in self.abandonNodeList
-            or dstID in self.abandonNodeList):
+        if ( (srcID, dstID) in self.abandonLinkList
+            or srcID in self.abandonNodeIDList
+            or dstID in self.abandonNodeIDList):
             return True
         else:
             return False

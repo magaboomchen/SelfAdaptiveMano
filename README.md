@@ -98,6 +98,7 @@ Dashboard
 
 Orchestrator
 * UFRR mapping: check vnfi in vnfiSequence, delete duplicate vnfi in same server
+* UFRR mapping and E2E-P: measure vnf max latency and update function getLatencyOfVNF in performanceModel.py
 * store reservation of resource for each elements in information base
 
 Measurer

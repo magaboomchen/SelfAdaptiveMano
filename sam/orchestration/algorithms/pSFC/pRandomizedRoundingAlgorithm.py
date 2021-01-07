@@ -32,7 +32,7 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
         self.requestForwardingPathSet = requestForwardingPathSet
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'P-RRA.log', level='debug')
+            'P-RRA.log', level='warning')
         self.logger = logConfigur.getLogger()
 
     def mapSFCI(self):
@@ -108,8 +108,8 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
         mlg.loadInstance4dibAndRequest(self._dib, 
             self._requestInRRA, WEIGHT_TYPE_01_UNIFORAM_MODEL)
         bp = self.requestPartialPathBp[pIndex]
-        mlg.addAbandonNodes([bp])
-        mlg.addAbandonLinks([])
+        mlg.addAbandonNodeIDs([bp])
+        mlg.addAbandonLinkIDs([])
         mlg.trans2MLG()
 
         startSwitchID = self.requestPartialPathSrcSwitchID[pIndex]
@@ -214,4 +214,9 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
 
     def _addPath2Sfci(self, path):
         bp = self.requestPartialPathBp[self._pIndexInRRA]
-        self.requestForwardingPathSet[self._rIndexInRRA].backupForwardingPath[1][(bp,'*')] = path
+        Xp = self.requestPartialPathXp[self._pIndexInRRA]
+        xp = Xp[0]
+        mlg = MultiLayerGraph()
+        sfc = self._requestInRRA.attributes['sfc']
+        vnfLayerNum = mlg.getVnfLayerNum(xp, sfc)
+        self.requestForwardingPathSet[self._rIndexInRRA].backupForwardingPath[1][((vnfLayerNum, bp),'*')] = path

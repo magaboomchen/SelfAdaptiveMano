@@ -31,7 +31,7 @@ class OPSFC(object):
         self._sc = SocketConverter()
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'OPSFC.log', level='debug')
+            'OPSFC.log', level='warning')
         self.logger = logConfigur.getLogger()
 
     def mapSFCI(self):

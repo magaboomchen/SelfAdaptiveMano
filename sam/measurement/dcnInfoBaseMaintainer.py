@@ -244,6 +244,17 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
         else:
             return False
 
+    def getNPoPServersCapacity(self, switchID, zoneName):
+        # for the sake of simplicity, we only use cpu core as capacity
+        coreNum = 0
+        for serverID, server in self.getServersByZone(zoneName).items():
+            if (self.isServerConnectSwitch(switchID, serverID, zoneName)
+                and server.getServerType() != SERVER_TYPE_CLASSIFIER):
+                coreNum = coreNum \
+                    + self.getServerResidualResources(serverID,
+                        zoneName)[0] # server.getMaxCores()
+        return coreNum
+
     def reserveSwitchResource(self, switchID, reservedTcamUsage, zoneName):
         if not self._switchesReservedResources.has_key(zoneName):
             self._switchesReservedResources[zoneName] = {}

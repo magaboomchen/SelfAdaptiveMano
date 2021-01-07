@@ -27,12 +27,19 @@ class Server(object):
         self._serverType = serverType
 
         self._controlIfName = controlIfName # string, e.g. "eno2"
-        self._serverControlNICMAC = None    # string, e.g. "2.2.0.35"
+        self._serverControlNICIP = None     # string, e.g. "2.2.0.35"
+        self._serverControlNICMAC = None    # string, e.g. "18:66:da:86:4c:16"
         self._serverDatapathNICIP = datapathIfIP    # string, e.g. "2.2.0.36"
         self._serverDatapathNICMAC = None   # string, e.g. "18:66:da:86:4c:16"
         self._ifSet = {}    # self.updateIfSet()
 
-        self._vnfSupportSet = []    # see vnf.py, e.g. [VNF_TYPE_FW, VNF_TYPE_IDS]
+        self._routingTag = {}  # 4 type routing tag
+        # ['ip'] = ['ip1', 'ip2']
+        # ['identification'] = ['id1', 'id2']
+        # ['geo'] = ['geo1', 'geo2']
+        # ['content'] = ['c1', 'c2']
+
+        self._supportVNFSet = []    # see vnf.py, e.g. [VNF_TYPE_FW, VNF_TYPE_IDS]
 
         self._memoryAccessMode = None # "SMP", "NUMA"
         # There is a misunderstanding between socket and NUMA, we need discuss with DPDK community
@@ -44,11 +51,10 @@ class Server(object):
         self._hugepagesTotal = None # list of int, e.g. [14,13] for two numa nodes
         self._hugepagesFree = None # list of int, e.g. [10,13] for two numa nodes
         self._hugepageSize = None # unit: kB
+        self._nicBandwidth = 10 # unit: Gbps, default is 10 Gbps
 
-        self.nicBandwidth = 10 # unit: Gbps, default is 10 Gbps
-
-    def setServerID(self, id):
-        self._serverID = id
+    def setServerID(self, serverID):
+        self._serverID = serverID
 
     def setControlNICIP(self, controlNICIP):
         ifName = self._controlIfName
@@ -143,7 +149,10 @@ class Server(object):
         return addList
 
     def addVNFSupport(self, vnfType):
-        self._vnfSupportSet.append(vnfType)
+        self._supportVNFSet.append(vnfType)
+    
+    def getVNFSupport(self):
+        return self._supportVNFSet
 
     def printCpuUtil(self):
         for x in range(10):
@@ -271,10 +280,10 @@ class Server(object):
         self._hugepageSize = int(out_bytes.split(':')[1].split('kB')[0])
 
     def setNICBandwidth(self, bandwidth):
-        self.nicBandwidth = bandwidth
+        self._nicBandwidth = bandwidth
 
     def getNICBandwidth(self):
-        return self.nicBandwidth
+        return self._nicBandwidth
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

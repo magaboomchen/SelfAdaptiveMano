@@ -82,3 +82,46 @@ class PerformanceModel(object):
         resConRatio.append(trafficDemand)
 
         return resConRatio
+
+    def getMaxLatencyOfVNF(self, vnfType):
+        # VNF_TYPE_CLASSIFIER = 0
+        # VNF_TYPE_FORWARD = 1
+        # VNF_TYPE_FW = 2
+        # VNF_TYPE_IDS = 3
+        # VNF_TYPE_MONITOR = 4
+        # VNF_TYPE_LB = 5
+        # VNF_TYPE_TRAFFICSHAPER = 6
+        # VNF_TYPE_NAT = 7
+        # VNF_TYPE_VPN = 8
+        # VNF_TYPE_WOC = 9    # WAN Optimization Controller
+        # VNF_TYPE_APPFW = 10 # http firewall
+        # VNF_TYPE_VOC = 11
+
+        vnfMaxLatencyDict = {
+            # vnfType: maxLatencyOfVNF
+            # \rho = \delta_{f} / ceil(\delta_{f} * D^c_{sd}) * Latency_{max}
+            # where ceil(\delta_{f} * D^c_{sd}) = ResourceAllocation^{sd,c}_{u}
+            0: 5,
+            1: 5,
+            2: 5,
+            3: 5,
+            4: 5,
+            5: 5,
+            6: 5,
+            7: 5,
+            8: 5,
+            9: 5,
+            10: 5,
+            11: 5
+        }
+
+        return vnfMaxLatencyDict[vnfType]
+
+    def getLatencyOfVNF(self, vnfType, trafficDemand):
+        # only consider cpu core resource
+        maxLatency = self.getMaxLatencyOfVNF(vnfType)
+        resConRatio = self.getResourceConsumeRatioOfVNF(vnfType)[0]
+        consumedRes = trafficDemand * resConRatio
+        reservedRes = math.ceil(trafficDemand * resConRatio)
+        latency = consumedRes / reservedRes * maxLatency
+        return latency

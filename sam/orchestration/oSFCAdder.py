@@ -20,6 +20,9 @@ from sam.orchestration.orchestrator import *
 from sam.orchestration.algorithms.pSFC.pSFC import *
 from sam.orchestration.algorithms.oPSFC.oPSFC import *
 from sam.orchestration.algorithms.notVia.notVia import *
+from sam.orchestration.algorithms.dpSFC.dpSFC import *
+from sam.orchestration.algorithms.mMLPSFC.mMLPSFC import *
+from sam.orchestration.algorithms.mMLBSFC.mMLBSFC import *
 
 
 class OSFCAdder(object):
@@ -223,11 +226,19 @@ class OSFCAdder(object):
         return requestForwardingPathSet
 
     def e2eProtection(self, requestBatchList):
-        requestForwardingPathSet = None
+        dpSFC = DPSFC(self._dib, requestBatchList)
+        requestForwardingPathSet = dpSFC.mapSFCI()
+
         return requestForwardingPathSet
 
     def ufrr(self, requestBatchList):
-        requestForwardingPathSet = None
+        mMLPSFC = MMLPSFC(self._dib, requestBatchList)
+        requestForwardingPathSet = mMLPSFC.mapSFCI()
+
+        mMLBSFC = MMLBSFC(self._dib, requestBatchList,
+            requestForwardingPathSet)
+        requestForwardingPathSet = mMLBSFC.mapSFCI()
+
         return requestForwardingPathSet
 
     def _divRequest(self, requestBatchQueue):
