@@ -17,6 +17,7 @@ from gurobipy import *
 from sam.base.sfc import *
 from sam.base.path import *
 from sam.base.server import *
+from sam.base.mkdirs import *
 from sam.base.messageAgent import *
 from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -33,7 +34,7 @@ class PartialLP(OriginalPartialLP):
 
         logConfigur = LoggerConfigurator(__name__,
             './log',
-            'PartialLP.log', level='warning')
+            'PartialLP.log', level='debug')
         self.logger = logConfigur.getLogger()
 
     def mapSFCI(self):
@@ -105,7 +106,7 @@ class PartialLP(OriginalPartialLP):
 
             if not self._hasPartialPath(index, len(aggSFFIDList), preAggSFF, 
                                         currentAggSFF, nextAggSFF):
-                self.logger.debug("has not partial path")
+                self.logger.warning("has not any partial path")
                 continue
 
             pIndex = self._assignPartialPathIndex()
@@ -291,7 +292,7 @@ class PartialLP(OriginalPartialLP):
 
             # some switch only forward, can't provide vnf
             m.addConstrs(
-                (a.sum(pIndex, vnfI, [w for w in self.switches if (vnfI in self._dib.getSwitch(w, SIMULATOR_ZONE).supportVNF and w != self.requestPartialPathBp[pIndex]) ]   ) == 1
+                (a.sum(pIndex, vnfI, [w for w in self.switches if (vnfI in self._dib.getSwitch(w, self.zoneName).supportVNF and w != self.requestPartialPathBp[pIndex]) ]   ) == 1
                     for pIndex, vnfI in self.partialPathVnf.keys() if vnfI not in [0, -1]
                     ),
                     "vnfDeployNode")
@@ -328,9 +329,10 @@ class PartialLP(OriginalPartialLP):
                     for w in self.switches), "NPoPLoad")
 
             m.update()
-            # m.write("./partialLP.mps")
-            # m.write("./partialLP.prm")
-            m.write("./partialLP.lp")
+            mkdirs("./LP/")
+            # m.write("./LP/partialLP.mps")
+            # m.write("./LP/partialLP.prm")
+            m.write("./LP/partialLP.lp")
 
             # Add obj
             obj = k

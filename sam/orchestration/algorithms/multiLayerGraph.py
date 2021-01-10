@@ -22,6 +22,7 @@ from sam.orchestration.algorithms.performanceModel import *
 WEIGHT_TYPE_CONST = "WEIGHT_TYPE_CONST"
 WEIGHT_TYPE_DELAY_MODEL = "WEIGHT_TYPE_DELAY_MODEL"
 WEIGHT_TYPE_01_UNIFORAM_MODEL = "WEIGHT_TYPE_01_UNIFORAM_MODEL"
+WEIGHT_TYPE_0100_UNIFORAM_MODEL = "WEIGHT_TYPE_0100_UNIFORAM_MODEL"
 
 
 class MultiLayerGraph(object):
@@ -112,8 +113,9 @@ class MultiLayerGraph(object):
             linkUtil = self._getLinkUtil(link)
             return self._getLinkLatency(link, linkUtil)
         elif self.weightType == WEIGHT_TYPE_01_UNIFORAM_MODEL:
-            # return 1
             return random.random()
+        elif self.weightType == WEIGHT_TYPE_0100_UNIFORAM_MODEL:
+            return random.random() * 100
         else:
             raise ValueError("Unknown weight type.")
 
@@ -236,6 +238,10 @@ class MultiLayerGraph(object):
         if vnfIType == 0:
             vnfType = vnfJType
         elif vnfJType == -1:
+            vnfType = vnfIType
+        else:
+            # raise ValueError("vnfType != vnfIType:{0} or vnfJtype{1}".format(
+            #         vnfIType, vnfJType))
             vnfType = vnfIType
 
         for index in range(c):

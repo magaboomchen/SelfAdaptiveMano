@@ -64,7 +64,7 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
                 self._updateJointLinkValue(jointLink)
             self.logger.debug("existedPathFlag:{0}".format(existedPathFlag))
             path = self._selectPath4Candidates()
-            path = self._selectNPoPNodeAndServers(path)
+            path = self._selectNPoPNodeAndServers(path, self._pIndexInRRA)
             self._addPath2Sfci(path)
             self._updateResource(path)
 
@@ -120,13 +120,11 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
         self.logger.debug("startLayerNum:{0}, endLayerNum:{1}".format(startLayerNum, endLayerNum))
         firstHalfPath = mlg.getPath(vnfLayerNum, startSwitchID, vnfLayerNum, u)
 
-        middleLinkPath = mlg.getPath(
-            vnfLayerNum, u, vnfLayerNum, v)
+        middleLinkPath = mlg.getPath(vnfLayerNum, u, vnfLayerNum, v)
 
         c = sfc.getSFCLength()
         endSwitchID = self.requestPartialPathDstSwitchID[pIndex]
-        pathLatterHalf = mlg.getPath(
-            vnfLayerNum, v, endLayerNum, endSwitchID)
+        pathLatterHalf = mlg.getPath(vnfLayerNum, v, endLayerNum, endSwitchID)
 
         path = mlg.catPath(firstHalfPath, middleLinkPath)
         path = mlg.catPath(path, pathLatterHalf)
@@ -146,7 +144,7 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
                 #     self.jointLink[jointLink]
                 # ))
 
-    def _selectNPoPNodeAndServers(self, path):
+    def _selectNPoPNodeAndServers(self, path, rIndex):
         self.logger.debug("path: {0}".format(path))
         # Example 1
         # before adding servers
@@ -171,20 +169,20 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
         dividedPath = self._dividePath(path)
 
         # # add start node and end node
-        startNodeID = self.requestPartialPathSrcSwitchID[self._pIndexInRRA]
-        endNodeID = self.requestPartialPathDstSwitchID[self._pIndexInRRA]
+        startNodeID = self.requestPartialPathSrcSwitchID[rIndex]
+        endNodeID = self.requestPartialPathDstSwitchID[rIndex]
         # dividedPath = self._addStartNodeIDAndEndNodeID2Path(dividedPath, startNodeID, endNodeID)
 
         # select a server for each stage
-        serverList = self._selectServer4EachStage(dividedPath)
+        serverList = self._selectServer4EachStage(dividedPath, rIndex)
         dividedPath = self._addNFVI2Path(dividedPath, serverList)
         self.logger.info("startNodeID:{0}, endNodeID:{1}, dividedPath:{2}".format(
                 startNodeID, endNodeID, dividedPath))
 
         return dividedPath
 
-    def _selectServer4EachStage(self, dividedPath):
-        Xp = self.requestPartialPathXp[self._pIndexInRRA]
+    def _selectServer4EachStage(self, dividedPath, rIndex):
+        Xp = self.requestPartialPathXp[rIndex]
         sfc = self._requestInRRA.attributes['sfc']
         trafficDemand = sfc.getSFCTrafficDemand()
         serverList = []

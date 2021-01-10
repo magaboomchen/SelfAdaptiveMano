@@ -16,6 +16,7 @@ from gurobipy import *
 
 from sam.base.path import *
 from sam.base.server import *
+from sam.base.mkdirs import *
 from sam.base.messageAgent import *
 from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -227,9 +228,10 @@ class OriginalPartialLP(object):
                     for w in self.switches), "NPoPLoad")
 
             m.update()
-            # m.write("./originalPartialLP.mps")
-            # m.write("./originalPartialLP.prm")
-            m.write("./originalPartialLP.lp")
+            mkdirs("./LP/")
+            # m.write("./LP/originalPartialLP.mps")
+            # m.write("./LP/originalPartialLP.prm")
+            m.write("./LP/originalPartialLP.lp")
 
             # Add obj
             obj = k

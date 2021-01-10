@@ -258,24 +258,24 @@ class TestBase(object):
 
     def genUniDirection10BackupForwardingPathSet(self):
         primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
-        frrType = "UFRR"
+        mappingType = MAPPING_TYPE_UFRR
         # {(srcID,dstID,pathID):forwardingPath}
         backupForwardingPath = {
             1:{(1,2,2):[[1,3,2,10002],[10002,2,3,1,10001]]}
         }
-        return ForwardingPathSet(primaryForwardingPath,frrType,
+        return ForwardingPathSet(primaryForwardingPath,mappingType,
             backupForwardingPath)
 
     def genUniDirection11BackupForwardingPathSet(self):
         primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
-        frrType = "UFRR"
+        mappingType = MAPPING_TYPE_UFRR
         # {(srcID,dstID,pathID):forwardingPath}
         backupForwardingPath = {
             1:{(1,2,2):[[1,3,10003],[10003,3,1,10001]],
                 (2,10002,3):[[2,3,10003],[10003,3,1,10001]]
             }
         }
-        return ForwardingPathSet(primaryForwardingPath,frrType,
+        return ForwardingPathSet(primaryForwardingPath,mappingType,
             backupForwardingPath)
 
     def genBiDirection10BackupForwardingPathSet(self):
@@ -283,7 +283,7 @@ class TestBase(object):
             1:[[10001,1,2,10002],[10002,2,1,10001]],
             128:[[10001,1,2,10002],[10002,2,1,10001]]
         }
-        frrType = "UFRR"
+        mappingType = MAPPING_TYPE_UFRR
         # {(srcID,dstID,pathID):forwardingPath}
         backupForwardingPath = {
             1:{(1,2,2):[[1,3,2,10002],[10002,2,3,1,10001]]
@@ -292,7 +292,7 @@ class TestBase(object):
                 (1,2,129):[[1,3,2,10002],[10002,2,3,1,10001]]
             }
         }
-        return ForwardingPathSet(primaryForwardingPath,frrType,
+        return ForwardingPathSet(primaryForwardingPath,mappingType,
             backupForwardingPath)
 
     def genUniDirection12BackupSFCI(self):
@@ -337,14 +337,14 @@ class TestBase(object):
 
     def genUniDirection12BackupForwardingPathSet(self):
         primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
-        frrType = "UFRR"
+        mappingType = MAPPING_TYPE_UFRR
         # {(srcID,dstID,pathID):forwardingPath}
         backupForwardingPath = {
             1:{(1,2,2):[[1,3,10003],[10003,3,1,10001]],
                 (2,10002,3):[[2,10004],[10004,2,1,10001]]
             }
         }
-        return ForwardingPathSet(primaryForwardingPath,frrType,
+        return ForwardingPathSet(primaryForwardingPath,mappingType,
             backupForwardingPath)
 
     def recvCmd(self, queue):

@@ -9,6 +9,7 @@ import pytest
 from ryu.controller import dpset
 
 from sam.ryu.topoCollector import TopoCollector
+from sam.base.path import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
@@ -23,7 +24,7 @@ class TestNotViaClass(TestBase):
 
     def genUniDirection10BackupForwardingPathSet(self):
         primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
-        frrType = "NotVia"
+        mappingType = "NotVia"
         # {(srcID,dstID,pathID):forwardingPath}
         backupForwardingPath = {
             1:{
@@ -31,7 +32,7 @@ class TestNotViaClass(TestBase):
                 (2,1,3):[[2,3,1]],
             }
         }
-        return ForwardingPathSet(primaryForwardingPath,frrType,
+        return ForwardingPathSet(primaryForwardingPath,mappingType,
             backupForwardingPath)
 
     @pytest.fixture(scope="function")

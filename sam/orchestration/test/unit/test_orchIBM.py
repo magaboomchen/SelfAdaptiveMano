@@ -9,6 +9,7 @@ import pytest
 import pickle
 import base64
 
+from sam.base.path import *
 from sam.base.request import *
 from sam.base.databaseAgent import DatabaseAgent
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -35,7 +36,7 @@ class TestOIBMClass(TestBase):
         cls.classifier = cls.testBase.genClassifier("2.2.0.36")
         cls.sfc = cls.testBase.genUniDirectionSFC(cls.classifier)
         cls.sfci = SFCI(cls.testBase._genSFCIID(), [],
-            forwardingPathSet=ForwardingPathSet({},"UFRR",{}))
+            forwardingPathSet=ForwardingPathSet({}, MAPPING_TYPE_UFRR, {}))
 
         cls.zoneName = ""
 

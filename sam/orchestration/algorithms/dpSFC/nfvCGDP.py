@@ -18,14 +18,16 @@ from gurobipy import *
 
 from sam.base.path import *
 from sam.base.server import *
+from sam.base.mkdirs import *
 from sam.base.messageAgent import *
 from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.algorithms.multiLayerGraph import *
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
+from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import *
 
 
-class NFVCGDedicatedProtection(MappingAlgorithmBase):
+class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
     def __init__(self, dib, requestList):
         self._dib = dib
         self.requestList = requestList
@@ -36,38 +38,37 @@ class NFVCGDedicatedProtection(MappingAlgorithmBase):
 
     def initRMP(self):
         self._genInitialConfigurations()
+
+    def updateRMP(self):
         self._genVariablesAndConsts()
         self._trans2LP()
 
     def _genInitialConfigurations(self):
         self.configurations = {}
         for request in self.requestList:
-            self._requestInCGDP = request
+            self.request = request
             self.zoneName = request.attributes['zone']
             sdc = self._getSDC(request)
             if sdc not in self.configurations.keys():
                 self.configurations[sdc] = []
                 initPrimaryPath = self._genInitPrimaryPaths(sdc)
-                initBackupPath = self._genInitBackupPaths(sdc, initPrimaryPath)
+                initBackupPath = self._genInitBackupPaths(sdc,
+                    initPrimaryPath)
+                self._updateResource4NFVCGDPInitPath(
+                    self._dividePath(initPrimaryPath))
+                self._updateResource4NFVCGDPInitPath(
+                    self._dividePath(initBackupPath))
                 self.logger.debug(
                     "requestID:{0}, initPrimaryPath:{1}," \
                         " initBackupPath:{2}".format(
-                        self._requestInCGDP.requestID, 
+                        self.request.requestID, 
                         initPrimaryPath, initBackupPath))
                 self.configurations[sdc].extend(
                     [initPrimaryPath, initBackupPath])
 
-    def _getSDC(self, request):
-        sfc = self.getSFC4Request(request)
-        vnfSeqList = sfc.vNFTypeSequence
-        ingSwitchID = self.getIngSwitchID4Request(request)
-        egSwitchID = self.getEgSwitchID4Request(request)
-        sdc = (ingSwitchID, egSwitchID, self.vnfSeqList2Str(vnfSeqList))
-        return sdc
-
     def _genInitPrimaryPaths(self, sdc):
         mlg = MultiLayerGraph()
-        mlg.loadInstance4dibAndRequest(self._dib, self._requestInCGDP,
+        mlg.loadInstance4dibAndRequest(self._dib, self.request,
             WEIGHT_TYPE_CONST)
         mlg.trans2MLG()
         (ingSwitchID, egSwitchID, vnfSeqStr) = sdc
@@ -78,7 +79,7 @@ class NFVCGDedicatedProtection(MappingAlgorithmBase):
 
     def _genInitBackupPaths(self, sdc, initPrimaryPath):
         mlg = MultiLayerGraph()
-        mlg.loadInstance4dibAndRequest(self._dib, self._requestInCGDP,
+        mlg.loadInstance4dibAndRequest(self._dib, self.request,
             WEIGHT_TYPE_CONST)
         abandonLinkIDList = self._getLinkID4Path(initPrimaryPath)
         mlg.addAbandonLinkIDs(abandonLinkIDList)
@@ -90,7 +91,7 @@ class NFVCGDedicatedProtection(MappingAlgorithmBase):
 
     def _getLinkID4Path(self, initPrimaryPath):
         # print(initPrimaryPath)
-        # [(0, 13), (1, 13), (1, 5), (1, 2), (1, 11), (1, 19)]
+        # input [(0, 13), (1, 13), (1, 5), (1, 2), (1, 11), (1, 19)]
         linkIDList = []
         for index in range(len(initPrimaryPath)-1):
             srcNodeID = initPrimaryPath[index][1]
@@ -118,7 +119,7 @@ class NFVCGDedicatedProtection(MappingAlgorithmBase):
         for sdc, pathList in self.configurations.items():
             for pathIndex in range(len(pathList)):
                 path = pathList[pathIndex]
-                self.logger.debug("path:{0}".format(path))
+                # self.logger.debug("path:{0}".format(path))
                 (ingSwitchID, egSwitchID, vnfSeqStr) = sdc
                 self.pathLength[ingSwitchID, egSwitchID,
                     vnfSeqStr, pathIndex] = len(path) - 1
@@ -180,12 +181,17 @@ class NFVCGDedicatedProtection(MappingAlgorithmBase):
                 pathIndex, srcID, dstID)] = 0
 
     def _getLinkIDList4ForwardingPath(self, path):
-        # [(0, 13), (1, 13), (1, 5), (1, 2), (1, 11), (1, 19)]
+        # input [(0, 13), (1, 13), (1, 5), (1, 2), (1, 11), (1, 19)]
+        # return [(13, 5), (5, 2), (2, 11), (11, 19)]
+        self.logger.debug("path:{0}".format(path))
         linkIDList = []
         for index in range(len(path)-1):
+            srcLayerNum = path[index][0]
             srcID = path[index][1]
+            dstLayerNum = path[index+1][0]
             dstID = path[index+1][1]
-            linkIDList.append((srcID, dstID))
+            if srcLayerNum == dstLayerNum:
+                linkIDList.append((srcID, dstID))
         return linkIDList
 
     def _genEdgeDisjointCoeff(self):
@@ -384,7 +390,8 @@ class NFVCGDedicatedProtection(MappingAlgorithmBase):
             self._genModelObj()
             self.cgModel.setObjective(self.modelObj, GRB.MINIMIZE)
             self.cgModel.update()
-            self.cgModel.write("./nfvCGDP.lp")
+            mkdirs("./LP/")
+            self.cgModel.write("./LP/nfvCGDP.lp")
 
         except GurobiError:
             self.logger.error('Error reported')
@@ -414,6 +421,7 @@ class NFVCGDedicatedProtection(MappingAlgorithmBase):
         return self.dualVars
 
     def _genDualVariables(self):
+        # variable format
         # self.dualVars['constr10a'][rIndex, 'p']
         # self.dualVars['constr10b'][rIndex, 'b']
         # self.dualVars['constr11'][rIndex, srcID, dstID]
@@ -461,7 +469,7 @@ class NFVCGDedicatedProtection(MappingAlgorithmBase):
             self.dualVars['constr13'][switchID] = self._getConstrDualVariable(constr)
 
     def _getConstrDualVariable(self, constr):
-        return self.cgModel.getAttr(GRB.Attr.Pi, [constr])
+        return self.cgModel.getAttr(GRB.Attr.Pi, [constr])[0]
 
     def _logDualVariables(self):
         for key,value in self.dualVars.items():
@@ -475,19 +483,79 @@ class NFVCGDedicatedProtection(MappingAlgorithmBase):
             pathList = configurations[sdc]
             self.configurations[sdc].extend(pathList)
 
+    def hasNewConfigurations(self, configurations):
+        for sdc in configurations.keys():
+            pathList = configurations[sdc]
+            for path in pathList:
+                if path not in self.configurations[sdc]:
+                    return True
+        return False
+
     def transRMP2ILP(self):
         for key, variable in self.modelYVar.items():
             variable.vtype = GRB.BINARY
 
-    def getSolution(self):
+    def getSolutions(self):
         if (self.cgModel.status == GRB.OPTIMAL 
-            or self.cgModel.status == GRB.SUBOPTIMAL):
+                or self.cgModel.status == GRB.SUBOPTIMAL):
             self.logger.info('Optimal Obj = {0}'.format(self.cgModel.objVal))
-
-            self.yVarSolution = self.cgModel.getAttr('x', self.modelYVar)
-            return self.yVarSolution
+            self.yVarSolutions = self.cgModel.getAttr('x', self.modelYVar)
+            return self.yVarSolutions
         else:
             return None
+
+    def getForwardingPathSet(self):
+        self.requestForwardingPathSet = {}
+        for rIndex in range(len(self.requestList)):
+            primaryPathSolutions = self.modelYVar.select(rIndex,'*','*','*',
+                '*', 'p')
+            for solution in primaryPathSolutions:
+                if solution.X == 1:
+                    (ingSwitchID, egSwitchID, vnfSeqStr, 
+                        pathIndex) = self._getSolutionVarIndexTuple(solution)
+                    sdc = (ingSwitchID, egSwitchID, vnfSeqStr)
+                    primaryFP = self.configurations[sdc][pathIndex]
+                    primaryFP = self._selectNPoPNodeAndServers(primaryFP,
+                        rIndex)
+                    primaryForwardingPath = {1:
+                            primaryFP
+                        }
+
+            backupPathSolutions = self.modelYVar.select(rIndex,'*','*','*',
+                '*', 'b')
+            for solution in backupPathSolutions:
+                if solution.X == 1:
+                    (ingSwitchID, egSwitchID, vnfSeqStr, 
+                        pathIndex) = self._getSolutionVarIndexTuple(solution)
+                    sdc = (ingSwitchID, egSwitchID, vnfSeqStr)
+                    backupFP = self.configurations[sdc][pathIndex]
+                    backupFP = self._selectNPoPNodeAndServers(backupFP,
+                        rIndex)
+                    backupForwardingPath = {1:
+                        {
+                            ('*','*'): backupFP
+                        }        
+                    }
+
+            mappingType = MAPPING_TYPE_E2EP
+            self.requestForwardingPathSet[rIndex] = ForwardingPathSet(
+                primaryForwardingPath, mappingType,
+                backupForwardingPath)
+
+        return self.requestForwardingPathSet
+
+    def _getSolutionVarIndexTuple(self, solution):
+        varName = solution.VarName
+        index1 = varName.find('[')
+        index2 = varName.find(']')
+        varIndice = varName[index1+1:index2]
+        varIndiceList = varIndice.split(',')
+
+        ingSwitchID = int(varIndiceList[1])
+        egSwitchID = int(varIndiceList[2])
+        vnfSeqStr = varIndiceList[3]
+        pathIndex = int(varIndiceList[4])
+        return (ingSwitchID, egSwitchID, vnfSeqStr, pathIndex)
 
     def logSolution(self):
         # Print solution

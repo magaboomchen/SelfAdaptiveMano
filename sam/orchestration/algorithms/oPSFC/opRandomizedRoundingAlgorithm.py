@@ -57,7 +57,7 @@ class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase):
                 self._updateJointLinkValue(jointLink)
             self.logger.debug("existedPathFlag:{0}".format(existedPathFlag))
             path = self._selectPath4Candidates()
-            path = self._selectNPoPNodeAndServers(path)
+            path = self._selectNPoPNodeAndServers(path, self._rIndexInRRA)
             self._addPath2Sfci(path)
             self._updateResource(path)
 
@@ -169,7 +169,7 @@ class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase):
             name = name + str(jointLink[0][index]) + "_"
         return name
 
-    def _selectNPoPNodeAndServers(self, path):
+    def _selectNPoPNodeAndServers(self, path, rIndex):
         self.logger.debug("path: {0}".format(path))
         # Example 1
         # before adding servers
@@ -191,7 +191,7 @@ class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase):
         # [(1, 10002), (1, 14), (1, 6), (1, 0), (1, 8), (1, 16), (1, 10003)]
         # ]
 
-        request = self.requestList[self._rIndexInRRA]
+        request = self.requestList[rIndex]
 
         dividedPath = self._dividePath(path)
 
@@ -284,7 +284,7 @@ class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase):
     def _addPath2Sfci(self, path):
         forwardingPath = path
         primaryForwardingPath = {1:forwardingPath}
-        frrType = FRR_TYPE_NOTVIA_PSFC
+        mappingType = MAPPING_TYPE_NOTVIA_PSFC
         backupForwardingPath = {1:{}}
         self.requestForwardingPathSet[self._rIndexInRRA] = ForwardingPathSet(
-            primaryForwardingPath, frrType, backupForwardingPath)
+            primaryForwardingPath, mappingType, backupForwardingPath)

@@ -3,6 +3,7 @@
 
 import logging
 
+from sam.base.path import *
 from sam.base.switch import *
 from sam.base.server import *
 from sam.base.link import *
@@ -67,7 +68,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         classifier = self.genClassifier("2.2.0.36")
         self.sfc = self.genUniDirectionSFC(classifier)
         self.sfci = SFCI(self._genSFCIID(), [],
-            forwardingPathSet=ForwardingPathSet({},"UFRR",{}))
+            forwardingPathSet=ForwardingPathSet({}, MAPPING_TYPE_UFRR, {}))
         zoneName = self.sfc.attributes['zone']
         self.logger.info("zoneName:{0}".format(zoneName))
         self.addSFCRequest = self.genAddSFCRequest(self.sfc)

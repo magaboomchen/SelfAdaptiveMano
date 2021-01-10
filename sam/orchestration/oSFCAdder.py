@@ -169,7 +169,7 @@ class OSFCAdder(object):
         self._pC = PathComputer(self._dib, self.request, self.sfci,
             self.logger)
         self._pC.mapPrimaryFP()
-        if self.sfci.requestForwardingPathSet.frrType != None:
+        if self.sfci.requestForwardingPathSet.mappingType != None:
             self._pC.mapBackupFP()
 
     def genABatchOfRequestAndAddSFCICmds(self, requestBatchQueue):
@@ -178,26 +178,26 @@ class OSFCAdder(object):
         #     self.logger.info("request:{0}".format(request))
         #     self.logger.info("sfci:{0}".format(request.attributes["sfci"]))
 
-        # self.logger.debug(requestBatchQueue)
-        # raw_input()
-
         requestDict = self._divRequest(requestBatchQueue)
-        for frrType in requestDict.keys():
-            if frrType == 'FRR_TYPE_UFRR':
+        for mappingType in requestDict.keys():
+            if mappingType == 'MAPPING_TYPE_UFRR':
                 self.logger.info("ufrr")
                 requestForwardingPathSet = self.ufrr(
-                    requestDict['FRR_TYPE_UFRR'])
-            elif frrType == 'FRR_TYPE_E2EP':
+                    requestDict['MAPPING_TYPE_UFRR'])
+            elif mappingType == 'MAPPING_TYPE_E2EP':
                 self.logger.info("e2ep")
                 requestForwardingPathSet = self.e2eProtection(
-                    requestDict['FRR_TYPE_E2EP'])
-            elif frrType == 'FRR_TYPE_NOTVIA_PSFC':
+                    requestDict['MAPPING_TYPE_E2EP'])
+            elif mappingType == 'MAPPING_TYPE_NOTVIA_PSFC':
                 self.logger.info("PSFC NotVia")
                 requestForwardingPathSet = self.notViaPSFC(
-                    requestDict['FRR_TYPE_NOTVIA_PSFC'])
+                    requestDict['MAPPING_TYPE_NOTVIA_PSFC'])
+            elif mappingType == MAPPING_TYPE_NONE:
+                pass
             else:
-                self.logger.error("Unknown frrType.")
-                raise ValueError("Unknown frrType.")
+                self.logger.error(
+                    "Unknown mappingType {0}".format(mappingType))
+                raise ValueError("Unknown mappingType.")
 
         # TODO: 
         # cmdsList = self._requestForwardingPathSet2Cmd(requestForwardingPathSet)
@@ -205,8 +205,23 @@ class OSFCAdder(object):
 
         return cmdsList
 
+    def _divRequest(self, requestBatchQueue):
+        requestDict = {}
+        while not requestBatchQueue.empty():
+            request = copy.deepcopy(requestBatchQueue.get())
+            # self.logger.debug(request)
+            # self.logger.debug("*****************")
+            # raw_input()
+            mappingType = request.attributes['mappingType']
+            if mappingType not in requestDict.keys():
+                requestDict[mappingType] = []
+            requestDict[mappingType].append(request)
+            # self.logger.debug(requestDict[mappingType])
+            # raw_input()
+        return requestDict
+
     def notViaPSFC(self, requestBatchList):
-        # self.logger.debug(requestDict['FRR_TYPE_NOTVIA_PSFC'])
+        # self.logger.debug(requestDict['MAPPING_TYPE_NOTVIA_PSFC'])
         # raw_input()
 
         opSFC = OPSFC(self._dib, requestBatchList)
@@ -240,18 +255,3 @@ class OSFCAdder(object):
         requestForwardingPathSet = mMLBSFC.mapSFCI()
 
         return requestForwardingPathSet
-
-    def _divRequest(self, requestBatchQueue):
-        requestDict = {}
-        while not requestBatchQueue.empty():
-            request = copy.deepcopy(requestBatchQueue.get())
-            # self.logger.debug(request)
-            # self.logger.debug("*****************")
-            # raw_input()
-            frrType = request.attributes['frrType']
-            if frrType not in requestDict.keys():
-                requestDict[frrType] = []
-            requestDict[frrType].append(request)
-            # self.logger.debug(requestDict[frrType])
-            # raw_input()
-        return requestDict
