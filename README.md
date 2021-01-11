@@ -78,7 +78,7 @@ sffController
 * vnf can't use multi-core, increase queue number in PMDPort(RSS)
 
 integration
-* Null
+* None
 
 # TODO LIST
 
@@ -86,7 +86,6 @@ Readme.md
 * add rabbitmq setting
 
 Base
-* link adds bandwidth, traffic rate
 * add routing/addressing scheme name to sfci's attributes
 
 Dashboard
@@ -99,7 +98,6 @@ Dashboard
 Orchestrator
 * UFRR mapping: check vnfi in vnfiSequence, delete duplicate vnfi in same server
 * UFRR mapping and E2E-P: measure vnf max latency and update function getLatencyOfVNF in performanceModel.py
-* store reservation of resource for each elements in information base
 
 Measurer
 * add self.sendGetSFCIStateCmd()
@@ -111,7 +109,7 @@ SFFController
 * (optional) add getSFCIStatus
 
 ClassifierController
-* Null
+* None
 
 vnfController
 * numa node support: numa cpu core and mem allocation
@@ -119,7 +117,7 @@ vnfController
 * test chain deployment in one server
 
 NetworkController
-* Null
+* None
 
 Database Agent
 * add database agent to orchestrator, measurer, dashboard

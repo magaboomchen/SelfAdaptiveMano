@@ -168,8 +168,10 @@ class TestBase(object):
             'destination': {"IPv4":WEBSITE_REAL_IP}
         }
         directions = [direction1]
+        slo = SLO(latencyBound=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions, {'zone':""})
+            backupInstanceNumber, applicationType, directions,
+            {'zone':""}, slo=slo)
 
     def genBiDirectionSFC(self, classifier, vnfTypeSeq=[VNF_TYPE_FORWARD]):
         sfcUUID = uuid.uuid1()
@@ -427,19 +429,14 @@ class TestBase(object):
         self.sP.runShellCommand("sudo python " + killAllSAMPythonScripts.__file__)
 
     def genSwitchList(self, num, switchType, 
-            switchLANNetlist, switchIDList):
+            switchLANNetlist, switchIDList, supportVNFList=None):
         switches = []
         for i in range(num):
             switch = Switch(switchIDList[i], switchType, switchLANNetlist[i])
+            if type(supportVNFList) == list:
+                switch.supportVNF = supportVNFList[i]
             switches.append(switch)
         return switches
-
-    # def genLinkList(self, num):
-    #     links = []
-    #     for i in range(num):
-    #         link = Link(i,(i+1)%num)
-    #         links.append(link)
-    #     return links
 
     def genServerList(self, num, serverType, serverCIPList,
             serverDPIPList, serverIDList):
@@ -449,6 +446,9 @@ class TestBase(object):
             server.setServerID(serverIDList[i])
             server.setControlNICIP([serverCIPList[i]])
             server.setControlNICMAC(self.genRandomMacAddress())
+            for vnfType in range(11):
+                server.addVNFSupport(vnfType)
+            server.updateResource()
             servers.append(server)
         return servers
 
@@ -459,23 +459,27 @@ class TestBase(object):
     def genAddSFCRequest(self, sfc):
         sfc.backupInstanceNumber = 3
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFC,
-            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'zone':""})
+            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc,
+                'zone':"", 'mappingType':MAPPING_TYPE_E2EP})
         return request
 
     def genAddSFCIRequest(self, sfc, sfci):
         sfc.backupInstanceNumber = 3
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
-            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'sfci':sfci, 'zone':""})
+            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc,
+                'sfci':sfci, 'zone':"", 'mappingType':MAPPING_TYPE_E2EP})
         return request
 
     def genDelSFCRequest(self, sfc):
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFC,
-            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'zone':""})
+            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc,
+                'zone':""})
         return request
 
     def genDelSFCIRequest(self, sfc, sfci):
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,
-            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'sfci':sfci, 'zone':""})
+            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc,
+                'sfci':sfci, 'zone':""})
         return request
 
     def _genSFCIID(self):

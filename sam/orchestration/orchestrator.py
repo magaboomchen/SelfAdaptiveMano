@@ -66,7 +66,7 @@ class Orchestrator(object):
                 self._oib.addSFCRequestHandler(request, cmd)
                 self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
-                if self._batchSize == 1:
+                if self._batchSize == 0:
                     self._odir.getDCNInfo()
                     cmd = self._osa.genAddSFCICmd(request)
                     self._cm.addCmd(cmd)
@@ -80,7 +80,6 @@ class Orchestrator(object):
                             self._requestBatchQueue)
                         for (request, cmd) in requestCmdBatch:
                             self._cm.addCmd(cmd)
-                            request = self._requestBatchQueue.get()
                             self._oib.addSFCIRequestHandler(request, cmd)
                             self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:

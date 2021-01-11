@@ -249,6 +249,7 @@ class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase):
             switchID = dividedPath[index][-1][1]
             self.logger.debug("switchID:{0}".format(switchID))
             servers = self._dib.getConnectedNFVIs(switchID, self.zoneName)
+            # self.logger.warning("servers:{0}".format(servers))
             server = self._selectServer4ServerList(servers, vnfType, trafficDemand)
             serverList.append(server)
         return serverList

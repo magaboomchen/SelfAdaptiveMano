@@ -9,6 +9,7 @@ import pytest
 from ryu.controller import dpset
 
 from sam.ryu.topoCollector import TopoCollector
+from sam.base.slo import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
@@ -87,8 +88,9 @@ class TestUFRRClass(TestFRR):
             'destination': {"IPv4":WEBSITE_REAL_IP}
         }
         directions = [direction1]
+        slo = SLO(latencyBound=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions)
+            backupInstanceNumber, applicationType, directions, slo=slo)
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_UFRRAddUniSFCI(self, setup_addUniSFCI):

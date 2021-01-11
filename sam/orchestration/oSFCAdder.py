@@ -183,21 +183,20 @@ class OSFCAdder(object):
 
         requestDict = self._divRequest(requestBatchQueue)
         self._updateRequestDictIngAndEg(requestDict)
-        self._logRequestDict(requestDict)
-        raw_input()
+        # self._logRequestDict(requestDict)
+        cmdList = []
         for mappingType in requestDict.keys():
-            if mappingType == 'MAPPING_TYPE_UFRR':
+            requestBatchList =requestDict[mappingType]
+            if mappingType == MAPPING_TYPE_UFRR:
                 self.logger.info("ufrr")
-                requestForwardingPathSet = self.ufrr(
-                    requestDict['MAPPING_TYPE_UFRR'])
-            elif mappingType == 'MAPPING_TYPE_E2EP':
+                requestForwardingPathSet = self.ufrr(requestBatchList)
+            elif mappingType == MAPPING_TYPE_E2EP:
                 self.logger.info("e2ep")
                 requestForwardingPathSet = self.e2eProtection(
-                    requestDict['MAPPING_TYPE_E2EP'])
-            elif mappingType == 'MAPPING_TYPE_NOTVIA_PSFC':
+                    requestBatchList)
+            elif mappingType == MAPPING_TYPE_NOTVIA_PSFC:
                 self.logger.info("PSFC NotVia")
-                requestForwardingPathSet = self.notViaPSFC(
-                    requestDict['MAPPING_TYPE_NOTVIA_PSFC'])
+                requestForwardingPathSet = self.notViaPSFC(requestBatchList)
             elif mappingType == MAPPING_TYPE_NONE:
                 pass
             else:
@@ -205,7 +204,10 @@ class OSFCAdder(object):
                     "Unknown mappingType {0}".format(mappingType))
                 raise ValueError("Unknown mappingType.")
 
-        cmdList = self._requestForwardingPathSet2Cmd(requestForwardingPathSet)
+            cmdList.extend(
+                self._requestForwardingPathSet2Cmd(requestForwardingPathSet,
+                    requestBatchList)
+            )
 
         return cmdList
 
@@ -242,16 +244,13 @@ class OSFCAdder(object):
                 self.request = request
                 self.sfc = self.request.attributes['sfc']
                 for direction in self.sfc.directions:
-                    self.logger.debug(
+                    self.logger.info(
                         "requestUUID:{0}, ingress:{1}, egress:{2}".format(
                             request.requestID,
                             direction['ingress'],
                             direction['egress']))
 
     def notViaPSFC(self, requestBatchList):
-        # self.logger.debug(requestDict['MAPPING_TYPE_NOTVIA_PSFC'])
-        # raw_input()
-
         opSFC = OPSFC(self._dib, requestBatchList)
         requestForwardingPathSet = opSFC.mapSFCI()
 
@@ -283,10 +282,21 @@ class OSFCAdder(object):
 
         return requestForwardingPathSet
 
-    def _requestForwardingPathSet2Cmd(self, requestForwardingPathSet):
-        self.logger.debug("requestFPSet:{0}".formate(
-            requestForwardingPathSet
-        ))
-        raw_input()
+    def _requestForwardingPathSet2Cmd(self, requestForwardingPathSet,
+            requestBatchList):
+        self.logger.info("requestFPSet:{0}".format(requestForwardingPathSet))
+        cmdList = []
+        for rIndex in range(len(requestBatchList)):
+            request = requestBatchList[rIndex]
+            sfc = request.attributes['sfc']
+            zoneName = sfc.attributes['zone']
+            sfci = request.attributes['sfci']
+            sfci.forwardingPathSet = requestForwardingPathSet[rIndex]
 
-        return []
+            cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
+                'sfc':sfc, 'sfci':sfci, 'zone':zoneName
+            })
+
+            cmdList.append((request, cmd))
+
+        return cmdList
