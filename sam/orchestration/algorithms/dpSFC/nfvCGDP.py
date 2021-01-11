@@ -173,8 +173,9 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
 
     def _initPathLinkVar(self, sdc, pathIndex):
         (ingSwitchID, egSwitchID, vnfSeqStr) = sdc
-        linkDict = self._dib.getLinksByZone(self.zoneName)
-        for link in linkDict.itervalues():
+        linksInfoDict = self._dib.getLinksByZone(self.zoneName)
+        for linkInfoDict in linksInfoDict.itervalues():
+            link = linkInfoDict['link']
             srcID = link.srcID
             dstID = link.dstID
             self.pathLinkVar[(ingSwitchID, egSwitchID, vnfSeqStr,
@@ -290,8 +291,9 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
 
     def _initAVar(self, sdc, pathIndex):
         (ingSwitchID, egSwitchID, vnfSeqStr) = sdc
-        linkDict = self._dib.getLinksByZone(self.zoneName)
-        for link in linkDict.itervalues():
+        linksInfoDict = self._dib.getLinksByZone(self.zoneName)
+        for linkInfoDict in linksInfoDict.itervalues():
+            link = linkInfoDict['link']
             srcID = link.srcID
             dstID = link.dstID
             for vnfType in range(-1,11):
@@ -301,7 +303,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
     def _genPhysicalLink(self):
         # cap: link
         self.links = {}
-        for key, link in self._dib.getLinksByZone(self.zoneName).items():
+        for key in self._dib.getLinksByZone(self.zoneName).keys():
             (srcNodeID, dstNodeID) = key
             self.links[(srcNodeID, dstNodeID)] \
                 = self._dib.getLinkResidualResource(
@@ -315,7 +317,8 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
     def _genSwitch(self):
         # cap: vNode
         self.switches = {}
-        for switchID, switch in self._dib.getSwitchesByZone(self.zoneName).items():
+        for switchID, switchInfoDict in self._dib.getSwitchesByZone(self.zoneName).items():
+            switch = switchInfoDict['switch']
             self.switches[switchID] = [self._dib.getNPoPServersCapacity(switchID,
                 self.zoneName)]
         self.switches, self.switchCapacity = gp.multidict(self.switches)

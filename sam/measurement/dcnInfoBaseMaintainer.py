@@ -12,16 +12,16 @@ from sam.base.loggerConfigurator import LoggerConfigurator
 class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self, *args, **kwargs):
         super(DCNInfoBaseMaintainer, self).__init__(*args, **kwargs)
-        self._servers = {}
-        self._switches = {}
-        self._links = {}
+        self._servers = {}  # [zoneName][serverID] = {'server':server, 'Active':True/False, 'timestamp':time}
+        self._switches = {} # [zoneName][serverID] = {'switch':switch, 'active':True/False}
+        self._links = {}    # [zoneName][serverID] = {'link':link, 'active':True/False}
         self._vnfis = {}
 
-        self._serversReservedResources = {}
+        self._serversReservedResources = {} # [zoneName][serverID] = {'bandwidth':bw, 'cores':cpu, 'memory':mem}
         self._switchesReservedResources = {}
         self._linksReservedResources = {}
         self._vnfisReservedResources = {}
-        
+
         self._sc = SocketConverter()
         logConfigur = LoggerConfigurator(__name__, './log',
             'DCNInfoBaseMaintainer.log', level='debug')
@@ -76,18 +76,18 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
         return self._vnfis[zoneName]
 
     def getServer(self, serverID, zoneName):
-        return self._servers[zoneName][serverID]
+        return self._servers[zoneName][serverID]['server']
 
     def getConnectedSwitch(self, serverID, zoneName):
-        for switchID,switch in self._switches[zoneName].items():
+        for switchID,switchInfoDict in self._switches[zoneName].items():
+            switch = switchInfoDict['switch']
             if self.isServerConnectSwitch(switchID, serverID, zoneName):
                 return switch
 
     def isServerConnectSwitch(self, switchID, serverID, zoneName):
-        switch = self._switches[zoneName][switchID]
+        switch = self._switches[zoneName][switchID]['switch']
         lanNet = switch.lanNet
-        server = self._servers[zoneName][serverID]
-        # ctIP = server.getControlNICIP()
+        server = self._servers[zoneName][serverID]['server']
         dpIP = server.getDatapathNICIP()
         if self._sc.isLANIP(dpIP, lanNet):
             return True
@@ -96,24 +96,26 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def getConnectedServers(self, switchID, zoneName):
         servers = []
-        for serverID,server in self._servers[zoneName].items():
+        for serverID,serverInfoDict in self._servers[zoneName].items():
+            server = serverInfoDict['server']
             if self.isServerConnectSwitch(switchID, serverID, zoneName):
                 servers.append(server)
         return servers
 
     def getConnectedNFVIs(self, switchID, zoneName):
         servers = []
-        for serverID,server in self._servers[zoneName].items():
+        for serverID,serverInfoDict in self._servers[zoneName].items():
+            server = serverInfoDict['server']
             if (self.isServerConnectSwitch(switchID, serverID, zoneName) 
                 and server.getServerType() == SERVER_TYPE_NFVI):
                 servers.append(server)
         return servers
 
     def getSwitch(self, switchID, zoneName):
-        return self._switches[zoneName][switchID]
+        return self._switches[zoneName][switchID]['switch']
 
     def getLink(self, srcID, dstID, zoneName):
-        return self._links[zoneName][(srcID, dstID)]
+        return self._links[zoneName][(srcID, dstID)]['link']
 
     def reserveServerResources(self, serverID, reservedCores, reservedMemory,
             reservedBandwidth, zoneName):
@@ -210,7 +212,7 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def hasEnoughServerResources(self, serverID, expectedResource, zoneName):
         (expectedCores, expectedMemory, expectedBandwidth) = expectedResource
-        server = self._servers[zoneName][serverID]
+        server = self._servers[zoneName][serverID]['server']
         (coresCapacity, memoryCapacity, bandwidthCapacity) = self.getServersResourcesCapacity(
             [server], zoneName)
         if (expectedCores <= coresCapacity 
@@ -247,7 +249,8 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
     def getNPoPServersCapacity(self, switchID, zoneName):
         # for the sake of simplicity, we only use cpu core as capacity
         coreNum = 0
-        for serverID, server in self.getServersByZone(zoneName).items():
+        for serverID, serverInfoDict in self.getServersByZone(zoneName).items():
+            server = serverInfoDict['server']
             if (self.isServerConnectSwitch(switchID, serverID, zoneName)
                 and server.getServerType() != SERVER_TYPE_CLASSIFIER):
                 coreNum = coreNum \

@@ -66,8 +66,9 @@ class MultiLayerGraph(object):
         expectedBandwidth = self._getExpectedBandwidth(stage)
         expectedTCAM = self._getExpectedTCAM(stage)
 
-        linkDict = self._dib.getLinksByZone(self.zoneName)
-        for link in linkDict.itervalues():
+        linksInfoDict = self._dib.getLinksByZone(self.zoneName)
+        for linkInfoDict in linksInfoDict.itervalues():
+            link = linkInfoDict['link']
             s = self._genNodeID(link.srcID, stage)
             d = self._genNodeID(link.dstID, stage)
             weight = self._getLinkWeight(link)
@@ -160,7 +161,8 @@ class MultiLayerGraph(object):
     def _getSupportVNFSwitchesOfLayer(self, layerNum):
         switches = []
         vnfType = self.sfc.vNFTypeSequence[layerNum]
-        for switchID,switch in self._dib.getSwitchesByZone(self.zoneName).items():
+        for switchID,switchDictInfo in self._dib.getSwitchesByZone(self.zoneName).items():
+            switch = switchDictInfo['switch']
             if vnfType in switch.supportVNF:
                 switches.append(switch)
         return switches

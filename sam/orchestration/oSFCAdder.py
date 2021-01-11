@@ -53,17 +53,18 @@ class OSFCAdder(object):
 
         self.sfc = self.request.attributes['sfc']
         self.zoneName = self.sfc.attributes["zone"]
-        self.sfci = self.request.attributes['sfci']
 
         self._mapIngressEgress()    # TODO: get sfc from database
         self.logger.debug("sfc:{0}".format(self.sfc))
+
+        self.sfci = self.request.attributes['sfci']
 
         self._mapVNFI()
         self.logger.debug("sfci:{0}".format(self.sfci))
 
         self._mapForwardingPath()
         self.logger.debug("ForwardingPath:{0}".format(
-            self.sfci.requestForwardingPathSet))
+            self.sfci.forwardingPathSet))
 
         cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
             'sfc':self.sfc, 'sfci':self.sfci, 'zone':self.zoneName
@@ -103,8 +104,8 @@ class OSFCAdder(object):
             else:
                 raise ValueError("Unsupport source/destination type")
 
-            for serverInfo in self._dib.getServersByZone(self.zoneName).values():
-                server = serverInfo['server']
+            for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
+                server = serverInfoDict['server']
                 ip = server.getDatapathNICIP()
                 serverType = server.getServerType()
                 if self._sc.isInSameLAN(nodeIP, ip, LANIPPrefix) and\
@@ -115,8 +116,10 @@ class OSFCAdder(object):
 
     def _getDCNGateway(self):
         dcnGateway = None
-        switchDict = self._dib.getSwitchesByZone(self.zoneName)
-        for switch in switchDict.itervalues():
+        switchesInfoDict = self._dib.getSwitchesByZone(self.zoneName)
+        # self.logger.warning(switchesInfoDict)
+        for switchInfoDict in switchesInfoDict.itervalues():
+            switch = switchInfoDict['switch']
             # self.logger.debug(switch)
             if switch.switchType == SWITCH_TYPE_DCNGATEWAY:
                 # self.logger.debug(
@@ -130,8 +133,8 @@ class OSFCAdder(object):
 
     def _getClassifierBySwitch(self, switch):
         self.logger.debug(self._dib.getServersByZone(self.zoneName))
-        for serverInfo in self._dib.getServersByZone(self.zoneName).values():
-            server = serverInfo['server']
+        for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
+            server = serverInfoDict['server']
             self.logger.debug(server)
             ip = server.getDatapathNICIP()
             self.logger.debug(ip)
@@ -158,8 +161,8 @@ class OSFCAdder(object):
 
     def _roundRobinSelectServers(self, vnfType, iNum):
         vnfiList = []
-        for serverInfo in self._dib.getServersByZone(self.zoneName).values():
-            server = serverInfo['server']
+        for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
+            server = serverInfoDict['server']
             if server.getServerType() == 'nfvi':
                 vnfi = VNFI(vnfType, vnfType, uuid.uuid1(), None, server)
                 vnfiList.append(vnfi)
@@ -169,7 +172,7 @@ class OSFCAdder(object):
         self._pC = PathComputer(self._dib, self.request, self.sfci,
             self.logger)
         self._pC.mapPrimaryFP()
-        if self.sfci.requestForwardingPathSet.mappingType != None:
+        if self.sfci.forwardingPathSet.mappingType != None:
             self._pC.mapBackupFP()
 
     def genABatchOfRequestAndAddSFCICmds(self, requestBatchQueue):
@@ -179,6 +182,9 @@ class OSFCAdder(object):
         #     self.logger.info("sfci:{0}".format(request.attributes["sfci"]))
 
         requestDict = self._divRequest(requestBatchQueue)
+        self._updateRequestDictIngAndEg(requestDict)
+        self._logRequestDict(requestDict)
+        raw_input()
         for mappingType in requestDict.keys():
             if mappingType == 'MAPPING_TYPE_UFRR':
                 self.logger.info("ufrr")
@@ -199,11 +205,9 @@ class OSFCAdder(object):
                     "Unknown mappingType {0}".format(mappingType))
                 raise ValueError("Unknown mappingType.")
 
-        # TODO: 
-        # cmdsList = self._requestForwardingPathSet2Cmd(requestForwardingPathSet)
-        cmdsList = []
+        cmdList = self._requestForwardingPathSet2Cmd(requestForwardingPathSet)
 
-        return cmdsList
+        return cmdList
 
     def _divRequest(self, requestBatchQueue):
         requestDict = {}
@@ -220,6 +224,30 @@ class OSFCAdder(object):
             # raw_input()
         return requestDict
 
+    def _updateRequestDictIngAndEg(self, requestDict):
+        for mappingType,requestList in requestDict.items():
+            for request in requestList:
+                self.request = request
+                self._checkRequest()
+
+                self.sfc = self.request.attributes['sfc']
+                self.zoneName = self.sfc.attributes["zone"]
+
+                self._mapIngressEgress()
+                # self.logger.debug("sfc:{0}".format(self.sfc))
+
+    def _logRequestDict(self, requestDict):
+        for mappingType,requestList in requestDict.items():
+            for request in requestList:
+                self.request = request
+                self.sfc = self.request.attributes['sfc']
+                for direction in self.sfc.directions:
+                    self.logger.debug(
+                        "requestUUID:{0}, ingress:{1}, egress:{2}".format(
+                            request.requestID,
+                            direction['ingress'],
+                            direction['egress']))
+
     def notViaPSFC(self, requestBatchList):
         # self.logger.debug(requestDict['MAPPING_TYPE_NOTVIA_PSFC'])
         # raw_input()
@@ -235,8 +263,7 @@ class OSFCAdder(object):
             requestBatchList, requestForwardingPathSet)
         requestForwardingPathSet = notVia.mapSFCI()
 
-        self.logger.debug(
-            "requestForwardingPathSet:{0}".format(
+        self.logger.debug("requestForwardingPathSet:{0}".format(
                 requestForwardingPathSet))
         return requestForwardingPathSet
 
@@ -255,3 +282,11 @@ class OSFCAdder(object):
         requestForwardingPathSet = mMLBSFC.mapSFCI()
 
         return requestForwardingPathSet
+
+    def _requestForwardingPathSet2Cmd(self, requestForwardingPathSet):
+        self.logger.debug("requestFPSet:{0}".formate(
+            requestForwardingPathSet
+        ))
+        raw_input()
+
+        return []
