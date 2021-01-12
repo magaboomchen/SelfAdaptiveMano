@@ -10,6 +10,9 @@ VNF_TYPE_LB = 5
 VNF_TYPE_TRAFFICSHAPER = 6
 VNF_TYPE_NAT = 7
 VNF_TYPE_VPN = 8
+VNF_TYPE_WOC = 9    # WAN Optimization Controller
+VNF_TYPE_APPFW = 10 # http firewall
+VNF_TYPE_VOC = 11 # 
 
 VNFID_LENGTH = 4 # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 
@@ -23,11 +26,11 @@ class VNFIStatus(object):
 
 
 class VNFI(object):
-    def __init__(self, VNFID=None, VNFType=None, VNFIID=None,
+    def __init__(self, vnfID=None, vnfType=None, vnfiID=None,
         config=None, node=None, vnfiStatus=None):
-        self.VNFID = VNFID
-        self.VNFType = VNFType
-        self.VNFIID = VNFIID
+        self.vnfID = vnfID
+        self.vnfType = vnfType
+        self.vnfiID = vnfiID
         self.config = config
         self.node = node # server or switch
         self.vnfiStatus = vnfiStatus
@@ -47,10 +50,10 @@ class VNFI(object):
 
 
 class VNFIRequest(object):
-    def __init__(self, userID, requestID, requestType, VNFIID, config=None):
+    def __init__(self, userID, requestID, requestType, vnfiID, config=None):
         self.userID =  userID # 0 is root
         self.requestID = requestID # uuid1()
         self.requestType = requestType # GETCONFIG/UPDATECONFIG/GETVNFI
-        self.VNFIID = VNFIID
+        self.vnfiID = vnfiID
         self.config = config
 

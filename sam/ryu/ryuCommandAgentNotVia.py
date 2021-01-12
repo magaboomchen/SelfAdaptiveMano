@@ -16,7 +16,11 @@ from sam.ryu.baseApp import BaseApp
 class RyuCommandAgent(BaseApp):
     def __init__(self, *args, **kwargs):
         super(RyuCommandAgent, self).__init__(*args, **kwargs)
-        self._messageAgent.startRecvMsg(NETWORK_CONTROLLER_QUEUE)
+        self.zoneName = ZONE_NAME
+        self.queueName = self._messageAgent.genQueueName(
+            NETWORK_CONTROLLER_QUEUE, self.zoneName)
+        self._messageAgent.startRecvMsg(self.queueName)
+
         self.ufrr = lookup_service_brick("UFRR")
         self.notVia = lookup_service_brick("NotVia")
         self.tC = lookup_service_brick('TopoCollector')
@@ -34,14 +38,18 @@ class RyuCommandAgent(BaseApp):
                 self.ufrr = lookup_service_brick("UFRR")
             if self.notVia == None:
                 self.notVia = lookup_service_brick("NotVia")
-            msg = self._messageAgent.getMsg(NETWORK_CONTROLLER_QUEUE)
+            msg = self._messageAgent.getMsg(self.queueName)
             if msg.getMessageType() == MSG_TYPE_NETWORK_CONTROLLER_CMD:
                 self.logger.info("Ryu command agent gets a ryu cmd.")
                 cmd = msg.getbody()
-                if cmd.cmdType == CMD_TYPE_ADD_SFCI:
-                    self.notVia._addSfciHandler(cmd)
+                if cmd.cmdType == CMD_TYPE_ADD_SFC:
+                    self.notVia._addSFCHandler(cmd)
+                elif cmd.cmdType == CMD_TYPE_ADD_SFCI:
+                    self.notVia._addSFCIHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
-                    self.notVia._delSfciHandler(cmd)
+                    self.notVia._delSFCIHandler(cmd)
+                elif cmd.cmdType == CMD_TYPE_DEL_SFC:
+                    self.notVia._delSFCHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
                     self.tC.get_topology_handler(cmd)
                 else:

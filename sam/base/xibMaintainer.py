@@ -1,9 +1,15 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from sam.base.databaseAgent import DatabaseAgent
+
+
 class XInfoBaseMaintainer(object):
     def __init__(self):
         pass
+
+    def addDatabaseAgent(self, host, user, passwd):
+        self.dbA = DatabaseAgent(host, user, passwd)
 
     def genAvailableMiniNum4List(self,numList):
         if numList == []:

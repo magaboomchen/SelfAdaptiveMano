@@ -37,7 +37,7 @@ PS：
 
 1.2）在docker中运行testpmd：
 
-    ./build/app/testpmd -l 0-1 -n 1 -m 1024 --no-pci \
+    ./x86_64-native-linuxapp-gcc/app/testpmd -l 0-1 -n 1 -m 1024 --no-pci \
     --vdev=net_virtio_user0,path=/tmp/vsock0_FW1 \
     --vdev=net_virtio_user0,path=/tmp/vsock1_FW1 \
     --file-prefix=virtio --log-level=8 -- \
@@ -51,7 +51,7 @@ PS：
 
 msg中的vnfi实例提供了很多参数。
 
-### VNFType
+### vnfType
 
 具体的有VNF_TYPE_FORWARD，VNF_TYPE_FW等等。
 
@@ -61,11 +61,11 @@ VNF_TYPE_FORWARD表示部署testpmd程序的容器。
 其他类型的VNF需要自己实现，可以通过修改iofwd.c来实现各种vnf。
 实现完的vnf需要打包成容器镜像，具体方法可以查看后文。
 
-### VNFIID
+### vnfiID
 
-本质是一个uuid1，这个VNFIID用于生成命令中的path=/tmp/vsock0_FW1参数。生成方法参考后文。
+本质是一个uuid1，这个vnfiID用于生成命令中的path=/tmp/vsock0_FW1参数。生成方法参考后文。
 
-PS：注意VNFIID不是VNFID
+PS：注意vnfiID不是vnfID
 
 ### config
 
@@ -93,7 +93,7 @@ vnfController按照max去分配资源即可。（之所以有min和max的区别�
 
 以下参数不是固定参数，要保证不同的VNFI的相应参数不同（用于区分不同的VNFI）
 
-可以用VNFIID来区分。
+可以用vnfiID来区分。
 
 ### --name=XXX
 ### --vdev=XXX
@@ -113,7 +113,7 @@ vnfController部署VNF与人工部署的区别：
 
 在步骤1.2）在vnf中运行testpmd命令
 
-    ./build/app/testpmd -m 1024 --no-pci \
+    ./x86_64-native-linuxapp-gcc/app/testpmd -m 1024 --no-pci \
     --vdev=net_virtio_user0,path=/tmp/vsock0_FW1 \
     --vdev=net_virtio_user0,path=/tmp/vsock1_FW1 \
     --file-prefix=virtio --log-level=8 -- \
@@ -134,7 +134,7 @@ vnfCmd中给出了每个VNF的UUID。
 
 使用方法：
 在192.168.0.150机器上运行：
-	sudo python -m pytest ./test_vnfControllerAddSFCI.py -s
+    sudo python -m pytest ./test_vnfControllerAddSFCI.py -s
 
 
 
@@ -146,7 +146,7 @@ vnfCmd中给出了每个VNF的UUID。
 FROM ubuntu:xenial
 WORKDIR /home/t1/bess/deps/dpdk-17.11
 COPY .  /home/t1/bess/deps/dpdk-17.11
-ENV PATH "$PATH: /home/t1/bess/deps/dpdk-17.11/build/app/"
+ENV PATH "$PATH: /home/t1/bess/deps/dpdk-17.11/x86_64-native-linuxapp-gcc/app/"
 RUN apt-get update && apt-get install -y \
     numactl \
     libnuma-dev

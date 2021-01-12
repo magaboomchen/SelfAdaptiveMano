@@ -27,25 +27,25 @@ class VNFIMaintainer(object):
         self._vnfiSet[sfciID] = {}
     
     def addVNFI(self, sfciID, vnfi):
-        self._vnfiSet[sfciID][vnfi.VNFIID] = VNFIDeployStatus(vnfi, VNFI_STATE_PROCESSING)
+        self._vnfiSet[sfciID][vnfi.vnfiID] = VNFIDeployStatus(vnfi, VNFI_STATE_PROCESSING)
 
     def setVNFIState(self, sfciID, vnfi, state):
-        self._vnfiSet[sfciID][vnfi.VNFIID].state = state 
+        self._vnfiSet[sfciID][vnfi.vnfiID].state = state 
 
     def setVNFIContainerID(self, sfciID, vnfi, containerID):
-        self._vnfiSet[sfciID][vnfi.VNFIID].containerID = containerID
+        self._vnfiSet[sfciID][vnfi.vnfiID].containerID = containerID
 
     def setVNFIVIOStart(self, sfciID, vnfi, vioStart):
-        self._vnfiSet[sfciID][vnfi.VNFIID].vioStart = vioStart
+        self._vnfiSet[sfciID][vnfi.vnfiID].vioStart = vioStart
 
     def setVNFICPUStart(self, sfciID, vnfi, cpuStart):
-        self._vnfiSet[sfciID][vnfi.VNFIID].cpuStart = cpuStart
+        self._vnfiSet[sfciID][vnfi.vnfiID].cpuStart = cpuStart
 
     def setVNFIError(self, sfciID, vnfi, error):
-        self._vnfiSet[sfciID][vnfi.VNFIID].error = error
+        self._vnfiSet[sfciID][vnfi.vnfiID].error = error
 
     def getVNFIDeployStatus(self, sfciID, vnfi):
-        return self._vnfiSet[sfciID][vnfi.VNFIID]
+        return self._vnfiSet[sfciID][vnfi.vnfiID]
     
     def getSFCI(self, sfciID):
         return self._vnfiSet[sfciID]

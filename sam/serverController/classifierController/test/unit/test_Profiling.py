@@ -20,10 +20,15 @@ from sam.test.fixtures import sendArpRequest, sendInboundTraffic, sendOutSFCDoma
 MANUAL_TEST = True
 
 TESTER_SERVER_DATAPATH_IP = "2.2.0.33"
-TESTER_SERVER_DATAPATH_MAC = "18:66:da:86:4c:16" #"f4:e9:d4:a3:53:a0"
-TESTER_SERVER_INTERFACE = "eno2" #"enp5s0f0"
+#TESTER_SERVER_DATAPATH_MAC = "f4:e9:d4:a3:53:a0"
+#TESTER_SERVER_DATAPATH_MAC = "18:66:da:86:4c:16"
+TESTER_SERVER_DATAPATH_MAC = "6c:b3:11:50:ec:64"
 
-CLASSIFIER_DATAPATH_MAC = "00:1b:21:c0:8f:98"
+#TESTER_SERVER_INTERFACE = "eno2"
+TESTER_SERVER_INTERFACE = "enp5s0f0"
+
+CLASSIFIER_DATAPATH_MAC = "6c:b3:11:50:ec:3c"
+#CLASSIFIER_DATAPATH_MAC = "00:1b:21:c0:8f:98"
 
 CLASSIFIER_CONTROL_IP = "192.168.0.173"
 
@@ -34,6 +39,7 @@ logging.getLogger("pika").setLevel(logging.WARNING)
 
 # run scripts on dut 192.168.0.173
 # python ./serverAgent.py 0000:04:00.0 eno1 classifier 2.2.0.36
+# python ./serverAgent.py 0000:05:00.0 eno1 classifier 2.2.0.36
 
 
 class TestSFCIAdderClass(TestBase):
@@ -119,7 +125,7 @@ class TestSFCIAdderClass(TestBase):
     def _checkArpRespond(self,inIntf):
         logging.info("_checkArpRespond: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()) +
-            " and arp",iface=inIntf, prn=self.frame_callback,count=1,store=0)
+            " and arp",iface=inIntf, prn=self.frame_callback,count=1, store=0)
 
     def frame_callback(self,frame):
         frame.show()
@@ -144,7 +150,7 @@ class TestSFCIAdderClass(TestBase):
         logging.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         sniff(filter=filterRE,
-            iface=inIntf, prn=self.encap_callback,count=1,store=0)
+            iface=inIntf, prn=self.encap_callback,count=1, store=0)
 
     def encap_callback(self,frame):
         frame.show()
@@ -173,7 +179,7 @@ class TestSFCIAdderClass(TestBase):
     def _checkDecapsulatedTraffic(self,inIntf):
         logging.info("_checkDecapsulatedTraffic: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
-            iface=inIntf, prn=self.decap_callback,count=1,store=0)
+            iface=inIntf, prn=self.decap_callback,count=1, store=0)
 
     def decap_callback(self,frame):
         frame.show()

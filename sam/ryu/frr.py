@@ -28,6 +28,7 @@ from sam.base.path import *
 from sam.base.socketConverter import *
 from sam.base.vnf import *
 from sam.serverController.serverManager.serverManager import *
+from sam.base.exceptionProcessor import ExceptionProcessor
 
 
 class FRR(BaseApp):
@@ -53,10 +54,10 @@ class FRR(BaseApp):
         self.logger.setLevel(logging.DEBUG)
         self.logger.info("FRR App is running !")
 
-    def _addRoute2Classifier(self, sfc, sfci):
+    def _addRoute2Classifier(self, sfc):
         # install route to classifier
         for direction in sfc.directions:
-            dpid = self._getFirstSwitchIDInSFCI(sfci,direction)
+            dpid = self._getSwitchByClassifier(direction['ingress'])
             datapath = self.dpset.get(int(str(dpid), 0))
             source = direction['source']
             if source == None:
@@ -68,16 +69,31 @@ class FRR(BaseApp):
             else:
                 raise ValueError("_addRoute2Classifier: invalid source")
             classifierMAC = direction['ingress'].getDatapathNICMac()
-            self._installRoute4Switch2Classifier(
-                sfci.SFCIID, datapath, inPortNum, classifierMAC)
+            self._installRoute4Switch2Classifier(sfc.sfcUUID,
+                datapath, inPortNum, classifierMAC)
+
+    def _getSwitchByClassifier(self, classifier):
+        # dpid = classifier.getServerID()
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.debug("in _getSwitchByClassifier ")
+        datapathNICIP = classifier.getDatapathNICIP()
+        self.logger.debug("datapathNICIP:{0}".format(datapathNICIP))
+        for dpid in self._switchConfs.keys():
+            net = self._getLANNet(dpid)
+            self.logger.debug("net:{0}".format(net))
+            if self._isLANIP(datapathNICIP, net):
+                return dpid
+        else:
+            raise ValueError("Can not find switch by classifier")
 
     def _getFirstSwitchIDInSFCI(self, sfci, direction):
-        FPSet = sfci.ForwardingPathSet
+        forwardingPathSet = sfci.forwardingPathSet
+        primaryForwardingPath = forwardingPathSet.primaryForwardingPath
         directionID = direction["ID"]
         if directionID == 0:
-            firstPath = FPSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET][0]
+            firstPath = primaryForwardingPath[DIRECTION1_PATHID_OFFSET][0]
         else:
-            firstPath = FPSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET][0]
+            firstPath = primaryForwardingPath[DIRECTION2_PATHID_OFFSET][0]
         firstSwitchID = firstPath[1]
         # the first node is a server, the second node is a switch
         return firstSwitchID
@@ -107,7 +123,7 @@ class FRR(BaseApp):
                 continue
         return port
 
-    def _installRoute4Switch2Classifier(self, SFCIID, datapath, inPortNum,
+    def _installRoute4Switch2Classifier(self, sfcUUID, datapath, inPortNum,
             classifierMAC):
         dpid = datapath.id
         ofproto = datapath.ofproto
@@ -126,35 +142,26 @@ class FRR(BaseApp):
         ]
         self._add_flow(datapath,match,inst,table_id=IPv4_CLASSIFIER_TABLE,
             priority=3)
-        # TODO: we need to add new cmd type: CMD_TYPE_DEL_SFC, to delete this route!
-        # However, before delete this route, we must check whether other SFC use the same matchFields.
-        # If yes, we can't delete this route.
-        # If no, we can delete this route.
-        # Maintain route info into self.ibm
-        # self.ibm.addSFCIFlowTableEntry(SFCIID, dpid, IPv4_CLASSIFIER_TABLE, 
-        #     matchFields)
+        self.ibm.addSFCFlowTableEntry(sfcUUID, dpid,
+            IPv4_CLASSIFIER_TABLE, matchFields)
 
     def getSFCIStageDstIP(self, sfci, stageCount, pathID):
-        if stageCount<len(sfci.VNFISequence):
-            vnfID = sfci.VNFISequence[stageCount][0].VNFID
+        if stageCount<len(sfci.vnfiSequence):
+            vnfID = sfci.vnfiSequence[stageCount][0].vnfID
         else:
             vnfID = VNF_TYPE_CLASSIFIER
-        sfcID = sfci.SFCIID
+        sfcID = sfci.sfciID
         ipNum = (10<<24) + ((vnfID & 0xF) << 20) + ((sfcID & 0xFFF) << 8) \
             + (pathID & 0xFF)
         return self._sc.int2ip(ipNum)
 
-    def _canSkipPrimaryPathFlowInstallation(self, SFCIID, dstIP,
+    def _canSkipPrimaryPathFlowInstallation(self, sfciID, dstIP,
         currentSwitchID):
         matchFields = {'eth_type':ether_types.ETH_TYPE_IP,
             'ipv4_dst':dstIP}
-        if self.ibm.hasSFCIFlowTable(SFCIID, currentSwitchID,
+        if self.ibm.hasSFCIFlowTable(sfciID, currentSwitchID,
             matchFields):
-            self.logger.warning(
-                "\n___________________________\n"
-                "Duplicate Flow Table Entry!"
-                "\n___________________________\n"
-                )
+            self.logger.warning("Duplicate Flow Table Entry!")
             return True
         else:
             return False
@@ -167,7 +174,7 @@ class FRR(BaseApp):
         return pathID
 
     def _getPrimaryPath(self, sfci, pathID):
-        primaryFP = sfci.ForwardingPathSet.primaryForwardingPath[pathID]
+        primaryFP = sfci.forwardingPathSet.primaryForwardingPath[pathID]
         return primaryFP
 
     def _getSrcDstServerInStage(self, stage):
@@ -224,7 +231,7 @@ class FRR(BaseApp):
         return False
 
     def _getBackupPaths(self,sfci,primaryPathID):
-        return sfci.ForwardingPathSet.backupForwardingPath[primaryPathID]
+        return sfci.forwardingPathSet.backupForwardingPath[primaryPathID]
 
     def _getNextHopActionFields(self, sfci, direction, currentDpid,
             nextDpid):
@@ -246,7 +253,7 @@ class FRR(BaseApp):
 
     def getServerByServerID(self, sfci, direction, nextDpid):
         self.logger.debug("getServerByServerID")
-        for vnf in sfci.VNFISequence:
+        for vnf in sfci.vnfiSequence:
             for vnfi in vnf:
                 node = vnfi.node
                 if isinstance(node,Server) and \
@@ -262,15 +269,21 @@ class FRR(BaseApp):
             else:
                 return None
 
-    def _delSfciHandler(self, cmd):
+    def _delSFCIHandler(self, cmd):
         self.logger.info('*** FRR App Received command={0}'.format(cmd))
-        sfc = cmd.attributes['sfc']
-        sfci = cmd.attributes['sfci']
-        self._delSFCIRoute(sfc,sfci)
-        self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+        try:
+            sfc = cmd.attributes['sfc']
+            sfci = cmd.attributes['sfci']
+            self._delSFCIRoute(sfc,sfci)
+            self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+            self.ibm.printUIBM()
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex,
+                "frr _delSFCIHandler")
+            self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
 
     def _delSFCIRoute(self, sfc, sfci):
-        for dpid,entrys in self.ibm.getSFCIFlowTable(sfci.SFCIID).items():
+        for dpid,entrys in self.ibm.getSFCIFlowTable(sfci.sfciID).items():
             for entry in entrys:
                 datapath = self.dpset.get(int(str(dpid), 0))
                 parser = datapath.ofproto_parser
@@ -280,13 +293,48 @@ class FRR(BaseApp):
                 self._del_flow(datapath, match, table_id=tableID, priority=1)
                 if entry.has_key("groupID"):
                     groupID = entry["groupID"]
-                    self._delUFRRSFCIGroupTable(datapath, groupID)
-                    self.ibm.delGroupID(dpid,groupID)
-        self.ibm.delSFCIFlowTableEntry(sfci.SFCIID)
+                    self._delSFCIGroupTable(datapath, groupID)
+                    self.ibm.delGroupID(dpid, groupID)
+        self.ibm.delSFCIFlowTableEntry(sfci.sfciID)
 
-    def _delUFRRSFCIGroupTable(self, datapath, groupID):
+    def _delSFCIGroupTable(self, datapath, groupID):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         req = parser.OFPGroupMod(datapath, ofproto.OFPGC_DELETE, 
             ofproto.OFPGT_FF, groupID)
         datapath.send_msg(req)
+
+    def _delSFCHandler(self, cmd):
+        self.logger.info('*** FRR App Received command={0}'.format(cmd))
+        try:
+            sfc = cmd.attributes['sfc']
+            self._delRoute2Classifier(sfc)
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_SUCCESSFUL)
+            self.ibm.printUIBM()
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex,
+                "frr _delSFCHandler")
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_FAIL)
+
+    def _delRoute2Classifier(self, sfc):
+        # delete route to classifier
+        for direction in sfc.directions:
+            dpid = self._getSwitchByClassifier(direction['ingress'])
+            datapath = self.dpset.get(int(str(dpid), 0))
+            self._deleteRoute4Switch2Classifier(sfc.sfcUUID, datapath)
+
+    def _deleteRoute4Switch2Classifier(self, sfcUUID, datapath):
+        dpid = datapath.id
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+        matchFields = self.ibm.getSFCFlowTableEntryMatchFields(sfcUUID,
+            dpid, IPv4_CLASSIFIER_TABLE)
+        match = parser.OFPMatch(**matchFields)
+        # Before delete this route, we must check whether other SFC use the same matchFields.
+        count = self.ibm.countFlowTable(dpid, matchFields)
+        if count == 1: # If no, we can delete this route.
+            self._del_flow(datapath, match, table_id=IPv4_CLASSIFIER_TABLE,
+                priority=3)
+        else: # If yes, we can't delete this route.
+            pass
+        self.ibm.delSFCFlowTableEntry(sfcUUID)

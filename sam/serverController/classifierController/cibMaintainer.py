@@ -13,6 +13,7 @@ from sam.serverController.bessInfoBaseMaintainer import *
 
 # TODO: need test
 
+
 class CIBMS(object):
     def __init__(self):
         self._cibms = {} # {serverID:CIBMaintainer}
@@ -26,11 +27,12 @@ class CIBMS(object):
     def getCibm(self, serverID):
         return self._cibms[serverID]
 
+
 class CIBMaintainer(BessInfoBaseMaintainer):
     '''Classifiers Information Base Maintainer'''
     def __init__(self, *args, **kwargs):
         super(CIBMaintainer, self).__init__(*args, **kwargs)
-        self._sfcSet = {}   # {sfcUUID:[sfciid]}
+        self._sfcSet = {}   # {sfcUUID:[sfciID]}
 
     def addSFCDirection(self,sfcUUID,directionID):
         self._sfcSet[(sfcUUID,directionID)] = []
@@ -38,11 +40,11 @@ class CIBMaintainer(BessInfoBaseMaintainer):
     def delSFCDirection(self,sfcUUID,directionID):
         del self._sfcSet[(sfcUUID,directionID)]
 
-    def addSFCIDirection(self,sfcUUID,directionID,SFCIID):
-        self._sfcSet[(sfcUUID,directionID)].append(SFCIID)
+    def addSFCIDirection(self,sfcUUID,directionID,sfciID):
+        self._sfcSet[(sfcUUID,directionID)].append(sfciID)
 
-    def delSFCIDirection(self,sfcUUID,directionID,SFCIID):
-        self._sfcSet[(sfcUUID,directionID)].remove(SFCIID)
+    def delSFCIDirection(self,sfcUUID,directionID,sfciID):
+        self._sfcSet[(sfcUUID,directionID)].remove(sfciID)
 
     def canDeleteSFCDirection(self,sfcUUID,directionID):
         return self._sfcSet[(sfcUUID,directionID)] == []
@@ -50,11 +52,11 @@ class CIBMaintainer(BessInfoBaseMaintainer):
     def hasSFCDirection(self,sfcUUID,direction):
         return self._sfcSet.has_key((sfcUUID,direction))
 
-    def assignHashLBOGatesList(self,serverID,sfcUUID,direction,SFCIID):
+    def assignHashLBOGatesList(self,serverID,sfcUUID,direction,sfciID):
         hashLBName = self.getHashLBName(sfcUUID,direction)
         OGateList = self.getModuleOGateNumList(hashLBName)
         oGateNum = self.genAvailableMiniNum4List(OGateList)
-        self.addOGate2Module(hashLBName,SFCIID,oGateNum)
+        self.addOGate2Module(hashLBName,sfciID,oGateNum)
         OGateList.append(oGateNum)
         return OGateList
 
@@ -62,3 +64,6 @@ class CIBMaintainer(BessInfoBaseMaintainer):
         mclass = "HashLB"
         moduleNameSuffix = '_' + str(sfcUUID) + '_' + str(direction['ID'])
         return mclass + moduleNameSuffix
+
+    def getSFCSet(self):
+        return self._sfcSet

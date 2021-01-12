@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.xibMaintainer import *
+from sam.base.xibMaintainer import XInfoBaseMaintainer
 
 # TODO : test
 

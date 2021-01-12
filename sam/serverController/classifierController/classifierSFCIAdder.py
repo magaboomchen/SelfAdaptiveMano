@@ -16,6 +16,7 @@ from sam.serverController.bessInfoBaseMaintainer import *
 from sam.serverController.classifierController.classifierInitializer import *
 from sam.serverController.classifierController.classifierSFCAdder import *
 
+
 class ClassifierSFCIAdder(BessControlPlane):
     def __init__(self,cibms,logger):
         super(ClassifierSFCIAdder,self).__init__()
@@ -28,25 +29,29 @@ class ClassifierSFCIAdder(BessControlPlane):
         sfc = cmd.attributes['sfc']
         sfci = cmd.attributes['sfci']
         sfcUUID = sfc.sfcUUID
-        SFCIID = sfci.SFCIID
+        sfciID = sfci.sfciID
+        self.logger.debug("addSFCI sfcUUID:{0}, sfciID:{1}".format(
+            sfcUUID, sfciID
+        ))
         for direction in sfc.directions:
             classifier = direction['ingress']
             serverID = classifier.getServerID()
             if not self.cibms.hasCibm(serverID):
                 self.clsfSFCInitializer.initClassifier(direction)
+            self.logger.debug("addSFCIHandler serverID:{0}".format(serverID))
             cibm = self.cibms.getCibm(serverID)
             if not cibm.hasSFCDirection(sfcUUID,direction["ID"]):
                 self.clsfSFCAdder.addSFC(sfcUUID,direction)
             self._addModules(sfc,sfcUUID,sfci,direction)
             self._addRules(sfcUUID,sfci,direction)
             self._addLinks(sfcUUID,sfci,direction)
-            cibm.addSFCIDirection(sfcUUID,direction['ID'],SFCIID)
+            cibm.addSFCIDirection(sfcUUID,direction['ID'],sfciID)
 
     def _addModules(self,sfc,sfcUUID,sfci,direction):
         classifier = direction['ingress']
         serverID = classifier.getServerID()
         cibm = self.cibms.getCibm(serverID)
-        SFCIID = sfci.SFCIID
+        sfciID = sfci.sfciID
 
         bessServerUrl = classifier.getControlNICIP() + ":10514"
         self.logger.info(bessServerUrl)
@@ -54,7 +59,7 @@ class ClassifierSFCIAdder(BessControlPlane):
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())
 
-            moduleNameSuffix = self.getSFCIModuleSuffix(SFCIID,direction)
+            moduleNameSuffix = self.getSFCIModuleSuffix(sfciID,direction)
 
             # GenericDecap()
             argument = Any()
@@ -70,12 +75,12 @@ class ClassifierSFCIAdder(BessControlPlane):
             argument = Any()
             tunnelSrcIP = self._sc.aton(classifier.getDatapathNICIP())
             if direction['ID'] == 0:
-                VNFID = sfc.vNFTypeSequence[0]
-                PathID = DIRECTION1_PATHID_OFFSET
+                vnfID = sfc.vNFTypeSequence[0]
+                pathID = DIRECTION1_PATHID_OFFSET
             else:
-                VNFID = sfc.vNFTypeSequence[0]
-                PathID = DIRECTION2_PATHID_OFFSET
-            tunnelDstIP = self._sc.aton(self._genIP4SVPIDs(SFCIID,VNFID,PathID))
+                vnfID = sfc.vNFTypeSequence[0]
+                pathID = DIRECTION2_PATHID_OFFSET
+            tunnelDstIP = self._sc.aton(self._genIP4SVPIDs(sfciID,vnfID,pathID))
             arg = module_msg_pb2.SetMetadataArg(attrs=[
                 {'name':"ip_src", 'size':4, 'value_bin':tunnelSrcIP},
                 {'name':"ip_dst", 'size':4, 'value_bin':tunnelDstIP},
@@ -105,7 +110,7 @@ class ClassifierSFCIAdder(BessControlPlane):
         classifier = direction['ingress']
         serverID = classifier.getServerID()
         cibm = self.cibms.getCibm(serverID)
-        SFCIID = sfci.SFCIID
+        sfciID = sfci.sfciID
 
         bessServerUrl = classifier.getControlNICIP() + ":10514"
         with grpc.insecure_channel(bessServerUrl) as channel:
@@ -117,7 +122,7 @@ class ClassifierSFCIAdder(BessControlPlane):
             # add hash LB gate
             argument = Any()
             gateNumList = cibm.assignHashLBOGatesList(serverID,sfcUUID,
-                direction, SFCIID)
+                direction, sfciID)
             arg = module_msg_pb2.HashLBCommandSetGatesArg(gates=gateNumList)
             argument.Pack(arg)
             response = stub.ModuleCommand(bess_msg_pb2.CommandRequest(
@@ -129,7 +134,7 @@ class ClassifierSFCIAdder(BessControlPlane):
         classifier = direction['ingress']
         serverID = classifier.getServerID()
         cibm = self.cibms.getCibm(serverID)
-        SFCIID = sfci.SFCIID
+        sfciID = sfci.sfciID
 
         bessServerUrl = classifier.getControlNICIP() + ":10514"
         self.logger.info(bessServerUrl)
@@ -139,7 +144,7 @@ class ClassifierSFCIAdder(BessControlPlane):
 
             hashLBName = cibm.getHashLBName(sfcUUID,direction)
 
-            moduleNameSuffix = self.getSFCIModuleSuffix(SFCIID,direction)
+            moduleNameSuffix = self.getSFCIModuleSuffix(sfciID,direction)
             mclass = "GenericDecap"
             genericDecapName = mclass + moduleNameSuffix
 
@@ -151,7 +156,7 @@ class ClassifierSFCIAdder(BessControlPlane):
 
             # Connection
             # hlb: gate -> gd
-            ogate = cibm.getModuleOGate(hashLBName,SFCIID)
+            ogate = cibm.getModuleOGate(hashLBName,sfciID)
             response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
                 m1=hashLBName,m2=genericDecapName,ogate=ogate,igate=0))
             self._checkResponse(response)

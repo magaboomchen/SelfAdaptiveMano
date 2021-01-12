@@ -46,7 +46,7 @@ class TestSFFSFCIAdderClass(TestBase):
         yield
         # teardown
         self.vC.uninstallVNF("t1", "123", "192.168.122.134",
-            self.sfci.VNFISequence[0][0].VNFIID)
+            self.sfci.vnfiSequence[0][0].vnfiID)
         self.killSFFController()
 
     def runSFFController(self):
@@ -58,7 +58,7 @@ class TestSFFSFCIAdderClass(TestBase):
         # exercise
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SSF_CONTROLLER_CMD , self.addSFCICmd)
+            MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
 
         # verify
         self.verifyArpResponder()
@@ -68,7 +68,7 @@ class TestSFFSFCIAdderClass(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
-                self.sfci.VNFISequence[0][0].VNFIID)
+                self.sfci.vnfiSequence[0][0].vnfiID)
             logging.info(
                 "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,

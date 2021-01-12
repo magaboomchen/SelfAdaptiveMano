@@ -28,6 +28,7 @@ from sam.base.command import *
 from sam.base.path import *
 from sam.base.socketConverter import *
 from sam.base.vnf import *
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.serverController.serverManager.serverManager import *
 
 
@@ -38,20 +39,33 @@ class UFRR(FRR):
         self.ibm = UIBMaintainer()
         self.logger.info("UFRR App is running !")
 
-    def _addSfciHandler(self, cmd):
+    def _addSFCHandler(self, cmd):
+        self.logger.debug(
+            '*** FRR App Received command={0}'.format(cmd)
+            )
+        try:
+            sfc = cmd.attributes['sfc']
+            self._addRoute2Classifier(sfc)
+            self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex,
+                "Ryu app UFRR _addSFCHandler ")
+            self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
+        finally:
+            pass
+
+    def _addSFCIHandler(self, cmd):
         self.logger.debug(
             '*** FRR App Received command={0}'.format(cmd)
             )
         try:
             sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
-            self._addRoute2Classifier(sfc,sfci)
             self._addSFCIRoute(sfc,sfci)
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
         except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            self.logger.error("Ryu app UFRR occure error: {0}".format(message))
+            ExceptionProcessor(self.logger).logException(ex,
+                "Ryu app UFRR _addSFCIHandler ")
             self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
         finally:
             pass
@@ -84,14 +98,14 @@ class UFRR(FRR):
                 self.logger.info("assignGroupID:{0}".format(groupID))
                 nextNodeID = stage[i+1]
 
-                if self._canSkipPrimaryPathFlowInstallation(sfci.SFCIID, dstIP,
+                if self._canSkipPrimaryPathFlowInstallation(sfci.sfciID, dstIP,
                     currentSwitchID):
                     continue
 
                 self._addUFRRSFCIGroupTable(currentSwitchID,
                     nextNodeID, sfci, direction, stageCount, groupID)
                 self._addUFRRSFCIFlowtable(currentSwitchID,
-                    sfci.SFCIID, dstIP, groupID)
+                    sfci.sfciID, dstIP, groupID)
 
     def _addUFRRSFCIGroupTable(self, currentDpid, nextDpid, sfci, direction,
             stageCount, groupID):
@@ -148,7 +162,7 @@ class UFRR(FRR):
                                     ofproto.OFPGT_FF, groupID, buckets)
         datapath.send_msg(req)
 
-    def _addUFRRSFCIFlowtable(self, currentDpid, SFCIID, dstIP, groupID):
+    def _addUFRRSFCIFlowtable(self, currentDpid, sfciID, dstIP, groupID):
         self.logger.info("_addUFRRSFCIFlowtable")
         datapath = self.dpset.get(int(str(currentDpid),0))
         ofproto = datapath.ofproto
@@ -165,7 +179,7 @@ class UFRR(FRR):
         ]
         self._add_flow(datapath, match, inst, table_id=UFRR_TABLE,
             priority = 1)
-        self.ibm.addSFCIFlowTableEntry(SFCIID,currentDpid,
+        self.ibm.addSFCIFlowTableEntry(sfciID,currentDpid,
             UFRR_TABLE, matchFields, groupID)
 
     def _getNewDstIP(self, currentDpid, nextDpid, sfci, direction,
@@ -186,7 +200,7 @@ class UFRR(FRR):
         for key,value in backupFPs.items():
             (currentID, nextID, pathID) = key
             FP = value
-            sfciLength = len(sfci.VNFISequence)
+            sfciLength = len(sfci.vnfiSequence)
             fpLength = len(FP)
             stageCount = sfciLength - fpLength
             self.logger.info("_installBackupPaths")
@@ -236,7 +250,7 @@ class UFRR(FRR):
         self.logger.debug("_packet_in_handler: Add_flow")
         self._add_flow(datapath, match, inst, table_id=UFRR_TABLE,
             priority=1)
-        self.ibm.addSFCIFlowTableEntry(sfci.SFCIID,currentDpid,
+        self.ibm.addSFCIFlowTableEntry(sfci.sfciID,currentDpid,
             UFRR_TABLE, matchFields)
 
 

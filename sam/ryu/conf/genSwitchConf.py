@@ -54,8 +54,8 @@ class SwitchConfGenerator(object):
 
 if __name__ == '__main__':
     s1 = SwitchConf(0x0000000000000001, "SWITCH_TYPE_DCNGATEWAY", 1, "1.1.1.1", "1.1.1.2")
-    s2 = SwitchConf(0x0000000000000002, "SWITCH_TYPE_TOR", 2)
-    s3 = SwitchConf(0x0000000000000003, "SWITCH_TYPE_TOR", 3)
+    s2 = SwitchConf(0x0000000000000002, "SWITCH_TYPE_SFF", 2)
+    s3 = SwitchConf(0x0000000000000003, "SWITCH_TYPE_SFF", 3)
 
     scg = SwitchConfGenerator()
     scg.addSwtichTopoConf(s1)

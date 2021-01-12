@@ -2,8 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 class User(object):
-    def __init__(self, userID, userType, SFCRequests=None, VNFRequests=None):
+    def __init__(self, userID, userType, sfcRequests=None, vnfRequests=None):
         self.userID = userID
         self.userType = userType
-        self.SFCRequests = SFCRequests
-        self.VNFRequests = VNFRequests
+        self.sfcRequests = sfcRequests
+        self.vnfRequests = vnfRequests

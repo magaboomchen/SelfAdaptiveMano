@@ -9,6 +9,7 @@ import pytest
 from ryu.controller import dpset
 
 from sam.ryu.topoCollector import TopoCollector
+from sam.base.path import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
@@ -17,13 +18,13 @@ logging.basicConfig(level=logging.INFO)
 
 class TestNotViaClass(TestBase):
     def genUniDirection10BackupSFCI(self):
-        VNFISequence = self.gen10BackupVNFISequence()
-        return SFCI(self.assignSFCIID(),VNFISequence, None,
+        vnfiSequence = self.gen10BackupVNFISequence()
+        return SFCI(self.assignSFCIID(),vnfiSequence, None,
             self.genUniDirection10BackupForwardingPathSet())
 
     def genUniDirection10BackupForwardingPathSet(self):
         primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
-        frrType = "NotVia"
+        mappingType = "NotVia"
         # {(srcID,dstID,pathID):forwardingPath}
         backupForwardingPath = {
             1:{
@@ -31,7 +32,7 @@ class TestNotViaClass(TestBase):
                 (2,1,3):[[2,3,1]],
             }
         }
-        return ForwardingPathSet(primaryForwardingPath,frrType,
+        return ForwardingPathSet(primaryForwardingPath,mappingType,
             backupForwardingPath)
 
     @pytest.fixture(scope="function")
@@ -61,7 +62,7 @@ class TestNotViaClass(TestBase):
         self.runSFFController()
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SSF_CONTROLLER_CMD, self.addSFCICmd)
+            MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
@@ -80,7 +81,7 @@ class TestNotViaClass(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
-                self.sfci.VNFISequence[0][0].VNFIID)
+                self.sfci.vnfiSequence[0][0].vnfiID)
             logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
@@ -91,7 +92,7 @@ class TestNotViaClass(TestBase):
 
     def delVNFI4Server(self):
         self.vC.uninstallVNF("t1", "123", "192.168.122.134",
-                    self.sfci.VNFISequence[0][0].VNFIID)
+                    self.sfci.vnfiSequence[0][0].vnfiID)
         # Here has a unstable bug
         # In sometimes, we can't delete VNFI, you should delete it manually
         # Command: sudo docker stop name1
@@ -142,7 +143,7 @@ class TestNotViaClass(TestBase):
         self.runSFFController()
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SSF_CONTROLLER_CMD , self.addSFCICmd)
+            MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL

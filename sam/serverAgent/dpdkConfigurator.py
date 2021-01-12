@@ -7,7 +7,8 @@ from sam.base.loggerConfigurator import LoggerConfigurator
 
 UNBIND = 0
 BIND_IGB_UIO = 1
-BIND_OTHER_DRIVER = 2
+BIND_I40E = 2
+BIND_OTHER_DRIVER = 3
 
 
 class DPDKConfigurator(object):
@@ -26,6 +27,9 @@ class DPDKConfigurator(object):
             pass
         elif status == UNBIND:
             self.bindNIC()
+        elif status == BIND_I40E:
+            self.unbindNIC()
+            self.bindNIC()
         elif status == BIND_OTHER_DRIVER:
             self.unbindNIC()
             self.bindNIC()
@@ -34,9 +38,9 @@ class DPDKConfigurator(object):
             exit(1)
 
     def insertIGB_UIO(self):
-        out_bytes = subprocess.check_output(['lsmod'],shell=True)
+        out_bytes = subprocess.check_output(['lsmod'], shell=True)
         if out_bytes.find('igb_uio') == -1:
-            out_bytes = subprocess.check_output(['sudo modprobe uio'],shell=True)
+            out_bytes = subprocess.check_output(['sudo modprobe uio'], shell=True)
             out_bytes = subprocess.check_output(
                 ['sudo insmod $RTE_SDK/build/kmod/igb_uio.ko'],
                 shell=True
@@ -56,6 +60,8 @@ class DPDKConfigurator(object):
             out_text = out_bytes.split('drv=')[1].split(' unused=')[0]
             if out_text == 'igb_uio':
                 return BIND_IGB_UIO
+            elif out_text == 'i40e':
+                return BIND_I40E
             else:
                 return BIND_OTHER_DRIVER
 

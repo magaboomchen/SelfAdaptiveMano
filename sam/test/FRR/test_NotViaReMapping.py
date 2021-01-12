@@ -9,6 +9,7 @@ import pytest
 from ryu.controller import dpset
 
 from sam.ryu.topoCollector import TopoCollector
+from sam.base.path import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
@@ -26,9 +27,9 @@ class TestNotViaAndReMappingClass(TestFRR):
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genUniDirectionSFC(classifier)
         self.sfci = self.genUniDirection12BackupSFCI()
-        self.SFCIID = self.sfci.SFCIID
-        self.VNFISequence = self.sfci.VNFISequence
-        self.newSfci = self.genReMappingUniDirection12BackupSFCI(self.SFCIID, self.VNFISequence)
+        self.sfciID = self.sfci.sfciID
+        self.vnfiSequence = self.sfci.vnfiSequence
+        self.newSfci = self.genReMappingUniDirection12BackupSFCI(self.sfciID, self.vnfiSequence)
 
         self.mediator = MediatorStub()
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
@@ -54,7 +55,7 @@ class TestNotViaAndReMappingClass(TestFRR):
 
     def genUniDirection12BackupForwardingPathSet(self):
         primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
-        frrType = "NotVia"
+        mappingType = "NotVia"
         # {(srcID,dstID,pathID):forwardingPath}
         backupForwardingPath = {
             1:{
@@ -62,16 +63,16 @@ class TestNotViaAndReMappingClass(TestFRR):
                 (2,1,3):[[2,3,1]]
             }
         }
-        return ForwardingPathSet(primaryForwardingPath, frrType,
+        return ForwardingPathSet(primaryForwardingPath, mappingType,
             backupForwardingPath)
 
-    def genReMappingUniDirection12BackupSFCI(self, SFCIID, VNFISequence):
-        return SFCI(SFCIID, VNFISequence, None,
+    def genReMappingUniDirection12BackupSFCI(self, sfciID, vnfiSequence):
+        return SFCI(sfciID, vnfiSequence, None,
             self.genNewUniDirection12BackupForwardingPathSet())
 
     def genNewUniDirection12BackupForwardingPathSet(self):
         primaryForwardingPath = {1:[[10001,1,2,10004],[10004,2,1,10001]]}
-        frrType = "NotVia"
+        mappingType = "NotVia"
         # {(srcID,dstID,pathID):forwardingPath}
         backupForwardingPath = {
             1:{
@@ -79,7 +80,7 @@ class TestNotViaAndReMappingClass(TestFRR):
                 (2,1,3):[[2,3,1]]
             }
         }
-        return ForwardingPathSet(primaryForwardingPath, frrType,
+        return ForwardingPathSet(primaryForwardingPath, mappingType,
             backupForwardingPath)
 
     # @pytest.mark.skip(reason='Temporarly')

@@ -19,9 +19,10 @@ import pika
 from pika.exceptions import ChannelClosed
 from pika.exceptions import ReentrancyError
 
-from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.command import *
 from sam.base.request import *
+from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.exceptionProcessor import ExceptionProcessor
 
 threadLock = threading.Lock()
 
@@ -42,6 +43,7 @@ SERVER_CLASSIFIER_CONTROLLER_QUEUE = "SERVER_CLASSIFIER_CONTROLLER_QUEUE"
 SERVER_MANAGER_QUEUE = "SERVER_MANAGER_QUEUE"
 NETWORK_CONTROLLER_QUEUE = "NETWORK_CONTROLLER_QUEUE"
 MININET_TESTER_QUEUE = "MININET_TESTER_QUEUE"
+SIMULATOR_QUEUE = "SIMULATOR_QUEUE"
 
 # general use case
 MSG_TYPE_STRING = "MSG_TYPE_STRING"
@@ -51,8 +53,8 @@ MSG_TYPE_REPLY = "MSG_TYPE_REPLY"
 MSG_TYPE_MEDIATOR_CMD = "MSG_TYPE_MEDIATOR_CMD"
 MSG_TYPE_MEDIATOR_CMD_REPLY = "MSG_TYPE_MEDIATOR_CMD_REPLY"
 # mediator use case
-MSG_TYPE_SSF_CONTROLLER_CMD = "MSG_TYPE_SSF_CONTROLLER_CMD"
-MSG_TYPE_SSF_CONTROLLER_CMD_REPLY = "MSG_TYPE_SSF_CONTROLLER_CMD_REPLY"
+MSG_TYPE_SFF_CONTROLLER_CMD = "MSG_TYPE_SFF_CONTROLLER_CMD"
+MSG_TYPE_SFF_CONTROLLER_CMD_REPLY = "MSG_TYPE_SFF_CONTROLLER_CMD_REPLY"
 MSG_TYPE_VNF_CONTROLLER_CMD = "MSG_TYPE_VNF_CONTROLLER_CMD"
 MSG_TYPE_VNF_CONTROLLER_CMD_REPLY = "MSG_TYPE_VNF_CONTROLLER_CMD_REPLY"
 MSG_TYPE_SERVER_MANAGER_CMD = "MSG_TYPE_SERVER_MANAGER_CMD"
@@ -61,6 +63,8 @@ MSG_TYPE_NETWORK_CONTROLLER_CMD = "MSG_TYPE_NETWORK_CONTROLLER_CMD"
 MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY = "MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY"
 MSG_TYPE_CLASSIFIER_CONTROLLER_CMD = "MSG_TYPE_CLASSIFIER_CONTROLLER_CMD"
 MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY = "MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY"
+MSG_TYPE_SIMULATOR_CMD = "MSG_TYPE_SIMULATOR_CMD"
+MSG_TYPE_SIMULATOR_CMD_REPLY = "MSG_TYPE_SIMULATOR_CMD_REPLY"
 # server manager use case
 MSG_TYPE_SERVER_REPLY = "MSG_TYPE_SERVER_REPLY"
 # tester use case
@@ -158,10 +162,8 @@ class MessageAgent(object):
                 self.logger.debug(" [x] Sent %r" % message)
                 channel.close()
             except Exception as ex:
-                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                message = template.format(type(ex).__name__, ex.args)
-                self.logger.error(
-                    "MessageAgent sendMsg failed!: {0}".format(message))
+                ExceptionProcessor(self.logger).logException(ex,
+                    "MessageAgent sendMsg failed")
             finally:
                 if self._publisherConnection.is_open:
                     self._publisherConnection.close()
@@ -190,7 +192,7 @@ class MessageAgent(object):
                 threadLock.release()
                 return result
 
-    def getMsg(self,srcQueueName, throughput=1000):
+    def getMsg(self, srcQueueName, throughput=1000):
         # poll-mode: we need to trade-off between 
         # cpu utilization and performance
         time.sleep(1/float(throughput))    # throughput pps msg
@@ -294,9 +296,8 @@ class QueueReciever(threading.Thread):
                     "Used by BlockingConnection/BlockingChannel.")
                 return None
             except Exception as ex:
-                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                message = template.format(type(ex).__name__, ex.args)
-                self.logger.error("MessageAgent recvMsg failed! occure error: {0}".format(message))
+                ExceptionProcessor(self.logger).logException(ex,
+                    "MessageAgent recvMsg failed")
 
     def callback(self,ch, method, properties, body):
         self.logger.debug(" [x] Received %r" % body)

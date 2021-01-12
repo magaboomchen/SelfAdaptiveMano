@@ -23,25 +23,38 @@ SERVER_TYPE_TESTER = "tester"
 class Server(object):
     def __init__(self, controlIfName, datapathIfIP, serverType):
         # each server has at least two nic, one for control, another for data processing
-        self._serverID = None
+        self._serverID = None   # an uuid
         self._serverType = serverType
 
-        self._controlIfName = controlIfName
-        self._serverControlNICMAC = None
-        self._serverDatapathNICIP = datapathIfIP
-        self._serverDatapathNICMAC = None
-        self._ifSet = {}
+        self._controlIfName = controlIfName # string, e.g. "eno2"
+        self._serverControlNICIP = None     # string, e.g. "2.2.0.35"
+        self._serverControlNICMAC = None    # string, e.g. "18:66:da:86:4c:16"
+        self._serverDatapathNICIP = datapathIfIP    # string, e.g. "2.2.0.36"
+        self._serverDatapathNICMAC = None   # string, e.g. "18:66:da:86:4c:16"
+        self._ifSet = {}    # self.updateIfSet()
 
-        self._memoryDesign = None # "SMP", "NUMA"
-        self._cpuSocketsNum = None
-        self._CPUNum = None # list of int, e.g. [6,6] for two numa nodes
-        self._CPUUtil = None # list of float, e.g. [100.0, 0.0, ..., 100.0]
+        self._routingTag = {}  # 4 type routing tag
+        # ['ip'] = ['ip1', 'ip2']
+        # ['identification'] = ['id1', 'id2']
+        # ['geo'] = ['geo1', 'geo2']
+        # ['content'] = ['c1', 'c2']
+
+        self._supportVNFSet = []    # see vnf.py, e.g. [VNF_TYPE_FW, VNF_TYPE_IDS]
+
+        self._memoryAccessMode = None # "SMP", "NUMA"
+        # There is a misunderstanding between socket and NUMA, we need discuss with DPDK community
+        self._socketNum = None  # int
+        self._coreSocketDistribution = None # list of int, e.g. [6,6] means socket 0 has 6 cores, socket 1 has 6 cores
+        self._numaNum = None    # int
+        self._coreNUMADistribution = None # list of list, e.g. [[0,2,4,6,8,10],[1,3,5,7,9,11]]
+        self._coreUtilization = None # list of float, e.g. [100.0, 0.0, ..., 100.0]
         self._hugepagesTotal = None # list of int, e.g. [14,13] for two numa nodes
-        self._hugepagesFree = None # list of int
+        self._hugepagesFree = None # list of int, e.g. [10,13] for two numa nodes
         self._hugepageSize = None # unit: kB
+        self._nicBandwidth = 10 # unit: Gbps, default is 10 Gbps
 
-    def setServerID(self, id):
-        self._serverID = id
+    def setServerID(self, serverID):
+        self._serverID = serverID
 
     def setControlNICIP(self, controlNICIP):
         ifName = self._controlIfName
@@ -106,11 +119,22 @@ class Server(object):
 
     def _getHwAddrInDPDK(self):
         command = "echo -ne \'\n\' | sudo $RTE_SDK/build/app/testpmd | grep \"Port 0: \""
-        res = subprocess.Popen(command, shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True)
-        result = str(res.stdout.readlines())
-        if result.find("Port 0: ")==-1:
+        res = subprocess.Popen(command, shell=True, 
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+        result = res.stdout.readlines()
+        outputText = str(result)
+        if outputText.find("Port 0: ")==-1:
             raise ValueError("get data path nic mac address error, maybe run out of hugepages?")
-        final = result.split(' ')[2][0:17]
+        
+        for reg in result:
+            if reg.count(":") == 6:
+                final = reg.split(' ')[2][0:17]
+                break
+            elif reg.find("Link Down") != -1:
+                print("link down")
+                # raise ValueError("datapath nic link down!")
+        else:
+            raise ValueError("get data path nic mac address error, unknown reason.")
         return final
 
     def _getHwAddrInKernel(self, ifName):
@@ -118,66 +142,135 @@ class Server(object):
         return ethMac
 
     def _getIPList(self, ifName):
-        addresses = [i['addr'] for i in ifaddresses(ifName).setdefault(AF_INET,[{'addr':'No IP addr'}])  ]
+        addresses = [i['addr'] for i in ifaddresses(ifName).setdefault(AF_INET,[{'addr':'No IP addr'}])]
         addList = []
         for add in addresses:
             addList.append( str(add) )
         return addList
 
+    def addVNFSupport(self, vnfType):
+        self._supportVNFSet.append(vnfType)
+    
+    def getVNFSupport(self):
+        return self._supportVNFSet
+
     def printCpuUtil(self):
         for x in range(10):
             logging.info(psutil.cpu_percent(interval=1, percpu=True))
 
+    def getMemoryAccessMode(self):
+        return self._memoryAccessMode
+
+    def getSocketNum(self):
+        return self._socketNum
+
+    def getCoreSocketDistribution(self):
+        return self._coreSocketDistribution
+
+    def getNUMANum(self):
+        return self._numaNum
+
+    def getCoreNUMADistribution(self):
+        return self._coreNUMADistribution
+
+    def getCpuUtil(self):
+        return self._updateCpuUtil
+
+    def getHugepagesTotal(self):
+        return self._hugepagesTotal
+
+    def getHugepagesFree(self):
+        return self._hugepagesFree
+
+    def getHugepagesSize(self):
+        return self._hugepageSize
+
+    def getMaxCores(self):
+        coreNum = 0
+        for item in self.getCoreNUMADistribution():
+            coreNum = coreNum + len(item)
+        return coreNum - 2  # reserve one core for OS and one core for BESS
+
+    def getMaxMemory(self):
+        hugepages = 0
+        for pages in self.getHugepagesTotal():
+            hugepages = hugepages + pages
+        return hugepages*self.getHugepagesSize()/1024/1024    # unit: GB
+
     def updateResource(self):
-        self._updateMemDesign()
-        self._updateSocketsNum()
-        self._updateCpuCount()
+        self._updateMemAccessMode()
+        self._updateSocketNum()
+        self._updateCoreSocketDistribution()
+        self._updateNUMANum()
+        self._updateCoreNUMADistribution()
         self._updateCpuUtil()
         self._updateHugepagesTotal()
         self._updateHugepagesFree()
         self._updateHugepagesSize()
 
-    def _updateMemDesign(self):
+    def _updateMemAccessMode(self):
         rv = subprocess.check_output("lscpu | grep -i numa | grep 'NUMA node(s):'", shell=True)
         rv = int(rv.strip("\n").split(":")[1])
         if rv <= 1:
-            self._memoryDesign = "SMP"
+            self._memoryAccessMode = "SMP"
         else:
-            self._memoryDesign = "NUMA"
+            self._memoryAccessMode = "NUMA"
 
-    def _updateSocketsNum(self):
-        self._cpuSocketsNum =  int(subprocess.check_output('cat /proc/cpuinfo | grep "physical id" | sort -u | wc -l', shell=True))
+    def _updateSocketNum(self):
+        rv = subprocess.check_output(' lscpu | grep Socket ', shell=True)
+        rv = rv.strip("\n").split(":")[1]
+        self._socketNum = int(rv)
 
-    def _updateCpuCount(self):
-        self._CPUNum = []
-        for nodeIndex in range(self._cpuSocketsNum):
+    def _updateCoreSocketDistribution(self):
+        self._coreSocketDistribution = []
+        for nodeIndex in range(self._socketNum):
             regexp = "'NUMA node{0} CPU(s):'".format(nodeIndex)
             cmd = "lscpu | grep -i numa | grep {0}".format(regexp)
-            print(cmd)
             rv = subprocess.check_output([cmd], shell=True)
             rv = rv.strip("\n").split(":")[1].split(",")
             coreNum = len(rv)
-            self._CPUNum.append(coreNum)
+            self._coreSocketDistribution.append(coreNum)
+
+    def _updateNUMANum(self):
+        rv = subprocess.check_output(" lscpu | grep 'NUMA node(s)' ", shell=True)
+        rv = rv.strip("\n").split(":")[1]
+        self._numaNum = int(rv)
+
+    def _updateCoreNUMADistribution(self):
+        self._coreNUMADistribution = []
+        for nodeIndex in range(self._socketNum):
+            regexp = "'NUMA node{0} CPU(s):'".format(nodeIndex)
+            cmd = "lscpu | grep -i numa | grep {0}".format(regexp)
+            rv = subprocess.check_output([cmd], shell=True)
+            rv = rv.strip("\n").split(":")[1]
+            if rv.find(",") != -1:
+                rv = rv.split(",")
+                rv = map(lambda x : int(x), rv) 
+            elif rv.find("-") != -1:
+                rv = rv.split("-")
+                rv = map(lambda x : int(x), rv) 
+                rv = range(rv[0], rv[1]+1)
+            else:
+                raise ValueError("Can't parse NUMA Core")
+            self._coreNUMADistribution.append(rv)
 
     def _updateCpuUtil(self):
-        self._CPUUtil = psutil.cpu_percent(percpu=True)
+        self._coreUtilization = psutil.cpu_percent(percpu=True)
 
     def _updateHugepagesTotal(self):
         self._hugepagesTotal = []
-        for nodeIndex in range(self._cpuSocketsNum):
+        for nodeIndex in range(self._socketNum):
             regexp = "'Node {0} HugePages_Total:'".format(nodeIndex)
             cmd = "cat /sys/devices/system/node/node*/meminfo | fgrep Huge | grep {0}".format(regexp)
-            print(cmd)
             rv = subprocess.check_output([cmd], shell=True)
             rv = int(rv.strip("\n").split(":")[1])
             self._hugepagesTotal.append(rv)
 
     def _updateHugepagesFree(self):
         self._hugepagesFree = []
-        for nodeIndex in range(self._cpuSocketsNum):
+        for nodeIndex in range(self._socketNum):
             regexp = "'Node {0} HugePages_Free:'".format(nodeIndex)
             cmd = "cat /sys/devices/system/node/node*/meminfo | fgrep Huge | grep {0}".format(regexp)
-            print(cmd)
             rv = subprocess.check_output([cmd], shell=True)
             rv = int(rv.strip("\n").split(":")[1])
             self._hugepagesFree.append(rv)
@@ -185,6 +278,12 @@ class Server(object):
     def _updateHugepagesSize(self):
         out_bytes = subprocess.check_output(['grep Huge /proc/meminfo | grep Hugepagesize'], shell=True)
         self._hugepageSize = int(out_bytes.split(':')[1].split('kB')[0])
+
+    def setNICBandwidth(self, bandwidth):
+        self._nicBandwidth = bandwidth
+
+    def getNICBandwidth(self):
+        return self._nicBandwidth
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)
@@ -194,3 +293,33 @@ class Server(object):
 
     def __repr__(self):
         return str(self)
+
+
+# if __name__ =="__main__":
+#     _NUMACpuCore = []
+#     for nodeIndex in range(2):
+#         regexp = "'NUMA node{0} CPU(s):'".format(nodeIndex)
+#         cmd = "lscpu | grep -i numa | grep {0}".format(regexp)
+#         rv = subprocess.check_output([cmd], shell=True)
+#         rv = rv.strip("\n").split(":")[1]
+#         if rv.find(",") != -1:
+#             rv = rv.split(",")
+#             rv = map(lambda x : int(x), rv) 
+#         elif rv.find("-") != -1:
+#             rv = rv.split("-")
+#             rv = map(lambda x : int(x), rv) 
+#             rv = range(rv[0], rv[1]+1)
+#         else:
+#             raise ValueError("Can't parse NUMA Core")
+#         _NUMACpuCore.append(rv)
+
+#     rv = subprocess.check_output(' lscpu | grep Socket ', shell=True)
+#     rv = rv.strip("\n").split(":")[1]
+#     print(int(rv))
+
+#     rv = subprocess.check_output(" lscpu | grep 'NUMA node(s)' ", shell=True)
+#     rv = rv.strip("\n").split(":")[1]
+#     print(int(rv))
+
+#     reg = 'Port 0: 00:1B:21:C0:8F:98\n'
+#     print(reg.count(":") == 6)

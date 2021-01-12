@@ -45,7 +45,7 @@ class PathComputer(object):
 
         multiStagePath = self._transPath2MultiStagePath(path)
         self.primaryFP = multiStagePath
-        self.sfci.ForwardingPathSet.primaryForwardingPath[1] = self.primaryFP
+        self.sfci.forwardingPathSet.primaryForwardingPath[1] = self.primaryFP
         self.logger.info("PathComputer, primayFP:{0}".format(self.primaryFP))
 
     def _genMultiLayerGraph(self):
@@ -62,8 +62,9 @@ class PathComputer(object):
         G = nx.DiGraph()
         e = []
 
-        linkList = self._dib.getLinksByZone(self.zoneName)
-        for link in linkList:
+        linksInfoDict = self._dib.getLinksByZone(self.zoneName)
+        for linkInfoDict in linksInfoDict.itervalues():
+            link = linkInfoDict['link']
             s = self._genNodeID(link.srcID, stage)
             d = self._genNodeID(link.dstID, stage)
             e.append((s,d,1))
@@ -84,7 +85,7 @@ class PathComputer(object):
         return G
 
     def _addEdgeSwitch2Server(self, G, vnfiStage, layerStage):
-        vnfiList = self.sfci.VNFISequence[vnfiStage]
+        vnfiList = self.sfci.vnfiSequence[vnfiStage]
         for vnfi in vnfiList:
             node = vnfi.node
             if isinstance(node, Server):
@@ -123,9 +124,10 @@ class PathComputer(object):
 
     def _findSwitchByServer(self, server):
         serverIP = server.getDatapathNICIP()
-        switchList = self._dib.getSwitchesByZone(self.zoneName)
-        for switch in switchList:
-            lanNet = switch.LanNet
+        switchesInfoDict = self._dib.getSwitchesByZone(self.zoneName)
+        for switchDictInfo in switchesInfoDict.itervalues():
+            switch = switchDictInfo['switch']
+            lanNet = switch.lanNet
             if self._sc.isLANIP(serverIP, lanNet):
                 return switch
         else:
@@ -136,7 +138,7 @@ class PathComputer(object):
 
     def _connectLayers(self, mLG):
         for stage in range(self.sfcLength):
-            vnfiList = self.sfci.VNFISequence[stage]
+            vnfiList = self.sfci.vnfiSequence[stage]
             for vnfi in vnfiList:
                 node = vnfi.node
                 if isinstance(node, Server):
@@ -162,7 +164,6 @@ class PathComputer(object):
                 nodeID = multiStagePath[index][0]
                 multiStagePath[index].append(int(nodeID))
         return multiStagePath
-
 
     def mapBackupFP(self):
         backupPathSet = {}
@@ -197,7 +198,7 @@ class PathComputer(object):
             backupForwardingPath[(int(currentNodeID), int(nextNodeID),
                 pathID)] = value
             pathID = pathID + 1
-        self.sfci.ForwardingPathSet.backupForwardingPath[1]\
+        self.sfci.forwardingPathSet.backupForwardingPath[1]\
             = backupForwardingPath
         self.logger.info("PathComputer, backupFP:{0}".format(backupForwardingPath))
 

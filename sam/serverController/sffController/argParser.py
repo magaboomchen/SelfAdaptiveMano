@@ -3,6 +3,7 @@
 
 from sam.base.argParser import *
 
+
 class ArgParser(ArgParserBase):
     def __init__(self, *args, **kwargs):
         super(ArgParser, self).__init__(*args, **kwargs)

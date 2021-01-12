@@ -12,6 +12,7 @@ from sam.serverController.bessInfoBaseMaintainer import *
 
 # TODO: need test
 
+
 class SIBMS(object):
     def __init__(self, logger):
         self._sibms = {} # {serverID:SIBMaintainer}
@@ -36,60 +37,60 @@ class SIBMS(object):
             self.logger.info("{0}'s sibm:".format(key))
             self._sibms[key].show()
 
+
 class SIBMaintainer(BessInfoBaseMaintainer):
     '''SFF Information Base Maintainer'''
     def __init__(self, *args, **kwargs):
         super(SIBMaintainer, self).__init__(*args, **kwargs)
-        self._sfcSet = {}   # {sfcUUID:[sfciid]}
+        self._sfcSet = {}   # {sfcUUID:[sfciID]}
 
     def addLogger(self, logger):
         self.logger = logger
 
-    def getModuleNameSuffix(self,VNFIID,directionID):
-        return "_" + str(VNFIID) + "_" + str(directionID)
+    def getModuleNameSuffix(self,vnfiID,directionID):
+        return "_" + str(vnfiID) + "_" + str(directionID)
 
-    def getModuleName(self,mclass,VNFIID,directionID):
-        return str(mclass) + self.getModuleNameSuffix(VNFIID,directionID)
+    def getModuleName(self,mclass,vnfiID,directionID):
+        return str(mclass) + self.getModuleNameSuffix(vnfiID,directionID)
 
-    def getVdev(self,VNFIID,directionID):
-        suffix = self.getModuleNameSuffix(VNFIID,directionID)
+    def getVdev(self,vnfiID,directionID):
+        suffix = self.getModuleNameSuffix(vnfiID,directionID)
         return  "net_vhost" + suffix + ",iface=/tmp/vsock" + suffix
 
     def getNextVNFID(self,sfci,vnf,directionID):
-        VNFISequence = copy.deepcopy(sfci.VNFISequence)
+        vnfiSequence = copy.deepcopy(sfci.vnfiSequence)
         if directionID == 0:
             pass
         elif directionID == 1:
-            VNFISequence.reverse()
+            vnfiSequence.reverse()
         else:
             raise ValueError('Invalid direction ID.')
 
-        sfcLen = len(VNFISequence)
-        VNFID = vnf.VNFID
+        sfcLen = len(vnfiSequence)
+        vnfID = vnf.vnfID
         for i in range(sfcLen):
-            currentVNF = VNFISequence[i][0]
-            if currentVNF.VNFID == VNFID:
+            currentVNF = vnfiSequence[i][0]
+            if currentVNF.vnfID == vnfID:
                 if i != (sfcLen-1):
-                    return VNFISequence[i+1][0].VNFID
+                    return vnfiSequence[i+1][0].vnfID
                 else:
                     return VNF_TYPE_CLASSIFIER
 
-    def getUpdateValue(self,SFCIID,nextVNFID):
-        value = (SFCIID & 0xFFF) + ((nextVNFID & 0XF) << 12)
+    def getUpdateValue(self,sfciID,nextVNFID):
+        value = (sfciID & 0xFFF) + ((nextVNFID & 0XF) << 12)
         return value
 
-    def assignSFFWM2OGate(self,VNFID,directionID):
+    def assignSFFWM2OGate(self,vnfID,directionID):
         OGateList = self.getModuleOGateNumList("wm2")
         oGateNum = self.genAvailableMiniNum4List(OGateList)
-        self.addOGate2Module("wm2",(VNFID,directionID),oGateNum)
+        self.addOGate2Module("wm2",(vnfID,directionID),oGateNum)
         return oGateNum
 
-    def getSFFWM2MatchValue(self,SFCIID,VNFID,directionID):
-        value = (10<<24) + ((VNFID & 0XF)<<20) + ((SFCIID & 0xFFF) << 8) + ((directionID & 0x1) <<7)
+    def getSFFWM2MatchValue(self,sfciID,vnfID,directionID):
+        value = (10<<24) + ((vnfID & 0XF)<<20) + ((sfciID & 0xFFF) << 8) + ((directionID & 0x1) <<7)
         return value
     
     def show(self):
         self.logger.info("sfcSet:{0}".format(self._sfcSet))
         self.logger.info("modules:{0}".format(self._modules))
         self.logger.info("links:{0}".format(self._links))
-

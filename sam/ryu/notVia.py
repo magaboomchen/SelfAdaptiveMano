@@ -28,6 +28,7 @@ from sam.base.command import *
 from sam.base.path import *
 from sam.base.socketConverter import *
 from sam.base.vnf import *
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.serverController.serverManager.serverManager import *
 
 
@@ -44,18 +45,28 @@ class NotVia(FRR):
         self.ibm = NIBMaintainer()
         self.logger.info("NotVia App is running !")
 
-    def _addSfciHandler(self, cmd):
+    def _addSFCHandler(self, cmd):
+        self.logger.debug('*** NotVia App Received command= %s', cmd)
+        try:
+            sfc = cmd.attributes['sfc']
+            self._addRoute2Classifier(sfc)
+            self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex,
+                "Ryu app NotVia _addSFCHandler ")
+            self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
+
+
+    def _addSFCIHandler(self, cmd):
         self.logger.debug('*** NotVia App Received command= %s', cmd)
         try:
             sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
-            self._addRoute2Classifier(sfc,sfci)
             self._addSFCIRoute(sfc,sfci)
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
         except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            self.logger.error("Ryu app NotVia occure error: {0}".format(message))
+            ExceptionProcessor(self.logger).logException(ex,
+                "Ryu app NotVia _addSFCIHandler ")
             self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
 
     def _addSFCIRoute(self, sfc, sfci):
@@ -86,14 +97,14 @@ class NotVia(FRR):
                 self.logger.debug("______: assignGroupID:{0}".format(groupID))
                 nextNodeID = stage[i+1]
 
-                if self._canSkipPrimaryPathFlowInstallation(sfci.SFCIID,
+                if self._canSkipPrimaryPathFlowInstallation(sfci.sfciID,
                     dstIP, currentSwitchID):
                     continue
 
                 self._addNotViaSFCIGroupTable(currentSwitchID,
                     nextNodeID, sfci, direction, stageCount, groupID)
                 self._addNotViaSFCIFlowtable(currentSwitchID,
-                    sfci.SFCIID, dstIP, groupID)
+                    sfci.sfciID, dstIP, groupID)
 
     def _addNotViaSFCIGroupTable(self, currentDpid, nextDpid, sfci, direction,
             stageCount, groupID):
@@ -155,11 +166,11 @@ class NotVia(FRR):
         for key in backupPaths.iterkeys():
             if key[0] == currentDpid and key[1] == nextDpid:
                 pathID = key[2]
-                return self.ibm.assignVLANID(sfci.SFCIID, pathID)
+                return self.ibm.assignVLANID(sfci.sfciID, pathID)
         else:
             return None
 
-    def _addNotViaSFCIFlowtable(self, currentDpid, SFCIID, dstIP, groupID):
+    def _addNotViaSFCIFlowtable(self, currentDpid, sfciID, dstIP, groupID):
         self.logger.debug("_addNotViaSFCIFlowtable")
         datapath = self.dpset.get(int(str(currentDpid),0))
         ofproto = datapath.ofproto
@@ -174,7 +185,7 @@ class NotVia(FRR):
         ]
         self._add_flow(datapath, match, inst, table_id=NotVia_TABLE,
             priority = 1)
-        self.ibm.addSFCIFlowTableEntry(SFCIID,currentDpid,
+        self.ibm.addSFCIFlowTableEntry(sfciID,currentDpid,
             NotVia_TABLE, matchFields, groupID)
 
     def _installBackupPaths(self, sfci, direction):
@@ -183,7 +194,7 @@ class NotVia(FRR):
         for key,value in backupFPs.items():
             (currentID, nextID, pathID) = key
             FP = value
-            sfciLength = len(sfci.VNFISequence)
+            sfciLength = len(sfci.vnfiSequence)
             fpLength = len(FP)
             stageCount = sfciLength - fpLength
             self.logger.debug("_installBackupPaths")
@@ -193,7 +204,7 @@ class NotVia(FRR):
                 if len(stage)==2:
                     # SFF inner routing
                     continue
-                vlanID = self.ibm.getVLANID(sfci.SFCIID, pathID)
+                vlanID = self.ibm.getVLANID(sfci.sfciID, pathID)
                 for i in range(1,len(stage)-1):
                     currentSwitchID = stage[i]
                     nextNodeID = stage[i+1]
@@ -239,7 +250,7 @@ class NotVia(FRR):
         self.logger.debug("_packet_in_handler: Add_flow")
         self._add_flow(datapath, match, inst, table_id=VLAN_TABLE,
             priority=1)
-        self.ibm.addSFCIFlowTableEntry(sfci.SFCIID,currentDpid,
+        self.ibm.addSFCIFlowTableEntry(sfci.sfciID,currentDpid,
             VLAN_TABLE, matchFields)
 
     def _installLastRouteOnBackupPath(self, sfci, direction, currentDpid,
@@ -269,7 +280,7 @@ class NotVia(FRR):
         self.logger.debug("_packet_in_handler: Add_flow")
         self._add_flow(datapath, match, inst, table_id=VLAN_TABLE,
             priority=1)
-        self.ibm.addSFCIFlowTableEntry(sfci.SFCIID,currentDpid,
+        self.ibm.addSFCIFlowTableEntry(sfci.sfciID,currentDpid,
             VLAN_TABLE, matchFields)
 
 

@@ -59,25 +59,26 @@ class TestVNFSFCIAdderClass(TestBase):
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
-        VNFISequence = []
+        vnfiSequence = []
         for index in range(SFCLength):
-            VNFISequence.append([])
+            vnfiSequence.append([])
             for iN in range(1):
                 server = Server("ens3", SFF0_DATAPATH_IP, SERVER_TYPE_NORMAL)
                 server.setServerID(SERVERID_OFFSET + 1)
                 server.setControlNICIP(SFF0_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
-                vnfi = VNFI(VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD, 
-                    VNFIID=uuid.uuid1(), node=server)
-                VNFISequence[index].append(vnfi)
-        return VNFISequence
+                server.updateResource()
+                vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
+                    vnfiID=uuid.uuid1(), node=server)
+                vnfiSequence[index].append(vnfi)
+        return vnfiSequence
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SSF_CONTROLLER_CMD , self.addSFCICmd)
+            MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL

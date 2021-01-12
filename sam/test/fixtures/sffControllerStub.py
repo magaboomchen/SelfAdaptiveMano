@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 from sam.base.messageAgent import *
 from sam.base.command import *
 from sam.base.sfc import *
@@ -9,5 +12,5 @@ class SFFControllerStub(object):
         # self.mA.startRecvMsg(SFF_CONTROLLER_QUEUE)
     
     def sendCmdRply(self,cmdRply):
-        msg = SAMMessage(MSG_TYPE_SSF_CONTROLLER_CMD_REPLY, cmdRply)
+        msg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD_REPLY, cmdRply)
         self.mA.sendMsg(MEDIATOR_QUEUE,msg)

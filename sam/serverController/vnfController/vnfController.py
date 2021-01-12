@@ -34,12 +34,12 @@ class VNFController(object):
         self._cpuManager = {}  # serverID: sourceAllocator for CPU
 
         self._messageAgent = MessageAgent()
-        queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, zoneName)
-        self._messageAgent.startRecvMsg(queueName)
+        self.queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, zoneName)
+        self._messageAgent.startRecvMsg(self.queueName)
 
     def startVNFController(self):
         while True:
-            msg = self._messageAgent.getMsg(VNF_CONTROLLER_QUEUE)
+            msg = self._messageAgent.getMsg(self.queueName)
             msgType = msg.getMessageType()
             if msgType == None:
                 pass
@@ -69,17 +69,17 @@ class VNFController(object):
                 self.logger.error('Unsupported msg type for vnf controller: %s.' % msg.getMessageType())
 
     def _sfciAddHandler(self, cmd):
-        sfciID = cmd.attributes['sfci'].SFCIID
+        sfciID = cmd.attributes['sfci'].sfciID
         self.logger.info('Adding sfci %s.' % sfciID)
         # TODO: if sfciID in vnfMaintainer?
         self._vnfiMaintainer.addSFCI(sfciID)
-        vnfSeq = cmd.attributes['sfci'].VNFISequence
+        vnfSeq = cmd.attributes['sfci'].vnfiSequence
         success = True
         for vnf in vnfSeq:
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):
                     # TODO: if vnfi in vnfMaintainer?
-                    self.logger.info('Adding vnfi %s.' % vnfi.VNFIID)
+                    self.logger.info('Adding vnfi %s.' % vnfi.vnfiID)
                     self._vnfiMaintainer.addVNFI(sfciID, vnfi)
 
                     # get vioAllocator of server
@@ -104,7 +104,7 @@ class VNFController(object):
         return success
 
     def _sfciDeleteHandler(self, cmd):
-        sfciID = cmd.attributes['sfci'].SFCIID
+        sfciID = cmd.attributes['sfci'].sfciID
         self.logger.info('Deleting sfci %s.' % sfciID)
         try:
             sfciState = self._vnfiMaintainer.getSFCI(sfciID)

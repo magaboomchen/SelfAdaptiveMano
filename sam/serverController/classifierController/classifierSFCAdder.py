@@ -13,13 +13,29 @@ import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
 import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
 
 from sam.serverController.bessControlPlane import *
+from sam.serverController.classifierController.classifierInitializer import *
 from sam.base.socketConverter import SocketConverter
+
 
 class ClassifierSFCAdder(BessControlPlane):
     def __init__(self,cibms,logger):
         super(ClassifierSFCAdder,self).__init__()
         self.cibms = cibms
         self.logger = logger
+        self.clsfSFCInitializer = ClassifierInitializer(self.cibms, logger)
+
+    def addSFCHandler(self,cmd):
+        sfc = cmd.attributes['sfc']
+        sfcUUID = sfc.sfcUUID
+        for direction in sfc.directions:
+            classifier = direction['ingress']
+            serverID = classifier.getServerID()
+            if not self.cibms.hasCibm(serverID):
+                self.clsfSFCInitializer.initClassifier(direction)
+            cibm = self.cibms.getCibm(serverID)
+            if not cibm.hasSFCDirection(sfcUUID,direction["ID"]):
+                self.addSFC(sfcUUID,direction)
+            cibm.addSFCDirection(sfcUUID,direction['ID'])
 
     def addSFC(self,sfcUUID,direction):
         classifier = direction['ingress']

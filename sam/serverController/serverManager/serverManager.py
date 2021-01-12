@@ -9,15 +9,16 @@ import inspect
 
 import datetime
 
-from sam.base.server import Server
-from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.messageAgent import *
 from sam.base.command import *
+from sam.base.server import Server
+from sam.base.messageAgent import *
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.serverManager.argParser import ArgParser
 
 SERVER_TIMEOUT = 10
 TIMEOUT_CLEANER_INTERVAL = 5
 SERVERID_OFFSET = 10001
+
 
 class SeverManager(object):
     def __init__(self, zoneName=""):
@@ -27,16 +28,18 @@ class SeverManager(object):
         self.logger.info('Init ServerManager')
 
         self._messageAgent = MessageAgent(self.logger)
-        queueName = self._messageAgent.genQueueName(SERVER_MANAGER_QUEUE, zoneName)
-        self._messageAgent.startRecvMsg(queueName)
+        self.queueName = self._messageAgent.genQueueName(SERVER_MANAGER_QUEUE,
+            zoneName)
+        self._messageAgent.startRecvMsg(self.queueName)
 
         self.serverSet = {}
+        self.serverIDMappingTable = {}
         self._timeoutCleaner()
         self._listener()
 
     def _listener(self):
         while True:
-            msg = self._messageAgent.getMsg(SERVER_MANAGER_QUEUE)
+            msg = self._messageAgent.getMsg(self.queueName)
             self.logger.debug("msgType:".format(msg.getMessageType()))
             time.sleep(1)
             if msg.getMessageType() == MSG_TYPE_SERVER_REPLY:
@@ -56,12 +59,17 @@ class SeverManager(object):
             serverControlNICMac, server.getServerType()
         ))
         threadLock.acquire()
-        if serverControlNICMac in self.serverSet.iterkeys():
-            serverID = self.serverSet[serverControlNICMac]["server"].getServerID()
+        if serverControlNICMac in self.serverIDMappingTable.iterkeys():
+            serverID = self.serverIDMappingTable[serverControlNICMac]
         else:
             serverID = self._assignServerID()
+            self.serverIDMappingTable[serverControlNICMac] = serverID
+        # if serverControlNICMac in self.serverSet.iterkeys():
+        #     serverID = self.serverSet[serverControlNICMac]["server"].getServerID()
+        # else:
+        #     serverID = self._assignServerID()
         server.setServerID(serverID)
-        self.serverSet[serverControlNICMac] = {"server":server, 
+        self.serverSet[serverID] = {"server":server, 
             "Active": True, "timestamp":self._getCurrentTime()}
         threadLock.release()
 
@@ -125,6 +133,7 @@ class SeverManager(object):
             self._async_raise(thread.ident, KeyboardInterrupt)
             thread.join()
 
+
 class TimeoutCleaner(threading.Thread):
     def __init__(self, serverSet, logger):
         threading.Thread.__init__(self)
@@ -154,6 +163,7 @@ class TimeoutCleaner(threading.Thread):
         seconds_in_day = 24 * 60 * 60
         datetime.timedelta(0, 8, 562000)
         return difference.days * seconds_in_day + difference.seconds
+
 
 if __name__=="__main__":
     argParser = ArgParser()

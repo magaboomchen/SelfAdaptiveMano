@@ -16,52 +16,63 @@ from sam.base.sfc import *
 from sam.base.command import *
 from sam.base.path import *
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.serverController.classifierController.cibMaintainer import *
 from sam.serverController.classifierController.classifierSFCIAdder import *
 from sam.serverController.classifierController.classifierSFCIDeleter import *
 from sam.serverController.classifierController.argParser import ArgParser
 
+
 class ClassifierControllerCommandAgent(object):
     def __init__(self, zoneName=""):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'classifierController.log', level='info')
+            'classifierController.log', level='debug')
         self.logger = logConfigur.getLogger()
         self.logger.info("Initialize classifier controller command agent.")
+        self.logger.setLevel(logging.DEBUG)
         self._commandsInfo = {}
 
         self.cibms = CIBMS()
 
+        self.clsfSFCAdder = ClassifierSFCAdder(self.cibms, self.logger)
         self.clsfSFCIAdder = ClassifierSFCIAdder(self.cibms, self.logger)
         self.clsfSFCIDeleter = ClassifierSFCIDeleter(self.cibms, self.logger)
+        self.clsfSFCDeleter = ClassifierSFCDeleter(self.cibms, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
-        queueName = self._messageAgent.genQueueName(SERVER_CLASSIFIER_CONTROLLER_QUEUE, zoneName)
-        self._messageAgent.startRecvMsg(queueName)
+        self.queueName = self._messageAgent.genQueueName(
+            SERVER_CLASSIFIER_CONTROLLER_QUEUE, zoneName)
+        self._messageAgent.startRecvMsg(self.queueName)
+        self.logger.info("listen on queueName: {0}".format(self.queueName))
 
     def startClassifierControllerCommandAgent(self):
         while True:
-            msg = self._messageAgent.getMsg(SERVER_CLASSIFIER_CONTROLLER_QUEUE)
+            msg = self._messageAgent.getMsg(self.queueName)
             if msg.getMessageType() == MSG_TYPE_CLASSIFIER_CONTROLLER_CMD:
                 self.logger.info("Classifier controller get a command.")
                 try:
                     cmd = msg.getbody()
                     self._commandsInfo[cmd.cmdID] = {"cmd":cmd,
                         "state":CMD_STATE_PROCESSING}
-                    if cmd.cmdType == CMD_TYPE_ADD_SFCI:
+                    if cmd.cmdType == CMD_TYPE_ADD_SFC:
+                        self.clsfSFCAdder.addSFCHandler(cmd)
+                    elif cmd.cmdType == CMD_TYPE_ADD_SFCI:
                         self.clsfSFCIAdder.addSFCIHandler(cmd)
                     elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
                         self.clsfSFCIDeleter.delSFCIHandler(cmd)
+                    elif cmd.cmdType == CMD_TYPE_DEL_SFC:
+                        self.clsfSFCDeleter.delSFCHandler(cmd)
                     else:
                         self.logger.error("Unkonwn classifier command type.")
+                        raise ValueError("Unkonwn classifier command type.")
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL
                 except ValueError as err:
-                    self.logger.error('classifier command processing error: ' +
-                        repr(err))
+                    self.logger.error('classifier command processing error:' \
+                        + repr(err))
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 except Exception as ex:
-                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                    message = template.format(type(ex).__name__, ex.args)
-                    self.logger.error("Classifier Controller occure error: {0}".format(message))
+                    ExceptionProcessor(self.logger).logException(ex,
+                        " Classifier Controller ")
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 finally:
                     cmdRply = CommandReply(cmd.cmdID, self._commandsInfo[cmd.cmdID]["state"])

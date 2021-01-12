@@ -4,6 +4,7 @@
 from sam.base.slo import *
 from sam.base.vnf import *
 
+
 SFC_DOMAIN_PREFIX = "10.0.0.0"
 SFC_DOMAIN_PREFIX_LENGTH = 8    # DO NOT MODIFY THIS VALUE,
     # otherwise BESS will incurr error
@@ -14,13 +15,21 @@ APP_TYPE_NORTHSOUTH_WEBSITE = "APP_TYPE_NORTHSOUTH_WEBSITE"
 MANUAL_SCALE = 0
 ADAPTIVE_SCALE = 1
 
+STATE_IN_PROCESSING = "STATE_IN_PROCESSING"
+STATE_ACTIVE = "STATE_ACTIVE"
+STATE_INACTIVE = "STATE_INACTIVE"   # There maybe some resource used in DCN
+STATE_DELETED = "STATE_DELETED" # All resource of this sfc/sfci has been released
+# Delete an sfc/sfci will not release SFCIID
+# To get back SFCIID, please prune sfc/sfci from database
+
+
 class SFCI(object):
-    def __init__(self, SFCIID, VNFISequence, sloRealTimeValue=None,
-        ForwardingPathSet=None):
-        self.SFCIID = SFCIID
-        self.VNFISequence = VNFISequence    # only show the direction1
+    def __init__(self, sfciID, vnfiSequence, sloRealTimeValue=None,
+            forwardingPathSet=None):
+        self.sfciID = sfciID
+        self.vnfiSequence = vnfiSequence    # only show the direction1
         self.sloRealTimeValue = sloRealTimeValue
-        self.ForwardingPathSet = ForwardingPathSet
+        self.forwardingPathSet = forwardingPathSet
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)
@@ -34,8 +43,8 @@ class SFCI(object):
 
 class SFC(object):
     def __init__(self, sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-        backupInstanceNumber, applicationType, directions=None,
-        attributes={}, traffic=None, slo=None, scalingMode=MANUAL_SCALE, sFCIs=[]):
+            backupInstanceNumber, applicationType, directions=None,
+            attributes={}, traffic=None, slo=None, scalingMode=MANUAL_SCALE, sFCIs=[]):
         self.sfcUUID = sfcUUID
         self.vNFTypeSequence = vNFTypeSequence # [FW, LB]
         self.scalingMode = scalingMode
@@ -89,6 +98,15 @@ class SFC(object):
                             # different direction; 
                             # For bess, we use (src,dst) pair to distinguish
                             # different direction.
+
+    def getSFCLength(self):
+        return len(self.vNFTypeSequence)
+
+    def getSFCTrafficDemand(self):
+        return self.slo.throughput
+
+    def getSFCLatencyBound(self):
+        return self.slo.latencyBound
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

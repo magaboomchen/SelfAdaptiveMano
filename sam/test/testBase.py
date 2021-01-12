@@ -84,6 +84,7 @@ logging.basicConfig(level=logging.INFO)
 
 class TestBase(object):
     MAXSFCIID = 0
+    sfciCounter = 0
     logging.getLogger("pika").setLevel(logging.WARNING)
 
     def resetRabbitMQConf(self, filePath, serverIP,
@@ -199,82 +200,82 @@ class TestBase(object):
             backupInstanceNumber, applicationType, directions, {'zone':""})
 
     def genUniDirection10BackupSFCI(self):
-        VNFISequence = self.gen10BackupVNFISequence()
-        return SFCI(self.assignSFCIID(), VNFISequence, None,
+        vnfiSequence = self.gen10BackupVNFISequence()
+        return SFCI(self.assignSFCIID(), vnfiSequence, None,
             self.genUniDirection10BackupForwardingPathSet())
 
     def genBiDirection10BackupSFCI(self):
-        VNFISequence = self.gen10BackupVNFISequence()
-        return SFCI(self.assignSFCIID(), VNFISequence, None,
+        vnfiSequence = self.gen10BackupVNFISequence()
+        return SFCI(self.assignSFCIID(), vnfiSequence, None,
             self.genBiDirection10BackupForwardingPathSet())
 
     def genUniDirection11BackupSFCI(self):
-        VNFISequence = self.gen11BackupVNFISequence()
-        return SFCI(self.assignSFCIID(), VNFISequence, None,
+        vnfiSequence = self.gen11BackupVNFISequence()
+        return SFCI(self.assignSFCIID(), vnfiSequence, None,
             self.genUniDirection11BackupForwardingPathSet())
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
-        VNFISequence = []
+        vnfiSequence = []
         for index in range(SFCLength):
-            VNFISequence.append([])
+            vnfiSequence.append([])
             for iN in range(1):
                 server = Server("ens3",SFF1_DATAPATH_IP,SERVER_TYPE_NORMAL)
                 server.setServerID(SERVERID_OFFSET + 1)
                 server.setControlNICIP(SFF1_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
-                vnfi = VNFI(VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
-                    VNFIID=uuid.uuid1(), node=server)
-                VNFISequence[index].append(vnfi)
-        return VNFISequence
+                vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
+                    vnfiID=uuid.uuid1(), node=server)
+                vnfiSequence[index].append(vnfi)
+        return vnfiSequence
 
     def gen11BackupVNFISequence(self, SFCLength=1):
         # hard-code function
-        VNFISequence = []
+        vnfiSequence = []
         for index in range(SFCLength):
-            VNFISequence.append([])
+            vnfiSequence.append([])
             
             server = Server("ens3",SFF1_DATAPATH_IP,SERVER_TYPE_NORMAL)
             server.setServerID(SERVERID_OFFSET + 1)
             server.setControlNICIP(SFF1_CONTROLNIC_IP)
             server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
-            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
-                VNFIID=uuid.uuid1(), node=server)
-            VNFISequence[index].append(vnfi)
+            vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
+                vnfiID=uuid.uuid1(), node=server)
+            vnfiSequence[index].append(vnfi)
 
             server = Server("ens3",SFF2_DATAPATH_IP,SERVER_TYPE_NORMAL)
             server.setServerID(SERVERID_OFFSET + 2)
             server.setControlNICIP(SFF2_CONTROLNIC_IP)
             server.setControlNICMAC(SFF2_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF2_DATAPATH_MAC)
-            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
-                VNFIID=uuid.uuid1(), node=server)
-            VNFISequence[index].append(vnfi)
+            vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
+                vnfiID=uuid.uuid1(), node=server)
+            vnfiSequence[index].append(vnfi)
 
-        return VNFISequence
+        return vnfiSequence
 
     def genUniDirection10BackupForwardingPathSet(self):
         primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
-        frrType = "UFRR"
+        mappingType = MAPPING_TYPE_UFRR
         # {(srcID,dstID,pathID):forwardingPath}
         backupForwardingPath = {
             1:{(1,2,2):[[1,3,2,10002],[10002,2,3,1,10001]]}
         }
-        return ForwardingPathSet(primaryForwardingPath,frrType,
+        return ForwardingPathSet(primaryForwardingPath,mappingType,
             backupForwardingPath)
 
     def genUniDirection11BackupForwardingPathSet(self):
         primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
-        frrType = "UFRR"
+        mappingType = MAPPING_TYPE_UFRR
         # {(srcID,dstID,pathID):forwardingPath}
         backupForwardingPath = {
             1:{(1,2,2):[[1,3,10003],[10003,3,1,10001]],
                 (2,10002,3):[[2,3,10003],[10003,3,1,10001]]
             }
         }
-        return ForwardingPathSet(primaryForwardingPath,frrType,
+        return ForwardingPathSet(primaryForwardingPath,mappingType,
             backupForwardingPath)
 
     def genBiDirection10BackupForwardingPathSet(self):
@@ -282,7 +283,7 @@ class TestBase(object):
             1:[[10001,1,2,10002],[10002,2,1,10001]],
             128:[[10001,1,2,10002],[10002,2,1,10001]]
         }
-        frrType = "UFRR"
+        mappingType = MAPPING_TYPE_UFRR
         # {(srcID,dstID,pathID):forwardingPath}
         backupForwardingPath = {
             1:{(1,2,2):[[1,3,2,10002],[10002,2,3,1,10001]]
@@ -291,59 +292,59 @@ class TestBase(object):
                 (1,2,129):[[1,3,2,10002],[10002,2,3,1,10001]]
             }
         }
-        return ForwardingPathSet(primaryForwardingPath,frrType,
+        return ForwardingPathSet(primaryForwardingPath,mappingType,
             backupForwardingPath)
 
     def genUniDirection12BackupSFCI(self):
-        VNFISequence = self.gen12BackupVNFISequence()
-        return SFCI(self.assignSFCIID(),VNFISequence, None,
+        vnfiSequence = self.gen12BackupVNFISequence()
+        return SFCI(self.assignSFCIID(),vnfiSequence, None,
             self.genUniDirection12BackupForwardingPathSet())
 
     def gen12BackupVNFISequence(self, SFCLength=1):
         # hard-code function
-        VNFISequence = []
+        vnfiSequence = []
         for index in range(SFCLength):
-            VNFISequence.append([])
+            vnfiSequence.append([])
 
             server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NORMAL)
             server.setServerID(SERVERID_OFFSET + 1)
             server.setControlNICIP(SFF1_CONTROLNIC_IP)
             server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
-            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD, 
-                VNFIID=uuid.uuid1(), node=server)
-            VNFISequence[index].append(vnfi)
+            vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
+                vnfiID=uuid.uuid1(), node=server)
+            vnfiSequence[index].append(vnfi)
 
             server = Server("ens3", SFF2_DATAPATH_IP, SERVER_TYPE_NORMAL)
             server.setServerID(SERVERID_OFFSET + 2)
             server.setControlNICIP(SFF2_CONTROLNIC_IP)
             server.setControlNICMAC(SFF2_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF2_DATAPATH_MAC)
-            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
-                VNFIID=uuid.uuid1(), node=server)
-            VNFISequence[index].append(vnfi)
+            vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
+                vnfiID=uuid.uuid1(), node=server)
+            vnfiSequence[index].append(vnfi)
 
             server = Server("ens3", SFF3_DATAPATH_IP, SERVER_TYPE_NORMAL)
             server.setServerID(SERVERID_OFFSET + 3)
             server.setControlNICIP(SFF3_CONTROLNIC_IP)
             server.setControlNICMAC(SFF3_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF3_DATAPATH_MAC)
-            vnfi = VNFI(VNFID=VNF_TYPE_FORWARD, VNFType=VNF_TYPE_FORWARD,
-                VNFIID=uuid.uuid1(), node=server)
-            VNFISequence[index].append(vnfi)
+            vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
+                vnfiID=uuid.uuid1(), node=server)
+            vnfiSequence[index].append(vnfi)
 
-        return VNFISequence
+        return vnfiSequence
 
     def genUniDirection12BackupForwardingPathSet(self):
         primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
-        frrType = "UFRR"
+        mappingType = MAPPING_TYPE_UFRR
         # {(srcID,dstID,pathID):forwardingPath}
         backupForwardingPath = {
             1:{(1,2,2):[[1,3,10003],[10003,3,1,10001]],
                 (2,10002,3):[[2,10004],[10004,2,1,10001]]
             }
         }
-        return ForwardingPathSet(primaryForwardingPath,frrType,
+        return ForwardingPathSet(primaryForwardingPath,mappingType,
             backupForwardingPath)
 
     def recvCmd(self, queue):
@@ -455,14 +456,28 @@ class TestBase(object):
         return "02:00:00:%02x:%02x:%02x" % (random.randint(0, 255),
             random.randint(0, 255), random.randint(0, 255))
 
-    def genAddSFCIRequest(self, sfc):
+    def genAddSFCRequest(self, sfc):
         sfc.backupInstanceNumber = 3
-        request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
-            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'zone':""})
-        return request
-    
-    def genDelSFCIRequest(self, sfc):
-        request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,
+        request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFC,
             REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'zone':""})
         return request
 
+    def genAddSFCIRequest(self, sfc, sfci):
+        sfc.backupInstanceNumber = 3
+        request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
+            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'sfci':sfci, 'zone':""})
+        return request
+
+    def genDelSFCRequest(self, sfc):
+        request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFC,
+            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'zone':""})
+        return request
+
+    def genDelSFCIRequest(self, sfc, sfci):
+        request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,
+            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc, 'sfci':sfci, 'zone':""})
+        return request
+
+    def _genSFCIID(self):
+        TestBase.sfciCounter = TestBase.sfciCounter + 1
+        return TestBase.sfciCounter

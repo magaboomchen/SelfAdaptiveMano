@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 SWITCH_CONF_FILEPATH = "./conf/switch.yaml"
+ZONE_NAME = ""
 
 MAIN_TABLE = 0
 IPv4_CLASSIFIER_TABLE = 1

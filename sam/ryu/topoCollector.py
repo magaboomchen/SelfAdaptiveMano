@@ -40,6 +40,11 @@ class TopoCollector(BaseApp):
         self.switches = {}
         self.links = {}
         self.hosts = {}
+
+        # following member record all device in history with current state, i.e. active/inactive
+        self.switchesInfo = {}
+        self.linksInfo = {}
+
         self.logger.setLevel(logging.WARNING)
         self.logger.warning("Please use'ryu-manager --observe-links topoCollector.py'")
 
@@ -64,6 +69,7 @@ class TopoCollector(BaseApp):
         switch = ev.switch
         self.switches[switch.dp.id] = switch
         self.logger.info("add switch:{0}".format(switch))
+        self.switchesInfo[switch.dp.id] = {'switch':switch, 'Active':True}
         self._sendEvent(TopologyChangeEvent())
         # self._ls(switch)
         # self._ls(switch.ports)
@@ -77,6 +83,7 @@ class TopoCollector(BaseApp):
     def _delSwitch(self,ev):
         switch = ev.switch
         del self.switches[switch.dp.id]
+        self.switchesInfo[switch.dp.id]['Active'] = False
         self.logger.info("delete switch:{0}".format(switch))
         self._sendEvent(TopologyChangeEvent())
 
@@ -84,6 +91,7 @@ class TopoCollector(BaseApp):
     def _addLink(self,ev):
         link = ev.link
         self.links[(link.src.dpid,link.dst.dpid)] = link
+        self.linksInfo[(link.src.dpid,link.dst.dpid)] = {'link':link, 'Active':True}
         self.logger.info("add link:{0}".format(link))
         self._sendEvent(TopologyChangeEvent())
 
@@ -91,6 +99,7 @@ class TopoCollector(BaseApp):
     def _delLink(self,ev):
         link = ev.link
         del self.links[(link.src.dpid,link.dst.dpid)]
+        self.linksInfo[(link.src.dpid,link.dst.dpid)]['Active'] = False
         self.logger.info("del link:{0}".format(link))
         self._sendEvent(TopologyChangeEvent())
 
@@ -119,8 +128,8 @@ class TopoCollector(BaseApp):
             '*** TopoCollector App Received command={0}'.format(cmd)
             )
         attr = {
-            "switches": self._transSwitches(self.switches),
-            "links": self._transLinks(self.links),
+            "switches": self._transSwitches(self.switchesInfo),
+            "links": self._transLinks(self.linksInfo),
             # "servers": self._transHosts(self.hosts)
         }
         attr.update(cmd.attributes)
@@ -129,9 +138,11 @@ class TopoCollector(BaseApp):
         queue = MEDIATOR_QUEUE
         self._messageAgent.sendMsg(queue, rplyMsg)
 
-    def _transSwitches(self, switches):
-        switchList = []
-        for switch in self.switches.values():
+    def _transSwitches(self, switchesInfo):
+        # switchList = []
+        switchDict = {}
+        for switchID,switchInfoDict in switchesInfo.items():
+            switch = switchInfoDict['switch']
             # self._ls(switch.address)
             self.logger.info(
                 "switch:dpid:{0},address:{1}".format(
@@ -141,20 +152,26 @@ class TopoCollector(BaseApp):
             dpid = switch.dp.id
             sw = Switch(dpid, self._switchConfs[dpid].switchType,
                 self._switchConfs[dpid].lANNet)
-            switchList.append(sw)
-        return switchList
+            switchState = switchInfoDict['Active']
+            switchDict[dpid] = {'switch':sw, 'Active':switchState}
+        return switchDict
 
-    def _transLinks(self, links):
-        linkList = []
-        for link in self.links.values():
+    def _transLinks(self, linksInfo):
+        linkDict = {}
+        for linkID, linkInfo in linksInfo.items():
+            link = linkInfo['link']
             # self._ls(link)
             self.logger.info(
                 "link:({0},{1})".format(
                     link.src.dpid,link.dst.dpid
                     )
                 )
-            linkList.append(Link(link.src.dpid,link.dst.dpid))
-        return linkList
+            linkState = linkInfo['Active']
+            linkDict[(link.src.dpid,link.dst.dpid)] = {
+                'link': Link(link.src.dpid, link.dst.dpid),
+                'Active': linkState
+                }
+        return linkDict
 
     # def _transHosts(self, hosts):
     #     serverList = []

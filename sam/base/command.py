@@ -1,11 +1,15 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from sam.base.xibMaintainer import XInfoBaseMaintainer
+
+
 CMD_STATE_WAITING = "CMD_STATE_WAITING"
 CMD_STATE_PROCESSING = "CMD_STATE_PROCESSING"
 CMD_STATE_SUCCESSFUL = "CMD_STATE_SUCCESSFUL"
 CMD_STATE_FAIL = "CMD_STATE_FAIL"
 
+CMD_TYPE_ADD_SFC = "CMD_TYPE_ADD_SFC"
 CMD_TYPE_ADD_SFCI = "CMD_TYPE_ADD_SFCI"
 CMD_TYPE_DEL_SFCI = "CMD_TYPE_DEL_SFCI"
 CMD_TYPE_DEL_SFC = "CMD_TYPE_DEL_SFC"
@@ -48,8 +52,9 @@ class CommandReply(object):
         return str(self)
 
 
-class CommandMaintainer(object):
+class CommandMaintainer(XInfoBaseMaintainer):
     def __init__(self):
+        super(CommandMaintainer, self).__init__()
         self._commandsInfo = {}
 
     def addCmd(self, cmd):
@@ -92,6 +97,12 @@ class CommandMaintainer(object):
 
     def changeCmdState(self, cmdID, state):
         self._commandsInfo[cmdID]['state'] = state
+
+    def transitCmdState(self, cmdID, statePrev, stateNext):
+        if self.hasCmd(cmdID):
+            state = self._commandsInfo[cmdID]['state']
+            if state == statePrev:
+                self._commandsInfo[cmdID]['state'] = stateNext
 
     def getChildCmdState(self, cmdID, childCmdName):
         cCmdID = self._commandsInfo[cmdID]['childCmdID'][childCmdName]

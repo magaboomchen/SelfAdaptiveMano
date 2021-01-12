@@ -19,6 +19,7 @@ pika
 netifaces
 getmac
 pytest
+MySQL-python
 ```
 
 # Installation
@@ -33,12 +34,30 @@ Auto:
 python environmentSetter.py
 ```
 
-## Set SAM DPDK environment
+## RabbitMQ
+```
+install erlang 20.3.8.26-1 (please make sure the version number)
+rabbitmq3.7.0-1 (please make sure the version number)
+```
+
+## Set mysql database
+```
+add user dbAgent with password 123
+add databases Orchestrator, Dashboard, Measurer
+```
+
+## Set SAM DPDK environment (Except for Controller server)
 export $RTE_SDK to the directory of dpdk in bess, for example:
 ``` 
 export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
 export RTE_TARGET=x86_64-native-linuxapp-gcc
 ```
+
+## Set RYU App path
+```
+RYU_APP_PATH=/usr/local/lib/python2.7/dist-packages/ryu/app
+```
+
 # FYI
 
 Please read files in "/doc/SoftwareRequirements/", "/doc/SoftwareDesign/" (Ignore the TODO sections)
@@ -51,21 +70,36 @@ We need to discuss together and then work it out.
 
 # BUG LIST
 
-vnfController will get stuck when delete vnfi if vnfi has existed
+vnfcontroller
+* (not sure) it will get stuck when delete vnfi if vnfi has existed
+* can't support multi-core click (maybe the problem of sff? fastclick use RSS to enable multi-core)
+
+sffController
+* vnf can't use multi-core, increase queue number in PMDPort(RSS)
+
+integration
+* Null
 
 # TODO LIST
 
-vnfController
-* numa node support: numa cpu core and mem allocation
-* independent dpdk apps: set different --file-prefix for differenct vnfi
+Readme.md
+* add rabbitmq setting
 
-Add zone to all controller
-* Simulator as SIMULATOR_ZONE
-* Mininet as MININET_ZONE
-* Turbonet as TURBONET_ZONE
+Base
+* link adds bandwidth, traffic rate
+* add routing/addressing scheme name to sfci's attributes
+
+Dashboard
+* give requirements
+* ask Weilin Zhou to give a design
+* user can add new routing scheme, stores it to database, sends it to control layer's module
+* select routing/addressing scheme
+* validate SFCIID selection
 
 Orchestrator
-* add ADD_SFC_REQUEST, ADD_SFCI_REQUEST, DEL_SFCI_REQUEST, DEL_SFC_REQUEST
+* UFRR mapping: check vnfi in vnfiSequence, delete duplicate vnfi in same server
+* UFRR mapping and E2E-P: measure vnf max latency and update function getLatencyOfVNF in performanceModel.py
+* store reservation of resource for each elements in information base
 
 Measurer
 * add self.sendGetSFCIStateCmd()
@@ -73,13 +107,21 @@ Measurer
 Adaptive
 * give a design
 
-Request Processor
-* give a design
-
 SFFController
-* add getSFCIStatus
+* (optional) add getSFCIStatus
+
+ClassifierController
+* Null
+
+vnfController
+* numa node support: numa cpu core and mem allocation
+* independent dpdk apps: set different --file-prefix for differenct vnfi
+* test chain deployment in one server
 
 NetworkController
-* (Optional) ryuCommandAgentUFRR/ryuCommandAgentNotVia: add CMD_TYPE_DEL_SFC handler (delete route2Classifier)
+* Null
+
+Database Agent
+* add database agent to orchestrator, measurer, dashboard
 
 # FEATURE REQUEST LIST

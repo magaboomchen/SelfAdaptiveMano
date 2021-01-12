@@ -6,9 +6,10 @@ from __future__ import print_function
 from google.protobuf.any_pb2 import Any
 import grpc
 
+from sam.base.sfc import *
 from sam.base.server import Server
 from sam.base.messageAgent import *
-from sam.base.sfc import *
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.sffController.sibMaintainer import *
@@ -18,6 +19,7 @@ from sam.serverController.sffController.sffMonitor import *
 from sam.serverController.sffController.argParser import ArgParser
 
 # TODO: finish sfci monitor
+
 
 class SFFControllerCommandAgent(object):
     def __init__(self, zoneName=""):
@@ -33,13 +35,13 @@ class SFFControllerCommandAgent(object):
         self.sffMonitor = SFFMonitor(self.sibms, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
-        queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, zoneName)
-        self._messageAgent.startRecvMsg(queueName)
+        self.queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, zoneName)
+        self._messageAgent.startRecvMsg(self.queueName)
 
     def startSFFControllerCommandAgent(self):
         while True:
-            msg = self._messageAgent.getMsg(SFF_CONTROLLER_QUEUE)
-            if msg.getMessageType() == MSG_TYPE_SSF_CONTROLLER_CMD:
+            msg = self._messageAgent.getMsg(self.queueName)
+            if msg.getMessageType() == MSG_TYPE_SFF_CONTROLLER_CMD:
                 self.logger.info("SFF controller get a command.")
                 try:
                     cmd = msg.getbody()
@@ -53,21 +55,20 @@ class SFFControllerCommandAgent(object):
                         self.sffMonitor.monitorSFCIHandler(cmd)
                     else:
                         self.logger.error("Unkonwn sff command type.")
+                        raise ValueError("Unkonwn sff command type.")
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL
                 except ValueError as err:
                     self.logger.error('sff controller command processing error: ' +
                         repr(err))
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 except Exception as ex:
-                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                    message = template.format(type(ex).__name__, ex.args)
-                    self.logger.error("SFF Controller occure error: {0}".format(message))
+                    ExceptionProcessor(self.logger).logException(ex, "SFF Controller")
                     self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
                 finally:
                     cmdRply = CommandReply(
                         cmd.cmdID,self._commandsInfo[cmd.cmdID]["state"])
                     cmdRply.attributes["source"] = {"sffController"}
-                    rplyMsg = SAMMessage(MSG_TYPE_SSF_CONTROLLER_CMD_REPLY,
+                    rplyMsg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD_REPLY,
                         cmdRply)
                     self._messageAgent.sendMsg(MEDIATOR_QUEUE,rplyMsg)
             elif msg.getMessageType() == None:

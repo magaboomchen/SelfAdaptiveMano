@@ -22,6 +22,7 @@ import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
 from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.server import *
+from sam.base.exceptionProcessor import ExceptionProcessor
 
 
 class BessControlPlane(object):
@@ -40,7 +41,8 @@ class BessControlPlane(object):
                     response = stub.GetVersion(bess_msg_pb2.EmptyRequest())
                 return True
             except Exception as ex:
-                # if type(ex).__name__ == "_InactiveRpcError":
+                ExceptionProcessor(self.logger).logException(ex,
+                    " isBESSAlive ")
                 count = count - 1
         return False
 
@@ -86,14 +88,14 @@ class BessControlPlane(object):
             + (pathID & 0xFF)
         return self._sc.int2ip(ipNum)
 
-    def getSFCIModuleSuffix(self,SFCIID,direction):
-        return '_' + str(SFCIID) + '_' + str(direction['ID'])
+    def getSFCIModuleSuffix(self,sfciID,direction):
+        return '_' + str(sfciID) + '_' + str(direction['ID'])
 
     def getSFCModuleSuffix(self,sfcUUID,direction):
         return '_' + str(sfcUUID) + '_' + str(direction['ID'])
 
-    def _checkVNFISequence(self, VNFISequence):
-        for vnf in VNFISequence:
+    def _checkVNFISequence(self, vnfiSequence):
+        for vnf in vnfiSequence:
             for i in range(len(vnf)-1):
                 for j in range(i+1,len(vnf)-1):
                     vnfi1 = vnf[i]

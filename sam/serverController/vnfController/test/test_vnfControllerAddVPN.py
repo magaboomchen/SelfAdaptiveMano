@@ -79,28 +79,28 @@ class TestVNFAddVPN(TestBase):
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
-        VNFISequence = []
+        vnfiSequence = []
         for index in range(SFCLength):
-            VNFISequence.append([])
+            vnfiSequence.append([])
             for iN in range(1):
                 server = Server("ens3", SFF0_DATAPATH_IP, SERVER_TYPE_NORMAL)
                 server.setServerID(SERVERID_OFFSET + 1)
                 server.setControlNICIP(SFF0_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
+                server.updateResource()
                 config = {}
                 config['VPN'] = VPNTuple(VPN_TunnelSrcIP,VPN_TunnelDstIP, VPN_EncryptKey, VPN_AuthKey)
-                vnfi = VNFI(VNF_TYPE_VPN, VNFType=VNF_TYPE_VPN, 
-                    VNFIID=uuid.uuid1(), config=config, node=server)
-                vnfi.maxCPUNum = 1
-                VNFISequence[index].append(vnfi)
-        return VNFISequence
+                vnfi = VNFI(VNF_TYPE_VPN, vnfType=VNF_TYPE_VPN, 
+                    vnfiID=uuid.uuid1(), config=config, node=server)
+                vnfiSequence[index].append(vnfi)
+        return vnfiSequence
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SSF_CONTROLLER_CMD , self.addSFCICmd)
+            MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL

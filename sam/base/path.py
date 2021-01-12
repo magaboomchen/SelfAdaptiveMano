@@ -12,16 +12,24 @@ PATHID_LENGTH = 8  # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 # [] presenets no path and internel VNF link in the previous node
 # the last nodeID in each stage distinguish P4 or Server
 
+MAPPING_TYPE_NONE = "MAPPING_TYPE_NONE"
+MAPPING_TYPE_UFRR = "MAPPING_TYPE_UFRR"
+MAPPING_TYPE_E2EP = "MAPPING_TYPE_E2EP"
+MAPPING_TYPE_NOTVIA_PSFC = "MAPPING_TYPE_NOTVIA_PSFC"
+MAPPING_TYPE_INTERFERENCE = "MAPPING_TYPE_INTERFERENCE"
+MAPPING_TYPE_SHORTEST_PATH = "MAPPING_TYPE_SHORTEST_PATH"
+
 
 class ForwardingPathSet(object):
-    def __init__(self, primaryForwardingPath, frrType, backupForwardingPath):
+    def __init__(self, primaryForwardingPath,
+                mappingType, backupForwardingPath):
         self.primaryForwardingPath = primaryForwardingPath
         # {pathID:forwardingPath}
         # {1:forwardingPath, 128:forwardingPath}
         # direction1's pathID == 1
         # direction2's pathID == 128
 
-        self.frrType = frrType  # UFRR, NotVia
+        self.mappingType = mappingType  # MAPPING_TYPE_NONE, MAPPING_TYPE_UFRR, etc
         self.backupForwardingPath = backupForwardingPath
         # {
         #   1:{(srcID,dstID,pathID):forwardingPath},
