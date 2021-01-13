@@ -131,19 +131,40 @@ class MappingAlgorithmBase(object):
         else:
             raise ValueError("Can't find this layer in path.")
 
-    def _updateResource4NFVCGDPInitPath(self, path):
-        self._updateSwitchResource(path)
-        self._updateLinkResource(path)
+    def _genRequestIngAndEg(self):
+        self.requestIngSwitchID = {}
+        self.requestEgSwitchID = {}
+        for rIndex in range(len(self.requestList)):
+            request = self.requestList[rIndex]
+            sfc = request.attributes['sfc']
+            ingress = sfc.directions[0]['ingress']
+            egress = sfc.directions[0]['egress']
+            ingSwitch = self._dib.getConnectedSwitch(ingress.getServerID(),
+                self.zoneName)
+            ingSwitchID = ingSwitch.switchID
+            egSwitch = self._dib.getConnectedSwitch(egress.getServerID(),
+                self.zoneName)
+            egSwitchID = egSwitch.switchID
+            # self.logger.debug("ingSwitchID:{0}, egSwitchID:{1}".format(
+            #     ingSwitchID,egSwitchID))
+            self.requestIngSwitchID[rIndex] = ingSwitchID
+            self.requestEgSwitchID[rIndex] = egSwitchID
+        # self.logger.debug("self.requestIngSwitchID:{0}".format(
+        #     self.requestIngSwitchID))
 
-    def _updateResource(self, path):
+    def _updateResource4NFVCGDPInitPath(self, path):
+        self._allocateSwitchResource(path)
+        self._allocateLinkResource(path)
+
+    def _allocateResource(self, path):
         # input:
         # [[(0, 10024), (0, 15), (0, 6), (0, 0), (0, 4), (0, 13), (0, 10002)],
         #  [(1, 10002), (1, 13), (1, 5), (1, 2), (1, 9), (1, 16), (1, 10025)]]
-        self._updateServerResource(path)
-        self._updateSwitchResource(path)
-        self._updateLinkResource(path)
+        self._allocateServerResource(path)
+        self._allocateSwitchResource(path)
+        self._allocateLinkResource(path)
 
-    def _updateServerResource(self, path):
+    def _allocateServerResource(self, path):
         for index in range(1, len(path)):
             serverID = path[index][0]
 
@@ -159,29 +180,41 @@ class MappingAlgorithmBase(object):
                 serverID, expectedCores, expectedMemory,
                 expectedBandwidth, self.zoneName)
 
-    def _updateSwitchResource(self, path):
+    def _allocateSwitchResource(self, path):
         for segPath in path:
             for node in segPath:
                 nodeID = node[1]
-                if self._isSwitch(nodeID):
+                if self._isSwitchID(nodeID):
                     self._dib.reserveSwitchResource(
                         nodeID, 1, self.zoneName)
 
-    def _isSwitch(self, nodeID):
-        return nodeID < SERVERID_OFFSET
+    def _isSwitchID(self, nodeID):
+        switches = self._dib.getSwitchesInAllZone()
+        for switchesInAZoneDict in switches.values():
+            if nodeID in switchesInAZoneDict.keys():
+                return True
+        else:
+            return False
+        # return nodeID < SERVERID_OFFSET
 
-    def _isServer(self, nodeID):
-        return nodeID >= SERVERID_OFFSET
+    def _isServerID(self, nodeID):
+        servers = self._dib.getServersInAllZone()
+        for serversInAZoneDict in servers.values():
+            if nodeID in serversInAZoneDict.keys():
+                return True
+        else:
+            return False
+        # return nodeID >= SERVERID_OFFSET
 
-    def _updateLinkResource(self, path):
+    def _allocateLinkResource(self, path):
         sfc = self.request.attributes['sfc']
         trafficDemand = sfc.getSFCTrafficDemand()
         for segPath in path:
             for index in range(len(segPath)-1):
                 currentNodeID = segPath[index][1]
                 nextNodeID = segPath[index+1][1]
-                if (self._isSwitch(currentNodeID) 
-                        and self._isSwitch(nextNodeID)):
+                if (self._isSwitchID(currentNodeID) 
+                        and self._isSwitchID(nextNodeID)):
                     self._dib.reserveLinkResource(
                         currentNodeID, nextNodeID, 
                         trafficDemand, self.zoneName)

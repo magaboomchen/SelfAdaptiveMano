@@ -14,7 +14,7 @@ from sam.test.testBase import *
 class TestMeasurerClass(TestBase):
     def setup_TenThousandsServerDCNInfo(self):
         self.switches = self.genSwitchList(1620,
-            SWITCH_TYPE_SFF, range(1620))
+            SWITCH_TYPE_NPOP, range(1620))
         self.links = self.genLinkList(46656)
         self.servers = []
         self.servers.extend(

@@ -420,7 +420,7 @@ class Mediator(object):
 
 if __name__=="__main__":
     mode = {
-        'switchType': SWITCH_TYPE_SFF,
+        'switchType': SWITCH_TYPE_NPOP,
         'classifierType': 'Server'  # 'Switch'
     }
     m = Mediator(mode)

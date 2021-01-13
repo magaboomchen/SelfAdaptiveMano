@@ -74,7 +74,7 @@ class NotVia(MappingAlgorithmBase):
                 segPath, node, path))
             pathID = self._assignPathID()
             self._addByPassPath2Set((node, pathID), path)
-            self._updateResource(path)
+            self._allocateResource(path)
 
     def _modifyPathStage(self, path, stageNum):
         modifiedPath = []

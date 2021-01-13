@@ -66,7 +66,7 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
             path = self._selectPath4Candidates()
             path = self._selectNPoPNodeAndServers(path, self._pIndexInRRA)
             self._addPath2Sfci(path)
-            self._updateResource(path)
+            self._allocateResource(path)
 
     def _initPartialPathCalculation(self, pIndex):
         self.logger.debug(
@@ -196,19 +196,20 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
             self.logger.debug("selected serverID: {0}".format(server.getServerID()))
         return serverList
 
-    def _addNFVI2Path(self, dividedPath, serverList):
-        # self.logger.debug("dividedPath:{0}".format(dividedPath))
-        # for server in serverList:
-        #     self.logger.debug("serverID:{0}".format(server.getServerID()))
+    # implement in PathServerFiller
+    # def _addNFVI2Path(self, dividedPath, serverList):
+    #     # self.logger.debug("dividedPath:{0}".format(dividedPath))
+    #     # for server in serverList:
+    #     #     self.logger.debug("serverID:{0}".format(server.getServerID()))
 
-        for index in range(len(serverList)):
-            currentIndex = index
-            nextIndex = index + 1
-            serverID = serverList[currentIndex].getServerID()
-            dividedPath[currentIndex].append((currentIndex,serverID))
-            dividedPath[nextIndex].insert(0, (nextIndex, serverID))
-        self.logger.debug("new dividedPath:{0}".format(dividedPath))
-        return dividedPath
+    #     for index in range(len(serverList)):
+    #         currentIndex = index
+    #         nextIndex = index + 1
+    #         serverID = serverList[currentIndex].getServerID()
+    #         dividedPath[currentIndex].append((currentIndex,serverID))
+    #         dividedPath[nextIndex].insert(0, (nextIndex, serverID))
+    #     self.logger.debug("new dividedPath:{0}".format(dividedPath))
+    #     return dividedPath
 
     def _addPath2Sfci(self, path):
         bp = self.requestPartialPathBp[self._pIndexInRRA]

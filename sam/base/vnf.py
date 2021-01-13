@@ -36,8 +36,12 @@ class VNFI(object):
         self.vnfiStatus = vnfiStatus
         self.minCPUNum = 1
         self.maxCPUNum = 2
+        self.cpuCoreDistribution = []   # place vnfi on specific core
+        # e.g. [1,2,3,4] allocates core 1,2,3,4 for this vnfi
         self.minMem = 1024
         self.maxMem = 1024
+        self.memNUMADistribution = []   # place memory on specific numa node
+        # e.g. [2,2] allocates 2 huge page on numa0 and 2 hugepages on numa1
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

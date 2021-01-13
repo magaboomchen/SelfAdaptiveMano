@@ -75,25 +75,26 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
         self.switches, self.switchCapacity = gp.multidict(self.switches)
         # self.logger.debug("switches:{0}".format(self.switches))
 
-    def _genRequestIngAndEg(self):
-        self.requestIngSwitchID = {}
-        self.requestEgSwitchID = {}
-        for rIndex in range(len(self.requestList)):
-            request = self.requestList[rIndex]
-            sfc = request.attributes['sfc']
-            ingress = sfc.directions[0]['ingress']
-            egress = sfc.directions[0]['egress']
-            ingSwitch = self._dib.getConnectedSwitch(ingress.getServerID(),
-                self.zoneName)
-            ingSwitchID = ingSwitch.switchID
-            egSwitch = self._dib.getConnectedSwitch(egress.getServerID(),
-                self.zoneName)
-            egSwitchID = egSwitch.switchID
-            self.logger.debug("ingSwitchID:{0}, egSwitchID:{1}".format(
-                ingSwitchID,egSwitchID))
-            self.requestIngSwitchID[rIndex] = ingSwitchID
-            self.requestEgSwitchID[rIndex] = egSwitchID
-        self.logger.debug("self.requestIngSwitchID:{0}".format(self.requestIngSwitchID))
+    # implemented in MappingAlgorithmBase
+    # def _genRequestIngAndEg(self):
+    #     self.requestIngSwitchID = {}
+    #     self.requestEgSwitchID = {}
+    #     for rIndex in range(len(self.requestList)):
+    #         request = self.requestList[rIndex]
+    #         sfc = request.attributes['sfc']
+    #         ingress = sfc.directions[0]['ingress']
+    #         egress = sfc.directions[0]['egress']
+    #         ingSwitch = self._dib.getConnectedSwitch(ingress.getServerID(),
+    #             self.zoneName)
+    #         ingSwitchID = ingSwitch.switchID
+    #         egSwitch = self._dib.getConnectedSwitch(egress.getServerID(),
+    #             self.zoneName)
+    #         egSwitchID = egSwitch.switchID
+    #         self.logger.debug("ingSwitchID:{0}, egSwitchID:{1}".format(
+    #             ingSwitchID,egSwitchID))
+    #         self.requestIngSwitchID[rIndex] = ingSwitchID
+    #         self.requestEgSwitchID[rIndex] = egSwitchID
+    #     self.logger.debug("self.requestIngSwitchID:{0}".format(self.requestIngSwitchID))
 
     def initPPs(self, dualVars):
         self.dualVars = dualVars

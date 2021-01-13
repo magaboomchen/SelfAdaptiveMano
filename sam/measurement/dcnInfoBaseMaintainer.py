@@ -23,9 +23,11 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
         self._vnfisReservedResources = {}
 
         self._sc = SocketConverter()
-        logConfigur = LoggerConfigurator(__name__, './log',
-            'DCNInfoBaseMaintainer.log', level='debug')
-        self.logger = logConfigur.getLogger()
+
+        # can't implement logger, because it doesn't support deepcopy
+        # logConfigur = LoggerConfigurator(__name__, './log',
+        #     'DCNInfoBaseMaintainer.log', level='debug')
+        # self.logger = logConfigur.getLogger()
 
     def updateServersInAllZone(self, servers):
         self._servers = servers

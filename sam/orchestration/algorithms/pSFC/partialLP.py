@@ -97,8 +97,8 @@ class PartialLP(OriginalPartialLP):
         request = self.requestList[rIndex]
         sfc = request.attributes['sfc']
 
-        sffIDList = self._getSFFIDList(rIndex)  # [(0,2),(1,3),(2,3),(4,10)]
-        aggSFFIDList = self._getAggSFFIDList(sffIDList)   # [[(0,2)],[(1,3),(2,3)],[(4,10)]]
+        sffIDList = self._getSFFIDList(rIndex)  # sffIDList example: [(0,2),(1,3),(2,3),(4,10)]
+        aggSFFIDList = self._getAggSFFIDList(sffIDList)   # aggSFFIDList example: [[(0,2)],[(1,3),(2,3)],[(4,10)]]
         for index in range(1, len(aggSFFIDList)-1):
             preAggSFF = aggSFFIDList[index-1]
             currentAggSFF = aggSFFIDList[index]

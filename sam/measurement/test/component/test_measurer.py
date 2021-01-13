@@ -43,7 +43,7 @@ class TestMeasurerClass(TestBase):
 
     def genTopoAttr(self):
         switchList = []
-        switch = Switch(uuid.uuid1(), SWITCH_TYPE_SFF)
+        switch = Switch(uuid.uuid1(), SWITCH_TYPE_NPOP)
         switchList.append(switch)
 
         linkList = []

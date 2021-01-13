@@ -4,8 +4,6 @@
 import uuid
 import copy
 
-import networkx
-
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.switch import *
@@ -23,6 +21,7 @@ from sam.orchestration.algorithms.notVia.notVia import *
 from sam.orchestration.algorithms.dpSFC.dpSFC import *
 from sam.orchestration.algorithms.mMLPSFC.mMLPSFC import *
 from sam.orchestration.algorithms.mMLBSFC.mMLBSFC import *
+from sam.orchestration.algorithms.resourceAllocator import *
 
 
 class OSFCAdder(object):
@@ -104,12 +103,26 @@ class OSFCAdder(object):
             else:
                 raise ValueError("Unsupport source/destination type")
 
+            # decouple orchestrator from control plane's setting such as LANIPPrefix
+            # for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
+            #     server = serverInfoDict['server']
+            #     ip = server.getDatapathNICIP()
+            #     serverType = server.getServerType()
+            #     if (self._sc.isInSameLAN(nodeIP, ip, LANIPPrefix)
+            #             and serverType == SERVER_TYPE_CLASSIFIER):
+            #         return server
+            # else:
+            #     raise ValueError("Find ingress/egress failed")
+
             for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
                 server = serverInfoDict['server']
-                ip = server.getDatapathNICIP()
                 serverType = server.getServerType()
-                if self._sc.isInSameLAN(nodeIP, ip, LANIPPrefix) and\
-                    serverType == SERVER_TYPE_CLASSIFIER:
+                if serverType != SERVER_TYPE_CLASSIFIER:
+                    continue
+                serverID = server.getServerID()
+                switch = self._dib.getConnectedSwitch(serverID, self.zoneName)
+                lanNet = switch.lanNet
+                if self._sc.isLANIP(nodeIP, lanNet):
                     return server
             else:
                 raise ValueError("Find ingress/egress failed")
@@ -279,6 +292,9 @@ class OSFCAdder(object):
         mMLBSFC = MMLBSFC(self._dib, requestBatchList,
             requestForwardingPathSet)
         requestForwardingPathSet = mMLBSFC.mapSFCI()
+
+        rA = ResourceAllocator(self._dib)
+        rA.allocate4ForwardingPathSet(requestForwardingPathSet)
 
         return requestForwardingPathSet
 

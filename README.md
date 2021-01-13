@@ -10,53 +10,8 @@ Python2.7
 
 Ubuntu 16.04 LTS
 
-# Dependency
-
-## python
-```
-psutil
-pika
-netifaces
-getmac
-pytest
-MySQL-python
-```
-
 # Installation
-## Set SAM python environment
-```
-Manual:
-cd /usr/local/lib/python2.7/dist-packages
-sudo vim selfAdaptiveMano.pth
-(write) PATH_TO_SELFADAPTIVEMANO
-
-Auto:
-python environmentSetter.py
-```
-
-## RabbitMQ
-```
-install erlang 20.3.8.26-1 (please make sure the version number)
-rabbitmq3.7.0-1 (please make sure the version number)
-```
-
-## Set mysql database
-```
-add user dbAgent with password 123
-add databases Orchestrator, Dashboard, Measurer
-```
-
-## Set SAM DPDK environment (Except for Controller server)
-export $RTE_SDK to the directory of dpdk in bess, for example:
-``` 
-export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
-export RTE_TARGET=x86_64-native-linuxapp-gcc
-```
-
-## Set RYU App path
-```
-RYU_APP_PATH=/usr/local/lib/python2.7/dist-packages/ryu/app
-```
+please read INSTALL.md
 
 # FYI
 

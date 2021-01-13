@@ -21,9 +21,10 @@ from sam.base.messageAgent import *
 from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.algorithms.multiLayerGraph import *
+from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
 
 
-class OriginalPartialLP(object):
+class OriginalPartialLP(MappingAlgorithmBase):
     def __init__(self, dib, requestList):
         self._dib = dib
         self.requestList = requestList
@@ -129,27 +130,26 @@ class OriginalPartialLP(object):
                         # self.logger.debug("type:{0}".format(type(load)))
                         # self.logger.debug("rIndex:{0}, load:{1}".format(rIndex, load))
 
-    def _genRequestIngAndEg(self):
-        self.requestIngSwitchID = {}
-        self.requestEgSwitchID = {}
-        for rIndex in range(len(self.requestList)):
-            request = self.requestList[rIndex]
-            sfc = request.attributes['sfc']
-            ingress = sfc.directions[0]['ingress']
-            egress = sfc.directions[0]['egress']
-            # self.logger.debug("ingress:{0}".format(ingress))
-            # raw_input()
-            ingSwitch = self._dib.getConnectedSwitch(ingress.getServerID(),
-                self.zoneName)
-            ingSwitchID = ingSwitch.switchID
-            egSwitch = self._dib.getConnectedSwitch(egress.getServerID(),
-                self.zoneName)
-            egSwitchID = egSwitch.switchID
-            self.logger.debug("ingSwitchID:{0}, egSwitchID:{1}".format(
-                ingSwitchID,egSwitchID))
-            self.requestIngSwitchID[rIndex] = ingSwitchID
-            self.requestEgSwitchID[rIndex] = egSwitchID
-        self.logger.debug("self.requestIngSwitchID:{0}".format(self.requestIngSwitchID))
+    # implemented in MappingAlgorithmBase
+    # def _genRequestIngAndEg(self):
+    #     self.requestIngSwitchID = {}
+    #     self.requestEgSwitchID = {}
+    #     for rIndex in range(len(self.requestList)):
+    #         request = self.requestList[rIndex]
+    #         sfc = request.attributes['sfc']
+    #         ingress = sfc.directions[0]['ingress']
+    #         egress = sfc.directions[0]['egress']
+    #         ingSwitch = self._dib.getConnectedSwitch(ingress.getServerID(),
+    #             self.zoneName)
+    #         ingSwitchID = ingSwitch.switchID
+    #         egSwitch = self._dib.getConnectedSwitch(egress.getServerID(),
+    #             self.zoneName)
+    #         egSwitchID = egSwitch.switchID
+    #         self.logger.debug("ingSwitchID:{0}, egSwitchID:{1}".format(
+    #             ingSwitchID,egSwitchID))
+    #         self.requestIngSwitchID[rIndex] = ingSwitchID
+    #         self.requestEgSwitchID[rIndex] = egSwitchID
+    #     self.logger.debug("self.requestIngSwitchID:{0}".format(self.requestIngSwitchID))
 
     def _trans2LPAndSolve(self):
         try:

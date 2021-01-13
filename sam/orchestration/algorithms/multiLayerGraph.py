@@ -45,6 +45,16 @@ class MultiLayerGraph(object):
         for nodeID in nodeIDList:
             self.abandonNodeIDList = self.abandonNodeIDList + nodeIDList
 
+    def addAbandonNodes(self, nodeList):
+        for node in nodeList:
+            if type(node) == Server:
+                nodeID = node.getServerID()
+            elif type(node) == Switch:
+                nodeID = node.switchID
+            else:
+                raise ValueError("Invalid node type:{0}".format(type(node)))
+            self.abandonNodeIDList.append(nodeID)
+
     def addAbandonLinkIDs(self, linkIDList):
         for link in linkIDList:
             self.abandonLinkList = self.abandonLinkList + linkIDList
@@ -71,7 +81,7 @@ class MultiLayerGraph(object):
             link = linkInfoDict['link']
             s = self._genNodeID(link.srcID, stage)
             d = self._genNodeID(link.dstID, stage)
-            weight = self._getLinkWeight(link)
+            weight = self.getLinkWeight(link)
             # self.logger.debug(
             #     "resource link:{0}, node1:{1}, node2:{2}".format(
             #         self._dib.hasEnoughLinkResource(link, expectedBandwidth),
@@ -107,7 +117,7 @@ class MultiLayerGraph(object):
     def _genNodeID(self, nodeID, stage):
         return (stage, nodeID)
 
-    def _getLinkWeight(self, link):
+    def getLinkWeight(self, link):
         if self.weightType == WEIGHT_TYPE_CONST:
             return 1
         elif self.weightType == WEIGHT_TYPE_DELAY_MODEL:

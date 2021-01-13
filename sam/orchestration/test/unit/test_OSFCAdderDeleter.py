@@ -79,7 +79,7 @@ class TestOSFCAdderDeleterClass(TestBase):
             cls.switches[DEFAULT_ZONE][switchID] = {'switch':switch,
                 'Active':True}
 
-        switchList = cls.tc.genSwitchList(2, SWITCH_TYPE_SFF,
+        switchList = cls.tc.genSwitchList(2, SWITCH_TYPE_NPOP,
                 ["2.2.0.64/27", "2.2.0.96/27"], range(2,4), 
                 [range(11), range(11)])
         for switch in switchList:
@@ -124,7 +124,7 @@ class TestOSFCAdderDeleterClass(TestBase):
                 'server': server}
         cls.logger.debug("serverDict:{0}".format(cls.servers))
 
-    @pytest.mark.skip(reason='Temporarly')
+    # @pytest.mark.skip(reason='Temporarly')
     def test_genAddSFCCmd(self):
         # exercise
         cmd = self.oA.genAddSFCCmd(self.addSFCRequest)
@@ -135,7 +135,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         # verify
         assert sfc.sfcUUID == self.sfc.sfcUUID
 
-    @pytest.mark.skip(reason='Temporarly')
+    # @pytest.mark.skip(reason='Temporarly')
     def test_genAddSFCICmd(self):
         # exercise
         cmd = self.oA.genAddSFCICmd(self.addSFCIRequest)
@@ -150,7 +150,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         assert primaryForwardingPath == {1: [[10001, 1, 2, 10003], [10003, 2, 1, 10001]]}
         assert backupForwardingPath == {1: {(1, 2, 2): [[1, 3, 10005], [10005, 3, 1, 10001]], (2, 10003, 3): [[2, 10004], [10004, 2, 1, 10001]]}}
 
-    @pytest.mark.skip(reason='Temporarly')
+    # @pytest.mark.skip(reason='Temporarly')
     def test_genDelSFCICmd(self):
         # exercise
         cmd = self.oD.genDelSFCICmd(self.delSFCIRequest)
@@ -162,7 +162,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         assert sfc.sfcUUID == self.sfc.sfcUUID
         assert sfci.sfciID == self.sfci.sfciID
 
-    @pytest.mark.skip(reason='Temporarly')
+    # @pytest.mark.skip(reason='Temporarly')
     def test_genDelSFCCmd(self):
         # exercise
         cmd = self.oD.genDelSFCCmd(self.delSFCRequest)
@@ -172,6 +172,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         # verify
         assert sfc.sfcUUID == self.sfc.sfcUUID
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_genABatchOfRequestAndAddSFCICmds(self):
         # exercise
         self._requestBatchQueue = Queue.Queue()
