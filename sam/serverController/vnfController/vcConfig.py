@@ -3,9 +3,11 @@
 
 class VCConfig:
     MAX_VIO_NUM = 65536 # max num of XX in virtioXX.
-    MAX_CPU_NUM = 12 # max num of CPU in each server; TODO: may be replaced by server.CPUNum in the future.    
+    MAX_CPU_NUM = 10 # max num of CPU in each server; TODO: may be replaced by server.CPUNum in the future.    
     
     DOCKER_TCP_PORT = 5982  # maybe unsafe
+
+    DPDKINFO_BUF = 65536  # used for element DPDKInfo
 
     DEBUG = True  # if you set debug=True, the container will not be removed even if the app is terminated.
                   # !!!please run docker rm XXX to free resources of the container.!!!
@@ -45,6 +47,6 @@ class VCConfig:
     #VPN_IMAGE_CLICK = 'fastclick-vnf/disable-batch'
     VPN_APP_CLICK = './click-conf/vpn.click'
 
-    CPU_START = 1  # cpu 0 is used for bess
+    NOT_AVAI_CPU = [0]  # used for bess
 
 vcConfig = VCConfig()

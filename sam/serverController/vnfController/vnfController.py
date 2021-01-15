@@ -88,14 +88,14 @@ class VNFController(object):
                         self._vioManager[serverID] = SourceAllocator(serverID, vcConfig.MAX_VIO_NUM)
                     vioAllo = self._vioManager[serverID]
                     if serverID not in self._cpuManager:
-                        self._cpuManager[serverID] = SourceAllocator(serverID, vcConfig.MAX_CPU_NUM, start=vcConfig.CPU_START)
+                        self._cpuManager[serverID] = CPUAllocator(serverID, vnfi.node.getCoreNUMADistribution(), notAvaiCPU=vcConfig.NOT_AVAI_CPU)
                     cpuAllo = self._cpuManager[serverID]
                     try:
-                        containerID, cpuStart, vioStart = self._vnfiAdder.addVNFI(vnfi, vioAllo, cpuAllo)
+                        containerID, cpus, vioStart = self._vnfiAdder.addVNFI(vnfi, vioAllo, cpuAllo)
                         self._vnfiMaintainer.setVNFIState(sfciID, vnfi, VNFI_STATE_DEPLOYED)
                         self._vnfiMaintainer.setVNFIContainerID(sfciID, vnfi, containerID)
                         self._vnfiMaintainer.setVNFIVIOStart(sfciID, vnfi, vioStart)
-                        self._vnfiMaintainer.setVNFICPUStart(sfciID, vnfi, cpuStart)
+                        self._vnfiMaintainer.setVNFICPU(sfciID, vnfi, cpus)
                     except Exception as exp:
                         self.logger.error('Error occurs when adding vnfi: %s' % exp)
                         self._vnfiMaintainer.setVNFIState(sfciID, vnfi, VNFI_STATE_FAILED)

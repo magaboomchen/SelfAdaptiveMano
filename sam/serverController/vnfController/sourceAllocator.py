@@ -45,19 +45,59 @@ class SourceAllocator(object):
                 del(self._unallocatedList[i + 1])
                 break
 
-def mapCpuCores(start, end):
-    res = []
-    for i in range(start, end + 1):
-        if i * 2 < vcConfig.MAX_CPU_NUM:
-            res.append(i * 2)
-        else:
-            res.append(2 * i - vcConfig.MAX_CPU_NUM + 1)
-    resStr = ''
-    for i in res:
-        resStr = resStr + '%d,' % i
-    resStr = resStr[:-1]
-    return res, resStr
+class CPUAllocator(object):
+    def __init__(self, serverID, cpuList, notAvaiCPU=None):  
+        self._serverID = serverID
+        
+        for cpu in notAvaiCPU:
+            for each in cpuList:
+                if cpu in each:
+                    each.remove(cpu)
+                    break
+
+        self._cpuList = cpuList
+                    
+    def allocateCPU(self, num):  # resCpu: [nodeNum][] int
+        resCpu = []
+        for _ in self._cpuList:
+            resCpu.append([])
+
+        for idx, each in enumerate(self._cpuList):
+            if len(each) >= num:
+                resCpu[idx].extend(each[:num])
+                del(each[:num])
+                return resCpu
+
+        for idx, each in enumerate(self._cpuList):  
+            if num > len(each):
+                num -= len(each)
+                resCpu[idx].extend(each)
+                del(each[:len(each)])
+            elif num <= len(each):
+                resCpu[idx].extend(each[:num])
+                del(each[:num])
+                return resCpu
+        
+        # not enough cpu 
+        assert num > 0
+        self.freeCPU(resCpu)
+        return None, None 
+
+    def freeCPU(self, cpus):
+        for idx, each in enumerate(cpus):
+            if len(each) > 0:
+                self._cpuList[idx].extend(cpus[idx])
+
+    def getCPUList(self):
+        return self._cpuList
 
 if __name__ == '__main__':
-    print(mapCpuCores(1,2))
-    print(mapCpuCores(5,7))
+    ''' test '''  
+    cpuAllo = CPUAllocator(0, [[0,2,4,6],[1,3,5,7]], [0])
+    print(cpuAllo.getCPUList())
+    print(cpuAllo.allocateCPU(2))
+    print(cpuAllo.getCPUList())
+    print(cpuAllo.allocateCPU(2))
+    print(cpuAllo.getCPUList())
+    print(cpuAllo.allocateCPU(3))
+    print(cpuAllo.getCPUList())
