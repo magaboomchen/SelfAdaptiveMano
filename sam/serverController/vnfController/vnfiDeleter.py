@@ -18,7 +18,7 @@ class VNFIDeleter(object):
             assert vnfiDS.containerID is None
             return
         vioAllo.freeSource(vnfiDS.vioStart, 2)
-        cpuAllo.freeSource(vnfiDS.cpuStart, vnfiDS.vnfi.maxCPUNum)
+        cpuAllo.freeCPU(vnfiDS.cpus)
         server = vnfiDS.vnfi.node
         ''' kill container '''        
         docker_url = 'tcp://%s:%d' % (server.getControlNICIP(), self._dockerPort)
