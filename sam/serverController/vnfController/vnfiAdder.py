@@ -220,7 +220,7 @@ class VNFIAdder(object):
         volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
         ports = {'%d/tcp' % vcConfig.MON_TCP_PORT: None}
         try:
-            container = client.containers.run(imageName, command, tty=True, remove=not debug, privileged=True, name=containerName, 
+            container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
                 volumes=volumes, detach=True, ports=ports)
         except Exception as e:
             # free allocated CPU and virtioID
