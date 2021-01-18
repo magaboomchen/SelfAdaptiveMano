@@ -69,7 +69,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
     def _genInitPrimaryPaths(self, sdc):
         mlg = MultiLayerGraph()
         mlg.loadInstance4dibAndRequest(self._dib, self.request,
-            WEIGHT_TYPE_CONST)
+            WEIGHT_TYPE_0100_UNIFORAM_MODEL)
         mlg.trans2MLG()
         (ingSwitchID, egSwitchID, vnfSeqStr) = sdc
         primaryPath = mlg.getPath(0, ingSwitchID, 
@@ -80,7 +80,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
     def _genInitBackupPaths(self, sdc, initPrimaryPath):
         mlg = MultiLayerGraph()
         mlg.loadInstance4dibAndRequest(self._dib, self.request,
-            WEIGHT_TYPE_CONST)
+            WEIGHT_TYPE_0100_UNIFORAM_MODEL)
         abandonLinkIDList = self._getLinkID4Path(initPrimaryPath)
         mlg.addAbandonLinkIDs(abandonLinkIDList)
         mlg.trans2MLG()

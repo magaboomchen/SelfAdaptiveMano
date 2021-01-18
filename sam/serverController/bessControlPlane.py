@@ -66,19 +66,19 @@ class BessControlPlane(object):
             {'value_bin':b'\x00\x00'},
             {'value_bin':b'\x00\x00'}
         ]
-        if match['proto'] != None:
+        if match['proto'] != "*":
             values[0]["value_bin"] = match['proto']
             masks[0]["value_bin"] = b'\xFF'
-        if match['srcIP'] != None:
+        if match['srcIP'] != "*":
             values[1]["value_bin"] = self._sc.aton(match['srcIP'])
             masks[1]["value_bin"] = b'\xFF\xFF\xFF\xFF'
-        if match['dstIP'] != None:
+        if match['dstIP'] != "*":
             values[2]["value_bin"] = self._sc.aton(match['dstIP'])
             masks[2]["value_bin"] = b'\xFF\xFF\xFF\xFF'
-        if match['srcPort'] != None:
+        if match['srcPort'] != "*":
             values[3]["value_bin"] = self._sc.aton(match['srcPort'])
             masks[3]["value_bin"] = b'\xFF\xFF'
-        if match['dstPort'] != None:
+        if match['dstPort'] != "*":
             values[4]["value_bin"] = self._sc.aton(match['dstPort'])
             masks[4]["value_bin"] = b'\xFF\xFF'
         return [values,masks]

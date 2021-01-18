@@ -171,8 +171,8 @@ class MultiLayerGraph(object):
     def _getSupportVNFSwitchesOfLayer(self, layerNum):
         switches = []
         vnfType = self.sfc.vNFTypeSequence[layerNum]
-        for switchID,switchDictInfo in self._dib.getSwitchesByZone(self.zoneName).items():
-            switch = switchDictInfo['switch']
+        for switchID,switchInfoDict in self._dib.getSwitchesByZone(self.zoneName).items():
+            switch = switchInfoDict['switch']
             if vnfType in switch.supportVNF:
                 switches.append(switch)
         return switches

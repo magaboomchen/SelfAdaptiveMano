@@ -160,10 +160,10 @@ class TestBase(object):
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
         direction1 = {
             'ID': 0,
-            'source': None,
+            'source': {"IPv4":"*"},
             'ingress': classifier,
-            'match': {'srcIP': None,'dstIP':WEBSITE_REAL_IP,
-                'srcPort': None,'dstPort': None,'proto': None},
+            'match': {'srcIP': "*",'dstIP':WEBSITE_REAL_IP,
+                'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
             'destination': {"IPv4":WEBSITE_REAL_IP}
         }
@@ -181,10 +181,10 @@ class TestBase(object):
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
         direction1 = {
             'ID': 0,
-            'source': None,
+            'source': {"IPv4":"*"},
             'ingress': classifier,
-            'match': {'srcIP': None,'dstIP':WEBSITE_REAL_IP,
-                'srcPort': None,'dstPort': None,'proto': None},
+            'match': {'srcIP': "*",'dstIP':WEBSITE_REAL_IP,
+                'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
             'destination': {"IPv4":WEBSITE_REAL_IP}
         }
@@ -192,14 +192,15 @@ class TestBase(object):
             'ID': 1,
             'source': {"IPv4":WEBSITE_REAL_IP},
             'ingress': classifier,
-            'match': {'srcIP': WEBSITE_REAL_IP,'dstIP':None,
-                'srcPort': None,'dstPort': None,'proto': None},
+            'match': {'srcIP': WEBSITE_REAL_IP,'dstIP': "*",
+                'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
-            'destination': None
+            'destination': "*"
         }
         directions = [direction1,direction2]
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions, {'zone':""})
+            backupInstanceNumber, applicationType, directions=directions,
+            attributes={'zone':""}, routingMorphic=MORPHIC_IPV4)
 
     def genUniDirection10BackupSFCI(self):
         vnfiSequence = self.gen10BackupVNFISequence()

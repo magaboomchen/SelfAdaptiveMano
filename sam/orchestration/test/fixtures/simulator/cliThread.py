@@ -3,8 +3,8 @@
 
 import time
 import uuid
-import cmd
 import threading
+import cmd as simulatorCLI  # use this name or contect me to change
 
 from sam.base.messageAgent import *
 from sam.base.sfc import *

@@ -1,18 +1,22 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from sam.base.server import *
+from sam.base.switch import *
+
 VNF_TYPE_CLASSIFIER = 0
 VNF_TYPE_FORWARD = 1
 VNF_TYPE_FW = 2
 VNF_TYPE_IDS = 3
 VNF_TYPE_MONITOR = 4
 VNF_TYPE_LB = 5
-VNF_TYPE_TRAFFICSHAPER = 6
+VNF_TYPE_RATELIMITER = 6
 VNF_TYPE_NAT = 7
 VNF_TYPE_VPN = 8
 VNF_TYPE_WOC = 9    # WAN Optimization Controller
 VNF_TYPE_APPFW = 10 # http firewall
-VNF_TYPE_VOC = 11 # 
+VNF_TYPE_VOC = 11
+VNF_TYPE_DDOS_SCRUBBER = 12
 
 VNFID_LENGTH = 4 # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 
@@ -43,6 +47,25 @@ class VNFI(object):
         self.memNUMADistribution = []   # place memory on specific numa node
         # e.g. [2,2] allocates 2 huge page on numa0 and 2 hugepages on numa1
 
+    def to_dict(self):
+        if type(self.node) == Switch:
+            nodeID = self.node.switchID
+        elif type(self.node) == Server:
+            nodeID = self.node.getServerID()
+        else:
+            raise ValueError("Unknown node type {0}".format(type(node)))
+
+        vnfDict = {
+            "vnfType": self.vnfType,
+            "vnfiID": self.vnfiID,
+            "config": self.config,
+            "nodeID": nodeID,
+            "cpu": self.maxCPUNum,
+            "memory": self.maxMem
+        }
+
+        return vnfDict
+
     def __str__(self):
         string = "{0}\n".format(self.__class__)
         for key,values in self.__dict__.items():
@@ -60,4 +83,3 @@ class VNFIRequest(object):
         self.requestType = requestType # GETCONFIG/UPDATECONFIG/GETVNFI
         self.vnfiID = vnfiID
         self.config = config
-

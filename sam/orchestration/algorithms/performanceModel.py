@@ -42,7 +42,7 @@ class PerformanceModel(object):
         # VNF_TYPE_IDS = 3
         # VNF_TYPE_MONITOR = 4
         # VNF_TYPE_LB = 5
-        # VNF_TYPE_TRAFFICSHAPER = 6
+        # VNF_TYPE_RATELIMITER = 6
         # VNF_TYPE_NAT = 7
         # VNF_TYPE_VPN = 8
         # VNF_TYPE_WOC = 9    # WAN Optimization Controller
@@ -90,7 +90,7 @@ class PerformanceModel(object):
         # VNF_TYPE_IDS = 3
         # VNF_TYPE_MONITOR = 4
         # VNF_TYPE_LB = 5
-        # VNF_TYPE_TRAFFICSHAPER = 6
+        # VNF_TYPE_RATELIMITER = 6
         # VNF_TYPE_NAT = 7
         # VNF_TYPE_VPN = 8
         # VNF_TYPE_WOC = 9    # WAN Optimization Controller

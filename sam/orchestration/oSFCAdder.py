@@ -93,16 +93,22 @@ class OSFCAdder(object):
             destination = direction['destination']
             direction['egress'] = self._selectClassifier(destination)
 
-    def _selectClassifier(self, node):
-        if node == None:
+    def _selectClassifier(self, nodeIdentifier):
+        # if nodeIdentifier == None:
+        #     dcnGateway = self._getDCNGateway()
+        #     return self._getClassifierBySwitch(dcnGateway)
+        # else:
+        #     pass
+
+        if "IPv4" in nodeIdentifier:
+            nodeIP = nodeIdentifier["IPv4"]
+        else:
+            raise ValueError("Unsupport source/destination type")
+
+        if nodeIP == "*":
             dcnGateway = self._getDCNGateway()
             return self._getClassifierBySwitch(dcnGateway)
         else:
-            if "IPv4" in node:
-                nodeIP = node["IPv4"]
-            else:
-                raise ValueError("Unsupport source/destination type")
-
             # decouple orchestrator from control plane's setting such as LANIPPrefix
             # for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
             #     server = serverInfoDict['server']

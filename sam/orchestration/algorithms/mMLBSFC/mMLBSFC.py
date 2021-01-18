@@ -18,7 +18,8 @@ from sam.orchestration.algorithms.resourceAllocator import *
 
 class MMLBSFC(MappingAlgorithmBase, PathServerFiller):
     def __init__(self, dib, requestList, requestForwardingPathSet):
-        self._dib = copy.deepcopy(dib)
+        self._initDib = dib
+        self._dib = dib
         self.requestList = requestList
         self.requestForwardingPathSet = requestForwardingPathSet
 
@@ -38,33 +39,31 @@ class MMLBSFC(MappingAlgorithmBase, PathServerFiller):
     def _genAllFailureScenarios(self):
         # node protection: switch and server
         self.scenarioList = []
-        for switchesInfoDict in self._dib.getSwitchesByZone(self.zoneName):
-            print(switchesInfoDict)
-            raw_input()
-            for switchID, switchInfoDict in switchesInfoDict.items():
-                switch = self._dib.getSwitch(switchID, self.zoneName)
-                fS = FailureScenario()
-                fS.addElement(switch)
-                self.scenarioList.append(fS)
+        switchesInfoDict = self._initDib.getSwitchesByZone(self.zoneName)
+        for switchInfoDict in switchesInfoDict.itervalues():
+            switch = switchInfoDict['switch']
+            fS = FailureScenario()
+            fS.addElement(switch)
+            self.scenarioList.append(fS)
 
-        for serversInfoDict in self._dib.getServersByZone(self.zoneName):
-            for serverID, serverInfoDict in serversInfoDict.items():
-                server = self._dib.getServer(serverID, self.zoneName)
-                fS = FailureScenario()
-                fS.addElement(server)
-                self.scenarioList.append(fS)
+        serversInfoDict = self._initDib.getServersByZone(self.zoneName)
+        for serverInfoDict in serversInfoDict.itervalues():
+            server = serverInfoDict['server']
+            fS = FailureScenario()
+            fS.addElement(server)
+            self.scenarioList.append(fS)
 
     def _mapBackupPath4AllFailureScenarios(self):
         for scenario in self.scenarioList:
             self._mapBackupPath4Scenario(scenario)
 
     def _mapBackupPath4Scenario(self, scenario):
-        self._init()
+        self._init(scenario)
         self._allocateResource4UnaffectedPart()
         self._genBackupPath4EachRequest()
 
-    def _init(self):
-        self._tmpDib = copy.deepcopy(self.dib)
+    def _init(self, scenario):
+        self._dib = copy.deepcopy(self._initDib)
         self.elementList = scenario.getElementsList()
         self.unaffectedForwardingPathSegDict = {}   # {rIndex: unaffected part of forwardingPath}
 
@@ -78,7 +77,7 @@ class MMLBSFC(MappingAlgorithmBase, PathServerFiller):
                 segFp = self._getUnaffectedPartOfPrimaryForwardingPath(rIndex, fp)
                 self.addForwardingPath2UnaffectedForwardingPathSegDict(rIndex, segFp)
 
-        rA = ResourceAllocator(self._tmpDib)
+        rA = ResourceAllocator(self._dib)
         rA.allocate4ForwardingPathSet(self.unaffectedForwardingPathSegDict)
 
     def _genBackupPath4EachRequest(self):
@@ -88,7 +87,7 @@ class MMLBSFC(MappingAlgorithmBase, PathServerFiller):
             c = sfc.getSFCLength()
 
             mlg = MultiLayerGraph()
-            mlg.loadInstance4dibAndRequest(self._tmpDib, 
+            mlg.loadInstance4dibAndRequest(self._dib, 
                 self.request, WEIGHT_TYPE_DELAY_MODEL)
             mlg.addAbandonNodes([self.elementList])
             mlg.trans2MLG()

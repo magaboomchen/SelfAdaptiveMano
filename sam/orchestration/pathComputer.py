@@ -125,8 +125,8 @@ class PathComputer(object):
     def _findSwitchByServer(self, server):
         serverIP = server.getDatapathNICIP()
         switchesInfoDict = self._dib.getSwitchesByZone(self.zoneName)
-        for switchDictInfo in switchesInfoDict.itervalues():
-            switch = switchDictInfo['switch']
+        for switchInfoDict in switchesInfoDict.itervalues():
+            switch = switchInfoDict['switch']
             lanNet = switch.lanNet
             if self._sc.isLANIP(serverIP, lanNet):
                 return switch

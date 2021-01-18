@@ -62,6 +62,7 @@ Adaptive
 
 SFFController
 * (optional) add getSFCIStatus
+* add icmp reply function (ipv4 and ipv6)
 
 ClassifierController
 * None
@@ -72,7 +73,10 @@ vnfController
 * test chain deployment in one server
 
 NetworkController
-* None
+* P4 NF
+* add icmp reply function (ipv4 and ipv6)
+* add SFF rules (ipv4 and ipv6)
+* add NF rules (ipv4 and ipv6)
 
 Database Agent
 * add database agent to orchestrator, measurer, dashboard

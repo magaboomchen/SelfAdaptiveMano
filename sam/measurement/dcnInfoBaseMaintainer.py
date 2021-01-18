@@ -13,8 +13,8 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self, *args, **kwargs):
         super(DCNInfoBaseMaintainer, self).__init__(*args, **kwargs)
         self._servers = {}  # [zoneName][serverID] = {'server':server, 'Active':True/False, 'timestamp':time}
-        self._switches = {} # [zoneName][serverID] = {'switch':switch, 'active':True/False}
-        self._links = {}    # [zoneName][serverID] = {'link':link, 'active':True/False}
+        self._switches = {} # [zoneName][switchID] = {'switch':switch, 'active':True/False}
+        self._links = {}    # [zoneName][(srcID,dstID)] = {'link':link, 'active':True/False}
         self._vnfis = {}
 
         self._serversReservedResources = {} # [zoneName][serverID] = {'bandwidth':bw, 'cores':cpu, 'memory':mem}

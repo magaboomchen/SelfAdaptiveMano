@@ -22,6 +22,11 @@ STATE_DELETED = "STATE_DELETED" # All resource of this sfc/sfci has been release
 # Delete an sfc/sfci will not release SFCIID
 # To get back SFCIID, please prune sfc/sfci from database
 
+MORPHIC_IPV4 = "MORPHIC_IPV4"
+MORPHIC_IDENTITY = "MORPHIC_IDENTITY"
+MORPHIC_GEO = "MORPHIC_GEO"
+MORPHIC_CONTENT = "MORPHIC_CONTENT"
+
 
 class SFCI(object):
     def __init__(self, sfciID, vnfiSequence, sloRealTimeValue=None,
@@ -30,6 +35,19 @@ class SFCI(object):
         self.vnfiSequence = vnfiSequence    # only show the direction1
         self.sloRealTimeValue = sloRealTimeValue
         self.forwardingPathSet = forwardingPathSet
+
+    def to_dict(self):
+        sfciDict = {
+            "sfciID": self.sfciID,
+            "vnfiSequenceLength": len(self.vnfiSequence),
+            "forwardingPath": self.forwardingPathSet.primaryForwardingPath[1]
+        }
+
+        for vnfiIndex in range(len(self.vnfiSequence)):
+            sfciDict["vnfi_{0}".format(vnfiIndex)] \
+                = self.vnfiSequence[vnfiIndex][0].to_dict()
+
+        return sfciDict
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)
@@ -43,14 +61,16 @@ class SFCI(object):
 
 class SFC(object):
     def __init__(self, sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions=None,
-            attributes={}, traffic=None, slo=None, scalingMode=MANUAL_SCALE, sFCIs=[]):
+                backupInstanceNumber, applicationType, directions=None,
+                attributes={}, traffic=None, slo=None, sfChainMethod=None,
+                scalingMode=MANUAL_SCALE, sFCIs=[], routingMorphic=None):
         self.sfcUUID = sfcUUID
         self.vNFTypeSequence = vNFTypeSequence # [FW, LB]
         self.scalingMode = scalingMode
         self.maxScalingInstanceNumber = maxScalingInstanceNumber # 2
         self.backupInstanceNumber = backupInstanceNumber # 1
         self.applicationType = applicationType # NORTHSOUTH_WEBSITE
+        self.routingMorphic = routingMorphic
         self.slo = slo
         self.attributes = attributes # {"zone":ZONENAME}
         self.directions = directions
@@ -107,6 +127,30 @@ class SFC(object):
 
     def getSFCLatencyBound(self):
         return self.slo.latencyBound
+
+    def to_dict(self):
+        return {
+                'sfcUUID': str(self.sfcUUID),
+                'vNFTypeSequence': self.vNFTypeSequence,
+                'zone': self.attributes['zone'], # "PROJECT3_ZONE"
+                'source': self.directions[0]['source'],
+                        # Outside, {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or
+                        # other routing addressing format
+                'ingress': self.directions[0]['ingress'].getServerID(),
+                        # Any May be a P4 switch or a server
+                'match': self.directions[0]['match'],
+                        # {{},{},...} 
+                        # classifier's match, 
+                        # generic match fields: {"offset":offset, 
+                        # "size":size, "value": value}
+                'egress': self.directions[0]['egress'].getServerID(),
+                        # Any, May be a P4 switch or a server
+                'destination': self.directions[0]['destination'],
+                        # websiteIP
+                        # {'IPv4':"0.0.0.0"} or
+                        # {'MPLS':srcLable} or other routing addressing format
+                'routingMorphic': self.routingMorphic
+            }
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)
