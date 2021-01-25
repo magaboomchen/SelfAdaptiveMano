@@ -42,7 +42,7 @@ class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase, PathServerFiller):
         self.jointLink = self.opLP.jointLinkSolution
         self.requestIngSwitchID = self.opLP.requestIngSwitchID
         self.requestEgSwitchID = self.opLP.requestEgSwitchID
-        self.requestForwardingPathSet = {}
+        self.forwardingPathSetsDict = {}
 
     def randomizedRoundingAlgorithm(self):
         for rIndex in range(len(self.requestList)):
@@ -258,5 +258,5 @@ class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase, PathServerFiller):
         primaryForwardingPath = {1:forwardingPath}
         mappingType = MAPPING_TYPE_NOTVIA_PSFC
         backupForwardingPath = {1:{}}
-        self.requestForwardingPathSet[self._rIndexInRRA] = ForwardingPathSet(
+        self.forwardingPathSetsDict[self._rIndexInRRA] = ForwardingPathSet(
             primaryForwardingPath, mappingType, backupForwardingPath)

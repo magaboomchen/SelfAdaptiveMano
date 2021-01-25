@@ -184,27 +184,25 @@ class MappingAlgorithmBase(object):
         for segPath in path:
             for node in segPath:
                 nodeID = node[1]
-                if self._isSwitchID(nodeID):
+                if self._dib.isSwitchID(nodeID):
                     self._dib.reserveSwitchResource(
                         nodeID, 1, self.zoneName)
 
-    def _isSwitchID(self, nodeID):
-        switches = self._dib.getSwitchesInAllZone()
-        for switchesInAZoneDict in switches.values():
-            if nodeID in switchesInAZoneDict.keys():
-                return True
-        else:
-            return False
-        # return nodeID < SERVERID_OFFSET
+    # def _isSwitchID(self, nodeID):
+    #     switches = self._dib.getSwitchesInAllZone()
+    #     for switchesInAZoneDict in switches.values():
+    #         if nodeID in switchesInAZoneDict.keys():
+    #             return True
+    #     else:
+    #         return False
 
-    def _isServerID(self, nodeID):
-        servers = self._dib.getServersInAllZone()
-        for serversInAZoneDict in servers.values():
-            if nodeID in serversInAZoneDict.keys():
-                return True
-        else:
-            return False
-        # return nodeID >= SERVERID_OFFSET
+    # def _isServerID(self, nodeID):
+    #     servers = self._dib.getServersInAllZone()
+    #     for serversInAZoneDict in servers.values():
+    #         if nodeID in serversInAZoneDict.keys():
+    #             return True
+    #     else:
+    #         return False
 
     def _allocateLinkResource(self, path):
         sfc = self.request.attributes['sfc']
@@ -213,8 +211,8 @@ class MappingAlgorithmBase(object):
             for index in range(len(segPath)-1):
                 currentNodeID = segPath[index][1]
                 nextNodeID = segPath[index+1][1]
-                if (self._isSwitchID(currentNodeID) 
-                        and self._isSwitchID(nextNodeID)):
+                if (self._dib.isSwitchID(currentNodeID) 
+                        and self._dib.isSwitchID(nextNodeID)):
                     self._dib.reserveLinkResource(
                         currentNodeID, nextNodeID, 
                         trafficDemand, self.zoneName)

@@ -46,4 +46,4 @@ class OPSFC(object):
             self._dib, self.requestList, self.opLP)
         self.rra.mapSFCI()
 
-        return self.rra.requestForwardingPathSet
+        return self.rra.forwardingPathSetsDict

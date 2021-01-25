@@ -69,6 +69,9 @@ class OriginalPartialLP(MappingAlgorithmBase):
         self.links = {}
         for key in self._dib.getLinksByZone(self.zoneName).keys():
             (srcNodeID, dstNodeID) = key
+            if (self._dib.isServerID(srcNodeID) 
+                    or self._dib.isServerID(dstNodeID)):
+                continue
             self.links[(srcNodeID, dstNodeID)] = self._dib.getLinkResidualResource(
                 srcNodeID, dstNodeID, self.zoneName)
 

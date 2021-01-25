@@ -12,8 +12,14 @@ SFCID_LENGTH = 12  # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 
 APP_TYPE_NORTHSOUTH_WEBSITE = "APP_TYPE_NORTHSOUTH_WEBSITE"
 
-MANUAL_SCALE = 0
-ADAPTIVE_SCALE = 1
+MANUAL_SCALE = "MANUAL_SCALE"
+ADAPTIVE_SCALE = "ADAPTIVE_SCALE"
+
+WITHOUT_PROTECTION = "WITHOUT_PROTECTION"
+WITH_PROTECTION = "WITH_PROTECTION"
+
+MANUAL_RECOVERY = "MANUAL_RECOVERY"
+AUTO_RECOVERY = "AUTO_RECOVERY"
 
 STATE_IN_PROCESSING = "STATE_IN_PROCESSING"
 STATE_ACTIVE = "STATE_ACTIVE"
@@ -21,6 +27,7 @@ STATE_INACTIVE = "STATE_INACTIVE"   # There maybe some resource used in DCN
 STATE_DELETED = "STATE_DELETED" # All resource of this sfc/sfci has been released
 # Delete an sfc/sfci will not release SFCIID
 # To get back SFCIID, please prune sfc/sfci from database
+STATE_PROTECTION_MODE = "STATE_PROTECTION_MODE" # when a failure happen, sfc/sfci will be in this state
 
 MORPHIC_IPV4 = "MORPHIC_IPV4"
 MORPHIC_IDENTITY = "MORPHIC_IDENTITY"
@@ -63,13 +70,16 @@ class SFC(object):
     def __init__(self, sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
                 backupInstanceNumber, applicationType, directions=None,
                 attributes={}, traffic=None, slo=None, sfChainMethod=None,
-                scalingMode=MANUAL_SCALE, sFCIs=[], routingMorphic=None):
+                scalingMode=MANUAL_SCALE, sFCIs=[], routingMorphic=None,
+                protectionMode=WITHOUT_PROTECTION, recoveryMode=MANUAL_RECOVERY):
         self.sfcUUID = sfcUUID
         self.vNFTypeSequence = vNFTypeSequence # [FW, LB]
         self.scalingMode = scalingMode
         self.maxScalingInstanceNumber = maxScalingInstanceNumber # 2
+        self.protectionMode = protectionMode
         self.backupInstanceNumber = backupInstanceNumber # 1
         self.applicationType = applicationType # NORTHSOUTH_WEBSITE
+        self.recoveryMode = recoveryMode
         self.routingMorphic = routingMorphic
         self.slo = slo
         self.attributes = attributes # {"zone":ZONENAME}

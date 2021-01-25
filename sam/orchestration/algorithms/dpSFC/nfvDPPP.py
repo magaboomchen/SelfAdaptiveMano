@@ -56,6 +56,9 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
         self.links = {}
         for key in self._dib.getLinksByZone(self.zoneName).keys():
             (srcNodeID, dstNodeID) = key
+            if (self._dib.isServerID(srcNodeID) 
+                    or self._dib.isServerID(dstNodeID)):
+                continue
             self.links[(srcNodeID, dstNodeID)] \
                 = self._dib.getLinkResidualResource(
                     srcNodeID, dstNodeID, self.zoneName)
@@ -74,27 +77,6 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
                 self.zoneName)]
         self.switches, self.switchCapacity = gp.multidict(self.switches)
         # self.logger.debug("switches:{0}".format(self.switches))
-
-    # implemented in MappingAlgorithmBase
-    # def _genRequestIngAndEg(self):
-    #     self.requestIngSwitchID = {}
-    #     self.requestEgSwitchID = {}
-    #     for rIndex in range(len(self.requestList)):
-    #         request = self.requestList[rIndex]
-    #         sfc = request.attributes['sfc']
-    #         ingress = sfc.directions[0]['ingress']
-    #         egress = sfc.directions[0]['egress']
-    #         ingSwitch = self._dib.getConnectedSwitch(ingress.getServerID(),
-    #             self.zoneName)
-    #         ingSwitchID = ingSwitch.switchID
-    #         egSwitch = self._dib.getConnectedSwitch(egress.getServerID(),
-    #             self.zoneName)
-    #         egSwitchID = egSwitch.switchID
-    #         self.logger.debug("ingSwitchID:{0}, egSwitchID:{1}".format(
-    #             ingSwitchID,egSwitchID))
-    #         self.requestIngSwitchID[rIndex] = ingSwitchID
-    #         self.requestEgSwitchID[rIndex] = egSwitchID
-    #     self.logger.debug("self.requestIngSwitchID:{0}".format(self.requestIngSwitchID))
 
     def initPPs(self, dualVars):
         self.dualVars = dualVars
@@ -211,7 +193,7 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
                 'nfvDPPP[{0},{1}]'.format(rIndex, pb))
 
             # timeout setting
-            self.ppModel[rIndex, pb].setParam('TimeLimit', 1000)
+            self.ppModel[rIndex, pb].setParam('TimeLimit', 60)
 
             # Create continuous variables
             self.phi[rIndex, pb] = self.ppModel[rIndex, pb].addVars(
@@ -366,7 +348,7 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
         sfc = self.getSFC4Request(request)
         vnfSeq = sfc.vNFTypeSequence
 
-        # phi
+        # variable phi
         self.phiSolution = self.ppModel[rIndex, pb].getAttr('x',
             self.phi[rIndex, pb])
         for vnfIndex in range(len(vnfSeq)+1):
@@ -377,7 +359,7 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
                             vnfIndex, srcID, dstID,
                             self.phiSolution[vnfIndex, srcID, dstID]))
 
-        # a
+        # variable a
         self.aSolution = self.ppModel[rIndex, pb].getAttr('x',
             self.a[rIndex, pb])
         for vnfIndex in range(len(vnfSeq)+1):

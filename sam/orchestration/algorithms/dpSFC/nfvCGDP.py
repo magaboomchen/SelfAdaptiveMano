@@ -305,6 +305,9 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         self.links = {}
         for key in self._dib.getLinksByZone(self.zoneName).keys():
             (srcNodeID, dstNodeID) = key
+            if (self._dib.isServerID(srcNodeID) 
+                    or self._dib.isServerID(dstNodeID)):
+                continue
             self.links[(srcNodeID, dstNodeID)] \
                 = self._dib.getLinkResidualResource(
                     srcNodeID, dstNodeID, self.zoneName)
@@ -507,8 +510,8 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         else:
             return None
 
-    def getForwardingPathSet(self):
-        self.requestForwardingPathSet = {}
+    def getForwardingPathSetsDict(self):
+        self.forwardingPathSetsDict = {}
         for rIndex in range(len(self.requestList)):
             primaryPathSolutions = self.modelYVar.select(rIndex,'*','*','*',
                 '*', 'p')
@@ -524,6 +527,8 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
                             primaryFP
                         }
 
+            abandonServers = self._getNFVIInPrimaryPath(primaryFP)
+
             backupPathSolutions = self.modelYVar.select(rIndex,'*','*','*',
                 '*', 'b')
             for solution in backupPathSolutions:
@@ -533,19 +538,33 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
                     sdc = (ingSwitchID, egSwitchID, vnfSeqStr)
                     backupFP = self.configurations[sdc][pathIndex]
                     backupFP = self._selectNPoPNodeAndServers(backupFP,
-                        rIndex)
+                        rIndex, abandonServers)
                     backupForwardingPath = {1:
                         {
-                            ('*','*'): backupFP
+                            (
+                                # ('*','*'),
+                                ("repairMethod", "increaseBackupPathPrioriy")
+                            ): backupFP
                         }        
                     }
 
             mappingType = MAPPING_TYPE_E2EP
-            self.requestForwardingPathSet[rIndex] = ForwardingPathSet(
+            self.forwardingPathSetsDict[rIndex] = ForwardingPathSet(
                 primaryForwardingPath, mappingType,
                 backupForwardingPath)
 
-        return self.requestForwardingPathSet
+        return self.forwardingPathSetsDict
+
+    def _getNFVIInPrimaryPath(self, primaryFP):
+        serverList = []
+        for segPath in primaryFP:
+            layerNum, firstNodeID = segPath[0]
+            layerNum, lastNodeID = segPath[-1]
+            if firstNodeID not in serverList:
+                serverList.extend([firstNodeID])
+            if lastNodeID not in serverList:
+                serverList.extend([lastNodeID])
+        return serverList
 
     def _getSolutionVarIndexTuple(self, solution):
         varName = solution.VarName

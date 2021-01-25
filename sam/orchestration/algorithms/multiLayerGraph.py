@@ -39,7 +39,7 @@ class MultiLayerGraph(object):
         self.zoneName = self.sfc.attributes['zone']
         self.weightType = weightType
         self.abandonNodeIDList = []
-        self.abandonLinkList = []
+        self.abandonLinkIDList = []
 
     def addAbandonNodeIDs(self, nodeIDList):
         for nodeID in nodeIDList:
@@ -57,7 +57,15 @@ class MultiLayerGraph(object):
 
     def addAbandonLinkIDs(self, linkIDList):
         for link in linkIDList:
-            self.abandonLinkList = self.abandonLinkList + linkIDList
+            self.abandonLinkIDList = self.abandonLinkIDList + linkIDList
+
+    def addAbandonLinks(self, linkList):
+        for link in linkList:
+            if type(link) == Link:
+                linkID = (link.srcID, link.dstID)
+            else:
+                raise ValueError("Invalid link type:{0}".format(type(link)))
+            self.abandonLinkIDList.append(linkID)
 
     def trans2MLG(self):
         gList = []
@@ -88,6 +96,8 @@ class MultiLayerGraph(object):
             #         self._dib.hasEnoughSwitchResource(link.srcID, expectedTCAM),
             #         self._dib.hasEnoughSwitchResource(link.dstID, expectedTCAM)
             #     ))
+            if self._dib.isServerID(link.srcID) or self._dib.isServerID(link.dstID):
+                continue
             if (self._dib.hasEnoughLinkResource(link, expectedBandwidth, self.zoneName) 
                 and self._dib.hasEnoughSwitchResource(link.srcID, expectedTCAM, self.zoneName)
                 and self._dib.hasEnoughSwitchResource(link.dstID, expectedTCAM, self.zoneName)
@@ -133,7 +143,7 @@ class MultiLayerGraph(object):
     def _isAbandonLink(self, link):
         srcID = link.srcID
         dstID = link.dstID
-        if ( (srcID, dstID) in self.abandonLinkList
+        if ( (srcID, dstID) in self.abandonLinkIDList
             or srcID in self.abandonNodeIDList
             or dstID in self.abandonNodeIDList):
             return True

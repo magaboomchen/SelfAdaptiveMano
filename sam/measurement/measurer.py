@@ -132,6 +132,7 @@ class Measurer(object):
                 self._dib.updateLinksByZone(value, zoneName)
             elif key == 'servers':
                 self._dib.updateServersByZone(value, zoneName)
+                self._dib.updateSwitch2ServerLinksByZone(zoneName)
             elif key == 'vnfis':
                 self._dib.updateVnfisByZone(value, zoneName)
             elif key == 'zone':
@@ -139,6 +140,7 @@ class Measurer(object):
             else:
                 self.logger.warning("Unknown attributes:{0}".format(key))
         self.logger.debug("dib:{0}".format(self._dib))
+
 
 class MeasurerCommandSender(threading.Thread):
     def __init__(self, threadID, messageAgent, logger, dashib):

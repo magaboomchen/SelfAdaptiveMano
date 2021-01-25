@@ -28,14 +28,14 @@ class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
         self.logger.info("MMLPSFC mapSFCI")
         self._init()
         self._mapAllPrimaryPaths()
-        return self.requestForwardingPathSet
+        return self.forwardingPathSetsDict
 
     def _init(self):
         self.zoneName = self.requestList[0].attributes['zone']
         self._genRequestIngAndEg()
 
     def _mapAllPrimaryPaths(self):
-        self.requestForwardingPathSet = {}
+        self.forwardingPathSetsDict = {}
         self.primaryPathDict = {}
         for rIndex in range(len(self.requestList)):
             self.request = self.requestList[rIndex]
@@ -73,8 +73,8 @@ class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
                         rIndex))
 
             mappingType = MAPPING_TYPE_UFRR
-            self.requestForwardingPathSet[rIndex] = ForwardingPathSet(
-                path, mappingType, {1:{}})
+            self.forwardingPathSetsDict[rIndex] = ForwardingPathSet(
+                {1:path}, mappingType, {1:{}})
 
     def _isPathsMeetLatencySLA(self, dib, pathDict, requestList):
         for rIndex in pathDict.keys():
@@ -112,7 +112,8 @@ class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
         for segIndex in range(len(path)-1):
             segPath = path[segIndex]
             (layerNum, serverID) = segPath[-1]
-            if not self._isServerID(serverID):
+            # if not self._isServerID(serverID):
+            if not self._dib.isServerID(serverID):
                 raise ValueError("Invalid serverID: {0}".format(serverID))
             vnfType = vnfSeq[segIndex]
             vnfLatency = pM.getLatencyOfVNF(vnfType, trafficDemand)

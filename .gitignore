@@ -1,12 +1,69 @@
-*.log
-*.temp
-*.mp4
-*.docx
-*.pyc
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
 *.o
-~$*
+*.cpp.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.pyc
+
+# Data
+*.pcap
+
+# Log
+log/**
+*.log
+*.txt
+*.INFO
+*.ERROR
+
+# Directories
+tmp/**
+backup/**
+build/**
+log/
+topologyDataSet/
+SFC_info/
+topology/
+backup/
+solution/*
+instance/*
 .pytest_cache/
 __pycache__/
-log/
 samSimulation/
 sam/base/rabbitMQConf.conf
+
+# Backup Files
+*~
+*.temp
+~$*
+
+# Doc
+*.mp4
+*.docx

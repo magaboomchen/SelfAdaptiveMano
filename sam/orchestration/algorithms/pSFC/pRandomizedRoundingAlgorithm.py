@@ -25,11 +25,11 @@ from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
 
 
 class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
-    def __init__(self, dib, requestList, pLP, requestForwardingPathSet):
+    def __init__(self, dib, requestList, pLP, forwardingPathSetsDict):
         self._dib = dib
         self.requestList = requestList
         self.pLP = pLP
-        self.requestForwardingPathSet = requestForwardingPathSet
+        self.forwardingPathSetsDict = forwardingPathSetsDict
 
         logConfigur = LoggerConfigurator(__name__, './log',
             'P-RRA.log', level='warning')
@@ -196,21 +196,6 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
             self.logger.debug("selected serverID: {0}".format(server.getServerID()))
         return serverList
 
-    # implement in PathServerFiller
-    # def _addNFVI2Path(self, dividedPath, serverList):
-    #     # self.logger.debug("dividedPath:{0}".format(dividedPath))
-    #     # for server in serverList:
-    #     #     self.logger.debug("serverID:{0}".format(server.getServerID()))
-
-    #     for index in range(len(serverList)):
-    #         currentIndex = index
-    #         nextIndex = index + 1
-    #         serverID = serverList[currentIndex].getServerID()
-    #         dividedPath[currentIndex].append((currentIndex,serverID))
-    #         dividedPath[nextIndex].insert(0, (nextIndex, serverID))
-    #     self.logger.debug("new dividedPath:{0}".format(dividedPath))
-    #     return dividedPath
-
     def _addPath2Sfci(self, path):
         bp = self.requestPartialPathBp[self._pIndexInRRA]
         Xp = self.requestPartialPathXp[self._pIndexInRRA]
@@ -218,4 +203,11 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
         mlg = MultiLayerGraph()
         sfc = self._requestInRRA.attributes['sfc']
         vnfLayerNum = mlg.getVnfLayerNum(xp, sfc)
-        self.requestForwardingPathSet[self._rIndexInRRA].backupForwardingPath[1][((vnfLayerNum, bp),'*')] = path
+        requstFPSet = self.forwardingPathSetsDict[self._rIndexInRRA]
+        self.backupForwardingPath = requstFPSet.backupForwardingPath[1]
+        self.backupForwardingPath[
+                (
+                    ("failureNPoPID", (vnfLayerNum, bp, Xp)),
+                    ("repairMethod", "increaseBackupPathPrioriy")
+                )
+            ] = path

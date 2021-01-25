@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 from sam.base.server import *
+from sam.base.link import *
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -47,6 +48,25 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
     def updateLinksByZone(self, links, zoneName):
         self._links[zoneName] = links
 
+    def updateSwitch2ServerLinksByZone(self, zoneName):
+        servers = self.getServersByZone(zoneName)
+        for serverID, serverInfoDict in servers.items():
+            server = serverInfoDict['server']
+            bw = server.getNICBandwidth()
+            switch = self.getConnectedSwitch(serverID, zoneName)
+            switchID = switch.switchID
+            linkID1 = (serverID, switchID)
+            self._links[zoneName][linkID1] = {
+                'link': Link(serverID, switchID, bw),
+                'Active': True
+                }
+
+            linkID2 = (switchID, serverID)
+            self._links[zoneName][linkID2] = {
+                'link': Link(switchID, serverID, bw),
+                'Active': True
+                }
+
     def updateVnfisInAllZone(self, vnfis):
         self._vnfis = vnfis
 
@@ -79,6 +99,22 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def getServer(self, serverID, zoneName):
         return self._servers[zoneName][serverID]['server']
+
+    def isSwitchID(self, nodeID):
+        switches = self.getSwitchesInAllZone()
+        for switchesInAZoneDict in switches.values():
+            if nodeID in switchesInAZoneDict.keys():
+                return True
+        else:
+            return False
+
+    def isServerID(self, nodeID):
+        servers = self.getServersInAllZone()
+        for serversInAZoneDict in servers.values():
+            if nodeID in serversInAZoneDict.keys():
+                return True
+        else:
+            return False
 
     def getConnectedSwitch(self, serverID, zoneName):
         for switchID,switchInfoDict in self._switches[zoneName].items():

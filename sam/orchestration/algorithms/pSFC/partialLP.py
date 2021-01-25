@@ -27,10 +27,10 @@ from sam.orchestration.algorithms.oPSFC.originalPartialLP import *
 
 
 class PartialLP(OriginalPartialLP):
-    def __init__(self, dib, requestList, requestForwardingPathSet):
+    def __init__(self, dib, requestList, forwardingPathSetsDict):
         self._dib = dib
         self.requestList = requestList
-        self.requestForwardingPathSet = requestForwardingPathSet
+        self.forwardingPathSetsDict = forwardingPathSetsDict
 
         logConfigur = LoggerConfigurator(__name__,
             './log',
@@ -203,7 +203,7 @@ class PartialLP(OriginalPartialLP):
         return True
 
     def _getPrimaryPath(self, rIndex):
-        forwardingPathSet = self.requestForwardingPathSet[rIndex]
+        forwardingPathSet = self.forwardingPathSetsDict[rIndex]
         self.logger.debug("forwardingPathSet:{0}".format(forwardingPathSet))
 
         primaryPath = forwardingPathSet.primaryForwardingPath[1]      

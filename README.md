@@ -79,6 +79,6 @@ NetworkController
 * add NF rules (ipv4 and ipv6)
 
 Database Agent
-* add database agent to orchestrator, measurer, dashboard
+* add database agent to orchestrator, measurer, dashboard, adaptive
 
 # FEATURE REQUEST LIST

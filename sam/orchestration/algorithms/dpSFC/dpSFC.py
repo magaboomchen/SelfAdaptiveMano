@@ -76,9 +76,10 @@ class DPSFC(object):
         self.nfvCGDP.transRMP2ILP()
         self.nfvCGDP.solve()
 
-        forwardingPathSet = self.nfvCGDP.getForwardingPathSet()
+        forwardingPathSetsDict \
+            = self.nfvCGDP.getForwardingPathSetsDict()
 
-        return forwardingPathSet
+        return forwardingPathSetsDict
 
     def recordTime(self):
         return time.time()

@@ -208,14 +208,14 @@ class OSFCAdder(object):
             requestBatchList =requestDict[mappingType]
             if mappingType == MAPPING_TYPE_UFRR:
                 self.logger.info("ufrr")
-                requestForwardingPathSet = self.ufrr(requestBatchList)
+                forwardingPathSetsDict = self.ufrr(requestBatchList)
             elif mappingType == MAPPING_TYPE_E2EP:
                 self.logger.info("e2ep")
-                requestForwardingPathSet = self.e2eProtection(
+                forwardingPathSetsDict = self.e2eProtection(
                     requestBatchList)
             elif mappingType == MAPPING_TYPE_NOTVIA_PSFC:
                 self.logger.info("PSFC NotVia")
-                requestForwardingPathSet = self.notViaPSFC(requestBatchList)
+                forwardingPathSetsDict = self.notViaPSFC(requestBatchList)
             elif mappingType == MAPPING_TYPE_NONE:
                 pass
             else:
@@ -224,7 +224,7 @@ class OSFCAdder(object):
                 raise ValueError("Unknown mappingType.")
 
             cmdList.extend(
-                self._requestForwardingPathSet2Cmd(requestForwardingPathSet,
+                self._forwardingPathSetsDict2Cmd(forwardingPathSetsDict,
                     requestBatchList)
             )
 
@@ -271,49 +271,46 @@ class OSFCAdder(object):
 
     def notViaPSFC(self, requestBatchList):
         opSFC = OPSFC(self._dib, requestBatchList)
-        requestForwardingPathSet = opSFC.mapSFCI()
+        forwardingPathSetsDict = opSFC.mapSFCI()
 
         pSFC = PSFC(self._dib, requestBatchList,
-            requestForwardingPathSet)
-        requestForwardingPathSet = pSFC.mapSFCI()
+            forwardingPathSetsDict)
+        forwardingPathSetsDict = pSFC.mapSFCI()
 
         notVia = NotVia(self._dib, 
-            requestBatchList, requestForwardingPathSet)
-        requestForwardingPathSet = notVia.mapSFCI()
+            requestBatchList, forwardingPathSetsDict)
+        forwardingPathSetsDict = notVia.mapSFCI()
 
-        self.logger.debug("requestForwardingPathSet:{0}".format(
-                requestForwardingPathSet))
-        return requestForwardingPathSet
+        self.logger.debug("forwardingPathSetsDict:{0}".format(
+                forwardingPathSetsDict))
+        return forwardingPathSetsDict
 
     def e2eProtection(self, requestBatchList):
         dpSFC = DPSFC(self._dib, requestBatchList)
-        requestForwardingPathSet = dpSFC.mapSFCI()
+        forwardingPathSetsDict = dpSFC.mapSFCI()
 
-        return requestForwardingPathSet
+        return forwardingPathSetsDict
 
     def ufrr(self, requestBatchList):
         mMLPSFC = MMLPSFC(self._dib, requestBatchList)
-        requestForwardingPathSet = mMLPSFC.mapSFCI()
+        forwardingPathSetsDict = mMLPSFC.mapSFCI()
 
         mMLBSFC = MMLBSFC(self._dib, requestBatchList,
-            requestForwardingPathSet)
-        requestForwardingPathSet = mMLBSFC.mapSFCI()
+            forwardingPathSetsDict)
+        forwardingPathSetsDict = mMLBSFC.mapSFCI()
 
-        rA = ResourceAllocator(self._dib)
-        rA.allocate4ForwardingPathSet(requestForwardingPathSet)
+        return forwardingPathSetsDict
 
-        return requestForwardingPathSet
-
-    def _requestForwardingPathSet2Cmd(self, requestForwardingPathSet,
+    def _forwardingPathSetsDict2Cmd(self, forwardingPathSetsDict,
             requestBatchList):
-        self.logger.info("requestFPSet:{0}".format(requestForwardingPathSet))
+        self.logger.info("requestFPSet:{0}".format(forwardingPathSetsDict))
         cmdList = []
         for rIndex in range(len(requestBatchList)):
             request = requestBatchList[rIndex]
             sfc = request.attributes['sfc']
             zoneName = sfc.attributes['zone']
             sfci = request.attributes['sfci']
-            sfci.forwardingPathSet = requestForwardingPathSet[rIndex]
+            sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
 
             cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
                 'sfc':sfc, 'sfci':sfci, 'zone':zoneName

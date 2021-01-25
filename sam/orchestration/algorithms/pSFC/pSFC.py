@@ -29,10 +29,10 @@ class PSFC(object):
     # RYU部署初始/备份路径，用不同优先级表示。
     # adaptive模块根据测量结果，触发SFF的相应表项的优先级变更即可。
 
-    def __init__(self, dib, requestBatchList, requestForwardingPathSet):
+    def __init__(self, dib, requestBatchList, forwardingPathSetsDict):
         self._dib = dib
         self.requestList = copy.deepcopy(requestBatchList)
-        self.requestForwardingPathSet = requestForwardingPathSet
+        self.forwardingPathSetsDict = forwardingPathSetsDict
         self._sc = SocketConverter()
 
         logConfigur = LoggerConfigurator(__name__, './log',
@@ -43,16 +43,16 @@ class PSFC(object):
         self.logger.info("PSFC mapSFCI")
 
         # LP
-        self.pLP = PartialLP(self._dib, self.requestList, self.requestForwardingPathSet)
+        self.pLP = PartialLP(self._dib, self.requestList, self.forwardingPathSetsDict)
         self.pLP.mapSFCI()
 
         # P-RRA
         self.rra = PRandomizedRoundingAlgorithm(
-            self._dib, self.requestList, self.pLP, self.requestForwardingPathSet)
+            self._dib, self.requestList, self.pLP, self.forwardingPathSetsDict)
         self.rra.mapSFCI()
 
         self.logger.debug(
-            "requestForwardingPathSet:{0}".format(
-                self.requestForwardingPathSet))
+            "forwardingPathSetsDict:{0}".format(
+                self.forwardingPathSetsDict))
 
-        return self.rra.requestForwardingPathSet
+        return self.rra.forwardingPathSetsDict
