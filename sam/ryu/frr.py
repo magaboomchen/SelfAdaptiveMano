@@ -140,10 +140,10 @@ class FRR(BaseApp):
             parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
             parser.OFPInstructionGotoTable(table_id=L2_TABLE)
         ]
-        self._add_flow(datapath,match,inst,table_id=IPv4_CLASSIFIER_TABLE,
+        self._add_flow(datapath,match,inst,table_id=IPV4_CLASSIFIER_TABLE,
             priority=3)
         self.ibm.addSFCFlowTableEntry(sfcUUID, dpid,
-            IPv4_CLASSIFIER_TABLE, matchFields)
+            IPV4_CLASSIFIER_TABLE, matchFields)
 
     def getSFCIStageDstIP(self, sfci, stageCount, pathID):
         if stageCount<len(sfci.vnfiSequence):
@@ -328,12 +328,12 @@ class FRR(BaseApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         matchFields = self.ibm.getSFCFlowTableEntryMatchFields(sfcUUID,
-            dpid, IPv4_CLASSIFIER_TABLE)
+            dpid, IPV4_CLASSIFIER_TABLE)
         match = parser.OFPMatch(**matchFields)
         # Before delete this route, we must check whether other SFC use the same matchFields.
-        count = self.ibm.countFlowTable(dpid, matchFields)
+        count = self.ibm.countSFCRIB(dpid, matchFields)
         if count == 1: # If no, we can delete this route.
-            self._del_flow(datapath, match, table_id=IPv4_CLASSIFIER_TABLE,
+            self._del_flow(datapath, match, table_id=IPV4_CLASSIFIER_TABLE,
                 priority=3)
         else: # If yes, we can't delete this route.
             pass

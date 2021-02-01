@@ -275,12 +275,12 @@ class UFRR(FRR):
                                              actions)]
         self._add_flow(datapath, match, inst, table_id = UFRR_TABLE, priority=0)
 
-        # initial IPv4_CLASSIFIER_TABLE
+        # initial IPV4_CLASSIFIER_TABLE
         match = parser.OFPMatch(
             eth_type=ether_types.ETH_TYPE_IP,ipv4_dst="10.0.0.0/8"
         )
         inst = [parser.OFPInstructionGotoTable(table_id = UFRR_TABLE)]
-        self._add_flow(datapath, match, inst, table_id = IPv4_CLASSIFIER_TABLE, priority=2)
+        self._add_flow(datapath, match, inst, table_id = IPV4_CLASSIFIER_TABLE, priority=2)
 
     def _sendCmdRply(self, cmdID, cmdState):
         cmdRply = CommandReply(cmdID,cmdState)

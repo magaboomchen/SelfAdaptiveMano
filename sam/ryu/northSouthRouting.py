@@ -205,7 +205,7 @@ class NorthSouthRouting(BaseApp):
             eth_type=ether_types.ETH_TYPE_IP
         )
         instructions = [parser.OFPInstructionGotoTable(table_id=NORTH_SOUTH_TABLE)]
-        self._add_flow(datapath,match,instructions,table_id=IPv4_CLASSIFIER_TABLE, priority=1)
+        self._add_flow(datapath,match,instructions,table_id=IPV4_CLASSIFIER_TABLE, priority=1)
 
         match = parser.OFPMatch()
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,

@@ -20,7 +20,7 @@ from sam.base.mkdirs import *
 from sam.base.messageAgent import *
 from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.multiLayerGraph import *
+from sam.orchestration.algorithms.base.multiLayerGraph import *
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
 
 
@@ -31,7 +31,7 @@ class OriginalPartialLP(MappingAlgorithmBase):
 
         logConfigur = LoggerConfigurator(__name__,
             './log',
-            'OriginalPartialLP.log', level='warning')
+            'OriginalPartialLP.log', level='debug')
         self.logger = logConfigur.getLogger()
 
     def mapSFCI(self):
@@ -133,34 +133,14 @@ class OriginalPartialLP(MappingAlgorithmBase):
                         # self.logger.debug("type:{0}".format(type(load)))
                         # self.logger.debug("rIndex:{0}, load:{1}".format(rIndex, load))
 
-    # implemented in MappingAlgorithmBase
-    # def _genRequestIngAndEg(self):
-    #     self.requestIngSwitchID = {}
-    #     self.requestEgSwitchID = {}
-    #     for rIndex in range(len(self.requestList)):
-    #         request = self.requestList[rIndex]
-    #         sfc = request.attributes['sfc']
-    #         ingress = sfc.directions[0]['ingress']
-    #         egress = sfc.directions[0]['egress']
-    #         ingSwitch = self._dib.getConnectedSwitch(ingress.getServerID(),
-    #             self.zoneName)
-    #         ingSwitchID = ingSwitch.switchID
-    #         egSwitch = self._dib.getConnectedSwitch(egress.getServerID(),
-    #             self.zoneName)
-    #         egSwitchID = egSwitch.switchID
-    #         self.logger.debug("ingSwitchID:{0}, egSwitchID:{1}".format(
-    #             ingSwitchID,egSwitchID))
-    #         self.requestIngSwitchID[rIndex] = ingSwitchID
-    #         self.requestEgSwitchID[rIndex] = egSwitchID
-    #     self.logger.debug("self.requestIngSwitchID:{0}".format(self.requestIngSwitchID))
-
     def _trans2LPAndSolve(self):
         try:
             # Clear environment
-            disposeDefaultEnv()
+            # disposeDefaultEnv()
+            env = gp.Env()
 
             # Create optimization model
-            m = gp.Model('OriginalPartialLP')
+            m = gp.Model('OriginalPartialLP', env)
 
             # timeout setting
             m.setParam('TimeLimit', 1000)
@@ -221,6 +201,10 @@ class OriginalPartialLP(MappingAlgorithmBase):
                 (a.sum('*', '*', w) - a.sum('*', [0, -1], w) <= self.switchCapacity[w] for w in self.switches), "nodeCapacity")
 
             # Link capacity
+            for u,v in self.phsicalLink:
+                if self.linkCapacity[u,v] <= 1:
+                    self.logger.warning("link {0}->{1}'s bandwidth <= 1".format(u, v))
+
             m.addConstrs(
                 (flow.prod(self.requestLoad, '*', '*', '*', u, v) <= self.linkCapacity[u,v]
                     for u,v in self.phsicalLink), "linkCapacity")
@@ -269,14 +253,21 @@ class OriginalPartialLP(MappingAlgorithmBase):
                 self.logger.warning("model status: suboptimal")
             elif m.status == GRB.INFEASIBLE:
                 self.logger.warning("infeasible model")
+                m.computeIIS()
+                m.write("./LP/originalPartialLPIIS.ilp")
                 raise ValueError("infeasible model")
             else:
                 self.logger.warning("unknown model status:{0}".format(m.status))
 
-        except GurobiError:
+        # except GurobiError:
+        #     self.logger.error('Error reported')
+
+        except Exception as ex:
             self.logger.error('Error reported')
+            ExceptionProcessor(self.logger).logException(ex)
 
         finally:
-            del m
+            m.dispose()
             # clean up gruobi environment
-            disposeDefaultEnv()
+            # disposeDefaultEnv()
+            env.dispose()

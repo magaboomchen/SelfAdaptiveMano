@@ -1,5 +1,5 @@
 # Installation
-### python library
+## python library
 ```
 sudo python -m pip install psutil
 sudo python -m pip install pika
@@ -8,6 +8,10 @@ sudo python -m pip install getmac
 sudo python -m pip install pytest
 sudo python -m pip install MySQL-python
 sudo python -m pip install -i https://pypi.gurobi.com gurobipy
+sudo python -m pip install ryu
+sudo python -m pip uninstall tinyrpc
+sudo python -m pip install tinyrpc==0.8
+sudo python -m pip install ruamel.yaml
 ```
 
 ## SAM python environment
@@ -64,10 +68,10 @@ mysql> create database Measurer;
 
 ## BESS (Only need for client server)
 ```
-Install BESS accroding to the guide on https://github.com/NetSys/bess
+Install BESS according to the guide on https://github.com/NetSys/bess
 ```
 
-## DPDK environment (Only need for client server running)
+## DPDK environment (Only need for client server)
 export $RTE_SDK to the directory of dpdk in bess, for example:
 ``` 
 export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
@@ -78,9 +82,4 @@ export RTE_TARGET=x86_64-native-linuxapp-gcc
 ### Set ryu app environment variable "path"
 ```
 RYU_APP_PATH=/usr/local/lib/python2.7/dist-packages/ryu/app
-```
-
-## Gurobi
-```
-python -m pip install -i https://pypi.gurobi.com gurobipy
 ```

@@ -32,6 +32,8 @@ class LoggerConfigurator(object):
 
         self.loggerName = loggerName
         self._appendLoggerNameSuffix()
+        self.filename = filename
+        # self._appendFileNameSuffix()
         self.logger = logging.getLogger(self.loggerName)
         self.logger.setLevel(self.level_relations.get(level))
 
@@ -39,9 +41,10 @@ class LoggerConfigurator(object):
         sh = logging.StreamHandler() # print to screen
         sh.setFormatter(format_str)
         self.logger.addHandler(sh)
+        sh.close()
 
-        if directory != None and filename != None:
-            self.logFilePath = directory + '/' + filename
+        if directory != None and self.filename != None:
+            self.logFilePath = directory + '/' + self.filename
             th = handlers.TimedRotatingFileHandler(filename=self.logFilePath,
                 when=when, interval=interval, backupCount=backCount,
                 encoding='utf-8')
@@ -55,6 +58,7 @@ class LoggerConfigurator(object):
             # midnight
             th.setFormatter(format_str)
             self.logger.addHandler(th)
+            th.close()
 
     def getLogger(self):
         return self.logger
@@ -62,6 +66,10 @@ class LoggerConfigurator(object):
     def _appendLoggerNameSuffix(self):
         suffix = ''.join(random.sample(['z','y','x','w','v','u','t','s','r','q','p','o','n','m','l','k','j','i','h','g','f','e','d','c','b','a'], 5))
         self.loggerName = self.loggerName + "_" + suffix
+
+    def _appendFileNameSuffix(self):
+        suffix = ''.join(random.sample(['z','y','x','w','v','u','t','s','r','q','p','o','n','m','l','k','j','i','h','g','f','e','d','c','b','a'], 5))
+        self.filename = self.filename + "._" + suffix
 
 
 if __name__ == '__main__':

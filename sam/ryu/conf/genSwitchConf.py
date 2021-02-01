@@ -1,9 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from ruamel import yaml
 import sys
+
+from ruamel import yaml
+
 from sam.base.socketConverter import SocketConverter
+
 
 class SwitchConf(object):
     def __init__(self, dpid, switchType, switchID, dcnGatewaySelfIP=None, dcnGatewayPeerIP=None):

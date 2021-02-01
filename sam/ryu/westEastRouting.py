@@ -213,7 +213,7 @@ class WestEastRouting(BaseApp):
         )
         instructions = [parser.OFPInstructionGotoTable(table_id=WEST_EAST_TABLE)]
         self.logger.debug("_switch_features_handler: Add_flow")
-        self._add_flow(datapath,match,instructions,table_id=IPv4_CLASSIFIER_TABLE, priority=2)
+        self._add_flow(datapath,match,instructions,table_id=IPV4_CLASSIFIER_TABLE, priority=2)
         self._westEastRIB[datapath.id] = {}
         self._switchesLANArpTable[datapath.id] = {}
 

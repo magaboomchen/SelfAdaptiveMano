@@ -18,6 +18,7 @@ from sam.ryu.conf.ryuConf import *
 from sam.base.socketConverter import SocketConverter
 from sam.base.messageAgent import *
 
+
 class BaseApp(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(BaseApp, self).__init__(*args, **kwargs)

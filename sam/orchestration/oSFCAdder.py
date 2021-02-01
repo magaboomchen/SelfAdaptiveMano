@@ -18,10 +18,10 @@ from sam.orchestration.orchestrator import *
 from sam.orchestration.algorithms.pSFC.pSFC import *
 from sam.orchestration.algorithms.oPSFC.oPSFC import *
 from sam.orchestration.algorithms.notVia.notVia import *
-from sam.orchestration.algorithms.dpSFC.dpSFC import *
+from sam.orchestration.algorithms.dpSFCCG.dpSFCCG import *
 from sam.orchestration.algorithms.mMLPSFC.mMLPSFC import *
 from sam.orchestration.algorithms.mMLBSFC.mMLBSFC import *
-from sam.orchestration.algorithms.resourceAllocator import *
+from sam.orchestration.algorithms.base.resourceAllocator import *
 
 
 class OSFCAdder(object):
@@ -276,17 +276,18 @@ class OSFCAdder(object):
         pSFC = PSFC(self._dib, requestBatchList,
             forwardingPathSetsDict)
         forwardingPathSetsDict = pSFC.mapSFCI()
+        dibDict = pSFC.dibDict
 
-        notVia = NotVia(self._dib, 
+        notVia = NotVia(self._dib, dibDict,
             requestBatchList, forwardingPathSetsDict)
         forwardingPathSetsDict = notVia.mapSFCI()
 
-        self.logger.debug("forwardingPathSetsDict:{0}".format(
-                forwardingPathSetsDict))
+        # self.logger.debug("forwardingPathSetsDict:{0}".format(
+        #         forwardingPathSetsDict))
         return forwardingPathSetsDict
 
     def e2eProtection(self, requestBatchList):
-        dpSFC = DPSFC(self._dib, requestBatchList)
+        dpSFC = DPSFCCG(self._dib, requestBatchList)
         forwardingPathSetsDict = dpSFC.mapSFCI()
 
         return forwardingPathSetsDict

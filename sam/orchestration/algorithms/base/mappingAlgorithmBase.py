@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 from sam.serverController.serverManager.serverManager import *
-from sam.orchestration.algorithms.performanceModel import *
+from sam.orchestration.algorithms.base.performanceModel import *
 
 
 class MappingAlgorithmBase(object):
@@ -187,22 +187,6 @@ class MappingAlgorithmBase(object):
                 if self._dib.isSwitchID(nodeID):
                     self._dib.reserveSwitchResource(
                         nodeID, 1, self.zoneName)
-
-    # def _isSwitchID(self, nodeID):
-    #     switches = self._dib.getSwitchesInAllZone()
-    #     for switchesInAZoneDict in switches.values():
-    #         if nodeID in switchesInAZoneDict.keys():
-    #             return True
-    #     else:
-    #         return False
-
-    # def _isServerID(self, nodeID):
-    #     servers = self._dib.getServersInAllZone()
-    #     for serversInAZoneDict in servers.values():
-    #         if nodeID in serversInAZoneDict.keys():
-    #             return True
-    #     else:
-    #         return False
 
     def _allocateLinkResource(self, path):
         sfc = self.request.attributes['sfc']

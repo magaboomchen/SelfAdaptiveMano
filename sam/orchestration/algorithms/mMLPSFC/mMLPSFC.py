@@ -8,8 +8,8 @@ from sam.base.server import *
 from sam.base.messageAgent import *
 from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.multiLayerGraph import *
-from sam.orchestration.algorithms.performanceModel import *
+from sam.orchestration.algorithms.base.multiLayerGraph import *
+from sam.orchestration.algorithms.base.performanceModel import *
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
 from sam.orchestration.algorithms.base.pathServerFiller import *
 
@@ -100,7 +100,7 @@ class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
             for nodeIndex in range(1, len(segPath)-2):
                 (srcLayerNum, srcNodeID) = segPath[nodeIndex]
                 (dstLayerNum, dstNodeID) = segPath[nodeIndex + 1]
-                link = Link(srcNodeID, dstNodeID)
+                link = self._dib.getLink(srcNodeID, dstNodeID, self.zoneName)
                 linkLatency = mlg.getLinkWeight(link)
                 e2eLatency = e2eLatency + linkLatency
 

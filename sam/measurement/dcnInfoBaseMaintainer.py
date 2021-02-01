@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import os
+
 from sam.base.server import *
 from sam.base.link import *
 from sam.base.xibMaintainer import XInfoBaseMaintainer
@@ -57,13 +59,13 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
             switchID = switch.switchID
             linkID1 = (serverID, switchID)
             self._links[zoneName][linkID1] = {
-                'link': Link(serverID, switchID, bw),
+                'link': Link(serverID, switchID, bandwidth=bw),
                 'Active': True
                 }
 
             linkID2 = (switchID, serverID)
             self._links[zoneName][linkID2] = {
-                'link': Link(switchID, serverID, bw),
+                'link': Link(switchID, serverID, bandwidth=bw),
                 'Active': True
                 }
 
@@ -116,6 +118,18 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
         else:
             return False
 
+    def isLinkConnectServer(self, srcID, dstID):
+        if self.isServerID(srcID) or self.isServerID(dstID):
+            return True
+        else:
+            return False
+
+    def isLinkConnectTwoSwitches(self, srcID, dstID):
+        if self.isSwitchID(srcID) or self.isSwitchID(dstID):
+            return True
+        else:
+            return False
+
     def getConnectedSwitch(self, serverID, zoneName):
         for switchID,switchInfoDict in self._switches[zoneName].items():
             switch = switchInfoDict['switch']
@@ -145,7 +159,7 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
         for serverID,serverInfoDict in self._servers[zoneName].items():
             server = serverInfoDict['server']
             if (self.isServerConnectSwitch(switchID, serverID, zoneName) 
-                and server.getServerType() == SERVER_TYPE_NFVI):
+                    and server.getServerType() == SERVER_TYPE_NFVI):
                 servers.append(server)
         return servers
 
@@ -251,13 +265,23 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
     def hasEnoughServerResources(self, serverID, expectedResource, zoneName):
         (expectedCores, expectedMemory, expectedBandwidth) = expectedResource
         server = self._servers[zoneName][serverID]['server']
-        (coresCapacity, memoryCapacity, bandwidthCapacity) = self.getServersResourcesCapacity(
-            [server], zoneName)
-        if (expectedCores <= coresCapacity 
-            and expectedMemory <= memoryCapacity
-            and expectedBandwidth <= bandwidthCapacity):
+        # (coresCapacity, memoryCapacity, bandwidthCapacity) = self.getServersResourcesCapacity(
+        #     [server], zoneName)
+        serverID = server.getServerID()
+        (avaCores, avaMemory, avaBandwidth) = self.getServerResidualResources(
+            serverID, zoneName)
+        if (expectedCores <= avaCores
+                and expectedMemory <= avaMemory
+                and expectedBandwidth <= avaBandwidth):
             return True
         else:
+
+            # print("expectedCores:{0}\texpectedMemory:{1}\texpectedBandwidth:{2}\n"
+            #     "avaCores:{3}\tavaMemory:{4}\tavaBandwidth:{5}\n".format(
+            #         expectedCores, expectedMemory, expectedBandwidth,
+            #         avaCores, avaMemory, avaBandwidth))
+            # os.system("pause")
+
             return False
 
     def hasEnoughNPoPServersResources(self, nodeID,
@@ -277,9 +301,14 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
         #        residualMemory:{1}".format(
         #         residualCores, residualMemory
         #     ))
+
+        # print("servers resource, residualCores:{0}, residualMemory:{1}, "
+        #     "memoryCapacity:{2}".format(
+        #     residualCores, residualMemory, memoryCapacity))
+
         if (residualCores > expectedCores 
-            and residualMemory > expectedMemory
-            and residualBandwidth > expectedBandwidth):
+                and residualMemory > expectedMemory
+                and residualBandwidth > expectedBandwidth):
             return True
         else:
             return False
@@ -399,6 +428,12 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
             return True
         else:
             return False
+
+    def getLinkUtil(self, link, zoneName):
+        reservedBandwidth = self.getLinkReservedResource(
+            link.srcID, link.dstID, zoneName)
+        bandwidth = link.bandwidth
+        return reservedBandwidth*1.0/bandwidth
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

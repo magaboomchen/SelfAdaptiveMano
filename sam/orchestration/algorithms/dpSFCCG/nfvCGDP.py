@@ -22,7 +22,7 @@ from sam.base.mkdirs import *
 from sam.base.messageAgent import *
 from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.multiLayerGraph import *
+from sam.orchestration.algorithms.base.multiLayerGraph import *
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
 from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import *
 
@@ -37,11 +37,16 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         self.logger = logConfigur.getLogger()
 
     def initRMP(self):
+        self._initEnvModel()
         self._genInitialConfigurations()
 
     def updateRMP(self):
         self._genVariablesAndConsts()
         self._trans2LP()
+
+    def _initEnvModel(self):
+        self.env = gp.Env()
+        self.cgModel = gp.Model('nfvCGDP', self.env)
 
     def _genInitialConfigurations(self):
         self.configurations = {}
@@ -51,13 +56,13 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             sdc = self._getSDC(request)
             if sdc not in self.configurations.keys():
                 self.configurations[sdc] = []
-                initPrimaryPath = self._genInitPrimaryPaths(sdc)
-                initBackupPath = self._genInitBackupPaths(sdc,
-                    initPrimaryPath)
-                self._updateResource4NFVCGDPInitPath(
-                    self._dividePath(initPrimaryPath))
-                self._updateResource4NFVCGDPInitPath(
-                    self._dividePath(initBackupPath))
+                (initPrimaryPath, initBackupPath) \
+                    = self._try2GenerateInitialSolution(sdc)
+                # Don't update resource now!
+                # self._updateResource4NFVCGDPInitPath(
+                #     self._dividePath(initPrimaryPath))
+                # self._updateResource4NFVCGDPInitPath(
+                #     self._dividePath(initBackupPath))
                 self.logger.debug(
                     "requestID:{0}, initPrimaryPath:{1}," \
                         " initBackupPath:{2}".format(
@@ -66,10 +71,24 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
                 self.configurations[sdc].extend(
                     [initPrimaryPath, initBackupPath])
 
+    def _try2GenerateInitialSolution(self, sdc):
+        maxTryNum = 10
+        while maxTryNum > 0:
+            try:
+                initPrimaryPath = self._genInitPrimaryPaths(sdc)
+                initBackupPath = self._genInitBackupPaths(sdc,
+                    initPrimaryPath)
+                return (initPrimaryPath, initBackupPath)
+            except Exception as ex:
+                ExceptionProcessor(self.logger).logException(ex)
+                maxTryNum = maxTryNum - 1
+        raise ValueError("Compute initial solution failed!")
+
     def _genInitPrimaryPaths(self, sdc):
         mlg = MultiLayerGraph()
         mlg.loadInstance4dibAndRequest(self._dib, self.request,
-            WEIGHT_TYPE_0100_UNIFORAM_MODEL)
+            WEIGHT_TYPE_01_UNIFORAM_MODEL)
+        # WEIGHT_TYPE_PROPAGATION_DELAY_MODEL)
         mlg.trans2MLG()
         (ingSwitchID, egSwitchID, vnfSeqStr) = sdc
         primaryPath = mlg.getPath(0, ingSwitchID, 
@@ -78,15 +97,20 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         return primaryPath
 
     def _genInitBackupPaths(self, sdc, initPrimaryPath):
+        self.logger.debug("initPrimaryPath:{0}".format(initPrimaryPath))
         mlg = MultiLayerGraph()
         mlg.loadInstance4dibAndRequest(self._dib, self.request,
-            WEIGHT_TYPE_0100_UNIFORAM_MODEL)
+            WEIGHT_TYPE_01_UNIFORAM_MODEL)
+        #    WEIGHT_TYPE_PROPAGATION_DELAY_MODEL)
         abandonLinkIDList = self._getLinkID4Path(initPrimaryPath)
+        self.logger.debug("abandonLinkIDList:{0}".format(
+            abandonLinkIDList))
         mlg.addAbandonLinkIDs(abandonLinkIDList)
         mlg.trans2MLG()
         (ingSwitchID, egSwitchID, vnfSeqStr) = sdc
         backupPath = mlg.getPath(0, ingSwitchID,
             self.getvnfSeqStrLength(vnfSeqStr), egSwitchID)
+        self.logger.debug("backupPath:{0}".format(backupPath))
         return backupPath
 
     def _getLinkID4Path(self, initPrimaryPath):
@@ -96,7 +120,10 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         for index in range(len(initPrimaryPath)-1):
             srcNodeID = initPrimaryPath[index][1]
             dstNodeID = initPrimaryPath[index+1][1]
-            linkIDList.append((srcNodeID, dstNodeID))
+            if (srcNodeID != dstNodeID
+                    and (srcNodeID, dstNodeID) not in linkIDList):
+                linkIDList.append((srcNodeID, dstNodeID))
+                linkIDList.append((dstNodeID, srcNodeID))
         return linkIDList
 
     def _genVariablesAndConsts(self):
@@ -168,6 +195,8 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
                     (srcID, dstID) = linkID
                     self.pathLinkVar[(ingSwitchID, egSwitchID, vnfSeqStr,
                         pathIndex, srcID, dstID)] = 1
+                    self.pathLinkVar[(ingSwitchID, egSwitchID, vnfSeqStr,
+                        pathIndex, dstID, srcID)] = 1
         # self.logger.debug("self.pathLinkVar:{0}".format(
         #     self.pathLinkVar))
 
@@ -205,17 +234,23 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
                 if (pathLinkVarKey[0] == ingSwitchID
                 and pathLinkVarKey[1] == egSwitchID
                 and pathLinkVarKey[2] == vnfSeqStr
-                and pathLinkVarKey[3] == pathIndex) ]
+                and pathLinkVarKey[3] == pathIndex)]
 
             for pathLinkVarKey in pathLinkVarKeyList:
                 srcID = pathLinkVarKey[4]
                 dstID = pathLinkVarKey[5]
                 if (srcID, dstID) not in self.edgeDisjointCoeff.keys():
                     self.edgeDisjointCoeff[srcID, dstID] = {}
-                pathLinkVar = self.pathLinkVar[(ingSwitchID, egSwitchID, vnfSeqStr,
-                    pathIndex, srcID, dstID)]
-                self.edgeDisjointCoeff[srcID, dstID][rIndex, ingSwitchID,
-                    egSwitchID, vnfSeqStr, pathIndex, pb] = pathLinkVar
+                if (dstID, srcID) not in self.edgeDisjointCoeff.keys():
+                    self.edgeDisjointCoeff[dstID, srcID] = {}
+                pathLinkVar = self.pathLinkVar[(ingSwitchID, egSwitchID,
+                    vnfSeqStr, pathIndex, srcID, dstID)]
+                if srcID > dstID:
+                    self.edgeDisjointCoeff[dstID, srcID][rIndex, ingSwitchID,
+                        egSwitchID, vnfSeqStr, pathIndex, pb] = pathLinkVar
+                else:
+                    self.edgeDisjointCoeff[srcID, dstID][rIndex, ingSwitchID,
+                        egSwitchID, vnfSeqStr, pathIndex, pb] = pathLinkVar
         # self.logger.debug("self.edgeDisjointCoeff:{0}".format(
         #     self.edgeDisjointCoeff))
 
@@ -311,8 +346,20 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             self.links[(srcNodeID, dstNodeID)] \
                 = self._dib.getLinkResidualResource(
                     srcNodeID, dstNodeID, self.zoneName)
+            
+            # if self.links[(srcNodeID, dstNodeID)] < 1 :
+            #     self.logger.debug("capacity:{0}".format(
+            #         self.links[(srcNodeID, dstNodeID)]
+            #     ))
+            #     raw_input()
 
         self.physicalLink , self.linkCapacity = gp.multidict(self.links)
+
+        # for link,capacity in self.linkCapacity.items():
+        #     if capacity < 1:
+        #         self.logger.debug("nfvCGDP, link:{0}, capacity:{1}".format(
+        #             link, capacity))
+        #         raw_input()
 
         # self.logger.debug("phsicalLink:{0}, self.linkCapacity:{1}".format(
         #     self.physicalLink, self.linkCapacity))
@@ -320,10 +367,11 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
     def _genSwitch(self):
         # cap: vNode
         self.switches = {}
-        for switchID, switchInfoDict in self._dib.getSwitchesByZone(self.zoneName).items():
+        for switchID, switchInfoDict in self._dib.getSwitchesByZone(
+                self.zoneName).items():
             switch = switchInfoDict['switch']
-            self.switches[switchID] = [self._dib.getNPoPServersCapacity(switchID,
-                self.zoneName)]
+            self.switches[switchID] = [self._dib.getNPoPServersCapacity(
+                switchID, self.zoneName)]
         self.switches, self.switchCapacity = gp.multidict(self.switches)
         # self.logger.debug("switches:{0}".format(self.switches))
 
@@ -349,6 +397,8 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
 
     def _trans2LP(self):
         try:
+            self.cgModel.dispose()
+
             # Create optimization model
             self.cgModel = gp.Model('nfvCGDP')
 
@@ -372,9 +422,9 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             self.cgModel.addConstrs(
                 (   self.modelYVar.prod(
                         self.edgeDisjointCoeff[srcID, dstID], rIndex, '*', 
-                            '*', '*', '*', '*') <= 1
+                            '*', '*', '*', '*')  <= 1
                     for rIndex in range(len(self.requestList))
-                    for srcID, dstID in self.physicalLink
+                    for srcID, dstID in self.physicalLink if srcID < dstID
                 ), "edgeDisjoint")
 
             # link capacity (12)
@@ -399,12 +449,15 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             mkdirs("./LP/")
             self.cgModel.write("./LP/nfvCGDP.lp")
 
-        except GurobiError:
+        # except GurobiError:
+        #     self.logger.error('Error reported')
+
+        except Exception as ex:
             self.logger.error('Error reported')
+            ExceptionProcessor(self.logger).logException(ex)
 
         finally:
             pass
-            # del self.cgModel
 
     def _genModelObj(self):
         self.modelObj = LinExpr()
@@ -420,6 +473,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
 
     def solve(self):
         self.cgModel.optimize()
+        self.logSolution()
 
     def getDualVariables(self):
         self._genDualVariables()
@@ -454,10 +508,12 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         self.dualVars['constr11'] = {}
         for rIndex in range(len(self.requestList)):
             for srcID, dstID in self.physicalLink:
-                constr = self.cgModel.getConstrByName(
-                    "edgeDisjoint[{0},{1},{2}]".format(rIndex, srcID, dstID))
-                self.dualVars['constr11'][rIndex, srcID,
-                    dstID] = self._getConstrDualVariable(constr)
+                if srcID < dstID:
+                    constr = self.cgModel.getConstrByName(
+                        "edgeDisjoint[{0},{1},{2}]".format(
+                            rIndex, srcID, dstID))
+                    self.dualVars['constr11'][rIndex, srcID,
+                        dstID] = self._getConstrDualVariable(constr)
 
     def _genDualVar12(self):
         self.dualVars['constr12'] = {}
@@ -472,7 +528,8 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         for switchID in self.switches:
             constr = self.cgModel.getConstrByName(
                 "nodeCapacity[{0}]".format(switchID))
-            self.dualVars['constr13'][switchID] = self._getConstrDualVariable(constr)
+            self.dualVars['constr13'][switchID] \
+                = self._getConstrDualVariable(constr)
 
     def _getConstrDualVariable(self, constr):
         return self.cgModel.getAttr(GRB.Attr.Pi, [constr])[0]
@@ -597,9 +654,15 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             self.logger.warning("model status: suboptimal")
         elif self.cgModel.status == GRB.INFEASIBLE:
             self.logger.warning("infeasible model")
+            self.cgModel.computeIIS()
+            self.cgModel.write("./LP/nfvCGDPIIS.ilp")
             raise ValueError("infeasible model")
         else:
             self.logger.warning("unknown model status:{0}".format(
                 self.cgModel.status))
             raise ValueError("unknown model status:{0}".format(
                 self.cgModel.status))
+
+    def garbageCollector(self):
+        self.cgModel.dispose()
+        self.env.dispose()

@@ -21,7 +21,7 @@ from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.algorithms.oPSFC.originalPartialLP import *
 from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import *
-from sam.orchestration.algorithms.multiLayerGraph import *
+from sam.orchestration.algorithms.base.multiLayerGraph import *
 
 
 class OPSFC(object):
@@ -31,7 +31,7 @@ class OPSFC(object):
         self._sc = SocketConverter()
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'OPSFC.log', level='warning')
+            'OPSFC.log', level='debug')
         self.logger = logConfigur.getLogger()
 
     def mapSFCI(self):

@@ -1,12 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-LINK_DEFAULT_BANDWIDTH = 1000   # Mbps
+LINK_DEFAULT_BANDWIDTH = 1   # Gbps
 
 
 class Link(object):
-    def __init__(self, srcID, dstID, linkLength=1, 
+    def __init__(self, srcID, dstID, 
             bandwidth=LINK_DEFAULT_BANDWIDTH,
+            linkLength=1, 
             utilization=0):
         self.srcID = srcID  # link的起始端点交换机的switchID
         self.dstID = dstID  # link的终止端点交换机的switchID

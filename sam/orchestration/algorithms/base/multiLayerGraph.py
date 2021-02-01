@@ -9,6 +9,9 @@ import networkx as nx
 import gurobipy as gp
 from gurobipy import *
 from gurobipy import GRB
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 from sam.base.path import *
 from sam.base.link import *
@@ -17,9 +20,10 @@ from sam.base.server import *
 from sam.base.messageAgent import *
 from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.performanceModel import *
+from sam.orchestration.algorithms.base.performanceModel import *
 
 WEIGHT_TYPE_CONST = "WEIGHT_TYPE_CONST"
+WEIGHT_TYPE_PROPAGATION_DELAY_MODEL = "WEIGHT_TYPE_PROPAGATION_DELAY_MODEL"
 WEIGHT_TYPE_DELAY_MODEL = "WEIGHT_TYPE_DELAY_MODEL"
 WEIGHT_TYPE_01_UNIFORAM_MODEL = "WEIGHT_TYPE_01_UNIFORAM_MODEL"
 WEIGHT_TYPE_0100_UNIFORAM_MODEL = "WEIGHT_TYPE_0100_UNIFORAM_MODEL"
@@ -79,7 +83,7 @@ class MultiLayerGraph(object):
 
     def genOneLayer(self, stage):
         G = nx.DiGraph()
-        e = []
+        edgeList = []
 
         expectedBandwidth = self._getExpectedBandwidth(stage)
         expectedTCAM = self._getExpectedTCAM(stage)
@@ -87,8 +91,8 @@ class MultiLayerGraph(object):
         linksInfoDict = self._dib.getLinksByZone(self.zoneName)
         for linkInfoDict in linksInfoDict.itervalues():
             link = linkInfoDict['link']
-            s = self._genNodeID(link.srcID, stage)
-            d = self._genNodeID(link.dstID, stage)
+            srcLayerNodeID = self._genLayerNodeID(link.srcID, stage)
+            dstLayerNodeID = self._genLayerNodeID(link.dstID, stage)
             weight = self.getLinkWeight(link)
             # self.logger.debug(
             #     "resource link:{0}, node1:{1}, node2:{2}".format(
@@ -96,24 +100,37 @@ class MultiLayerGraph(object):
             #         self._dib.hasEnoughSwitchResource(link.srcID, expectedTCAM),
             #         self._dib.hasEnoughSwitchResource(link.dstID, expectedTCAM)
             #     ))
-            if self._dib.isServerID(link.srcID) or self._dib.isServerID(link.dstID):
+            if (self._dib.isServerID(link.srcID) 
+                    or self._dib.isServerID(link.dstID)):
                 continue
-            if (self._dib.hasEnoughLinkResource(link, expectedBandwidth, self.zoneName) 
-                and self._dib.hasEnoughSwitchResource(link.srcID, expectedTCAM, self.zoneName)
-                and self._dib.hasEnoughSwitchResource(link.dstID, expectedTCAM, self.zoneName)
+            if (self._dib.hasEnoughLinkResource(link, expectedBandwidth,
+                    self.zoneName) 
+                and self._dib.hasEnoughSwitchResource(link.srcID,
+                    expectedTCAM, self.zoneName)
+                and self._dib.hasEnoughSwitchResource(link.dstID,
+                    expectedTCAM, self.zoneName)
                 ):
                 if not self._isAbandonLink(link):
-                    e.append((s,d,weight))
+                    edgeList.append((srcLayerNodeID, dstLayerNodeID, weight))
             else:
                 self.logger.warning(
                     "Link {0}->{1} hasn't enough resource.".format(
                         link.srcID, link.dstID
                     ))
-        G.add_weighted_edges_from(e)
+        G.add_weighted_edges_from(edgeList)
 
         # self.logger.debug("A layer graph nodes:{0}".format(G.nodes))
         # self.logger.debug("A layer graph edges:{0}".format(G.edges))
         # self.logger.debug("edges number:{0}".format(len(G.edges)))
+
+        connectionFlag = nx.is_weakly_connected(copy.deepcopy(G))
+
+        if connectionFlag == False:
+            self.logger.debug("is_connected:{0}".format(connectionFlag))
+            # nx.draw(G, with_labels=True)
+            # plt.savefig("./temp.png")
+            # plt.show()
+            # raw_input()
 
         return G
 
@@ -124,12 +141,14 @@ class MultiLayerGraph(object):
     def _getExpectedTCAM(self, stage):
         return stage+1
 
-    def _genNodeID(self, nodeID, stage):
+    def _genLayerNodeID(self, nodeID, stage):
         return (stage, nodeID)
 
     def getLinkWeight(self, link):
         if self.weightType == WEIGHT_TYPE_CONST:
             return 1
+        elif self.weightType == WEIGHT_TYPE_PROPAGATION_DELAY_MODEL:
+            return self._getLinkPropagationLatency(link)
         elif self.weightType == WEIGHT_TYPE_DELAY_MODEL:
             linkUtil = self._getLinkUtil(link)
             return self._getLinkLatency(link, linkUtil)
@@ -156,6 +175,10 @@ class MultiLayerGraph(object):
         bandwidth = link.bandwidth
         return reservedBandwidth*1.0/bandwidth
 
+    def _getLinkPropagationLatency(self, link):
+        pM = PerformanceModel()
+        return pM.getPropogationLatency(link.linkLength)
+
     def _getLinkLatency(self, link, linkUtil):
         pM = PerformanceModel()
         return pM.getLatencyOfLink(link, linkUtil)
@@ -166,17 +189,27 @@ class MultiLayerGraph(object):
 
     def _connectLayer(self, mLG, layer1Num, layer2Num):
         switches = self._getSupportVNFSwitchesOfLayer(layer1Num)
+        # self.logger.debug("switches:{0}".format(switches))
+        self.logger.debug("connect layer")
         for switch in switches:
             nodeID = switch.switchID
-            (expectedCores, expectedMemory, expectedBandwidth) = self._getExpectedServerResource(layer1Num)
-            # self.logger.debug("expected Cores:{0}, Memory:{1}, bandwdith:{2}".format(
-            #     expectedCores, expectedMemory, expectedBandwidth
+            (expectedCores, expectedMemory, expectedBandwidth) \
+                = self._getExpectedServerResource(layer1Num)
+            # self.logger.debug(
+            #     "expected Cores:{0}, Memory:{1}, bandwdith:{2}".format(
+            #         expectedCores, expectedMemory, expectedBandwidth
             # ))
-            s = self._genNodeID(nodeID, layer1Num)
-            d = self._genNodeID(nodeID, layer2Num)
+            srcLayerNodeID = self._genLayerNodeID(nodeID, layer1Num)
+            dstLayerNodeID = self._genLayerNodeID(nodeID, layer2Num)
+            link = Link(srcLayerNodeID, dstLayerNodeID)
             if self._dib.hasEnoughNPoPServersResources(
-                    nodeID, expectedCores, expectedMemory, expectedBandwidth, self.zoneName):
-                mLG.add_edge(s, d, weight=0)
+                    nodeID, expectedCores, expectedMemory, expectedBandwidth,
+                        self.zoneName):
+                weight = self.getLinkWeight(link)
+                # self.logger.debug("weight:{0}".format(weight))
+                # raw_input()
+                mLG.add_edge(srcLayerNodeID, dstLayerNodeID, weight=weight)
+                # mLG.add_edge(srcLayerNodeID, dstLayerNodeID, weight=0)
 
     def _getSupportVNFSwitchesOfLayer(self, layerNum):
         switches = []
@@ -197,8 +230,20 @@ class MultiLayerGraph(object):
         startNodeInMLG = (startLayer, startNodeID)
         endNodeInMLG = (endLayer, endNodeID)
 
-        path = nx.dijkstra_path(self.multiLayerGraph,
-            startNodeInMLG, endNodeInMLG)
+        try:
+            path = nx.dijkstra_path(self.multiLayerGraph,
+                startNodeInMLG, endNodeInMLG)
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex)
+            self.logger.error("multi-layer-graph")
+            connectionFlag = nx.is_weakly_connected(copy.deepcopy(
+                self.multiLayerGraph))
+            self.logger.error("is_connected:{0}".format(
+                connectionFlag))
+            # nx.draw(self.multiLayerGraph, with_labels=True)
+            # plt.savefig("./disconnection.png")
+            # plt.show()
+            raise ValueError("can't compute path")
 
         # self.logger.debug("get path from {0}->{1}:{2}".format(
         #     startNodeInMLG, endNodeInMLG, path))

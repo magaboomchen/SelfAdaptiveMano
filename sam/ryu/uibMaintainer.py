@@ -3,6 +3,7 @@
 
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.xibMaintainer import XInfoBaseMaintainer
+from sam.base.socketConverter import *
 
 # TODO: test
 
@@ -13,6 +14,8 @@ class UIBMaintainer(XInfoBaseMaintainer):
         self.groupIDSets = {}
         self.sfcRIB = {}
         self.sfciRIB = {}
+        self.compSfciRIB = {}
+        self._sc = SocketConverter()
         logConfigur = LoggerConfigurator(__name__, './log',
             'UIBMaintainer.log', level='debug')
         self.logger = logConfigur.getLogger()
@@ -54,7 +57,7 @@ class UIBMaintainer(XInfoBaseMaintainer):
         else:
             return False
 
-    def countFlowTable(self, dpid, matchFields):
+    def countSFCRIB(self, dpid, matchFields):
         count = 0
         for sfcUUID in self.sfcRIB.keys():
             for dictItem in self.sfcRIB[sfcUUID][dpid]:
@@ -62,18 +65,43 @@ class UIBMaintainer(XInfoBaseMaintainer):
                     count = count + 1
         return count
 
+    def countSwitchFlowTable(self, dpid):
+        count = 0
+        for sfciID in self.sfciRIB.keys():
+            if dpid in self.sfciRIB[sfciID].keys():
+                count = count + len(self.sfciRIB[sfciID][dpid])
+        return count
+
+    def countSwitchCompressedFlowTable(self, switchID, compressType):
+        count = 0
+        for sfciID in self.compSfciRIB[compressType].keys():
+            if dpid in self.compSfciRIB[compressType][sfciID].keys():
+                count = count \
+                    + len(self.compSfciRIB[compressType][sfciID][dpid])
+        return count
+
+    def countSwitchGroupTable(self, dpid):
+        count = 0
+        if dpid in self.groupIDSets.keys():
+            count = count + len(self.groupIDSets[dpid])
+        return count
+
     def addSFCIFlowTableEntry(self, sfciID, dpid, tableID, matchFields,
-        groupID=None):
+            groupID=None, actions=None, priority=0):
         if not self.sfciRIB.has_key(sfciID):
             self.sfciRIB[sfciID] = {}
         if not self.sfciRIB[sfciID].has_key(dpid):
             self.sfciRIB[sfciID][dpid] = []
-        if groupID == None:
-            self.sfciRIB[sfciID][dpid].append(
-                {"tableID":tableID, "match":matchFields})
-        else:
-            self.sfciRIB[sfciID][dpid].append(
-                {"tableID":tableID, "match":matchFields, "groupID":groupID})
+        # if groupID == None:
+        #     self.sfciRIB[sfciID][dpid].append(
+        #         {"tableID":tableID, "match":matchFields, "priority":priority})
+        # else:
+        #     self.sfciRIB[sfciID][dpid].append(
+        #         {"tableID":tableID, "match":matchFields, "groupID":groupID,
+        #             "priority":priority})
+        self.sfciRIB[sfciID][dpid].append(
+            {"tableID":tableID, "match":matchFields, "groupID":groupID,
+                "priority":priority, "actions":actions})
 
     def delSFCIFlowTableEntry(self, sfciID):
         del self.sfciRIB[sfciID]
@@ -102,9 +130,7 @@ class UIBMaintainer(XInfoBaseMaintainer):
 
     def printSFCIFlowTable(self, sfciID, dpid):
         for entry in self.sfciRIB[sfciID][dpid]:
-            self.logger.info(
-                "entry[match]={0}".format(entry["match"])
-                )
+            self.logger.info("entry[match]={0}".format(entry["match"]))
     
     def printUIBM(self):
         self.logger.info("printUIBM")

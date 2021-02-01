@@ -15,16 +15,43 @@ class PerformanceModel(object):
 
     def getLatencyOfLink(self, link, util):
         if not self._validateUtilization(util):
-            raise ValueError("Invalid link utilization")
+            raise ValueError(
+                "Invalid link utilization {0} for link {1}".format(
+                    util, link))
         bandwidth = link.bandwidth
         linkLength = link.linkLength
         pl = self.getPropogationLatency(linkLength)
-        if bandwidth > 0:
-            # distinguish different bandwidth model
+        # distinguish different bandwidth model
+        if bandwidth == 1:
             if util < 1:
                 return min(self.alpha/(1-util), self.beta) + pl # unit: ms
             else:
                 return self.beta + pl
+        elif bandwidth == 10:
+            self.alpha = 0.01
+            self.beta = 0.12
+            if util < 1:
+                return min(self.alpha/(1-util), self.beta) + pl # unit: ms
+            else:
+                return self.beta + pl
+        elif bandwidth == 100:
+            self.alpha = 0.001
+            self.beta = 400
+            if util < 1:
+                return min(self.alpha/(1-util), self.beta) + pl # unit: ms
+            else:
+                return self.beta + pl
+        elif bandwidth == 400:
+            self.alpha = 0.001/4
+            self.beta = 100
+            if util < 1:
+                return min(self.alpha/(1-util), self.beta) + pl # unit: ms
+            else:
+                return self.beta + pl
+        else:
+            raise ValueError(
+                "Link latency model: unsupport bandwidth {0}".format(
+                    bandwidth))
 
     def getPropogationLatency(self, linkLength):
         return linkLength / SPEED_OF_LIGHT

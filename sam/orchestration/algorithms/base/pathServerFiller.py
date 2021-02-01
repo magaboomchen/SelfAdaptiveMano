@@ -4,7 +4,7 @@
 import copy
 
 from sam.serverController.serverManager.serverManager import *
-from sam.orchestration.algorithms.performanceModel import *
+from sam.orchestration.algorithms.base.performanceModel import *
 
 
 class PathServerFiller(object):
@@ -44,7 +44,7 @@ class PathServerFiller(object):
             ingID, egID)
 
         # select a server for each stage
-        serverList = self._selectServer4EachStage(dividedPath, request,
+        serverList = self._selectNFVI4EachStage(dividedPath, request,
             abandonElementIDList)
         dividedPath = self._addNFVI2Path(dividedPath, serverList)
         self.logger.info("ingID:{0}, egID:{1}, dividedPath:{2}".format(
@@ -80,32 +80,38 @@ class PathServerFiller(object):
     def _addStartNodeIDAndEndNodeID2Path(self, dividedPath,
                                         startNodeID, endNodeID):
         dividedPath[0].insert(0, (0, startNodeID))
-        dividedPath[-1].append((len(dividedPath)-1, endNodeID))
+        lastLayerNum = dividedPath[-1][0][0]
+        # dividedPath[-1].append((len(dividedPath)-1, endNodeID))
+        dividedPath[-1].append((lastLayerNum, endNodeID))
         self.logger.debug(
             "add start and end node to dividedPath:{0}".format(
                 dividedPath))
         return dividedPath
 
     def _addEndNodeID2Path(self, dividedPath, endNodeID):
-        dividedPath[-1].append((len(dividedPath)-1, endNodeID))
+        lastLayerNum = dividedPath[-1][0][0]
+        # dividedPath[-1].append((len(dividedPath)-1, endNodeID))
+        dividedPath[-1].append((lastLayerNum, endNodeID))
         self.logger.debug(
             "add end node ID {0} to dividedPath:{1}".format(
                 endNodeID, dividedPath))
         return dividedPath
 
-    def _selectServer4EachStage(self, dividedPath, request,
+    def _selectNFVI4EachStage(self, dividedPath, request,
                                 abandonElementIDList=[]):
         self.abandonElementIDList = abandonElementIDList
         sfc = request.attributes['sfc']
         trafficDemand = sfc.getSFCTrafficDemand()
         c = sfc.getSFCLength()
         serverList = []
+        self.logger.debug(dividedPath)
         dividedPathLength = len(dividedPath)
         startIndex = c+1 - dividedPathLength
-        for index in range(startIndex, c):
-            vnfType = sfc.vNFTypeSequence[index]
+        # for index in range(startIndex, c):
+        for index in range(len(dividedPath)-1):
+            layerNum = dividedPath[index][0][0]
+            vnfType = sfc.vNFTypeSequence[layerNum]
             switchID = dividedPath[index][-1][1]
-            # self.logger.debug(dividedPath)
             self.logger.debug("switchID:{0}".format(switchID))
             servers = self._dib.getConnectedNFVIs(switchID,
                 self.zoneName)
@@ -129,6 +135,9 @@ class PathServerFiller(object):
         for server in serverList:
             if self._hasEnoughResource(server, vnfType, trafficDemand):
                 return server
+        else:
+            self.logger.debug("serverList:{0}".format(serverList))
+            raise ValueError("No available server resource")
 
     def _isServerInAbandonElementsList(self, server):
         serverID = server.getServerID()

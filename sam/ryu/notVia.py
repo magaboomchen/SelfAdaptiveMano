@@ -183,10 +183,10 @@ class NotVia(FRR):
         inst = [
             parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)
         ]
-        self._add_flow(datapath, match, inst, table_id=NotVia_TABLE,
+        self._add_flow(datapath, match, inst, table_id=NOTVIA_TABLE,
             priority = 1)
         self.ibm.addSFCIFlowTableEntry(sfciID,currentDpid,
-            NotVia_TABLE, matchFields, groupID)
+            NOTVIA_TABLE, matchFields, groupID)
 
     def _installBackupPaths(self, sfci, direction):
         primaryPathID = self._getPathID(direction["ID"])
@@ -274,7 +274,7 @@ class NotVia(FRR):
         inst = [
             parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                 actions),
-            parser.OFPInstructionGotoTable(table_id=NotVia_TABLE)
+            parser.OFPInstructionGotoTable(table_id=NOTVIA_TABLE)
         ]
 
         self.logger.debug("_packet_in_handler: Add_flow")
@@ -293,7 +293,7 @@ class NotVia(FRR):
         parser = datapath.ofproto_parser
         dpid = datapath.id
 
-        # install table-miss flow entry in NotVia_TABLE
+        # install table-miss flow entry in NOTVIA_TABLE
         #
         # We specify NO BUFFER to max_len of the output action due to
         # OVS bug. At this moment, if we specify a lesser number, e.g.,
@@ -305,7 +305,7 @@ class NotVia(FRR):
                                           ofproto.OFPCML_NO_BUFFER)]
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
-        self._add_flow(datapath, match, inst, table_id = NotVia_TABLE,
+        self._add_flow(datapath, match, inst, table_id = NOTVIA_TABLE,
             priority=0)
 
         match = parser.OFPMatch()
@@ -316,13 +316,13 @@ class NotVia(FRR):
         self._add_flow(datapath, match, inst, table_id = VLAN_TABLE,
             priority=0)
 
-        # initial IPv4_CLASSIFIER_TABLE
+        # initial IPV4_CLASSIFIER_TABLE
         match = parser.OFPMatch(
             eth_type=ether_types.ETH_TYPE_IP,ipv4_dst="10.0.0.0/8"
         )
-        inst = [parser.OFPInstructionGotoTable(table_id = NotVia_TABLE)]
+        inst = [parser.OFPInstructionGotoTable(table_id = NOTVIA_TABLE)]
         self._add_flow(datapath, match, inst,
-            table_id = IPv4_CLASSIFIER_TABLE, priority=2)
+            table_id = IPV4_CLASSIFIER_TABLE, priority=2)
 
     def _sendCmdRply(self, cmdID, cmdState):
         cmdRply = CommandReply(cmdID, cmdState)

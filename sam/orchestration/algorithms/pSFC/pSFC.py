@@ -21,11 +21,10 @@ from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.algorithms.pSFC.partialLP import *
 from sam.orchestration.algorithms.pSFC.pRandomizedRoundingAlgorithm import *
-from sam.orchestration.algorithms.multiLayerGraph import *
+from sam.orchestration.algorithms.base.multiLayerGraph import *
 
 
 class PSFC(object):
-    # 生成的结果中，备份路径字典的key写成：(sffNodeID, "*")来保护SFF和其连接的servers。
     # RYU部署初始/备份路径，用不同优先级表示。
     # adaptive模块根据测量结果，触发SFF的相应表项的优先级变更即可。
 
@@ -36,7 +35,7 @@ class PSFC(object):
         self._sc = SocketConverter()
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'PSFC.log', level='warning')
+            'PSFC.log', level='debug')
         self.logger = logConfigur.getLogger()
 
     def mapSFCI(self):
@@ -50,6 +49,7 @@ class PSFC(object):
         self.rra = PRandomizedRoundingAlgorithm(
             self._dib, self.requestList, self.pLP, self.forwardingPathSetsDict)
         self.rra.mapSFCI()
+        self.dibDict = self.rra.getDibDict()
 
         self.logger.debug(
             "forwardingPathSetsDict:{0}".format(

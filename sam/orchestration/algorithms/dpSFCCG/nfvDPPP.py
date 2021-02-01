@@ -50,6 +50,7 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
         self.ppModelObj = {}
         self.phi = {}
         self.a = {}
+        self.env = gp.Env()
 
     def _genPhysicalLink(self):
         # cap: link
@@ -64,6 +65,12 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
                     srcNodeID, dstNodeID, self.zoneName)
 
         self.physicalLink , self.linkCapacity = gp.multidict(self.links)
+
+        # for link,capacity in self.linkCapacity.items():
+        #     if capacity < 1:
+        #         self.logger.debug("nfvDPPP, link:{0}, capacity:{1}".format(
+        #             link, capacity))
+        #         raw_input()
 
         # self.logger.debug("phsicalLink:{0}, self.linkCapacity:{1}".format(
         #     self.physicalLink, self.linkCapacity))
@@ -178,9 +185,6 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
 
     def _trans2MIP(self, rIndex, pb):
         try:
-            if (rIndex, pb) not in self.ppModel.keys():
-                self.ppModel[rIndex, pb] = {}
-
             request = self.requestList[rIndex]
             egSwitchID = self.getEgSwitchID4Request(request)
             sfc = self.getSFC4Request(request)
@@ -189,8 +193,12 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
             latencyBound = sfc.getSFCLatencyBound()
 
             # Create optimization model
-            self.ppModel[rIndex, pb] = gp.Model(
-                'nfvDPPP[{0},{1}]'.format(rIndex, pb))
+            if (rIndex, pb) not in self.ppModel.keys():
+                self.ppModel[rIndex, pb] = gp.Model(
+                    'nfvDPPP[{0},{1}]'.format(rIndex, pb),
+                    self.env)
+            else:
+                self.ppModel[rIndex, pb].dispose()
 
             # timeout setting
             self.ppModel[rIndex, pb].setParam('TimeLimit', 60)
@@ -306,9 +314,10 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
         # third polynomial
         for vnfIndex in range(len(vnfSeq)+1):
             for srcID, dstID in self.physicalLink:
-                self.ppModelObj[rIndex, pb] \
-                    += -1 * self.phi[rIndex, pb].sum(vnfIndex, srcID, dstID) \
-                        * self.dualVars['constr11'][rIndex, srcID, dstID]
+                if srcID < dstID:
+                    self.ppModelObj[rIndex, pb] \
+                        += -1 * self.phi[rIndex, pb].sum(vnfIndex, srcID, dstID) \
+                            * self.dualVars['constr11'][rIndex, srcID, dstID]
 
         # 4-th polynomial
         for vnfIndex in range(len(vnfSeq)+1):
@@ -327,6 +336,7 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
                         * self._resConsumeCoeff[rIndex, pb][vnfIndex, switchID]
 
     def solveAllPPs(self):
+        self.logger.debug("solve all pricing problems")
         for rIndex in range(len(self.requestList)):
             for pb in ['p', 'b']:
 
@@ -437,3 +447,8 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
         if sdc not in self.newConfigurations.keys():
             self.newConfigurations[sdc] = []
         self.newConfigurations[sdc].append(path)
+
+    def garbageCollector(self):
+        for key in self.ppModel.keys():
+            self.ppModel[key].dispose()
+        self.env.dispose()

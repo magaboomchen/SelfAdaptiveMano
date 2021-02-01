@@ -22,13 +22,13 @@ from sam.base.server import *
 from sam.base.messageAgent import *
 from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.dpSFC.nfvCGDP import *
-from sam.orchestration.algorithms.dpSFC.nfvDPPP import *
+from sam.orchestration.algorithms.dpSFCCG.nfvCGDP import *
+from sam.orchestration.algorithms.dpSFCCG.nfvDPPP import *
 
 
-TIME_LIMIT = 60
+TIME_LIMIT = 180
 
-class DPSFC(object):
+class DPSFCCG(object):
     def __init__(self, dib, requestList):
         self._dib = dib
         self.requestList = requestList
@@ -46,10 +46,6 @@ class DPSFC(object):
 
         self.nfvCGDP.initRMP()
         while True:
-            self.endtime = self.recordTime()
-            if self._isTimeExceed():
-                break
-
             self.nfvCGDP.updateRMP()
             self.nfvCGDP.solve()
             dualVars = self.nfvCGDP.getDualVariables()
@@ -66,11 +62,15 @@ class DPSFC(object):
                     # generate vaild primary/backup path because each 
                     # pricing problem doesn't consider the 
                     # resource consumption by other sfc requests.
-                    # Thus, a shortest path will be generated
+                    # As a result, a shortest path will be generated
                     # for each pricing problem.
                     self.logger.warning("No new configurations!")
                     break
             else:
+                break
+
+            self.endtime = self.recordTime()
+            if self._isTimeExceed():
                 break
 
         self.nfvCGDP.transRMP2ILP()
@@ -78,6 +78,9 @@ class DPSFC(object):
 
         forwardingPathSetsDict \
             = self.nfvCGDP.getForwardingPathSetsDict()
+
+        self.nfvDPPP.garbageCollector()
+        self.nfvCGDP.garbageCollector()
 
         return forwardingPathSetsDict
 

@@ -8,11 +8,11 @@ from sam.base.server import *
 from sam.base.messageAgent import *
 from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.multiLayerGraph import *
-from sam.orchestration.algorithms.performanceModel import *
+from sam.orchestration.algorithms.base.multiLayerGraph import *
+from sam.orchestration.algorithms.base.performanceModel import *
 from sam.orchestration.algorithms.base.frrPathIDAllocator import *
 from sam.orchestration.algorithms.base.failureScenario import *
-from sam.orchestration.algorithms.resourceAllocator import *
+from sam.orchestration.algorithms.base.resourceAllocator import *
 from sam.orchestration.algorithms.mMLPSFC.mMLPSFC import *
 
 
@@ -394,7 +394,7 @@ class MMLBSFC(MMLPSFC):
             dividedPath))
 
         # select a server for each stage
-        serverList = self._selectServer4EachStage(dividedPath, request,
+        serverList = self._selectNFVI4EachStage(dividedPath, request,
                 self.failureScenario.getFailureElementsIDInList())
         dividedPath = self._addNFVI2Path(dividedPath, serverList)
         self.logger.info("egID:{0}, dividedPath:{1}".format(

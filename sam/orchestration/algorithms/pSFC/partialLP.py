@@ -21,8 +21,8 @@ from sam.base.mkdirs import *
 from sam.base.messageAgent import *
 from sam.base.socketConverter import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.multiLayerGraph import *
-from sam.orchestration.algorithms.performanceModel import *
+from sam.orchestration.algorithms.base.multiLayerGraph import *
+from sam.orchestration.algorithms.base.performanceModel import *
 from sam.orchestration.algorithms.oPSFC.originalPartialLP import *
 
 
@@ -250,10 +250,11 @@ class PartialLP(OriginalPartialLP):
     def _trans2LPAndSolve(self):
         try:
             # Clear environment
-            disposeDefaultEnv()
+            # disposeDefaultEnv()
+            env = gp.Env()
 
             # Create optimization model
-            m = gp.Model('PartialLP')
+            m = gp.Model('PartialLP', env)
 
             # timeout setting
             m.setParam('TimeLimit', 1000)
@@ -360,7 +361,7 @@ class PartialLP(OriginalPartialLP):
                     for switchID in self.switches:
                         if self.vnfDeploymentSolution[pIndex, vnf, switchID] > 0:
                             self.logger.info(
-                                "Optimal deployment for pIndex {0}, vnf {1} > switch {2}. deployment: {3}".format(
+                                "Optimal deployment for pIndex {0}, vnf {1} @ switch {2}. deployment: {3}".format(
                                     pIndex, vnf, switchID, self.vnfDeploymentSolution[pIndex, vnf, switchID]))
 
             elif m.status == GRB.SUBOPTIMAL:
@@ -371,10 +372,15 @@ class PartialLP(OriginalPartialLP):
             else:
                 self.logger.warning("unknown model status:{0}".format(m.status))
 
-        except GurobiError:
+        # except GurobiError:
+        #     self.logger.error('Error reported')
+
+        except Exception as ex:
             self.logger.error('Error reported')
+            ExceptionProcessor(self.logger).logException(ex)
 
         finally:
-            del m
+            m.dispose()
             # clean up gruobi environment
-            disposeDefaultEnv()
+            # disposeDefaultEnv()
+            env.dispose()

@@ -68,7 +68,7 @@ class L2(BaseApp):
         match = parser.OFPMatch(eth_dst=portMac,
             eth_type=ether_types.ETH_TYPE_IP)
         inst = [
-            parser.OFPInstructionGotoTable(table_id=IPv4_CLASSIFIER_TABLE)
+            parser.OFPInstructionGotoTable(table_id=IPV4_CLASSIFIER_TABLE)
             ]
         self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
             priority = 1)
@@ -178,7 +178,7 @@ class L2(BaseApp):
                                           ofproto.OFPCML_NO_BUFFER)]
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
-        self._add_flow(datapath, match, inst, table_id = IPv4_CLASSIFIER_TABLE, priority=0)
+        self._add_flow(datapath, match, inst, table_id = IPV4_CLASSIFIER_TABLE, priority=0)
 
         match = parser.OFPMatch(
                 eth_type=ether_types.ETH_TYPE_ARP
