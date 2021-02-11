@@ -288,5 +288,3 @@ class UFRR(FRR):
         rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY,cmdRply)
         queue = MEDIATOR_QUEUE
         self._messageAgent.sendMsg(queue,rplyMsg)
-
-

@@ -5,6 +5,7 @@ import argparse
 
 from sam.base.loggerConfigurator import LoggerConfigurator
 
+
 class ArgParserBase(object):
     def __init__(self):
         logConfigur = LoggerConfigurator(__name__, './log',

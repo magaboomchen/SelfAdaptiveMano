@@ -16,6 +16,7 @@ import gurobipy as gp
 from gurobipy import GRB
 from gurobipy import *
 
+from sam.base.vnf import *
 from sam.base.path import *
 from sam.base.server import *
 from sam.base.mkdirs import *
@@ -25,6 +26,9 @@ from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.algorithms.base.multiLayerGraph import *
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
 from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import *
+
+
+INITIAL_PATH_PER_REQUEST_NUM = 2
 
 
 class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
@@ -56,38 +60,54 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             sdc = self._getSDC(request)
             if sdc not in self.configurations.keys():
                 self.configurations[sdc] = []
-                (initPrimaryPath, initBackupPath) \
-                    = self._try2GenerateInitialSolution(sdc)
+                # (initPrimaryPath, initBackupPath) \
+                #     = self._try2GenerateInitialSolution(sdc)
+                initialSolutionsList = self._try2GenerateInitialSolution(sdc)
                 # Don't update resource now!
                 # self._updateResource4NFVCGDPInitPath(
                 #     self._dividePath(initPrimaryPath))
                 # self._updateResource4NFVCGDPInitPath(
                 #     self._dividePath(initBackupPath))
                 self.logger.debug(
-                    "requestID:{0}, initPrimaryPath:{1}," \
-                        " initBackupPath:{2}".format(
-                        self.request.requestID, 
-                        initPrimaryPath, initBackupPath))
-                self.configurations[sdc].extend(
-                    [initPrimaryPath, initBackupPath])
+                    "requestID:{0}, initial solutions:{1}".format(
+                        self.request.requestID, initialSolutionsList))
+                self.configurations[sdc].extend(initialSolutionsList)
 
     def _try2GenerateInitialSolution(self, sdc):
-        maxTryNum = 10
+        maxTryNum = INITIAL_PATH_PER_REQUEST_NUM
+        solutionList = []
+
+        try:
+            initPrimaryPath = self._genInitPrimaryPaths(sdc,
+                WEIGHT_TYPE_PROPAGATION_DELAY_MODEL)
+            initBackupPath = self._genInitBackupPaths(sdc,
+                initPrimaryPath, WEIGHT_TYPE_PROPAGATION_DELAY_MODEL)
+            solutionList.extend([initPrimaryPath, initBackupPath])
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex)
+        maxTryNum = maxTryNum - 1
+
         while maxTryNum > 0:
             try:
-                initPrimaryPath = self._genInitPrimaryPaths(sdc)
+                initPrimaryPath = self._genInitPrimaryPaths(sdc,
+                    WEIGHT_TYPE_0100_UNIFORAM_MODEL)
                 initBackupPath = self._genInitBackupPaths(sdc,
-                    initPrimaryPath)
-                return (initPrimaryPath, initBackupPath)
+                    initPrimaryPath, WEIGHT_TYPE_0100_UNIFORAM_MODEL)
+                solutionList.extend([initPrimaryPath, initBackupPath])
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex)
-                maxTryNum = maxTryNum - 1
-        raise ValueError("Compute initial solution failed!")
+            maxTryNum = maxTryNum - 1
 
-    def _genInitPrimaryPaths(self, sdc):
+        if solutionList == []:
+            raise ValueError("Compute initial solution failed!")
+
+        return solutionList
+
+    def _genInitPrimaryPaths(self, sdc, weightType):
         mlg = MultiLayerGraph()
         mlg.loadInstance4dibAndRequest(self._dib, self.request,
-            WEIGHT_TYPE_01_UNIFORAM_MODEL)
+            weightType)
+        # WEIGHT_TYPE_0100_UNIFORAM_MODEL)
         # WEIGHT_TYPE_PROPAGATION_DELAY_MODEL)
         mlg.trans2MLG()
         (ingSwitchID, egSwitchID, vnfSeqStr) = sdc
@@ -96,12 +116,13 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         self.logger.debug("primaryPath:{0}".format(primaryPath))
         return primaryPath
 
-    def _genInitBackupPaths(self, sdc, initPrimaryPath):
+    def _genInitBackupPaths(self, sdc, initPrimaryPath, weightType):
         self.logger.debug("initPrimaryPath:{0}".format(initPrimaryPath))
         mlg = MultiLayerGraph()
         mlg.loadInstance4dibAndRequest(self._dib, self.request,
-            WEIGHT_TYPE_01_UNIFORAM_MODEL)
-        #    WEIGHT_TYPE_PROPAGATION_DELAY_MODEL)
+            weightType)
+        # WEIGHT_TYPE_0100_UNIFORAM_MODEL)
+        # WEIGHT_TYPE_PROPAGATION_DELAY_MODEL)
         abandonLinkIDList = self._getLinkID4Path(initPrimaryPath)
         self.logger.debug("abandonLinkIDList:{0}".format(
             abandonLinkIDList))
@@ -331,7 +352,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             link = linkInfoDict['link']
             srcID = link.srcID
             dstID = link.dstID
-            for vnfType in range(-1,11):
+            for vnfType in range(-1, VNF_TYPE_MAX):
                 self.aVar[(ingSwitchID, egSwitchID, vnfSeqStr, 
                     pathIndex, vnfType, dstID)] = 0
 
@@ -413,7 +434,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             # (10a) and (10b)
             self.cgModel.addConstrs(
                 (   self.modelYVar.sum(rIndex, '*',
-                    '*', '*', '*', pb) >= 1
+                    '*', '*', '*', pb) == 1
                     for rIndex in range(len(self.requestList))
                     for pb in ['p', 'b']
                     ), "pathNum")
@@ -558,6 +579,9 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         for key, variable in self.modelYVar.items():
             variable.vtype = GRB.BINARY
 
+        # IntegralityFocus setting
+        self.cgModel.setParam('IntegralityFocus', 1)
+
     def getSolutions(self):
         if (self.cgModel.status == GRB.OPTIMAL 
                 or self.cgModel.status == GRB.SUBOPTIMAL):
@@ -566,6 +590,12 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             return self.yVarSolutions
         else:
             return None
+
+    def logUnZeroSolutionVar(self, solutions):
+        self.logger.debug("logUnZeroSolutionVar:")
+        for solution in solutions:
+            if solution.X > 0:
+                self.logger.debug("solution:{0}".format(solution))
 
     def getForwardingPathSetsDict(self):
         self.forwardingPathSetsDict = {}
@@ -583,6 +613,10 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
                     primaryForwardingPath = {1:
                             primaryFP
                         }
+                    break
+            else:
+                self.logUnZeroSolutionVar(primaryPathSolutions)
+                raise ValueError("Can't find primaryPathSolutions")
 
             abandonServers = self._getNFVIInPrimaryPath(primaryFP)
 
@@ -604,6 +638,10 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
                             ): backupFP
                         }        
                     }
+                    break
+            else:
+                self.logUnZeroSolutionVar(backupPathSolutions)
+                raise ValueError("Can't find backupPathSolutions")
 
             mappingType = MAPPING_TYPE_E2EP
             self.forwardingPathSetsDict[rIndex] = ForwardingPathSet(

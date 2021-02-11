@@ -83,6 +83,7 @@ class NotVia(MappingAlgorithmBase):
                 mlg = MultiLayerGraph()
                 mlg.loadInstance4dibAndRequest(self._dib, self.request,
                     WEIGHT_TYPE_CONST)
+                    # WEIGHT_TYPE_0100_UNIFORAM_MODEL)
                 mlg.addAbandonNodeIDs([abandonNodeID])
                 graph = mlg.genOneLayer(0)
                 try:
@@ -131,7 +132,8 @@ class NotVia(MappingAlgorithmBase):
 
                 mlg = MultiLayerGraph()
                 mlg.loadInstance4dibAndRequest(self._dib, self.request,
-                    WEIGHT_TYPE_CONST)
+                    # WEIGHT_TYPE_CONST)
+                    WEIGHT_TYPE_0100_UNIFORAM_MODEL)
                 mlg.addAbandonLinkIDs([abandonLinkID])
                 graph = mlg.genOneLayer(0)
                 try:

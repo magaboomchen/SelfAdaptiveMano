@@ -17,6 +17,10 @@ VNF_TYPE_WOC = 9    # WAN Optimization Controller
 VNF_TYPE_APPFW = 10 # http firewall
 VNF_TYPE_VOC = 11
 VNF_TYPE_DDOS_SCRUBBER = 12
+VNF_TYPE_FW_RECEIVER = 13   # duplicate firewall in sfc
+VNF_TYPE_NAT_RECEIVER = 14  # duplicate nat in sfc
+# vnf type can't exceed 16, i.e. vnf type < 16
+VNF_TYPE_MAX = 15
 
 VNFID_LENGTH = 4 # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 

@@ -179,7 +179,9 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
 
         mlg = MultiLayerGraph()
         mlg.loadInstance4dibAndRequest(self._dib, 
-            self._requestInRRA, WEIGHT_TYPE_0100_UNIFORAM_MODEL)
+            self._requestInRRA, 
+            WEIGHT_TYPE_0100_UNIFORAM_MODEL)
+            # WEIGHT_TYPE_CONST)
         bp = self.requestPartialPathBp[pIndex]
         mlg.addAbandonNodeIDs([bp])
         mlg.addAbandonLinkIDs([])
@@ -190,6 +192,8 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
         vnfLayerNum = mlg.getVnfLayerNumOfBackupVNF(i, j, sfc)
         Xp = self.requestPartialPathXp[pIndex]
         (startLayerNum, endLayerNum) = mlg.getStartAndEndlayerNum(Xp, sfc)
+        # self.logger.debug("Xp:{0}, sfc:{1}, i:{2}, j:{3}".format(
+        #     Xp, sfc, i, j))
         self.logger.debug("startLayerNum:{0}, endLayerNum:{1}".format(
             startLayerNum, endLayerNum))
         firstHalfPath = mlg.getPath(startLayerNum, startSwitchID,

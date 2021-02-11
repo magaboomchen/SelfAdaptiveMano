@@ -190,7 +190,7 @@ class MultiLayerGraph(object):
     def _connectLayer(self, mLG, layer1Num, layer2Num):
         switches = self._getSupportVNFSwitchesOfLayer(layer1Num)
         # self.logger.debug("switches:{0}".format(switches))
-        self.logger.debug("connect layer")
+        # self.logger.debug("connect layer")
         for switch in switches:
             nodeID = switch.switchID
             (expectedCores, expectedMemory, expectedBandwidth) \
@@ -209,7 +209,11 @@ class MultiLayerGraph(object):
                 # self.logger.debug("weight:{0}".format(weight))
                 # raw_input()
                 mLG.add_edge(srcLayerNodeID, dstLayerNodeID, weight=weight)
-                # mLG.add_edge(srcLayerNodeID, dstLayerNodeID, weight=0)
+            else:
+                self.logger.warning(
+                    "NPoP {0} hasn't enough server resource.".format(
+                        nodeID
+                    ))
 
     def _getSupportVNFSwitchesOfLayer(self, layerNum):
         switches = []
@@ -235,15 +239,21 @@ class MultiLayerGraph(object):
                 startNodeInMLG, endNodeInMLG)
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex)
-            self.logger.error("multi-layer-graph")
             connectionFlag = nx.is_weakly_connected(copy.deepcopy(
                 self.multiLayerGraph))
-            self.logger.error("is_connected:{0}".format(
+            self.logger.error("multi-layer-graph is_connected:{0}".format(
                 connectionFlag))
             # nx.draw(self.multiLayerGraph, with_labels=True)
             # plt.savefig("./disconnection.png")
             # plt.show()
-            raise ValueError("can't compute path")
+            self.logger.error(
+                    "can't compute path for {0} -> {1}".format(
+                    (startLayer, startNodeID), (endLayer, endNodeID)
+                )
+            )
+            raise ValueError("can't compute path for {0} -> {1}".format(
+                (startLayer, startNodeID), (endLayer, endNodeID)
+            ))
 
         # self.logger.debug("get path from {0}->{1}:{2}".format(
         #     startNodeInMLG, endNodeInMLG, path))

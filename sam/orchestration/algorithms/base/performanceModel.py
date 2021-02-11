@@ -4,54 +4,63 @@
 import math
 
 from sam.base.link import *
+# from sam.base.loggerConfigurator import LoggerConfigurator
 
 SPEED_OF_LIGHT = 3.0 * pow(10, 8)
 
 
 class PerformanceModel(object):
     def __init__(self):
-        self.alpha = 0.1
-        self.beta = 1.2
+        pass
+        # There may be a bug in LoggerConfigurator
+        # It will consume a lot of memory!
+        # logConfigur = LoggerConfigurator(__name__, './log',
+        #     'performanceModel.log', level='debug')
+        # self.logger = logConfigur.getLogger()
 
     def getLatencyOfLink(self, link, util):
         if not self._validateUtilization(util):
-            raise ValueError(
-                "Invalid link utilization {0} for link {1}".format(
-                    util, link))
+            pass
+            # self.logger.error(
+            #     "Invalid link utilization {0} for link {1}".format(
+            #         util, link))
+            # raise ValueError(
+            #     "Invalid link utilization {0} for link {1}".format(
+            #         util, link))
         bandwidth = link.bandwidth
         linkLength = link.linkLength
         pl = self.getPropogationLatency(linkLength)
         # distinguish different bandwidth model
-        if bandwidth == 1:
-            if util < 1:
-                return min(self.alpha/(1-util), self.beta) + pl # unit: ms
-            else:
-                return self.beta + pl
+        if bandwidth == 0.155:
+            self.alpha = 0.65
+            self.beta = 7.74
+        elif bandwidth == 1:
+            self.alpha = 0.1
+            self.beta = 1.2
+        elif bandwidth == 2.5:
+            self.alpha = 0.04
+            self.beta = 0.48
         elif bandwidth == 10:
             self.alpha = 0.01
             self.beta = 0.12
-            if util < 1:
-                return min(self.alpha/(1-util), self.beta) + pl # unit: ms
-            else:
-                return self.beta + pl
+        elif bandwidth == 20:
+            self.alpha = 0.005
+            self.beta = 0.06
         elif bandwidth == 100:
             self.alpha = 0.001
             self.beta = 400
-            if util < 1:
-                return min(self.alpha/(1-util), self.beta) + pl # unit: ms
-            else:
-                return self.beta + pl
         elif bandwidth == 400:
             self.alpha = 0.001/4
             self.beta = 100
-            if util < 1:
-                return min(self.alpha/(1-util), self.beta) + pl # unit: ms
-            else:
-                return self.beta + pl
         else:
             raise ValueError(
                 "Link latency model: unsupport bandwidth {0}".format(
                     bandwidth))
+
+        if util < 1:
+            return min(self.alpha/(1-util), self.beta) + pl # unit: ms
+        else:
+            return self.beta + pl
 
     def getPropogationLatency(self, linkLength):
         return linkLength / SPEED_OF_LIGHT
@@ -93,9 +102,13 @@ class PerformanceModel(object):
                                 # Redundancy Elimination Over 
                                 # Encrypted Network Traffic
             10: [0.1, 1],   # pfSense
-            11: [1/1.1, 1]    # [2018][TON]Middlebox-Based Packet-Level
+            11: [1/1.1, 1],    # [2018][TON]Middlebox-Based Packet-Level
                                 # Redundancy Elimination Over 
                                 # Encrypted Network Traffic
+            12: [1/1.1, 1],     # need measurement
+            13: [1/5.846, 1],
+            14: [1/0.300, 1],
+            15: [1/1.1, 1],     # need measurement
         }
 
         return vnfResConsRatioList[vnfType]
@@ -139,7 +152,11 @@ class PerformanceModel(object):
             8: 5,
             9: 5,
             10: 5,
-            11: 5
+            11: 5,
+            12: 5,
+            13: 5,
+            14: 5,
+            15: 5,
         }
 
         return vnfMaxLatencyDict[vnfType]

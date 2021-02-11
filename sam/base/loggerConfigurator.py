@@ -1,6 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+'''
+There may be a bug in LoggerConfigurator
+It will consume a lot of memory!
+'''
+
 import os
 import random
 import logging

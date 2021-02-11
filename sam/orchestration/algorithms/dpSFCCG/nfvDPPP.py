@@ -203,6 +203,9 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
             # timeout setting
             self.ppModel[rIndex, pb].setParam('TimeLimit', 60)
 
+            # IntegralityFocus setting
+            self.ppModel[rIndex, pb].setParam('IntegralityFocus', 1)
+
             # Create continuous variables
             self.phi[rIndex, pb] = self.ppModel[rIndex, pb].addVars(
                     self._pathLinkVar[rIndex, pb],
@@ -260,6 +263,13 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
                 (   self.phi[rIndex, pb].sum('*', srcID, dstID) <= self.linkCapacity[srcID, dstID] / trafficDemand
                     for srcID, dstID in self.physicalLink
                 ), "linkCapacity")
+
+            # no loop constraints
+            self.ppModel[rIndex, pb].addConstrs(
+                (   self.phi[rIndex, pb].sum(vnfIndex, srcID, dstID) + self.phi[rIndex, pb].sum(vnfIndex, dstID, srcID) <= 1
+                    for srcID, dstID in self.physicalLink
+                    for vnfIndex in range(1, len(vnfSeq)+1)
+                ), "noLoop")
 
             # node capacity constraints
             self.ppModel[rIndex, pb].addConstrs(

@@ -178,22 +178,28 @@ class OriginalPartialLP(MappingAlgorithmBase):
 
             # VNF deployment constraints
             m.addConstrs(
-                (a.sum(rIndex, vnfI, '*') == 1 for rIndex, vnfI in self.requestVnf.keys()), "vnfDeployNode")
+                (a.sum(rIndex, vnfI, '*') == 1 for rIndex, vnfI in self.requestVnf.keys()), "vnfDeployNodeC1")
 
             # some switch only forward, can't provide vnf
+            # m.addConstrs(
+            #     (a.sum(rIndex, vnfI, [w for w in self.switches if vnfI in self._dib.getSwitch(w, self.zoneName).supportVNF ]) == 1 
+            #         for rIndex, vnfI in self.requestVnf.keys() if vnfI not in [0, -1]
+            #         ),
+            #         "vnfDeployNodeC2")
             m.addConstrs(
-                (a.sum(rIndex, vnfI, [w for w in self.switches if vnfI in self._dib.getSwitch(w, self.zoneName).supportVNF ]) == 1 
+                (a.sum(rIndex, vnfI, w) == 0
                     for rIndex, vnfI in self.requestVnf.keys() if vnfI not in [0, -1]
+                    for w in self.switches if vnfI not in self._dib.getSwitch(w, self.zoneName).supportVNF
                     ),
-                    "vnfDeployNode")
+                    "vnfDeployNodeC2")
 
             # fix the vnf 0 and vnf -1
             m.addConstrs(
                 (a.sum(rIndex, 0, w) == 1
-                for rIndex, w in self.requestIngSwitchID.items()), "vnfDeployNode")
+                for rIndex, w in self.requestIngSwitchID.items()), "vnfDeployNodeC3")
             m.addConstrs(
                 (a.sum(rIndex, -1, w) == 1
-                for rIndex, w in self.requestEgSwitchID.items()), "vnfDeployNode")
+                for rIndex, w in self.requestEgSwitchID.items()), "vnfDeployNodeC4")
 
             # Node capacity
             # we assume c_i == 1
@@ -202,8 +208,8 @@ class OriginalPartialLP(MappingAlgorithmBase):
 
             # Link capacity
             for u,v in self.phsicalLink:
-                if self.linkCapacity[u,v] <= 1:
-                    self.logger.warning("link {0}->{1}'s bandwidth <= 1".format(u, v))
+                if self.linkCapacity[u,v] < 1:
+                    self.logger.warning("link {0}->{1}'s bandwidth < 1 Gbps".format(u, v))
 
             m.addConstrs(
                 (flow.prod(self.requestLoad, '*', '*', '*', u, v) <= self.linkCapacity[u,v]

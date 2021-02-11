@@ -1,13 +1,17 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import copy
+
 from sam.serverController.serverManager.serverManager import *
 from sam.orchestration.algorithms.base.performanceModel import *
 
 
 class MappingAlgorithmBase(object):
     def __init__(self):
-        pass
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'MappingAlgorithmBase.log', level='debug')
+        self.logger = logConfigur.getLogger()
 
     def getSFC4Request(self, request):
         sfc = request.attributes['sfc']
@@ -62,7 +66,9 @@ class MappingAlgorithmBase(object):
             pathList.append(path)
         return pathList
 
-    def _findForwardPath(self, linkList):
+    def _findForwardPath(self, inputLinkList):
+        linkList = copy.deepcopy(inputLinkList)
+        self.logger.warning("_findForwardPath:{0}".format(linkList))
         currentSwitchID = linkList[0][0]
         path = [currentSwitchID]
         while True:
@@ -70,6 +76,7 @@ class MappingAlgorithmBase(object):
             for link in linkList:
                 if link[0] == currentSwitchID:
                     nextSwitchID = link[1]
+                    linkList.remove(link)
                     break
             else:
                 nextSwitchID = None
@@ -79,9 +86,16 @@ class MappingAlgorithmBase(object):
                 currentSwitchID = nextSwitchID
             else:
                 break
+
+            if len(path) > len(inputLinkList)+1:
+                self.logger.error("link:{0}".format(inputLinkList))
+                self.logger.error("path:{0}".format(path))
+                raise ValueError("_findForwardPath has loop?")
+
         return path
 
-    def _findPrevForwardPath(self, linkList):
+    def _findPrevForwardPath(self, inputLinkList):
+        linkList = copy.deepcopy(inputLinkList)
         currentSwitchID = linkList[0][0]
         path = [currentSwitchID]
         while True:
@@ -89,6 +103,7 @@ class MappingAlgorithmBase(object):
             for link in linkList:
                 if link[1] == currentSwitchID:
                     preSwitchID = link[0]
+                    linkList.remove(link)
                     break
             else:
                 preSwitchID = None
@@ -98,6 +113,11 @@ class MappingAlgorithmBase(object):
                 currentSwitchID = preSwitchID
             else:
                 break
+
+            if len(path) > len(inputLinkList)+1:
+                self.logger.error("link:{0}".format(inputLinkList))
+                self.logger.error("path:{0}".format(path))
+                raise ValueError("_findPrevForwardPath has loop?")
         return path
 
     def _transPath2ForwardingPath(self, vnfIndex, path):
