@@ -19,6 +19,7 @@ from sam.ryu.conf.genSwitchConf import SwitchConf
 from sam.ryu.conf.ryuConf import *
 from sam.ryu.baseApp import BaseApp
 
+
 class L2(BaseApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
     _CONTEXTS = {
@@ -40,8 +41,8 @@ class L2(BaseApp):
         self.logger.setLevel(logging.WARNING)
 
     def getLocalPortByMac(self,dpid,mac):
-        if self._switchesLANMacTable.has_key(dpid) and\
-            self._switchesLANMacTable[dpid].has_key(mac):
+        if (self._switchesLANMacTable.has_key(dpid)
+                and self._switchesLANMacTable[dpid].has_key(mac)):
             return self._switchesLANMacTable[dpid][mac]
         else:
             return None

@@ -16,8 +16,8 @@ import base64
 
 import pickle
 import pika
-from pika.exceptions import ChannelClosed
-from pika.exceptions import ReentrancyError
+# from pika.exceptions import ChannelClosed
+# from pika.exceptions import ReentrancyError
 
 from sam.base.command import *
 from sam.base.request import *
@@ -287,15 +287,15 @@ class QueueReciever(threading.Thread):
                 self.logger.info('Channel stop consuming')
                 self.channel.stop_consuming()
                 return None
-            except ChannelClosed:
-                self.logger.warning(
-                    "channel closed by broker, reconnect to broker.")
-            except ReentrancyError:
-                self.logger.error(
-                    "The requested operation would result in unsupported"
-                    " recursion or reentrancy."
-                    "Used by BlockingConnection/BlockingChannel.")
-                return None
+            # except ChannelClosed:
+            #     self.logger.warning(
+            #         "channel closed by broker, reconnect to broker.")
+            # except ReentrancyError:
+            #     self.logger.error(
+            #         "The requested operation would result in unsupported"
+            #         " recursion or reentrancy."
+            #         "Used by BlockingConnection/BlockingChannel.")
+            #     return None
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex,
                     "MessageAgent recvMsg failed")
