@@ -204,7 +204,7 @@ class MultiLayerGraph(object):
             link = Link(srcLayerNodeID, dstLayerNodeID)
             if self._dib.hasEnoughNPoPServersResources(
                     nodeID, expectedCores, expectedMemory, expectedBandwidth,
-                        self.zoneName):
+                        self.zoneName, self.abandonNodeIDList):
                 weight = self.getLinkWeight(link)
                 # self.logger.debug("weight:{0}".format(weight))
                 # raw_input()
