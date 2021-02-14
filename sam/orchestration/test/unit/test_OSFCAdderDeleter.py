@@ -42,6 +42,7 @@ class TestOSFCAdderDeleterClass(TestBase):
 
         classifier = cls.tc.genClassifier("2.2.0.36")
         cls.sfc = cls.tc.genUniDirectionSFC(classifier)
+        cls.sfc.slo = SLO(latencyBound=10, throughput=0.005)
         cls.sfci = SFCI(cls.tc._genSFCIID(), [],
             forwardingPathSet=ForwardingPathSet({}, MAPPING_TYPE_NOTVIA_PSFC, {}))
         zoneName = cls.sfc.attributes['zone']
@@ -75,13 +76,12 @@ class TestOSFCAdderDeleterClass(TestBase):
                 ["2.2.0.32/27"], range(1,2))
         for switch in switchList:
             switchID = switch.switchID
-            switch.supportVNF = []
             cls.switches[DEFAULT_ZONE][switchID] = {'switch':switch,
                 'Active':True}
 
         switchList = cls.tc.genSwitchList(2, SWITCH_TYPE_NPOP,
                 ["2.2.0.64/27", "2.2.0.96/27"], range(2,4), 
-                [range(11), range(11)])
+                supportVNFList=[range(VNF_TYPE_MAX+1), range(VNF_TYPE_MAX+1)])
         for switch in switchList:
             switchID = switch.switchID
             cls.switches[DEFAULT_ZONE][switchID] = {'switch': switch,
@@ -124,7 +124,7 @@ class TestOSFCAdderDeleterClass(TestBase):
                 'server': server}
         cls.logger.debug("serverDict:{0}".format(cls.servers))
 
-    # @pytest.mark.skip(reason='Temporarly')
+    @pytest.mark.skip(reason='Temporarly')
     def test_genAddSFCCmd(self):
         # exercise
         cmd = self.oA.genAddSFCCmd(self.addSFCRequest)
@@ -135,7 +135,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         # verify
         assert sfc.sfcUUID == self.sfc.sfcUUID
 
-    # @pytest.mark.skip(reason='Temporarly')
+    @pytest.mark.skip(reason='Temporarly')
     def test_genAddSFCICmd(self):
         # exercise
         cmd = self.oA.genAddSFCICmd(self.addSFCIRequest)
@@ -150,7 +150,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         assert primaryForwardingPath == {1: [[10001, 1, 2, 10003], [10003, 2, 1, 10001]]}
         assert backupForwardingPath == {1: {(1, 2, 2): [[1, 3, 10005], [10005, 3, 1, 10001]], (2, 10003, 3): [[2, 10004], [10004, 2, 1, 10001]]}}
 
-    # @pytest.mark.skip(reason='Temporarly')
+    @pytest.mark.skip(reason='Temporarly')
     def test_genDelSFCICmd(self):
         # exercise
         cmd = self.oD.genDelSFCICmd(self.delSFCIRequest)
@@ -162,7 +162,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         assert sfc.sfcUUID == self.sfc.sfcUUID
         assert sfci.sfciID == self.sfci.sfciID
 
-    # @pytest.mark.skip(reason='Temporarly')
+    @pytest.mark.skip(reason='Temporarly')
     def test_genDelSFCCmd(self):
         # exercise
         cmd = self.oD.genDelSFCCmd(self.delSFCRequest)
@@ -173,9 +173,10 @@ class TestOSFCAdderDeleterClass(TestBase):
         assert sfc.sfcUUID == self.sfc.sfcUUID
 
     # @pytest.mark.skip(reason='Temporarly')
-    def test_genABatchOfRequestAndAddSFCICmds(self):
+    def test_genABatchOfRequestAndAddSFCICmdsUFRR(self):
         # exercise
         self._requestBatchQueue = Queue.Queue()
+        self.addSFCIRequest.attributes['mappingType'] = MAPPING_TYPE_UFRR
         self._requestBatchQueue.put(self.addSFCIRequest)
 
         requestCmdBatch = self.oA.genABatchOfRequestAndAddSFCICmds(
@@ -188,12 +189,38 @@ class TestOSFCAdderDeleterClass(TestBase):
             primaryForwardingPath = forwardingPathSet.primaryForwardingPath
             backupForwardingPath = forwardingPathSet.backupForwardingPath
 
-            self.logger.info("forwardingPathSet:{0}".format(
-                forwardingPathSet))
+            # self.logger.info("forwardingPathSet:{0}".format(
+            #     forwardingPathSet))
 
-            assert primaryForwardingPath != {1: 
-                [[10001, 1, 2, 10003], [10003, 2, 1, 10001]]}
+            assert primaryForwardingPath == {1: [[(0, 10001), (0, 1), (0, 3), (0, 10005)], [(1, 10005), (1, 3), (1, 1), (1, 10001)]]}
+            assert backupForwardingPath == {1: 
+                    {(('failureNodeID', 3), ('repairMethod', 'fast-reroute'), ('repairSwitchID', 1), ('newPathID', 2)):
+                            [[(0, 1), (0, 2), (0, 10003)], [(1, 10003), (1, 2), (1, 1), (1, 10001)]],
+                        (('failureNodeID', 10005), ('repairMethod', 'fast-reroute'), ('repairSwitchID', 3), ('newPathID', 3)):
+                            [[(0, 3), (0, 2), (0, 10003)], [(1, 10003), (1, 2), (1, 1), (1, 10001)]]}}
+
+    def test_genABatchOfRequestAndAddSFCICmdsNotViaPSFC(self):
+        # exercise
+        self._requestBatchQueue = Queue.Queue()
+        self.addSFCIRequest.attributes['mappingType'] = MAPPING_TYPE_NOTVIA_PSFC
+        self._requestBatchQueue.put(self.addSFCIRequest)
+
+        requestCmdBatch = self.oA.genABatchOfRequestAndAddSFCICmds(
+            self._requestBatchQueue)
+
+        # verify
+        for (request, cmd) in requestCmdBatch:
+            sfci = cmd.attributes['sfci']
+            forwardingPathSet = sfci.forwardingPathSet
+            primaryForwardingPath = forwardingPathSet.primaryForwardingPath
+            backupForwardingPath = forwardingPathSet.backupForwardingPath
+
+            # self.logger.info("forwardingPathSet:{0}".format(
+            #     forwardingPathSet))
+
+            assert primaryForwardingPath != {1: [[(0, 10001), (0, 1), (0, 3), (0, 10005)], [(1, 10005), (1, 3), (1, 1), (1, 10001)]]}
             assert backupForwardingPath != {1: 
-                {(1, 2, 2): 
-                    [[1, 3, 10005], [10005, 3, 1, 10001]],
-                         (2, 10003, 3): [[2, 10004], [10004, 2, 1, 10001]]}}
+                    {(('failureNodeID', 3), ('repairMethod', 'fast-reroute'), ('repairSwitchID', 1), ('newPathID', 2)):
+                            [[(0, 1), (0, 2), (0, 10003)], [(1, 10003), (1, 2), (1, 1), (1, 10001)]],
+                        (('failureNodeID', 10005), ('repairMethod', 'fast-reroute'), ('repairSwitchID', 3), ('newPathID', 3)):
+                            [[(0, 3), (0, 2), (0, 10003)], [(1, 10003), (1, 2), (1, 1), (1, 10001)]]}}

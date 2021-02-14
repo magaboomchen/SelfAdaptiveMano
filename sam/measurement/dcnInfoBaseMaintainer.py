@@ -154,12 +154,13 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
                 servers.append(server)
         return servers
 
-    def getConnectedNFVIs(self, switchID, zoneName):
+    def getConnectedNFVIs(self, switchID, zoneName, abandonServerIDList=[]):
         servers = []
         for serverID,serverInfoDict in self._servers[zoneName].items():
             server = serverInfoDict['server']
             if (self.isServerConnectSwitch(switchID, serverID, zoneName) 
-                    and server.getServerType() == SERVER_TYPE_NFVI):
+                    and server.getServerType() == SERVER_TYPE_NFVI
+                    and serverID not in abandonServerIDList):
                 servers.append(server)
         return servers
 
@@ -285,10 +286,10 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
             return False
 
     def hasEnoughNPoPServersResources(self, nodeID,
-            expectedCores, expectedMemory, expectedBandwidth, zoneName):
+            expectedCores, expectedMemory, expectedBandwidth, zoneName, abandonServerIDList=[]):
         # cores and memory resources
         switch = self.getSwitch(nodeID, zoneName)
-        servers = self.getConnectedNFVIs(nodeID, zoneName)
+        servers = self.getConnectedNFVIs(nodeID, zoneName, abandonServerIDList)
         (coresSum, memorySum, bandwidthSum) = self.getServersReservedResources(
             servers, zoneName)
         (coreCapacity, memoryCapacity, bandwidthCapacity) = self.getServersResourcesCapacity(

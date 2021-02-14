@@ -18,6 +18,7 @@ from sam.test.FRR.testFRR import TestFRR
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
 
+
 class TestUFRRClass(TestFRR):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
@@ -31,7 +32,7 @@ class TestUFRRClass(TestFRR):
         self.sfci = self.genUniDirection12BackupSFCI()
 
         self.mediator = MediatorStub()
-        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc,self.sfci)
+        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
 
         self._messageAgent = MessageAgent()

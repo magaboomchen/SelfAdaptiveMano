@@ -61,7 +61,7 @@ class UFRR(FRR):
         try:
             sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
-            self._addSFCIRoute(sfc,sfci)
+            self._addSFCIRoute(sfc, sfci)
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
@@ -74,14 +74,14 @@ class UFRR(FRR):
         # install sfci path
         for direction in sfc.directions:
             # install primary path route
-            self._installPrimaryPath(sfci,direction)
+            self._installPrimaryPath(sfci, direction)
             # install backup paths route
-            self._installBackupPaths(sfci,direction)
+            self._installBackupPaths(sfci, direction)
         return True
 
     def _installPrimaryPath(self, sfci, direction):
         primaryPathID = self._getPathID(direction["ID"])
-        primaryFP = self._getPrimaryPath(sfci,primaryPathID)
+        primaryFP = self._getPrimaryPath(sfci, primaryPathID)
         stageCount = -1
         for stage in primaryFP:
             stageCount = stageCount + 1
@@ -89,9 +89,9 @@ class UFRR(FRR):
                 # SFF inner routing
                 continue
             dstIP = self.getSFCIStageDstIP(sfci, stageCount, primaryPathID)
-            (srcServerID,dstServerID) = self._getSrcDstServerInStage(stage)
+            (srcServerID, dstServerID) = self._getSrcDstServerInStage(stage)
             # add route
-            for i in range(1,len(stage)-1):
+            for i in range(1, len(stage)-1):
                 currentSwitchID = stage[i]
                 groupID = self.ibm.assignGroupID(currentSwitchID)
                 self.logger.info("dpid:{0}".format(currentSwitchID))
@@ -99,7 +99,7 @@ class UFRR(FRR):
                 nextNodeID = stage[i+1]
 
                 if self._canSkipPrimaryPathFlowInstallation(sfci.sfciID, dstIP,
-                    currentSwitchID):
+                        currentSwitchID):
                     continue
 
                 self._addUFRRSFCIGroupTable(currentSwitchID,
@@ -119,8 +119,8 @@ class UFRR(FRR):
         if defaultOutPort == None:
             raise ValueError("UFRR: can not get default out port")
         self.logger.info("Bucket1")
-        self.logger.info("srcMAC:{0},dstMAC:{1},outport:{2}".format(srcMAC,dstMAC,
-            defaultOutPort))
+        self.logger.info("srcMAC:{0},dstMAC:{1},outport:{2}".format(
+            srcMAC, dstMAC, defaultOutPort))
         actions = [
             parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
@@ -128,7 +128,7 @@ class UFRR(FRR):
             parser.OFPActionOutput(defaultOutPort)
         ]
         watch_port = defaultOutPort
-        bucket = parser.OFPBucket(watch_port=watch_port,actions=actions)
+        bucket = parser.OFPBucket(watch_port=watch_port, actions=actions)
         buckets.append(bucket)
 
         # get backup src/dst ether, backup OutPort and new dstIP
@@ -136,10 +136,10 @@ class UFRR(FRR):
             direction,stageCount)
         self.logger.info("backupnextDpid:{0}".format(backupnextDpid))
         if backupnextDpid != None:
-            newDstIP = self._getNewDstIP(currentDpid,nextDpid,sfci,direction,
+            newDstIP = self._getNewDstIP(currentDpid, nextDpid, sfci, direction,
                 stageCount)
             (srcMAC,dstMAC,backupOutPort) = self._getNextHopActionFields(sfci,
-                direction,currentDpid,backupnextDpid)
+                direction, currentDpid, backupnextDpid)
 
             self.logger.info("Bucket2")
             self.logger.info("srcMAC:{0},dstMAC:{1},newDstIP:{2},outport:{2}".format(
@@ -167,8 +167,8 @@ class UFRR(FRR):
         datapath = self.dpset.get(int(str(currentDpid),0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        matchFields = {'eth_type':ether_types.ETH_TYPE_IP,
-            'ipv4_dst':dstIP}
+        matchFields = {'eth_type': ether_types.ETH_TYPE_IP,
+            'ipv4_dst': dstIP}
         match = parser.OFPMatch(**matchFields)
 
         actions = [
@@ -187,7 +187,10 @@ class UFRR(FRR):
         primaryPathID = self._getPathID(direction["ID"])
         backupPaths = self._getBackupPaths(sfci,primaryPathID)
         for key in backupPaths.iterkeys():
-            if key[0] == currentDpid and key[1] == nextDpid:
+            # if key[0] == currentDpid and key[1] == nextDpid:
+            repairSwitchID = self._getRepairSwitchIDFromKey(key)
+            failureNodeID = self._getFailureNodeIDFromKey(key)
+            if repairSwitchID == currentDpid and failureNodeID == nextDpid:
                 pathID = key[2]
                 self.logger.info("_getNewDstIP")
                 return self.getSFCIStageDstIP(sfci,stageCount,pathID)
@@ -198,7 +201,7 @@ class UFRR(FRR):
         primaryPathID = self._getPathID(direction["ID"])
         backupFPs = self._getBackupPaths(sfci,primaryPathID)
         for key,value in backupFPs.items():
-            (currentID, nextID, pathID) = key
+            pathID = self._getPathFromKey(key)
             FP = value
             sfciLength = len(sfci.vnfiSequence)
             fpLength = len(FP)
@@ -215,6 +218,34 @@ class UFRR(FRR):
                     nextNodeID = stage[i+1]
                     self._installRouteOnBackupPath(sfci, direction,
                         currentSwitchID, nextNodeID, dstIP)
+
+    def _getPathFromKey(self, key):
+        if key[3][0] == "newPathID":
+            return key[3][1]
+        else:
+            raise ValueError("Unknown key")
+
+    # def _installBackupPaths(self, sfci, direction):
+    #     primaryPathID = self._getPathID(direction["ID"])
+    #     backupFPs = self._getBackupPaths(sfci,primaryPathID)
+    #     for key,value in backupFPs.items():
+    #         (currentID, nextID, pathID) = key
+    #         FP = value
+    #         sfciLength = len(sfci.vnfiSequence)
+    #         fpLength = len(FP)
+    #         stageCount = sfciLength - fpLength
+    #         self.logger.info("_installBackupPaths")
+    #         for stage in FP:
+    #             stageCount = stageCount + 1
+    #             if len(stage)==2:
+    #                 # SFF inner routing
+    #                 continue
+    #             dstIP = self.getSFCIStageDstIP(sfci, stageCount, pathID)
+    #             for i in range(1,len(stage)-1):
+    #                 currentSwitchID = stage[i]
+    #                 nextNodeID = stage[i+1]
+    #                 self._installRouteOnBackupPath(sfci, direction,
+    #                     currentSwitchID, nextNodeID, dstIP)
 
     def _installRouteOnBackupPath(self, sfci, direction, currentDpid,
             nextDpid, dstIP):
