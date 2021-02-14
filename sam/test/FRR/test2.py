@@ -349,7 +349,10 @@ if __name__ == '__main__':
     info( '*** Creating network\n' )
     topo = TriangleTopo()
     net = Mininet( topo=topo,
-        controller=partial(RemoteController, ip='192.168.122.1', port=6633),
+        controller=partial(RemoteController,
+            # ip='192.168.122.1',
+            ip='192.168.8.18',
+            port=6633),
         link=TCLink)
 
     nc = NetConfigurator(net)

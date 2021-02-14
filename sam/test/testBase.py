@@ -447,7 +447,7 @@ class TestBase(object):
             server.setServerID(serverIDList[i])
             server.setControlNICIP([serverCIPList[i]])
             server.setControlNICMAC(self.genRandomMacAddress())
-            for vnfType in range(11):
+            for vnfType in range(VNF_TYPE_MAX+1):
                 server.addVNFSupport(vnfType)
             server.updateResource()
             servers.append(server)

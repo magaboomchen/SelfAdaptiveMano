@@ -40,6 +40,7 @@ class Orchestrator(object):
         self._messageAgent.startRecvMsg(ORCHESTRATOR_QUEUE)
 
         self._requestBatchQueue = Queue.Queue()
+        self._batchMode = True
         self._batchSize = BATCH_SIZE
 
     def startOrchestrator(self):
@@ -66,7 +67,8 @@ class Orchestrator(object):
                 self._oib.addSFCRequestHandler(request, cmd)
                 self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
-                if self._batchSize == 1:
+                # if self._batchSize == NONE_BATCH_SIZE:
+                if self._batchMode == False:
                     self._odir.getDCNInfo()
                     cmd = self._osa.genAddSFCICmd(request)
                     self._cm.addCmd(cmd)

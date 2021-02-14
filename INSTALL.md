@@ -7,11 +7,19 @@ sudo python -m pip install netifaces
 sudo python -m pip install getmac
 sudo python -m pip install pytest
 sudo python -m pip install MySQL-python
+sudo python -m pip install networkx
+sudo python -m pip install numpy
+sudo python -m pip install pandas
 sudo python -m pip install -i https://pypi.gurobi.com gurobipy
 sudo python -m pip install ryu
 sudo python -m pip uninstall tinyrpc
 sudo python -m pip install tinyrpc==0.8
 sudo python -m pip install ruamel.yaml
+sudo python -m pip install matplotlib
+sudo python -m pip install scapy
+sudo python -m pip install grpcio
+sudo python -m pip install grpcio-tools
+sudo python -m pip install docker
 ```
 
 ## SAM python environment
@@ -47,9 +55,19 @@ systemctl start rabbitmq-server.service
 
 ## Mysql database
 ### Install python mysql
+#### Ubuntu 16.04
 ```
 sudo apt-get install libmysqlclient-dev
 sudo python -m pip install MySQL-python
+```
+#### Ubuntu 18.04
+```
+sudo apt-get install build-essential python-dev libmysqlclient-dev
+sudo apt update
+sudo apt install mysql-server
+sudo mysql_secure_installation
+sudo apt-get install gcc python3-dev
+sudo apt-get install python-mysqldb
 ```
 
 ### add user dbAgent with password 123
