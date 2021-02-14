@@ -64,7 +64,8 @@ class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase, PathServerFiller):
             path = self._selectPath4Candidates()
             path = self._selectNPoPNodeAndServers(path, self._rIndexInRRA)
             self._addPath2Sfci(path)
-            self._allocateResource(path)
+            # Randomized Rounding Algorithm doesn't reserve resource
+            # self._allocateResource(path)
 
     def _initRequestCalculation(self, rIndex):
         self.logger.debug(
@@ -100,8 +101,8 @@ class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase, PathServerFiller):
 
         mlg = MultiLayerGraph()
         mlg.loadInstance4dibAndRequest(self._dib, self._requestInRRA,
-            WEIGHT_TYPE_0100_UNIFORAM_MODEL)
-            # WEIGHT_TYPE_CONST)
+            # WEIGHT_TYPE_0100_UNIFORAM_MODEL)
+            WEIGHT_TYPE_CONST)
         mlg.addAbandonNodeIDs([])
         mlg.addAbandonLinkIDs([])
         mlg.trans2MLG()

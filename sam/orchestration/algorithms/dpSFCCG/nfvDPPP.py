@@ -354,7 +354,7 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
 
                 if self.ppModel[rIndex, pb].status == GRB.OPTIMAL:
                     self.logger.info("model status: optimal")
-                    self.logSolution(rIndex, pb)
+                    self._saveSolution(rIndex, pb)
                 elif self.ppModel[rIndex, pb].status == GRB.SUBOPTIMAL:
                     self.logger.warning("model status: suboptimal")
                 elif self.ppModel[rIndex, pb].status == GRB.INFEASIBLE:
@@ -363,7 +363,7 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
                 else:
                     self.logger.warning("unknown model status:{0}".format(m.status))
 
-    def logSolution(self, rIndex, pb):
+    def _saveSolution(self, rIndex, pb):
         request = self.requestList[rIndex]
         sfc = self.getSFC4Request(request)
         vnfSeq = sfc.vNFTypeSequence

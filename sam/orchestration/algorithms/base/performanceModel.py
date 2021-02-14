@@ -35,8 +35,12 @@ class PerformanceModel(object):
             self.alpha = 0.65
             self.beta = 7.74
         elif bandwidth == 1:
+            # real measurement of PICA8 ToR
             self.alpha = 0.1
             self.beta = 1.2
+            # https://people.ucsc.edu/~warner/Bufs/Arista7800R3SwitchArchitectureWP.pdf
+            # self.alpha = 1
+            # self.beta = 40
         elif bandwidth == 2.5:
             self.alpha = 0.04
             self.beta = 0.48

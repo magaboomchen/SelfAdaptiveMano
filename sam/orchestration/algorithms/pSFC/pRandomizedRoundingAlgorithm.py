@@ -89,7 +89,8 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
                 path = self._selectPath4Candidates()
             path = self._selectNPoPNodeAndServers(path, self._pIndexInRRA)
             self._addPath2Sfci(path)
-            self._allocateResource(path)
+            # Randomized Rounding Algorithm doesn't reserve resource
+            # self._allocateResource(path)
 
     def _getCandidatePath4NoneJointLink(self, pathIndex):
         rIndex = self.requestPartialPathRIndex[pathIndex]

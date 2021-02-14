@@ -108,9 +108,9 @@ class NotVia(MappingAlgorithmBase):
                     ),
                     path)
                 # For small topology,
-                # each byPass path will not allocate resource.
+                # it's better not allocate resource for byPass path.
                 # Otherwise for some topolgoy it can't find a feasible solution
-                self._allocateResource(path)
+                # self._allocateResource(path)
 
         elif self.failureType == "link":
             if len(segPath) < 4:
@@ -132,8 +132,8 @@ class NotVia(MappingAlgorithmBase):
 
                 mlg = MultiLayerGraph()
                 mlg.loadInstance4dibAndRequest(self._dib, self.request,
-                    # WEIGHT_TYPE_CONST)
-                    WEIGHT_TYPE_0100_UNIFORAM_MODEL)
+                    WEIGHT_TYPE_CONST)
+                    # WEIGHT_TYPE_0100_UNIFORAM_MODEL)
                 mlg.addAbandonLinkIDs([abandonLinkID])
                 graph = mlg.genOneLayer(0)
                 try:
@@ -160,9 +160,9 @@ class NotVia(MappingAlgorithmBase):
                     ),
                     path)
                 # For small topology,
-                # each byPass path will not allocate resource.
+                # it's better not allocate resource for byPass path.
                 # Otherwise for some topolgoy it can't find a feasible solution
-                self._allocateResource(path)
+                # self._allocateResource(path)
 
         else:
             raise ValueError(

@@ -28,7 +28,7 @@ from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
 from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import *
 
 
-INITIAL_PATH_PER_REQUEST_NUM = 2
+INITIAL_PATH_PER_REQUEST_NUM = 5
 
 
 class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
@@ -90,9 +90,9 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         while maxTryNum > 0:
             try:
                 initPrimaryPath = self._genInitPrimaryPaths(sdc,
-                    WEIGHT_TYPE_0100_UNIFORAM_MODEL)
+                    WEIGHT_TYPE_01_UNIFORAM_MODEL)
                 initBackupPath = self._genInitBackupPaths(sdc,
-                    initPrimaryPath, WEIGHT_TYPE_0100_UNIFORAM_MODEL)
+                    initPrimaryPath, WEIGHT_TYPE_01_UNIFORAM_MODEL)
                 solutionList.extend([initPrimaryPath, initBackupPath])
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex)
@@ -493,8 +493,56 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
                     egSwitchID, vnfSeqStr, pathIndex, '*'))
 
     def solve(self):
+        try:
+            self.cgModel.optimize()
+
+            # Print solution
+            if self.cgModel.status == GRB.OPTIMAL:
+                self._saveSolution()
+            elif self.cgModel.status == GRB.SUBOPTIMAL:
+                self.logger.warning("model status: suboptimal")
+            elif self.cgModel.status == GRB.INFEASIBLE:
+                self._tackleInfeasibleModel()
+                self._saveSolution()
+            else:
+                self.logger.warning("unknown model status:{0}".format(self.cgModel.status))
+                raise ValueError("Partial LP unknown model status")
+
+        except Exception as ex:
+            self.logger.error('Error reported')
+            ExceptionProcessor(self.logger).logException(ex)
+
+        finally:
+            # don't clean up gruobi environment and model
+            pass
+
+    def _tackleInfeasibleModel(self):
+        self.logger.warning("nfvCGDP infeasible model")
+        self.cgModel.computeIIS()
+        self.cgModel.write("./LP/nfvCGDPIIS.ilp")
+
+        # Relax the constraints to make the model feasible
+        self.logger.debug('The model is infeasible; relaxing the constraints')
+        orignumvars = self.cgModel.NumVars
+        self.cgModel.feasRelaxS(0, False, False, True)
         self.cgModel.optimize()
-        self.logSolution()
+        if self.cgModel.status in (GRB.INF_OR_UNBD, GRB.INFEASIBLE, GRB.UNBOUNDED):
+            self.logger.error('The relaxed model cannot be solved '
+                'because it is infeasible or unbounded')
+            raise ValueError('The relaxed model cannot be solved '
+                'because it is infeasible or unbounded')
+
+        if self.cgModel.status != GRB.OPTIMAL:
+            self.logger.error('Optimization was stopped with '
+                'status {0}'.format(self.cgModel.status))
+            raise ValueError('Optimization was stopped with '
+                'status {0}'.format(self.cgModel.status))
+
+        self.logger.debug('Slack values:')
+        slacks = self.cgModel.getVars()[orignumvars:]
+        for sv in slacks:
+            if sv.X > 1e-6:
+                self.logger.debug('{0} = {1}'.format(sv.VarName, sv.X))
 
     def getDualVariables(self):
         self._genDualVariables()
@@ -674,7 +722,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         pathIndex = int(varIndiceList[4])
         return (ingSwitchID, egSwitchID, vnfSeqStr, pathIndex)
 
-    def logSolution(self):
+    def _saveSolution(self):
         # Print solution
         if self.cgModel.status == GRB.OPTIMAL:
             self.logger.info('Optimal Obj = {0}'.format(self.cgModel.objVal))
