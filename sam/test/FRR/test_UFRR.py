@@ -114,5 +114,3 @@ class TestUFRRClass(TestFRR):
             "After the test, "
             "Press any key to quit!")
         raw_input()
-
-

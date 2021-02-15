@@ -3,7 +3,7 @@
 
 """
 3 switches topology
-test UFFR/NotVia/ReMapping
+test UFFR/NotVia-PSFC/End-to-endProtection
 """
 
 import re
@@ -48,6 +48,13 @@ INGRESS_MAC1 = None
 GATEWAY1_OUTBOUND_IP = "1.1.1.1"
 GATEWAY1_OUTBOUND_IP_prefix = 8
 GATEWAY1_OUTBOUND_MAC =  None
+
+# test mode
+MODE_UFRR = 0
+MODE_NOTVIA_REMAPPING = 1
+MODE_NOTVIA_PSFC = 2
+MODE_END2END_PROTECTION = 3
+MODE_DIRECT_REMAPPING = 4
 
 
 class TriangleTopo( Topo ):
@@ -207,17 +214,30 @@ class ManoTester(object):
     def startTest(self):
         while True:
             print(
-                "Mode 0: UFRR\n"
-                "Mode 1: NotVia + Remapping\n"
-                "Mode 2: Direct remapping\n"
-                "cli: start interactive cli\n"
-                "quit: to quit"
+                    "Mode {0}: UFRR\n"
+                    "Mode {1}: NotVia + Remapping\n"
+                    "Mode {2}: NotVia + PSFC\n"
+                    "Mode {3}: End-to-end Protection\n"
+                    "Mode {4}: Direct Remapping\n"
+                    "cli: start interactive cli\n"
+                    "quit: to quit".format(
+                        MODE_UFRR,
+                        MODE_NOTVIA_REMAPPING,
+                        MODE_NOTVIA_PSFC,
+                        MODE_END2END_PROTECTION,
+                        MODE_DIRECT_REMAPPING
+                    )
                 )
             print("Please input the mode number:")
             self.mode = raw_input()
-            if self.mode == "0" or self.mode == "1":
+            if self.mode in [
+                MODE_UFRR,
+                MODE_NOTVIA_REMAPPING,
+                MODE_NOTVIA_PSFC,
+                MODE_END2END_PROTECTION
+            ]:
                 self.testHandler()
-            elif self.mode == "2":
+            elif self.mode == MODE_DIRECT_REMAPPING:
                 self.sendReMappingCmd()
             elif self.mode == "cli":
                 CLI(self.net)
@@ -241,7 +261,7 @@ class ManoTester(object):
         time.sleep(self.SLEEP_TIME)
         s2 = self.net.get('s2')
         self.disableDpdkServer(s2, 'eth2')
-        if self.mode == "1":
+        if self.mode == MODE_NOTVIA_REMAPPING:
             self.sendReMappingCmd()
         time.sleep(self.SLEEP_TIME * 2)
         self.endMeasureE2EDelay(h1, h2)
@@ -372,3 +392,4 @@ if __name__ == '__main__':
 topos = {
     'TriangleTopo': TriangleTopo
 }
+

@@ -15,6 +15,7 @@ from sam.base.socketConverter import SocketConverter
 from sam.orchestration.oConfig import *
 from sam.orchestration.pathComputer import *
 from sam.orchestration.orchestrator import *
+from sam.orchestration.vnfiIDAssigner import *
 from sam.orchestration.algorithms.pSFC.pSFC import *
 from sam.orchestration.algorithms.oPSFC.oPSFC import *
 from sam.orchestration.algorithms.notVia.notVia import *
@@ -28,6 +29,7 @@ class OSFCAdder(object):
     def __init__(self, dib, logger):
         self._dib = dib
         self.logger = logger
+        self._via = VNFIIDAssigner()
         self._sc = SocketConverter()
 
     def genAddSFCCmd(self, request):
@@ -312,11 +314,60 @@ class OSFCAdder(object):
             zoneName = sfc.attributes['zone']
             sfci = request.attributes['sfci']
             sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
-
+            sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
+                sfci.forwardingPathSet)
             cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
                 'sfc':sfc, 'sfci':sfci, 'zone':zoneName
             })
-
             cmdList.append((request, cmd))
-
         return cmdList
+
+    def _getVNFISeqFromForwardingPathSet(self, sfc, forwardingPathSet):
+        sfcLength = len(sfc.vNFTypeSequence)
+        vSeq = []
+        for stage in range(sfcLength):
+            vnfType = sfc.vNFTypeSequence[stage]
+            vnfiList = []
+            serverList = self._getServerListOfStage4FPSet(forwardingPathSet, stage)
+            for server in serverList:
+                vnfiID = self._via._assignVNFIID(vnfType, server.getServerID())
+                vnfi = VNFI(vnfType, vnfType, vnfiID, None, server)
+                vnfiList.append(vnfi)
+            vSeq.append(vnfiList)
+        return vSeq
+
+    def _getServerListOfStage4FPSet(self, forwardingPathSet, stage):
+        serverIDDict = {}
+        # get server from primary fp
+        primaryForwardingPath = forwardingPathSet.primaryForwardingPath[1]
+        (vnfLayerNum, serverID) = primaryForwardingPath[stage][-1]
+        serverIDDict[serverID] = serverID
+
+        # get mapping type
+        mappingType = forwardingPathSet.mappingType
+
+        # get server from backup fp
+        backupForwardingPathDict = forwardingPathSet.backupForwardingPath[1]
+        for key, backupForwardingPath in backupForwardingPathDict.items():
+            if mappingType == MAPPING_TYPE_NOTVIA_PSFC:
+                if self._isFRRKey(key):
+                    continue
+            for backupPathStageIndex in range(len(backupForwardingPath)):
+                (vnfLayerNum, serverID) = backupForwardingPath[backupPathStageIndex][-1]
+                if vnfLayerNum == stage:
+                    serverIDDict[serverID] = serverID
+
+        serverList = []
+        for serverID in serverIDDict.keys():
+            self.logger.debug("serverID:{0}".format(serverID))
+            server = self._dib.getServer(serverID, self.zoneName)
+            serverList.append(server)
+
+        return serverList
+
+    def _isFRRKey(self, key):
+        for keyTag in key:
+            if keyTag == ("repairMethod", "fast-reroute"):
+                return True
+        else:
+            return False

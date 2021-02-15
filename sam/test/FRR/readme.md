@@ -37,7 +37,7 @@ s2 ip link set dev eth2 down
 
 <br />
 
-## NotVia 测试
+## NotVia + remapping 测试
 
 在 testServer 上运行test_NotViaReMapping.py
 
