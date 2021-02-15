@@ -309,6 +309,10 @@ class TestBase(object):
             backupForwardingPath)
 
     def genBiDirection10BackupForwardingPathSet(self):
+        # primaryForwardingPath = {
+        #     1:[[10001,1,2,10002],[10002,2,1,10001]],
+        #     128:[[10001,1,2,10002],[10002,2,1,10001]]
+        # }
         primaryForwardingPath = {
             1: [[(0, 10001), (0, 1), (0, 2), (0, 10002)], [(1, 10002), (1, 2), (1, 1), (1, 10001)]],
             128: [[(0, 10001), (0, 1), (0, 2), (0, 10002)], [(1, 10002), (1, 2), (1, 1), (1, 10001)]]
