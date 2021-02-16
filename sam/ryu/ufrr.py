@@ -21,7 +21,8 @@ from sam.ryu.conf.ryuConf import *
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
 from sam.ryu.baseApp import BaseApp
 from sam.ryu.conf.ryuConf import *
-from sam.ryu.uibMaintainer import *
+# from sam.ryu.uibMaintainer import *
+from sam.ryu.ufrrIBMaintainer import *
 from sam.ryu.frr import FRR
 from sam.base.messageAgent import *
 from sam.base.command import *
@@ -35,8 +36,10 @@ from sam.serverController.serverManager.serverManager import *
 class UFRR(FRR):
     def __init__(self, *args, **kwargs):
         super(UFRR, self).__init__(*args, **kwargs)
+        # raise ValueError("Haven't refactor for new forwarding path set format")
         self.logger.info("Initialize UFRR App !")
-        self.ibm = UIBMaintainer()
+        # self.ibm = UIBMaintainer()
+        self.ibm = UFRRIBMaintainer()
         self.logger.info("UFRR App is running !")
 
     def _addSFCHandler(self, cmd):
@@ -46,11 +49,11 @@ class UFRR(FRR):
         try:
             sfc = cmd.attributes['sfc']
             self._addRoute2Classifier(sfc)
-            self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_SUCCESSFUL)
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
                 "Ryu app UFRR _addSFCHandler ")
-            self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_FAIL)
         finally:
             pass
 
@@ -62,11 +65,11 @@ class UFRR(FRR):
             sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
             self._addSFCIRoute(sfc, sfci)
-            self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_SUCCESSFUL)
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
                 "Ryu app UFRR _addSFCIHandler ")
-            self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_FAIL)
         finally:
             pass
 
@@ -105,7 +108,7 @@ class UFRR(FRR):
                 self._addUFRRSFCIGroupTable(currentSwitchID,
                     nextNodeID, sfci, direction, stageCount, groupID)
                 self._addUFRRSFCIFlowtable(currentSwitchID,
-                    sfci.sfciID, dstIP, groupID)
+                    sfci, stageCount, primaryPathID, dstIP, groupID)
 
     def _addUFRRSFCIGroupTable(self, currentDpid, nextDpid, sfci, direction,
             stageCount, groupID):
@@ -162,8 +165,10 @@ class UFRR(FRR):
                                     ofproto.OFPGT_FF, groupID, buckets)
         datapath.send_msg(req)
 
-    def _addUFRRSFCIFlowtable(self, currentDpid, sfciID, dstIP, groupID):
+    def _addUFRRSFCIFlowtable(self, currentDpid, sfci, stageCount,
+                                pathID, dstIP, groupID):
         self.logger.info("_addUFRRSFCIFlowtable")
+        sfciID = sfci.sfciID
         datapath = self.dpset.get(int(str(currentDpid),0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -175,12 +180,16 @@ class UFRR(FRR):
             parser.OFPActionGroup(groupID)
         ]
         inst = [
-            parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions)
+            parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)
         ]
         self._add_flow(datapath, match, inst, table_id=UFRR_TABLE,
             priority = 1)
-        self.ibm.addSFCIFlowTableEntry(sfciID,currentDpid,
-            UFRR_TABLE, matchFields, groupID)
+        # self.ibm.addSFCIFlowTableEntry(sfciID, currentDpid,
+        #     UFRR_TABLE, matchFields, groupID)
+        vnfID = sfci.vnfiSequence[stageCount][0].vnfID
+        self.ibm.addSFCIUFRRFlowTableEntry(
+            currentDpid, sfciID, vnfID, pathID, {"goto group": groupID}
+        )
 
     def _getNewDstIP(self, currentDpid, nextDpid, sfci, direction,
             stageCount):
@@ -281,9 +290,12 @@ class UFRR(FRR):
         self.logger.debug("_packet_in_handler: Add_flow")
         self._add_flow(datapath, match, inst, table_id=UFRR_TABLE,
             priority=1)
-        self.ibm.addSFCIFlowTableEntry(sfci.sfciID,currentDpid,
-            UFRR_TABLE, matchFields)
-
+        # self.ibm.addSFCIFlowTableEntry(sfci.sfciID, currentDpid,
+        #     UFRR_TABLE, matchFields)
+        TODO: get vnfID and pathID
+        self.ibm.addSFCIUFRRFlowTableEntry(
+            currentDpid, sfci.sfciID, vnfID, pathID, {"goto group": nextDpid}
+        )
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def _switchFeaturesHandler(self, ev):

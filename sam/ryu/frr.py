@@ -60,12 +60,22 @@ class FRR(BaseApp):
             dpid = self._getSwitchByClassifier(direction['ingress'])
             datapath = self.dpset.get(int(str(dpid), 0))
             source = direction['source']
-            if source == None:
-                inPortNum = DCNGATEWAY_INBOUND_PORT
-            elif source.has_key("IPv4"):
-                inPortNum = self._getPortbyIP(datapath,source["IPv4"])
-                if inPortNum == None:
-                    raise ValueError("_addRoute2Classifier: invalid source")
+            # if source in [None, "*"]:
+            #     inPortNum = DCNGATEWAY_INBOUND_PORT
+            # elif source.has_key("IPv4"):
+            #     inPortNum = self._getPortbyIP(datapath,source["IPv4"])
+            #     if inPortNum == None:
+            #         raise ValueError("_addRoute2Classifier: invalid source")
+            # else:
+            #     raise ValueError("_addRoute2Classifier: invalid source")
+            if source.has_key("IPv4"):
+                ipv4Address = source["IPv4"]
+                if ipv4Address in [None, "*"]:
+                    inPortNum = DCNGATEWAY_INBOUND_PORT
+                else:
+                    inPortNum = self._getPortbyIP(datapath, source["IPv4"])
+                    if inPortNum == None:
+                        raise ValueError("_addRoute2Classifier: invalid source")
             else:
                 raise ValueError("_addRoute2Classifier: invalid source")
             classifierMAC = direction['ingress'].getDatapathNICMac()
@@ -178,21 +188,63 @@ class FRR(BaseApp):
         return primaryFP
 
     def _getSrcDstServerInStage(self, stage):
-        srcServerID = stage[0]
-        dstServerID = stage[-1]
+        srcServerID = stage[0][1]
+        dstServerID = stage[-1][1]
         return (srcServerID,dstServerID)
 
     def _getBackupNextHop(self, currentDpid, nextDpid, sfci, direction,
             stageCount):
         primaryPathID = self._getPathID(direction["ID"])
         backupPaths = self._getBackupPaths(sfci,primaryPathID)
+        # for key in backupPaths.iterkeys():
+        #     if key[0] == currentDpid and key[1] == nextDpid and\
+        #         self.isFirstElementUnderProtection(currentDpid,
+        #             nextDpid, sfci, direction,stageCount):
+        #         return backupPaths[key][0][1]
+        # else:
+        #     return None
         for key in backupPaths.iterkeys():
-            if key[0] == currentDpid and key[1] == nextDpid and\
-                self.isFirstElementUnderProtection(currentDpid,
-                    nextDpid, sfci, direction,stageCount):
-                return backupPaths[key][0][1]
+            # if key[0] == currentDpid and key[1] == nextDpid:
+            if self._isThisBackupPathProtectsNextHop(key, currentDpid,
+                    nextDpid, stageCount):
+                return backupPaths[key][0][1][1]
         else:
             return None
+
+    def _isThisBackupPathProtectsNextHop(self, key, currentDpid,
+            nextDpid, stageCount):
+        if key[0][0] == "failureNPoPID":
+            # pSFC
+            # ("failureNPoPID", (vnfLayerNum, bp, Xp)),
+            # ("repairMethod", "increaseBackupPathPrioriy")
+            return False
+        elif key[0][0] == "failureLayerNodeID":
+            # node protection frr
+            # ("failureLayerNodeID", abandonLayerNodeID),
+            # ("repairMethod", "fast-reroute"),
+            # ("repairLayerSwitchID", (stageNum, startLayerNodeID[1])),
+            # ("mergeLayerSwitchID", (stageNum, endLayerNodeID[1])),
+            # ("newPathID", pathID)
+            layerNum = key[2][1][0]
+            repairSwitchID = key[2][1][1]
+            failureNodeID = key[0][1][1]
+            if (currentDpid == repairSwitchID 
+                    and nextDpid == failureNodeID
+                    and stageCount == layerNum):
+                return True
+            else:
+                return False
+        elif key[0][0] == "failureLinkID":
+            # link protection frr
+            raise ValueError("Please implement link protection")
+        else:
+            raise ValueError("Unknown backup path key:{0}".format(key))
+
+    def _isPSFCBackupPath(self, key):
+        if key[0][0] == "failureNPoPID":
+            return True
+        else:
+            return False
 
     def isFirstElementUnderProtection(self,currentDpid, nextDpid, sfci,
             direction, currentStageCount):
@@ -229,6 +281,27 @@ class FRR(BaseApp):
                 else:
                     return False
         return False
+
+    def _getNewPathID4Key(self, key):
+        if key[0][0] == "failureNPoPID":
+            # pSFC
+            # ("failureNPoPID", (vnfLayerNum, bp, Xp)),
+            # ("repairMethod", "increaseBackupPathPrioriy")
+            raise ValueError("no new path ID")
+        elif key[0][0] == "failureLayerNodeID":
+            # node protection frr
+            # ("failureLayerNodeID", abandonLayerNodeID),
+            # ("repairMethod", "fast-reroute"),
+            # ("repairLayerSwitchID", (stageNum, startLayerNodeID[1])),
+            # ("mergeLayerSwitchID", (stageNum, endLayerNodeID[1])),
+            # ("newPathID", pathID)
+            newPathID = key[4][1]
+            return newPathID
+        elif key[0][0] == "failureLinkID":
+            # link protection frr
+            raise ValueError("Please implement link protection")
+        else:
+            raise ValueError("Unknown backup path key:{0}".format(key))
 
     def _getBackupPaths(self,sfci,primaryPathID):
         return sfci.forwardingPathSet.backupForwardingPath[primaryPathID]

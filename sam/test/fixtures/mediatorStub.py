@@ -10,6 +10,12 @@ class MediatorStub(OrchestrationStub):
     def __init__(self):
         self.mA = MessageAgent()
 
+    def genCMDAddSFC(self,sfc):
+        cmdID = uuid.uuid1()
+        attr = {'sfc':sfc}
+        cmd = Command(CMD_TYPE_ADD_SFC,cmdID,attr)
+        return cmd
+
     def genCMDAddSFCI(self,sfc,sfci):
         cmdID = uuid.uuid1()
         attr = {'sfc':sfc,'sfci':sfci}

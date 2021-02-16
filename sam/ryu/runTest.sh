@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [ "$1" == "ryu-manager start UFFR" ]
+if [ "$1" == "UFFR" ]
 then
-    echo "UFFR"
+    echo "ryu-manager start UFFR"
     ryuApps=(\
         $RYU_APP_PATH/ofctl_rest.py\
         L2.py\
@@ -11,16 +11,49 @@ then
         ufrr.py\
         ryuCommandAgentUFRR.py
         )
-elif [ "$1" == "notVia" ]
+# elif [ "$1" == "notVia-VLAN" ]
+# then
+#     echo "ryu-manager start NotVia"
+#     ryuApps=(\
+#         $RYU_APP_PATH/ofctl_rest.py\
+#         L2.py\
+#         northSouthRouting.py\
+#         westEastRouting.py\
+#         notViaVLAN.py\
+#         ryuCommandAgentNotViaVLAN.py
+#         )
+# elif [ "$1" == "notViaMPLS-PSFC" ]
+# then
+#     echo "ryu-manager start NotVia based on MPLS and PSFC"
+#     ryuApps=(\
+#         $RYU_APP_PATH/ofctl_rest.py\
+#         L2.py\
+#         northSouthRouting.py\
+#         westEastRouting.py\
+#         notViaMPLSAndPSFC.py\
+#         ryuCommandAgentNotViaMPLSAndPSFC.py
+#         )
+elif [ "$1" == "notViaNAT-PSFC" ]
 then
-    echo "ryu-manager start NotVia"
+    echo "ryu-manager start NotVia based on NAT and pSFC"
     ryuApps=(\
         $RYU_APP_PATH/ofctl_rest.py\
         L2.py\
         northSouthRouting.py\
         westEastRouting.py\
-        notVia.py\
-        ryuCommandAgentNotVia.py
+        notViaNATAndPSFC.py\
+        ryuCommandAgentNotViaNATAndPSFC.py
+        )
+elif [ "$1" == "e2ep" ]
+then
+    echo "ryu-manager start E2E Protection"
+    ryuApps=(\
+        $RYU_APP_PATH/ofctl_rest.py\
+        L2.py\
+        northSouthRouting.py\
+        westEastRouting.py\
+        e2eProtection.py\
+        ryuCommandAgentE2EProtection.py
         )
 else
     echo "ryu-manager start default app: UFFR"

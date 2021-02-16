@@ -18,6 +18,7 @@ from sam.ryu.topoCollector import TopoCollector
 from sam.ryu.conf.genSwitchConf import SwitchConf
 from sam.ryu.conf.ryuConf import *
 from sam.ryu.baseApp import BaseApp
+from sam.base.loggerConfigurator import LoggerConfigurator
 
 
 class L2(BaseApp):
@@ -38,6 +39,8 @@ class L2(BaseApp):
         self._peerPortTable = {}    # switch's peer switch's port
         self._switchesLANMacTable = {}  # {dpid:{mac:port}}
 
+        logConfigur = LoggerConfigurator('logger', './log', 'ryuAppL2.log', level='info')
+        self.logger = logConfigur.getLogger()
         self.logger.setLevel(logging.WARNING)
 
     def getLocalPortByMac(self,dpid,mac):
@@ -81,7 +84,16 @@ class L2(BaseApp):
                 parser.OFPInstructionGotoTable(table_id=VLAN_TABLE)
             ]
         self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
-            priority = 2)
+            priority = 1)
+
+        # MPLS
+        match = parser.OFPMatch(eth_dst=portMac,
+                                eth_type=ether_types.ETH_TYPE_MPLS)
+        inst = [
+                parser.OFPInstructionGotoTable(table_id=MPLS_TABLE)
+            ]
+        self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
+            priority = 1)
 
     def _delLocalPort(self, datapath, port):
         if self._localPortTable.has_key(datapath.id):
@@ -371,3 +383,12 @@ class L2(BaseApp):
             else:
                 self.logger.debug("This arp is from other LAN, drop it")
 
+        elif eth.ethertype == ether_types.ETH_TYPE_IP:
+            # mplsFrame = pkt.get_protocol(mpls.mpls)
+            # if mplsFrame:
+            #     self.logger.warning("get a miss match mpls frame:{0}".format(mplsFrame))
+
+            ipv4Pkt = pkt.get_protocol(ipv4.ipv4)
+            self.logger.warning(
+                "get a miss match ether frame:{0} with ipv4 dst:{1}".format(
+                    pkt, ipv4Pkt.dst))
