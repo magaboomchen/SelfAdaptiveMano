@@ -43,6 +43,14 @@ class SFCI(object):
         self.sloRealTimeValue = sloRealTimeValue
         self.forwardingPathSet = forwardingPathSet
 
+    def getVNFTypeByStageNum(self, stageNum):
+        if stageNum == len(self.vnfiSequence):
+            return 0
+        elif stageNum >= 0 and stageNum < len(self.vnfiSequence):
+            return self.vnfiSequence[stageNum][0].vnfID
+        else:
+            raise ValueError("Invalid stageNum:{0}".format(stageNum))
+
     def to_dict(self):
         sfciDict = {
             "sfciID": self.sfciID,

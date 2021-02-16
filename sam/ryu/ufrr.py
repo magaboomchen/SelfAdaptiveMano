@@ -21,7 +21,6 @@ from sam.ryu.conf.ryuConf import *
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
 from sam.ryu.baseApp import BaseApp
 from sam.ryu.conf.ryuConf import *
-# from sam.ryu.uibMaintainer import *
 from sam.ryu.ufrrIBMaintainer import *
 from sam.ryu.frr import FRR
 from sam.base.messageAgent import *
@@ -36,16 +35,13 @@ from sam.serverController.serverManager.serverManager import *
 class UFRR(FRR):
     def __init__(self, *args, **kwargs):
         super(UFRR, self).__init__(*args, **kwargs)
-        # raise ValueError("Haven't refactor for new forwarding path set format")
         self.logger.info("Initialize UFRR App !")
-        # self.ibm = UIBMaintainer()
         self.ibm = UFRRIBMaintainer()
         self.logger.info("UFRR App is running !")
 
     def _addSFCHandler(self, cmd):
         self.logger.debug(
-            '*** FRR App Received command={0}'.format(cmd)
-            )
+            '*** FRR App Received command={0}'.format(cmd))
         try:
             sfc = cmd.attributes['sfc']
             self._addRoute2Classifier(sfc)
@@ -59,8 +55,7 @@ class UFRR(FRR):
 
     def _addSFCIHandler(self, cmd):
         self.logger.debug(
-            '*** FRR App Received command={0}'.format(cmd)
-            )
+            '*** FRR App Received command={0}'.format(cmd))
         try:
             sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
@@ -86,23 +81,23 @@ class UFRR(FRR):
         primaryPathID = self._getPathID(direction["ID"])
         primaryFP = self._getPrimaryPath(sfci, primaryPathID)
         stageCount = -1
-        for stage in primaryFP:
+        for segPath in primaryFP:
             stageCount = stageCount + 1
-            if len(stage)==2:
+            if self._isInnerNFVISegPath(segPath):
                 # SFF inner routing
                 continue
             dstIP = self.getSFCIStageDstIP(sfci, stageCount, primaryPathID)
-            (srcServerID, dstServerID) = self._getSrcDstServerInStage(stage)
+            (srcServerID, dstServerID) = self._getSrcDstServerInStage(segPath)
             # add route
-            for i in range(1, len(stage)-1):
-                currentSwitchID = stage[i]
+            for i in range(1, len(segPath)-1):
+                currentSwitchID = segPath[i][1]
                 groupID = self.ibm.assignGroupID(currentSwitchID)
                 self.logger.info("dpid:{0}".format(currentSwitchID))
                 self.logger.info("assignGroupID:{0}".format(groupID))
-                nextNodeID = stage[i+1]
+                nextNodeID = segPath[i+1][1]
 
-                if self._canSkipPrimaryPathFlowInstallation(sfci.sfciID, dstIP,
-                        currentSwitchID):
+                if self._canSkipPrimaryPathFlowInstallation(sfci.sfciID,
+                        dstIP, currentSwitchID):
                     continue
 
                 self._addUFRRSFCIGroupTable(currentSwitchID,
@@ -110,19 +105,19 @@ class UFRR(FRR):
                 self._addUFRRSFCIFlowtable(currentSwitchID,
                     sfci, stageCount, primaryPathID, dstIP, groupID)
 
-    def _addUFRRSFCIGroupTable(self, currentDpid, nextDpid, sfci, direction,
-            stageCount, groupID):
+    def _addUFRRSFCIGroupTable(self, currentDpid, nextDpid, sfci,
+                                direction, stageCount, groupID):
         datapath = self.dpset.get(int(str(currentDpid),0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         buckets = []
         # get default src/dst ether and default OutPort
-        (srcMAC,dstMAC,defaultOutPort) = self._getNextHopActionFields(sfci,
-            direction,currentDpid,nextDpid)
+        (srcMAC, dstMAC, defaultOutPort) = self._getNextHopActionFields(sfci,
+            direction, currentDpid, nextDpid)
         if defaultOutPort == None:
             raise ValueError("UFRR: can not get default out port")
         self.logger.info("Bucket1")
-        self.logger.info("srcMAC:{0},dstMAC:{1},outport:{2}".format(
+        self.logger.info("srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
             srcMAC, dstMAC, defaultOutPort))
         actions = [
             parser.OFPActionDecNwTtl(),
@@ -135,31 +130,33 @@ class UFRR(FRR):
         buckets.append(bucket)
 
         # get backup src/dst ether, backup OutPort and new dstIP
-        backupnextDpid = self._getBackupNextHop(currentDpid,nextDpid,sfci,
-            direction,stageCount)
+        backupnextDpid = self._getBackupNextHop(currentDpid, nextDpid, sfci,
+            direction, stageCount)
         self.logger.info("backupnextDpid:{0}".format(backupnextDpid))
         if backupnextDpid != None:
-            newDstIP = self._getNewDstIP(currentDpid, nextDpid, sfci, direction,
-                stageCount)
-            (srcMAC,dstMAC,backupOutPort) = self._getNextHopActionFields(sfci,
-                direction, currentDpid, backupnextDpid)
+            newDstIP = self._getNewDstIP(currentDpid, nextDpid, sfci,
+                direction, stageCount)
+            (srcMAC, dstMAC, backupOutPort) = self._getNextHopActionFields(
+                sfci, direction, currentDpid, backupnextDpid)
 
             self.logger.info("Bucket2")
-            self.logger.info("srcMAC:{0},dstMAC:{1},newDstIP:{2},outport:{2}".format(
-                    srcMAC,dstMAC,newDstIP,backupOutPort))
+            self.logger.info("srcMAC:{0}, dstMAC:{1},"
+                    "newDstIP:{2}, outport:{3}".format(
+                        srcMAC, dstMAC, newDstIP, backupOutPort))
             actions = [
                 parser.OFPActionDecNwTtl(),
                 parser.OFPActionSetField(eth_src=srcMAC),
                 parser.OFPActionSetField(eth_dst=dstMAC),
                 parser.OFPActionSetField(ipv4_dst=newDstIP),
-                # parser.OFPActionSetField(ipv4_dst=(newDstIP,"0.0.0.255")), # available for openflow 1.5
+                # only available for openflow 1.5
+                # parser.OFPActionSetField(ipv4_dst=(newDstIP,"0.0.0.255")),
                 parser.OFPActionOutput(backupOutPort)
             ]
             watch_port = backupOutPort
-            bucket = parser.OFPBucket(watch_port=watch_port,actions=actions)
+            bucket = parser.OFPBucket(watch_port=watch_port, actions=actions)
             buckets.append(bucket)
 
-        self.logger.info("groupID:{0},buckets:{1}".format(groupID,buckets))
+        self.logger.info("groupID:{0}, buckets:{1}".format(groupID, buckets))
         self.logger.info("datapath:{0}".format(datapath))
         req = parser.OFPGroupMod(datapath, ofproto.OFPGC_ADD,
                                     ofproto.OFPGT_FF, groupID, buckets)
@@ -184,9 +181,7 @@ class UFRR(FRR):
         ]
         self._add_flow(datapath, match, inst, table_id=UFRR_TABLE,
             priority = 1)
-        # self.ibm.addSFCIFlowTableEntry(sfciID, currentDpid,
-        #     UFRR_TABLE, matchFields, groupID)
-        vnfID = sfci.vnfiSequence[stageCount][0].vnfID
+        vnfID = sfci.getVNFTypeByStageNum(stageCount)
         self.ibm.addSFCIUFRRFlowTableEntry(
             currentDpid, sfciID, vnfID, pathID, {"goto group": groupID}
         )
@@ -196,37 +191,35 @@ class UFRR(FRR):
         primaryPathID = self._getPathID(direction["ID"])
         backupPaths = self._getBackupPaths(sfci,primaryPathID)
         for key in backupPaths.iterkeys():
-            # if key[0] == currentDpid and key[1] == nextDpid:
-            repairSwitchID = self._getRepairSwitchIDFromKey(key)
-            failureNodeID = self._getFailureNodeIDFromKey(key)
+            (repairSwitchID, failureNodeID, newPathID) \
+                = self._getRepairSwitchIDAndFailureNodeIDAndNewPathIDFromKey(key)
             if repairSwitchID == currentDpid and failureNodeID == nextDpid:
-                pathID = key[2]
                 self.logger.info("_getNewDstIP")
-                return self.getSFCIStageDstIP(sfci,stageCount,pathID)
+                return self.getSFCIStageDstIP(sfci, stageCount, newPathID)
         else:
             return None
 
     def _installBackupPaths(self, sfci, direction):
         primaryPathID = self._getPathID(direction["ID"])
-        backupFPs = self._getBackupPaths(sfci,primaryPathID)
-        for key,value in backupFPs.items():
+        backupFPs = self._getBackupPaths(sfci, primaryPathID)
+        for key, backupPath in backupFPs.items():
             pathID = self._getPathFromKey(key)
-            FP = value
             sfciLength = len(sfci.vnfiSequence)
-            fpLength = len(FP)
+            fpLength = len(backupPath)
             stageCount = sfciLength - fpLength
             self.logger.info("_installBackupPaths")
-            for stage in FP:
+            for segPath in backupPath:
                 stageCount = stageCount + 1
-                if len(stage)==2:
+                if self._isInnerNFVISegPath(segPath):
                     # SFF inner routing
                     continue
                 dstIP = self.getSFCIStageDstIP(sfci, stageCount, pathID)
-                for i in range(1,len(stage)-1):
-                    currentSwitchID = stage[i]
-                    nextNodeID = stage[i+1]
+                for i in range(1,len(segPath)-1):
+                    currentSwitchID = segPath[i][1]
+                    nextNodeID = segPath[i+1][1]
                     self._installRouteOnBackupPath(sfci, direction,
-                        currentSwitchID, nextNodeID, dstIP)
+                        currentSwitchID, nextNodeID, dstIP, pathID,
+                        stageCount)
 
     def _getPathFromKey(self, key):
         if key[3][0] == "newPathID":
@@ -234,45 +227,24 @@ class UFRR(FRR):
         else:
             raise ValueError("Unknown key")
 
-    # def _installBackupPaths(self, sfci, direction):
-    #     primaryPathID = self._getPathID(direction["ID"])
-    #     backupFPs = self._getBackupPaths(sfci,primaryPathID)
-    #     for key,value in backupFPs.items():
-    #         (currentID, nextID, pathID) = key
-    #         FP = value
-    #         sfciLength = len(sfci.vnfiSequence)
-    #         fpLength = len(FP)
-    #         stageCount = sfciLength - fpLength
-    #         self.logger.info("_installBackupPaths")
-    #         for stage in FP:
-    #             stageCount = stageCount + 1
-    #             if len(stage)==2:
-    #                 # SFF inner routing
-    #                 continue
-    #             dstIP = self.getSFCIStageDstIP(sfci, stageCount, pathID)
-    #             for i in range(1,len(stage)-1):
-    #                 currentSwitchID = stage[i]
-    #                 nextNodeID = stage[i+1]
-    #                 self._installRouteOnBackupPath(sfci, direction,
-    #                     currentSwitchID, nextNodeID, dstIP)
-
     def _installRouteOnBackupPath(self, sfci, direction, currentDpid,
-            nextDpid, dstIP):
+            nextDpid, dstIP, pathID, stageCount):
         self.logger.info("_installRouteOnBackupPath")
         self.logger.info("currentDpid:{0}".format(currentDpid))
         datapath = self.dpset.get(int(str(currentDpid), 0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        matchFields={'eth_type':ether_types.ETH_TYPE_IP, 'ipv4_dst':dstIP+"/32"}
+        matchFields={'eth_type':ether_types.ETH_TYPE_IP,
+            'ipv4_dst':dstIP+"/32"}
         match = parser.OFPMatch(**matchFields)
 
         # get default src/dst ether and default OutPort
-        (srcMAC,dstMAC,defaultOutPort) = self._getNextHopActionFields(sfci,
+        (srcMAC, dstMAC, defaultOutPort) = self._getNextHopActionFields(sfci,
             direction, currentDpid, nextDpid)
         if defaultOutPort == None:
             raise ValueError("UFRR: can not get default out port")
         self.logger.info(
-            "srcMAC:{0},dstMAC:{1},outport:{2}".format(
+            "srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
                 srcMAC, dstMAC, defaultOutPort)
             )
         actions = [
@@ -287,14 +259,13 @@ class UFRR(FRR):
             parser.OFPInstructionGotoTable(table_id=L2_TABLE)
         ]
 
-        self.logger.debug("_packet_in_handler: Add_flow")
+        self.logger.debug("_installRouteOnBackupPath Add_flow")
         self._add_flow(datapath, match, inst, table_id=UFRR_TABLE,
             priority=1)
-        # self.ibm.addSFCIFlowTableEntry(sfci.sfciID, currentDpid,
-        #     UFRR_TABLE, matchFields)
-        TODO: get vnfID and pathID
+        vnfID = sfci.getVNFTypeByStageNum(stageCount)
         self.ibm.addSFCIUFRRFlowTableEntry(
-            currentDpid, sfci.sfciID, vnfID, pathID, {"goto group": nextDpid}
+            currentDpid, sfci.sfciID, vnfID, pathID,
+            {"output nodeID": nextDpid}
         )
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)

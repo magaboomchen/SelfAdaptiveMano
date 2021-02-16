@@ -115,7 +115,6 @@ class BaseApp(app_manager.RyuApp):
         self.logger.info("list attributes of:{0}".format(type(obj)))
         self.logger.info("\n".join([x for x in dir(obj) if x[0] != "_"]))
 
-
     def _dict2OrderJson(self,dict):
         return json.dumps(dict, sort_keys=True)
 
@@ -128,10 +127,16 @@ class BaseApp(app_manager.RyuApp):
         parser = datapath.ofproto_parser
         for port in ports:
             src_mac = port.hw_addr
-            self.logger.debug("Send arp request, src_mac:%s", src_mac)
+            # self.logger.debug("Send arp request, src_mac:%s", src_mac)
+            self.logger.debug(
+                "Send arp request "
+                "dpid:{0}, dstIP:{1},"
+                "port number:{2}, src_mac:{3}".format(
+                    datapath.id, dstIP, port.port_no, src_mac))
             src_ip = self._getSwitchGatewayIP(datapath.id)
             dst_mac = "FF:FF:FF:FF:FF:FF"
-            data = self._build_arp(arp.ARP_REQUEST,src_mac, src_ip, dst_mac, dstIP)
+            data = self._build_arp(arp.ARP_REQUEST,
+                src_mac, src_ip, dst_mac, dstIP)
 
             out_port = port.port_no
             actions = [parser.OFPActionOutput(out_port)]

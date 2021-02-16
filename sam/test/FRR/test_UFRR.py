@@ -32,10 +32,11 @@ class TestUFRRClass(TestFRR):
         self.sfci = self.genUniDirection12BackupSFCI()
 
         self.mediator = MediatorStub()
+        self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfc)
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
 
-        self._messageAgent = MessageAgent()
+        # self._messageAgent = MessageAgent()
         # self._messageAgent.startRecvMsg(MININET_TESTER_QUEUE)
 
         self.runClassifierController()
@@ -44,9 +45,9 @@ class TestUFRRClass(TestFRR):
         self.runSFFController()
         self.addSFCI2SFF()
 
-        # self.vC = VNFControllerStub()
+        self.vC = VNFControllerStub()
         time.sleep(5)
-        self.runVNFController()
+        # self.runVNFController()
         self.addVNFI2Server()
 
         yield
@@ -58,46 +59,59 @@ class TestUFRRClass(TestFRR):
         self.killSFFController()
         self.killVNFController()
 
-    def addVNFI2Server(self):
-        self.sendCmd(VNF_CONTROLLER_QUEUE,
-            MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
-        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.addSFCICmd.cmdID
-        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+    # def addVNFI2Server(self):
+    #     self.sendCmd(VNF_CONTROLLER_QUEUE,
+    #         MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
+    #     cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+    #     assert cmdRply.cmdID == self.addSFCICmd.cmdID
+    #     assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-    def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
-        self.sendCmd(VNF_CONTROLLER_QUEUE,
-            MSG_TYPE_VNF_CONTROLLER_CMD , self.delSFCICmd)
-        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.delSFCICmd.cmdID
-        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+    # def delVNFI4Server(self):
+    #     logging.warning("Deleting VNFI")
+    #     self.sendCmd(VNF_CONTROLLER_QUEUE,
+    #         MSG_TYPE_VNF_CONTROLLER_CMD , self.delSFCICmd)
+    #     cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+    #     assert cmdRply.cmdID == self.delSFCICmd.cmdID
+    #     assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-    def genUniDirectionSFC(self, classifier):
-        sfcUUID = uuid.uuid1()
-        vNFTypeSequence = [VNF_TYPE_FORWARD]
-        maxScalingInstanceNumber = 1
-        backupInstanceNumber = 0
-        applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
-        direction1 = {
-            'ID': 0,
-            'source': {"IPv4":"*"},
-            'ingress': classifier,
-            'match': {'srcIP': "*",'dstIP':WEBSITE_REAL_IP,
-                'srcPort': "*",'dstPort': "*",'proto': "*"},
-            'egress': classifier,
-            'destination': {"IPv4":WEBSITE_REAL_IP}
-        }
-        directions = [direction1]
-        slo = SLO(latencyBound=35, throughput=10)
-        return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions, slo=slo)
+    # def genUniDirectionSFC(self, classifier):
+    #     sfcUUID = uuid.uuid1()
+    #     vNFTypeSequence = [VNF_TYPE_FORWARD]
+    #     maxScalingInstanceNumber = 1
+    #     backupInstanceNumber = 0
+    #     applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
+    #     direction1 = {
+    #         'ID': 0,
+    #         'source': {"IPv4":"*"},
+    #         'ingress': classifier,
+    #         'match': {'srcIP': "*",'dstIP':WEBSITE_REAL_IP,
+    #             'srcPort': "*",'dstPort': "*",'proto': "*"},
+    #         'egress': classifier,
+    #         'destination': {"IPv4":WEBSITE_REAL_IP}
+    #     }
+    #     directions = [direction1]
+    #     slo = SLO(latencyBound=35, throughput=10)
+    #     return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
+    #         backupInstanceNumber, applicationType, directions, slo=slo)
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_UFRRAddUniSFCI(self, setup_addUniSFCI):
         logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
         raw_input()
+
+        # exercise: mapping SFC
+        self.addSFCCmd.cmdID = uuid.uuid1()
+        self.sendCmd(NETWORK_CONTROLLER_QUEUE,
+            MSG_TYPE_NETWORK_CONTROLLER_CMD,
+            self.addSFCCmd)
+
+        # verify
+        logging.info("Start listening on mediator queue")
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.addSFCCmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+
         # exercise: mapping SFCI
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,

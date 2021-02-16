@@ -390,5 +390,6 @@ class L2(BaseApp):
 
             ipv4Pkt = pkt.get_protocol(ipv4.ipv4)
             self.logger.warning(
-                "get a miss match ether frame:{0} with ipv4 dst:{1}".format(
-                    pkt, ipv4Pkt.dst))
+                "from dpid: {0} get a miss match ether frame:"
+                "{1} with ipv4 dst:{2}".format(
+                    datapath.id, pkt, ipv4Pkt.dst))

@@ -15,6 +15,7 @@ from sam.test.fixtures.vnfControllerStub import *
 
 logging.basicConfig(level=logging.INFO)
 
+
 class TestFRR(TestBase):
     def addSFCI2Classifier(self):
         logging.info("setup add SFCI to classifier")
@@ -68,7 +69,7 @@ class TestFRR(TestBase):
 
         try:
             # In normal case, there should be a timeout error!
-            shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.208",
+            shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.135",
                 self.sfci.vnfiSequence[0][1].vnfiID)
             logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
@@ -80,7 +81,7 @@ class TestFRR(TestBase):
 
         try:
             # In normal case, there should be a timeout error!
-            shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.135",
+            shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.208",
                 self.sfci.vnfiSequence[0][2].vnfiID)
             logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
@@ -94,17 +95,12 @@ class TestFRR(TestBase):
         logging.info("teardown del SFCI from server")
         self.vC.uninstallVNF("t1", "123", "192.168.122.134",
                     self.sfci.vnfiSequence[0][0].vnfiID)
-        self.vC.uninstallVNF("t1", "123", "192.168.122.208",
-                    self.sfci.vnfiSequence[0][1].vnfiID)
         self.vC.uninstallVNF("t1", "123", "192.168.122.135",
+                    self.sfci.vnfiSequence[0][1].vnfiID)
+        self.vC.uninstallVNF("t1", "123", "192.168.122.208",
                     self.sfci.vnfiSequence[0][2].vnfiID)
         time.sleep(10)
         # Here is a bug
         logging.info("Sometimes, we can't delete VNFI, you should delete it manually"
             "Command: sudo docker stop name1"
             )
-
-
-
-
-

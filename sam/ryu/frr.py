@@ -51,6 +51,7 @@ class FRR(BaseApp):
             return 
         self.ibm = None
         self._sc = SocketConverter()
+        self._sffType = SOFTWARE_SFF
         self.logger.setLevel(logging.DEBUG)
         self.logger.info("FRR App is running !")
 
@@ -128,7 +129,7 @@ class FRR(BaseApp):
                 continue
 
             # get port by mac table
-            port = self.L2.getLocalPortByMac(dpid,dstMac)
+            port = self.L2.getLocalPortByMac(dpid, dstMac)
             if port == None:
                 continue
         return port
@@ -157,12 +158,13 @@ class FRR(BaseApp):
 
     def getSFCIStageDstIP(self, sfci, stageCount, pathID):
         if stageCount<len(sfci.vnfiSequence):
-            vnfID = sfci.vnfiSequence[stageCount][0].vnfID
+            # vnfID = sfci.vnfiSequence[stageCount][0].vnfID
+            vnfID = sfci.getVNFTypeByStageNum(stageCount)
         else:
             vnfID = VNF_TYPE_CLASSIFIER
         sfcID = sfci.sfciID
         ipNum = (10<<24) + ((vnfID & 0xF) << 20) + ((sfcID & 0xFFF) << 8) \
-            + (pathID & 0xFF)
+                    + (pathID & 0xFF)
         return self._sc.int2ip(ipNum)
 
     def _canSkipPrimaryPathFlowInstallation(self, sfciID, dstIP,
@@ -212,7 +214,7 @@ class FRR(BaseApp):
             return None
 
     def _isThisBackupPathProtectsNextHop(self, key, currentDpid,
-            nextDpid, stageCount):
+                                            nextDpid, stageCount):
         if key[0][0] == "failureNPoPID":
             # pSFC
             # ("failureNPoPID", (vnfLayerNum, bp, Xp)),
@@ -234,11 +236,104 @@ class FRR(BaseApp):
                 return True
             else:
                 return False
+        elif key[0][0] == 'failureNodeID':
+            # (('failureNodeID', 2), ('repairMethod', 'fast-reroute'),
+            # ('repairSwitchID', 1), ('newPathID', 2))
+            repairSwitchID = key[2][1]
+            failureNodeID = key[0][1]
+            if (currentDpid == repairSwitchID 
+                    and nextDpid == failureNodeID):
+                return True
+            else:
+                return False
         elif key[0][0] == "failureLinkID":
             # link protection frr
             raise ValueError("Please implement link protection")
         else:
             raise ValueError("Unknown backup path key:{0}".format(key))
+
+    def _getRepairSwitchIDAndFailureNodeIDAndNewPathIDFromKey(self, key):
+        if key[0][0] == "failureNPoPID":
+            # pSFC
+            # ("failureNPoPID", (vnfLayerNum, bp, Xp)),
+            # ("repairMethod", "increaseBackupPathPrioriy")
+            return False
+        elif key[0][0] == "failureLayerNodeID":
+            # node protection frr
+            # ("failureLayerNodeID", abandonLayerNodeID),
+            # ("repairMethod", "fast-reroute"),
+            # ("repairLayerSwitchID", (stageNum, startLayerNodeID[1])),
+            # ("mergeLayerSwitchID", (stageNum, endLayerNodeID[1])),
+            # ("newPathID", pathID)
+            layerNum = key[2][1][0]
+            repairSwitchID = key[2][1][1]
+            failureNodeID = key[0][1][1]
+            newPathID = key[4][1]
+            return (repairSwitchID, failureNodeID, newPathID)
+        elif key[0][0] == 'failureNodeID':
+            # (('failureNodeID', 2), ('repairMethod', 'fast-reroute'),
+            # ('repairSwitchID', 1), ('newPathID', 2))
+            repairSwitchID = key[2][1]
+            failureNodeID = key[0][1]
+            newPathID = key[3][1]
+            return (repairSwitchID, failureNodeID, newPathID)
+        elif key[0][0] == "failureLinkID":
+            # link protection frr
+            raise ValueError("Please implement link protection")
+        else:
+            raise ValueError("Unknown backup path key:{0}".format(key))
+
+    # def _getRepairSwitchIDFromKey(self, key):
+    #     if key[0][0] == "failureNPoPID":
+    #         # pSFC
+    #         # ("failureNPoPID", (vnfLayerNum, bp, Xp)),
+    #         # ("repairMethod", "increaseBackupPathPrioriy")
+    #         return False
+    #     elif key[0][0] == "failureLayerNodeID":
+    #         # node protection frr
+    #         # ("failureLayerNodeID", abandonLayerNodeID),
+    #         # ("repairMethod", "fast-reroute"),
+    #         # ("repairLayerSwitchID", (stageNum, startLayerNodeID[1])),
+    #         # ("mergeLayerSwitchID", (stageNum, endLayerNodeID[1])),
+    #         # ("newPathID", pathID)
+    #         repairSwitchID = key[2][1][1]
+    #         return repairSwitchID
+    #     elif key[0][0] == 'failureNodeID':
+    #         # (('failureNodeID', 2), ('repairMethod', 'fast-reroute'),
+    #         # ('repairSwitchID', 1), ('newPathID', 2))
+    #         repairSwitchID = key[2][1]
+    #         return repairSwitchID
+    #     elif key[0][0] == "failureLinkID":
+    #         # link protection frr
+    #         raise ValueError("Please implement link protection")
+    #     else:
+    #         raise ValueError("Unknown backup path key:{0}".format(key))
+
+    # def _getFailureNodeIDFromKey(self, key):
+    #     if key[0][0] == "failureNPoPID":
+    #         # pSFC
+    #         # ("failureNPoPID", (vnfLayerNum, bp, Xp)),
+    #         # ("repairMethod", "increaseBackupPathPrioriy")
+    #         return False
+    #     elif key[0][0] == "failureLayerNodeID":
+    #         # node protection frr
+    #         # ("failureLayerNodeID", abandonLayerNodeID),
+    #         # ("repairMethod", "fast-reroute"),
+    #         # ("repairLayerSwitchID", (stageNum, startLayerNodeID[1])),
+    #         # ("mergeLayerSwitchID", (stageNum, endLayerNodeID[1])),
+    #         # ("newPathID", pathID)
+    #         failureNodeID = key[0][1][1]
+    #         return failureNodeID
+    #     elif key[0][0] == 'failureNodeID':
+    #         # (('failureNodeID', 2), ('repairMethod', 'fast-reroute'),
+    #         # ('repairSwitchID', 1), ('newPathID', 2))
+    #         failureNodeID = key[0][1]
+    #         return failureNodeID
+    #     elif key[0][0] == "failureLinkID":
+    #         # link protection frr
+    #         raise ValueError("Please implement link protection")
+    #     else:
+    #         raise ValueError("Unknown backup path key:{0}".format(key))
 
     def _isPSFCBackupPath(self, key):
         if key[0][0] == "failureNPoPID":
@@ -282,6 +377,23 @@ class FRR(BaseApp):
                     return False
         return False
 
+    def _isInnerNFVISegPath(self, segPath):
+        if self._sffType == SOFTWARE_SFF:
+            if len(segPath) == 3:
+                firstNodeID = segPath[0][1]
+                secondNodeID = segPath[1][1]
+                thirdNodeID = segPath[2][1]
+                if (firstNodeID >= SERVERID_OFFSET 
+                        and secondNodeID < SERVERID_OFFSET
+                        and thirdNodeID >= SERVERID_OFFSET):
+                    return True
+                else:
+                    return False
+        elif self._sffType == HARDWARE_SFF:
+            return False
+        else:
+            raise ValueError("Unknown NFVI type")
+
     def _getNewPathID4Key(self, key):
         if key[0][0] == "failureNPoPID":
             # pSFC
@@ -308,21 +420,24 @@ class FRR(BaseApp):
 
     def _getNextHopActionFields(self, sfci, direction, currentDpid,
             nextDpid):
+        self.logger.debug("currentDpid:{0}, nextDpid:{1}".format(currentDpid,
+            nextDpid))
         if nextDpid < SERVERID_OFFSET:
             self.logger.debug("_getNextHopActionFields: dst is a switch")
-            link = self.topoCollector.links[(currentDpid,nextDpid)]
+            link = self.topoCollector.links[(currentDpid, nextDpid)]
             srcMAC = link.src.hw_addr
             dstMAC = link.dst.hw_addr
-            defaultOutPort = self.L2.getLocalPortByPeerPort(currentDpid,nextDpid)
+            defaultOutPort = self.L2.getLocalPortByPeerPort(currentDpid,
+                                                            nextDpid)
         else:
             self.logger.debug("_getNextHopActionFields: dst is a server")
-            server = self.getServerByServerID(sfci,direction,nextDpid)
+            server = self.getServerByServerID(sfci, direction, nextDpid)
             dstMAC = server.getDatapathNICMac()
             dstDatapathIP = server.getDatapathNICIP()
-            currentDatapath = self.dpset.get(int(str(currentDpid),0))
-            defaultOutPort = self._getPortbyIP(currentDatapath,dstDatapathIP)
-            srcMAC = self.L2.getMacByLocalPort(currentDpid,defaultOutPort)
-        return (srcMAC,dstMAC,defaultOutPort)
+            currentDatapath = self.dpset.get(int(str(currentDpid), 0))
+            defaultOutPort = self._getPortbyIP(currentDatapath, dstDatapathIP)
+            srcMAC = self.L2.getMacByLocalPort(currentDpid, defaultOutPort)
+        return (srcMAC, dstMAC, defaultOutPort)
 
     def getServerByServerID(self, sfci, direction, nextDpid):
         self.logger.debug("getServerByServerID")

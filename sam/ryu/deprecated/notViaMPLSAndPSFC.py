@@ -57,42 +57,42 @@ class NotViaMPLSAndPSFC(FRR):
         try:
             sfc = cmd.attributes['sfc']
             self._addRoute2Classifier(sfc)
-            self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_SUCCESSFUL)
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
                 "Ryu app NotViaMPLSAndPSFC _addSFCHandler ")
-            self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_FAIL)
 
     def _addSFCIHandler(self, cmd):
         self.logger.debug('*** NotViaMPLSAndPSFC App Received command= %s', cmd)
         try:
             sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
-            self._addSFCIRoute(sfc,sfci)
-            self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+            self._addSFCIRoute(sfc, sfci)
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_SUCCESSFUL)
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
                 "Ryu app NotViaMPLSAndPSFC _addSFCIHandler ")
-            self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_FAIL)
 
     def _addSFCIRoute(self, sfc, sfci):
         # install sfci path
         for direction in sfc.directions:
             # install primary path route
-            self._installPrimaryPath(sfci,direction)
+            self._installPrimaryPath(sfci, direction)
             # install backup paths route
-            self._installBackupPaths(sfci,direction)
+            self._installBackupPaths(sfci, direction)
             # install pSFC paths route
-            self._installPSFCPaths(sfci,direction)
+            self._installPSFCPaths(sfci, direction)
         return True
 
     def _installPrimaryPath(self, sfci, direction):
         primaryPathID = self._getPathID(direction["ID"])
-        primaryFP = self._getPrimaryPath(sfci,primaryPathID)
+        primaryFP = self._getPrimaryPath(sfci, primaryPathID)
         stageCount = -1
         for segPath in primaryFP:
             stageCount = stageCount + 1
-            if len(segPath)==2:
+            if self._isInnerNFVISegPath(segPath):
                 # SFF inner routing
                 continue
             dstIP = self.getSFCIStageDstIP(sfci, stageCount, primaryPathID)
@@ -106,7 +106,7 @@ class NotViaMPLSAndPSFC(FRR):
                 nextNodeID = segPath[i+1][1]
 
                 if self._canSkipPrimaryPathFlowInstallation(sfci.sfciID,
-                    dstIP, currentSwitchID):
+                        dstIP, currentSwitchID):
                     continue
 
                 self._addNotViaSFCIGroupTable(currentSwitchID,
@@ -218,7 +218,7 @@ class NotViaMPLSAndPSFC(FRR):
             self.logger.debug(backupPath)
             for segPath in backupPath:
                 # stageCount = stageCount + 1
-                if len(segPath)==2:
+                if self._isInnerNFVISegPath(segPath):
                     # SFF inner routing
                     continue
                 mplsLabel = self.ibm.getMPLSLabel(sfci.sfciID, pathID)

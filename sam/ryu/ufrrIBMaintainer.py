@@ -5,7 +5,8 @@ import copy
 import json
 
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.xibMaintainer import XInfoBaseMaintainer
+# from sam.base.xibMaintainer import XInfoBaseMaintainer
+from sam.ryu.uibMaintainer import *
 from sam.base.socketConverter import *
 
 # TODO: test
@@ -15,8 +16,8 @@ ENCODING_SFCID_VNFID_PATHID = "ENCODING_SFCID_VNFID_PATHID"
 ENCODING_PATHID_VNFID_SFCID = "ENCODING_PATHID_VNFID_SFCID"
 
 
-class UFRRIBMaintainer(XInfoBaseMaintainer):
-    def __init__(self, encodingFormat):
+class UFRRIBMaintainer(UIBMaintainer):
+    def __init__(self, encodingFormat=ENCODING_VNFID_SFCID_PATHID):
         super(UFRRIBMaintainer, self).__init__()
         self.groupIDSets = {}
 

@@ -88,7 +88,7 @@ class NotViaNATAndPSFC(FRR):
         stageCount = -1
         for segPath in primaryFP:
             stageCount = stageCount + 1
-            if len(segPath)==2:
+            if self._isInnerNFVISegPath(segPath):
                 # SFF inner routing
                 continue
             dstIP = self.getSFCIStageDstIP(sfci, stageCount, primaryPathID)
@@ -214,7 +214,7 @@ class NotViaNATAndPSFC(FRR):
             self.logger.debug(backupPath)
             for segPath in backupPath:
                 # stageCount = stageCount + 1
-                if len(segPath)==2:
+                if self._isInnerNFVISegPath(segPath):
                     # SFF inner routing
                     continue
                 mplsLabel = self.ibm.getMPLSLabel(sfci.sfciID, pathID)

@@ -24,12 +24,13 @@ class TestNotViaClass(TestFRR):
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
+        self.killAllModule()
 
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genUniDirectionSFC(classifier)
         self.sfci = self.genUniDirection12BackupSFCI()
-        self.sfciID = self.sfci.sfciID
-        self.vnfiSequence = self.sfci.vnfiSequence
+        # self.sfciID = self.sfci.sfciID
+        # self.vnfiSequence = self.sfci.vnfiSequence
 
         self.mediator = MediatorStub()
         self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfc)
