@@ -3,7 +3,7 @@
 
 import math
 
-from sam.ryu.uibMaintainer import UIBMaintainer
+from sam.ryu.ribMaintainerBase import RIBMaintainerBase
 
 # TODO: test
 
@@ -12,7 +12,7 @@ MIN_MPLS_LABEL = 0
 MAX_MPLS_LABEL = math.pow(2,20)
 
 
-class NotViaMPLSIBMaintainer(UIBMaintainer):
+class NotViaMPLSIBMaintainer(RIBMaintainerBase):
     def __init__(self, *args, **kwargs):
         super(NotViaMPLSIBMaintainer, self).__init__(*args, **kwargs)
         self.groupIDSets = {}

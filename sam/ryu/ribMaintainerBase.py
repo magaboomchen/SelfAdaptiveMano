@@ -8,16 +8,16 @@ from sam.base.socketConverter import *
 # TODO: test
 
 
-class UIBMaintainer(XInfoBaseMaintainer):
+class RIBMaintainerBase(XInfoBaseMaintainer):
     def __init__(self, *args, **kwargs):
-        super(UIBMaintainer, self).__init__(*args, **kwargs)
+        super(RIBMaintainerBase, self).__init__(*args, **kwargs)
         self.groupIDSets = {}
         self.sfcRIB = {}
         self.sfciRIB = {}
         self.compSfciRIB = {}
         self._sc = SocketConverter()
         logConfigur = LoggerConfigurator(__name__, './log',
-            'UIBMaintainer.log', level='debug')
+            'RIBMaintainerBase.log', level='debug')
         self.logger = logConfigur.getLogger()
 
     def assignGroupID(self, dpid):
@@ -100,8 +100,11 @@ class UIBMaintainer(XInfoBaseMaintainer):
         #         {"tableID":tableID, "match":matchFields, "groupID":groupID,
         #             "priority":priority})
         self.sfciRIB[sfciID][dpid].append(
-            {"tableID":tableID, "match":matchFields, "groupID":groupID,
-                "priority":priority, "actions":actions})
+            {
+                "tableID":tableID, "match":matchFields, "groupID":groupID,
+                "priority":priority, "actions":actions
+            }
+        )
 
     def delSFCIFlowTableEntry(self, sfciID):
         del self.sfciRIB[sfciID]

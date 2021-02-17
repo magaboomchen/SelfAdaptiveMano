@@ -15,9 +15,9 @@ ENCODING_SFCID_VNFID_PATHID = "ENCODING_SFCID_VNFID_PATHID"
 ENCODING_PATHID_VNFID_SFCID = "ENCODING_PATHID_VNFID_SFCID"
 
 
-class UFRRIBMaintainer(RIBMaintainerBase):
+class NotViaNATIBMaintainer(RIBMaintainerBase):
     def __init__(self, encodingFormat=ENCODING_VNFID_SFCID_PATHID):
-        super(UFRRIBMaintainer, self).__init__()
+        super(NotViaNATIBMaintainer, self).__init__()
         self.groupIDSets = {}
         self.switchesUFRRTable = {}
         self.compSwitchesUFRRTable = {}
@@ -25,7 +25,7 @@ class UFRRIBMaintainer(RIBMaintainerBase):
         self.encodingFormat = encodingFormat
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'UFRRIBMaintainer.log', level='debug')
+            'NotViaNATIBMaintainer.log', level='debug')
         self.logger = logConfigur.getLogger()
 
     def assignGroupID(self, dpid):

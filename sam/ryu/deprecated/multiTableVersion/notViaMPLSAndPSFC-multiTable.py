@@ -301,7 +301,7 @@ class NotViaMPLSAndPSFC(FRR):
         # WARNINGS! We find that OvS doesn't support MPLS POP following a goto table.
         # Flow doesn't match the entry in NOTVIAPSFC_TABLE
         # We design a possible method to tackle this problem:
-        # TODO: store the mapping relation
+        # store the mapping relation
         #           groupID <-> switchID + (sfci.sfciID, pathID) <-> mplsLabel
         # Then, use following code replace above code:
         # groupID = self.groupIDMaintainer.getGroupID(currentDpid, sfci.sfciID, pathID)
