@@ -43,7 +43,7 @@ class L2(BaseApp):
         self.logger = logConfigur.getLogger()
         self.logger.setLevel(logging.WARNING)
 
-    def getLocalPortByMac(self,dpid,mac):
+    def getSwitchLocalPortByMac(self,dpid,mac):
         if (self._switchesLANMacTable.has_key(dpid)
                 and self._switchesLANMacTable[dpid].has_key(mac)):
             return self._switchesLANMacTable[dpid][mac]
@@ -155,10 +155,10 @@ class L2(BaseApp):
         self._del_flow(datapath, match, table_id = L2_TABLE, priority = 1)
 
     def getLocalPortByPeerPort(self, currentDpid, nextDpid):
-        for portNum in self._peerPortTable[currentDpid].iterkeys():
-            peerPort = self._peerPortTable[currentDpid][portNum]
+        for portID in self._peerPortTable[currentDpid].iterkeys():
+            peerPort = self._peerPortTable[currentDpid][portID]
             if peerPort.dpid == nextDpid:
-                return portNum
+                return portID
         else:
             return None
 

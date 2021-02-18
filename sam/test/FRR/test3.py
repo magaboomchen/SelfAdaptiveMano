@@ -26,6 +26,7 @@ from functools import partial
 
 from sam.base.messageAgent import *
 from sam.base.command import *
+from sam.test.FRR.test3InBoundTrafficSendRecv import *
 
 # KVM Bridge
 INT_TO_CLASSIFIER = 'eth1'
@@ -34,7 +35,8 @@ INT_TO_VNF1BACKUP = 'eth3'
 INT_TO_VNF1BACKUP0 = "eth4"
 
 # Websites server
-WEBSITE1_IP = "2.2.0.34"
+# WEBSITE1_IP = "2.2.0.34"
+WEBSITE1_IP = "3.3.3.3"
 WEBSITE1_IP_PREFIX = 27
 WEBSITE1_MAC = None
 WEBSITE1_GATEWAY_IP = "2.2.0.33"
@@ -43,6 +45,7 @@ WEBSITE1_GATEWAY_IP = "2.2.0.33"
 INGRESS_IP1 = "1.1.1.2"
 INGRESS_IP1_PREFIX = 8
 INGRESS_MAC1 = None
+INGRESS_INTERFACE_NAME = None
 
 # Gateway
 GATEWAY1_OUTBOUND_IP = "1.1.1.1"
@@ -50,11 +53,12 @@ GATEWAY1_OUTBOUND_IP_prefix = 8
 GATEWAY1_OUTBOUND_MAC =  None
 
 # test mode
-MODE_UFRR = 0
-MODE_NOTVIA_REMAPPING = 1
-MODE_NOTVIA_PSFC = 2
-MODE_END2END_PROTECTION = 3
-MODE_DIRECT_REMAPPING = 4
+MODE_UFRR = "0"
+MODE_NOTVIA_REMAPPING = "1"
+MODE_NOTVIA_PSFC = "2"
+MODE_END2END_PROTECTION = "3"
+MODE_DIRECT_REMAPPING = "4"
+MODE_SEND_RECV_INBOUND_TRAFFIC = "5"
 
 
 class TriangleTopo( Topo ):
@@ -141,11 +145,14 @@ class NetConfigurator(object):
         h1 = self._net.get('h1')
         # ip and mac address
         h1.setIP(INGRESS_IP1, prefixLen=INGRESS_IP1_PREFIX)
+        global INGRESS_MAC1
         INGRESS_MAC1 = h1.MAC()
         # default route
         s1 = self._net.get('s1')
         gateway1Intf = s1.intf('s1-eth1')
         defInt = h1.defaultIntf()
+        global INGRESS_INTERFACE_NAME
+        INGRESS_INTERFACE_NAME = str(defInt.name)
         defRoute = "dev " + str(defInt.name) + " via " + GATEWAY1_OUTBOUND_IP
         h1.setDefaultRoute( defRoute )
 
@@ -153,6 +160,7 @@ class NetConfigurator(object):
         h2 = self._net.get('h2')
         # ip and mac address
         h2.setIP(WEBSITE1_IP, prefixLen=WEBSITE1_IP_PREFIX)
+        global WEBSITE1_MAC
         WEBSITE1_MAC = h2.MAC()
         # default route
         defInt = h2.defaultIntf()
@@ -219,13 +227,15 @@ class ManoTester(object):
                     "Mode {2}: NotVia + PSFC\n"
                     "Mode {3}: End-to-end Protection\n"
                     "Mode {4}: Direct Remapping\n"
+                    "Mode {5}: send and recv inbound traffic\n"
                     "cli: start interactive cli\n"
                     "quit: to quit".format(
                         MODE_UFRR,
                         MODE_NOTVIA_REMAPPING,
                         MODE_NOTVIA_PSFC,
                         MODE_END2END_PROTECTION,
-                        MODE_DIRECT_REMAPPING
+                        MODE_DIRECT_REMAPPING,
+                        MODE_SEND_RECV_INBOUND_TRAFFIC
                     )
                 )
             print("Please input the mode number:")
@@ -239,11 +249,14 @@ class ManoTester(object):
                 self.testHandler()
             elif self.mode == MODE_DIRECT_REMAPPING:
                 self.sendReMappingCmd()
+            elif self.mode == MODE_SEND_RECV_INBOUND_TRAFFIC:
+                self.sendRecvInBoundTraffic()
             elif self.mode == "cli":
                 CLI(self.net)
             elif self.mode == "quit":
                 break
             else:
+                print("Your input is {0}".format(self.mode))
                 continue
 
     def testHandler(self):
@@ -358,8 +371,24 @@ class ManoTester(object):
 
     def sendReMappingCmd(self):
         print("sendReMappingCmd")
-        msg = SAMMessage(MSG_TYPE_TESTER_CMD, Command(cmdType=CMD_TYPE_TESTER_REMAP_SFCI, cmdID=uuid.uuid1()))
+        msg = SAMMessage(MSG_TYPE_TESTER_CMD, Command(
+            cmdType=CMD_TYPE_TESTER_REMAP_SFCI, cmdID=uuid.uuid1()))
         self._messageAgent.sendMsg(MININET_TESTER_QUEUE, msg)
+
+    def sendRecvInBoundTraffic(self):
+        try:
+            print("sendRecvInBoundTraffic")
+            print("iface:{0}, dmac:{1}, sip:{2}, dip:{3}".format(
+                INGRESS_INTERFACE_NAME, INGRESS_MAC1, INGRESS_IP1, WEBSITE1_IP
+            ))
+            h1 = self.net.get('h1')
+            h1.cmdPrint("sudo python ./test3InBoundTrafficSendRecv.py"
+                " -i {0} -dmac {1}".format(INGRESS_INTERFACE_NAME, INGRESS_MAC1))
+            # tsr = Test3InBoundTrafficSendRecv(iface=INGRESS_INTERFACE_NAME,
+            #     dmac=INGRESS_MAC1, sip=INGRESS_IP1, dip=WEBSITE1_IP)
+            # tsr.start()
+        except:
+            print("stop send recv!")
 
 
 if __name__ == '__main__':

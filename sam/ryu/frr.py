@@ -80,8 +80,13 @@ class FRR(BaseApp):
             else:
                 raise ValueError("_addRoute2Classifier: invalid source")
             classifierMAC = direction['ingress'].getDatapathNICMac()
+            classifierIP = direction['ingress'].getDatapathNICIP()
+            classifierPort = self._getPortbyIP(datapath, classifierIP)
+            self.logger.debug("classifierPort:{0}".format(classifierPort))
+            if classifierPort == None:
+                raise ValueError("Can't get classifier output port")
             self._installRoute4Switch2Classifier(sfc.sfcUUID,
-                datapath, inPortNum, classifierMAC)
+                datapath, inPortNum, classifierMAC, classifierPort)
 
     def _getSwitchByClassifier(self, classifier):
         # dpid = classifier.getServerID()
@@ -129,13 +134,13 @@ class FRR(BaseApp):
                 continue
 
             # get port by mac table
-            port = self.L2.getLocalPortByMac(dpid, dstMac)
+            port = self.L2.getSwitchLocalPortByMac(dpid, dstMac)
             if port == None:
                 continue
         return port
 
     def _installRoute4Switch2Classifier(self, sfcUUID, datapath, inPortNum,
-            classifierMAC):
+            classifierMAC, outputPort):
         dpid = datapath.id
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -145,16 +150,17 @@ class FRR(BaseApp):
         actions = [
             parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=in_port_info.hw_addr),
-            parser.OFPActionSetField(eth_dst=classifierMAC)
+            parser.OFPActionSetField(eth_dst=classifierMAC),
+            parser.OFPActionOutput(outputPort)
         ]
         inst = [
             parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
-            parser.OFPInstructionGotoTable(table_id=L2_TABLE)
+            # parser.OFPInstructionGotoTable(table_id=L2_TABLE)
         ]
-        self._add_flow(datapath,match,inst,table_id=IPV4_CLASSIFIER_TABLE,
+        self._add_flow(datapath,match,inst,table_id=MAIN_TABLE,
             priority=3)
         self.ibm.addSFCFlowTableEntry(sfcUUID, dpid,
-            IPV4_CLASSIFIER_TABLE, matchFields)
+            MAIN_TABLE, matchFields)
 
     def getSFCIStageDstIP(self, sfci, stageCount, pathID):
         if stageCount<len(sfci.vnfiSequence):

@@ -52,6 +52,8 @@ class RyuCommandAgent(BaseApp):
                     self.ufrr._delSFCHandler(cmd)
                 elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
                     self.tC.get_topology_handler(cmd)
+                elif cmd.cmdType == CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE:
+                    self.ufrr._serverStatusChangeHandler(cmd)
                 else:
                     self.logger.error("Unkonwn cmd type:{0}".format(cmd.cmdType))
             elif msg.getMessageType() == None:

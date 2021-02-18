@@ -129,7 +129,7 @@ class FRR(BaseApp):
                 continue
 
             # get port by mac table
-            port = self.L2.getLocalPortByMac(dpid, dstMac)
+            port = self.L2.getSwitchLocalPortByMac(dpid, dstMac)
             if port == None:
                 continue
         return port

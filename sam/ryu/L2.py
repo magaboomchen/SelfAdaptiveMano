@@ -43,7 +43,23 @@ class L2(BaseApp):
         self.logger = logConfigur.getLogger()
         self.logger.setLevel(logging.WARNING)
 
-    def getLocalPortByMac(self,dpid,mac):
+    def getLocalPortIDByMac(self, mac):
+        for dpid in self._switchesLANMacTable.keys():
+            if mac in self._switchesLANMacTable[dpid].keys():
+                portID = self._switchesLANMacTable[dpid][mac]
+                self.logger.debug("get local port id:{0}".format(portID))
+                return portID
+        else:
+            return None
+
+    def getConnectedSwitchDpidByServerMac(self, mac):
+        for dpid in self._switchesLANMacTable.keys():
+            if mac in self._switchesLANMacTable[dpid].keys():
+                return dpid
+        else:
+            return None
+
+    def getSwitchLocalPortByMac(self,dpid,mac):
         if (self._switchesLANMacTable.has_key(dpid)
                 and self._switchesLANMacTable[dpid].has_key(mac)):
             return self._switchesLANMacTable[dpid][mac]
@@ -69,31 +85,30 @@ class L2(BaseApp):
         parser = datapath.ofproto_parser
 
         # IPv4
-        match = parser.OFPMatch(eth_dst=portMac,
-            eth_type=ether_types.ETH_TYPE_IP)
-        inst = [
-            parser.OFPInstructionGotoTable(table_id=IPV4_CLASSIFIER_TABLE)
-            ]
-        self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
-            priority = 1)
+        # match = parser.OFPMatch(eth_dst=portMac,
+        #     eth_type=ether_types.ETH_TYPE_IP)
+        # inst = [
+        #     parser.OFPInstructionGotoTable(table_id=IPV4_CLASSIFIER_TABLE)
+        #     ]
+        # self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
+        #     priority = 1)
 
-        # VLAN
-        match = parser.OFPMatch(eth_dst=portMac, vlan_vid=(0x1000, 0x1000))
-        # eth_type=ether_types.ETH_TYPE_8021Q)
-        inst = [
-                parser.OFPInstructionGotoTable(table_id=VLAN_TABLE)
-            ]
-        self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
-            priority = 1)
+        # # VLAN
+        # match = parser.OFPMatch(eth_dst=portMac, vlan_vid=(0x1000, 0x1000))
+        # inst = [
+        #         parser.OFPInstructionGotoTable(table_id=VLAN_TABLE)
+        #     ]
+        # self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
+        #     priority = 1)
 
-        # MPLS
-        match = parser.OFPMatch(eth_dst=portMac,
-                                eth_type=ether_types.ETH_TYPE_MPLS)
-        inst = [
-                parser.OFPInstructionGotoTable(table_id=MPLS_TABLE)
-            ]
-        self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
-            priority = 1)
+        # # MPLS
+        # match = parser.OFPMatch(eth_dst=portMac,
+        #                         eth_type=ether_types.ETH_TYPE_MPLS)
+        # inst = [
+        #         parser.OFPInstructionGotoTable(table_id=MPLS_TABLE)
+        #     ]
+        # self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
+        #     priority = 1)
 
     def _delLocalPort(self, datapath, port):
         if self._localPortTable.has_key(datapath.id):
@@ -107,15 +122,15 @@ class L2(BaseApp):
 
         parser = datapath.ofproto_parser
 
-        # IPv4
-        match = parser.OFPMatch(eth_dst=portMac,
-            eth_type=ether_types.ETH_TYPE_IP)
-        self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=1)
+        # # IPv4
+        # match = parser.OFPMatch(eth_dst=portMac,
+        #     eth_type=ether_types.ETH_TYPE_IP)
+        # self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=1)
 
-        # VLAN
-        match = parser.OFPMatch(eth_dst=portMac, vlan_vid=(0x1000, 0x1000))
-        # eth_type=ether_types.ETH_TYPE_8021Q)
-        self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=2)
+        # # VLAN
+        # match = parser.OFPMatch(eth_dst=portMac, vlan_vid=(0x1000, 0x1000))
+        # # eth_type=ether_types.ETH_TYPE_8021Q)
+        # self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=2)
 
     def _addPeerPort(self, datapath, link):
         localPort = link.src
@@ -135,7 +150,7 @@ class L2(BaseApp):
         match = parser.OFPMatch(eth_dst=peerPortMac)
         actions = [parser.OFPActionOutput(localPort.port_no)]
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions)]
-        self._add_flow(datapath, match, inst, table_id = L2_TABLE, priority = 1)
+        # self._add_flow(datapath, match, inst, table_id = L2_TABLE, priority = 1)
 
     def _delPeerPort(self, datapath, link):
         localPort = link.src
@@ -152,13 +167,13 @@ class L2(BaseApp):
 
         parser = datapath.ofproto_parser
         match = parser.OFPMatch(eth_dst=peerPortMac)
-        self._del_flow(datapath, match, table_id = L2_TABLE, priority = 1)
+        # self._del_flow(datapath, match, table_id = L2_TABLE, priority = 1)
 
     def getLocalPortByPeerPort(self, currentDpid, nextDpid):
-        for portNum in self._peerPortTable[currentDpid].iterkeys():
-            peerPort = self._peerPortTable[currentDpid][portNum]
+        for portID in self._peerPortTable[currentDpid].iterkeys():
+            peerPort = self._peerPortTable[currentDpid][portID]
             if peerPort.dpid == nextDpid:
-                return portNum
+                return portID
         else:
             return None
 
@@ -175,23 +190,23 @@ class L2(BaseApp):
         # 128, OVS will send Packet-In with invalid buffer_id and
         # truncated packet data. In that case, we cannot output packets
         # correctly.  The bug has been fixed in OVS v2.1.0.
+        # match = parser.OFPMatch()
+        # inst = [parser.OFPInstructionGotoTable(table_id = L2_TABLE)]
+        # self._add_flow(datapath, match, inst, table_id = MAIN_TABLE, priority=0)
+
         match = parser.OFPMatch()
-        inst = [parser.OFPInstructionGotoTable(table_id = L2_TABLE)]
+        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
+                                          ofproto.OFPCML_NO_BUFFER)]
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
+                                             actions)]
         self._add_flow(datapath, match, inst, table_id = MAIN_TABLE, priority=0)
 
-        match = parser.OFPMatch()
-        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-                                          ofproto.OFPCML_NO_BUFFER)]
-        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                                             actions)]
-        self._add_flow(datapath, match, inst, table_id = L2_TABLE, priority=0)
-
-        match = parser.OFPMatch()
-        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-                                          ofproto.OFPCML_NO_BUFFER)]
-        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                                             actions)]
-        self._add_flow(datapath, match, inst, table_id = IPV4_CLASSIFIER_TABLE, priority=0)
+        # match = parser.OFPMatch()
+        # actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
+        #                                   ofproto.OFPCML_NO_BUFFER)]
+        # inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
+        #                                      actions)]
+        # self._add_flow(datapath, match, inst, table_id = IPV4_CLASSIFIER_TABLE, priority=0)
 
         match = parser.OFPMatch(
                 eth_type=ether_types.ETH_TYPE_ARP
@@ -200,7 +215,7 @@ class L2(BaseApp):
                                           ofproto.OFPCML_NO_BUFFER)]
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
-        self._add_flow(datapath, match, inst, table_id = L2_TABLE, priority=2)
+        self._add_flow(datapath, match, inst, table_id = MAIN_TABLE, priority=0)
 
         self._switchesLANMacTable[datapath.id] = {}
 
@@ -326,7 +341,7 @@ class L2(BaseApp):
                     match = parser.OFPMatch(eth_dst=arpHeader.src_mac)
                     actions = [parser.OFPActionOutput(in_port)]
                     inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions)]
-                    self._add_flow(datapath, match, inst, table_id=L2_TABLE, priority=1)
+                    # self._add_flow(datapath, match, inst, table_id=L2_TABLE, priority=1)
 
                 if arpHeader.opcode == arp.ARP_REQUEST:
                     if arpHeader.dst_ip == self._getSwitchGatewayIP(datapath.id):

@@ -175,18 +175,18 @@ class NorthSouthRouting(BaseApp):
 
             link = self._cacheLinks[(srcDpid,dstDpid)]
             out_port = link.src.port_no
-            actions = [
-                parser.OFPActionDecNwTtl(),
-                parser.OFPActionSetField(eth_src=link.src.hw_addr),
-                parser.OFPActionSetField(eth_dst=link.dst.hw_addr)
-            ]
-            inst = [
-                parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
-                parser.OFPInstructionGotoTable(table_id=L2_TABLE)
-            ]
-            if not self._cacheNorthSouthRIB.has_key(srcDpid):
-                self._cacheNorthSouthRIB[srcDpid] = {}
-            self._cacheNorthSouthRIB[srcDpid][self._dict2OrderJson(matchFields)] = inst
+            # actions = [
+            #     parser.OFPActionDecNwTtl(),
+            #     parser.OFPActionSetField(eth_src=link.src.hw_addr),
+            #     parser.OFPActionSetField(eth_dst=link.dst.hw_addr)
+            # ]
+            # inst = [
+            #     parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
+            #     parser.OFPInstructionGotoTable(table_id=L2_TABLE)
+            # ]
+            # if not self._cacheNorthSouthRIB.has_key(srcDpid):
+            #     self._cacheNorthSouthRIB[srcDpid] = {}
+            # self._cacheNorthSouthRIB[srcDpid][self._dict2OrderJson(matchFields)] = inst
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def _switchFeaturesHandler(self, ev):
@@ -201,18 +201,18 @@ class NorthSouthRouting(BaseApp):
         # 128, OVS will send Packet-In with invalid buffer_id and
         # truncated packet data. In that case, we cannot output packets
         # correctly.  The bug has been fixed in OVS v2.1.0.
-        match = parser.OFPMatch(
-            eth_type=ether_types.ETH_TYPE_IP
-        )
-        instructions = [parser.OFPInstructionGotoTable(table_id=NORTH_SOUTH_TABLE)]
-        self._add_flow(datapath,match,instructions,table_id=IPV4_CLASSIFIER_TABLE, priority=1)
+        # match = parser.OFPMatch(
+        #     eth_type=ether_types.ETH_TYPE_IP
+        # )
+        # instructions = [parser.OFPInstructionGotoTable(table_id=NORTH_SOUTH_TABLE)]
+        # self._add_flow(datapath,match,instructions,table_id=IPV4_CLASSIFIER_TABLE, priority=1)
 
-        match = parser.OFPMatch()
-        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-                                            ofproto.OFPCML_NO_BUFFER)]
-        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                                            actions)]
-        self._add_flow(datapath, match, inst, table_id=NORTH_SOUTH_TABLE, priority=0)
+        # match = parser.OFPMatch()
+        # actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
+        #                                     ofproto.OFPCML_NO_BUFFER)]
+        # inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
+        #                                     actions)]
+        # self._add_flow(datapath, match, inst, table_id=NORTH_SOUTH_TABLE, priority=0)
 
         self._northSouthRIB[datapath.id] = {}
 
@@ -239,22 +239,22 @@ class NorthSouthRouting(BaseApp):
         dpid = datapath.id
         self.logger.debug("northSouthRouting._packet_in_handler, dpid:%d, in_port:%d" %(dpid, in_port) )
 
-        if dpid == self._defaultDCNGateway and msg.table_id == L2_TABLE and eth.ethertype == ether_types.ETH_TYPE_ARP:
+        if dpid == self._defaultDCNGateway and msg.table_id == MAIN_TABLE and eth.ethertype == ether_types.ETH_TYPE_ARP:
             self.logger.debug("Get an arp packet in from default DCN gateway dpid: %d's L2 table, packet type: %d" %(dpid, eth.ethertype))
             arpHeader = pkt.get_protocol(arp.arp)
-            if (in_port == DEFAULT_DCN_GATEWAY_OUTBOUND_PORT_NUMBER and 
-                arpHeader.opcode == arp.ARP_REPLY and 
-                self._defaultDCNGateway != None and 
-                arpHeader.src_ip == self._switchConfs[self._defaultDCNGateway].dcnGatewayPeerIP):
+            if (in_port == DEFAULT_DCN_GATEWAY_OUTBOUND_PORT_NUMBER
+                    and arpHeader.opcode == arp.ARP_REPLY
+                    and self._defaultDCNGateway != None
+                    and arpHeader.src_ip == self._switchConfs[self._defaultDCNGateway].dcnGatewayPeerIP):
                 self.logger.debug("dcn gateway peer switch's arp reply")
                 self._defaultDCNGatewayPeerSwitchMac = arpHeader.src_mac
                 self._genDCNGatewaySouthRIB()
-                self._updateAllSwitchNorthSouthRIB()
+                # self._updateAllSwitchNorthSouthRIB()
 
         if dpid == self._defaultDCNGateway and eth.ethertype == ether_types.ETH_TYPE_ARP:
             arpHeader = pkt.get_protocol(arp.arp)
-            if (arpHeader.opcode == arp.ARP_REQUEST and
-                arpHeader.dst_ip == self._switchConfs[self._defaultDCNGateway].dcnGatewaySelfIP):
+            if (arpHeader.opcode == arp.ARP_REQUEST
+                    and arpHeader.dst_ip == self._switchConfs[self._defaultDCNGateway].dcnGatewaySelfIP):
                 self.logger.debug("DCN gateway get an arp request: requeset DCN gateway's mac")
                 # If gateway: send arpReply to sender
                 in_port_info = self.dpset.get_port(datapath.id, in_port)
@@ -295,13 +295,20 @@ class NorthSouthRouting(BaseApp):
             parser.OFPActionOutput(DEFAULT_DCN_GATEWAY_OUTBOUND_PORT_NUMBER)
         ]
         inst = [
-            parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
+            parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions),
             # parser.OFPInstructionGotoTable(table_id=L2_TABLE)
         ]
+
+        if (srcDpid in self._cacheNorthSouthRIB.keys()
+                and self._dict2OrderJson(matchFields) in self._cacheNorthSouthRIB[srcDpid]):
+            return 
+
         if not self._cacheNorthSouthRIB.has_key(srcDpid):
             self._cacheNorthSouthRIB[srcDpid] = {}
         self._cacheNorthSouthRIB[srcDpid][self._dict2OrderJson(matchFields)] = inst
         self.logger.debug(self._cacheNorthSouthRIB[srcDpid])
+
+        self._add_flow(datapath, match, inst, table_id=MAIN_TABLE, priority=1)
 
     def _updateAllSwitchNorthSouthRIB(self):
         northSouthRIBTmp = copy.copy(self._northSouthRIB)
@@ -328,7 +335,7 @@ class NorthSouthRouting(BaseApp):
                     match = parser.OFPMatch(
                         **matchFields
                     )
-                    self._add_flow(datapath, match, inst, table_id=NORTH_SOUTH_TABLE, priority=1)
+                    # self._add_flow(datapath, match, inst, table_id=NORTH_SOUTH_TABLE, priority=1)
             else:
                 self.logger.debug("old table set has this dpid && new tables set has this dpid")
                 for matchFieldsJson in self._cacheNorthSouthRIB[dpid].iterkeys():
@@ -338,7 +345,7 @@ class NorthSouthRouting(BaseApp):
                         match = parser.OFPMatch(
                             **matchFields
                         )
-                        self._del_flow(datapath, match, table_id=NORTH_SOUTH_TABLE, priority=1)
+                        # self._del_flow(datapath, match, table_id=NORTH_SOUTH_TABLE, priority=1)
                     else:
                         self.logger.debug("new entry is not in old rib")
 
@@ -349,7 +356,7 @@ class NorthSouthRouting(BaseApp):
                         **matchFields
                     )
                     inst = self._cacheNorthSouthRIB[dpid][matchFieldsJson]
-                    self._add_flow(datapath, match, inst, table_id=NORTH_SOUTH_TABLE, priority=1)
+                    # self._add_flow(datapath, match, inst, table_id=NORTH_SOUTH_TABLE, priority=1)
 
                 northSouthRIBofADpidTmp = copy.copy(self._northSouthRIB[dpid])
                 for matchFieldsJson in northSouthRIBofADpidTmp.iterkeys():
@@ -362,4 +369,4 @@ class NorthSouthRouting(BaseApp):
                         match = parser.OFPMatch(
                             **matchFields
                         )
-                        self._del_flow(datapath, match, table_id=NORTH_SOUTH_TABLE, priority=1)
+                        # self._del_flow(datapath, match, table_id=NORTH_SOUTH_TABLE, priority=1)
