@@ -56,7 +56,8 @@ class UFRR(FRR):
 
     def _serverStatusChangeHandler(self, cmd):
         self.logger.debug(
-            '*** FRR App Received command={0}'.format(cmd))
+            "*** FRR App Received server status change"
+            " command={0}".format(cmd))
         try:
             serverDownList = cmd.attributes['serverDown']
             self._shutdownServersPort(serverDownList)
@@ -69,10 +70,10 @@ class UFRR(FRR):
 
     def _shutdownServersPort(self, serverDownList):
         for server in serverDownList:
-            datapathNICMAC = server.getDatapathNICMac()
+            datapathNICMAC = server.getDatapathNICMac().lower()
+            self.logger.debug("server:{0}".format(server))
             dpid = self.L2.getConnectedSwitchDpidByServerMac(datapathNICMAC)
             portID = self.L2.getLocalPortIDByMac(datapathNICMAC)
-            
             self._shutdownSwitchPort(dpid, portID)
 
     def _shutdownSwitchPort(self, dpid, portID):

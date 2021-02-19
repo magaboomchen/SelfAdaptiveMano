@@ -47,7 +47,7 @@ class L2(BaseApp):
         for dpid in self._switchesLANMacTable.keys():
             if mac in self._switchesLANMacTable[dpid].keys():
                 portID = self._switchesLANMacTable[dpid][mac]
-                self.logger.debug("get local port id:{0}".format(portID))
+                self.logger.info("get local port id:{0}".format(portID))
                 return portID
         else:
             return None

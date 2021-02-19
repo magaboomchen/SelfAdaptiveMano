@@ -26,10 +26,11 @@ class SeverManager(object):
             'serverManager.log', level='debug')
         self.logger = logConfigur.getLogger()
         self.logger.info('Init ServerManager')
+        self.zoneName = zoneName
 
         self._messageAgent = MessageAgent(self.logger)
         self.queueName = self._messageAgent.genQueueName(SERVER_MANAGER_QUEUE,
-            zoneName)
+            self.zoneName)
         self._messageAgent.startRecvMsg(self.queueName)
 
         self.serverSet = {}
@@ -40,15 +41,16 @@ class SeverManager(object):
     def _listener(self):
         while True:
             msg = self._messageAgent.getMsg(self.queueName)
-            self.logger.debug("msgType:".format(msg.getMessageType()))
-            time.sleep(1)
+            # self.logger.debug("msgType:".format(msg.getMessageType()))
+            time.sleep(0.1)
             if msg.getMessageType() == MSG_TYPE_SERVER_REPLY:
                 self._storeServerInfo(msg)
             elif msg.getMessageType() == MSG_TYPE_SERVER_MANAGER_CMD:
                 cmd = msg.getbody()
                 self._reportServerSet(cmd)
             elif msg.getMessageType() == None:
-                self._printServerSet()
+                pass
+                # self._printServerSet()
             else:
                 self.logger.warning("Unknown msg type.")
 
@@ -114,7 +116,8 @@ class SeverManager(object):
         tid = ctypes.c_long(tid)
         if not inspect.isclass(exctype):
             exctype = type(exctype)
-        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid,
+                                    ctypes.py_object(exctype))
         if res == 0:
             raise ValueError("Invalid thread id")
         elif res != 1:
@@ -124,14 +127,15 @@ class SeverManager(object):
             raise SystemError("PyThreadState_SetAsyncExc failed")
 
     def __del__(self):
-        # first, delet self._messageAgent, or self._timeoutCleanerThread is hard to killed. Still need to address this problem
-        del self._messageAgent
-        self.logger.info("Delete ServerManager.")
+        # first, delete self._messageAgent or self._timeoutCleanerThread
+        # is hard to killed. Still need to address this problem
         thread = self._timeoutCleanerThread
         if thread.isAlive():
             self.logger.warning("Kill thread: %d" %thread.ident)
             self._async_raise(thread.ident, KeyboardInterrupt)
             thread.join()
+        del self._messageAgent
+        self.logger.info("Delete ServerManager.")
 
 
 class TimeoutCleaner(threading.Thread):
@@ -139,12 +143,15 @@ class TimeoutCleaner(threading.Thread):
         threading.Thread.__init__(self)
         self.serverSet = serverSet
         self.logger = logger
+        self._messageAgent = MessageAgent(self.logger)
 
     def run(self):
         try:
             self._startTimeout()
         except KeyboardInterrupt:
             self.logger.warning("TimeoutCleaner get KeyboardInterrupt.")
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex)
 
     def _startTimeout(self):
         self.logger.info("timeoutCleaner is running")
@@ -153,8 +160,12 @@ class TimeoutCleaner(threading.Thread):
             threadLock.acquire()
             currentTime = datetime.datetime.now()
             for serverKey in self.serverSet.iterkeys():
-                if self._getTimeDiff(self.serverSet[serverKey]["timestamp"], currentTime) > SERVER_TIMEOUT:
+                if (self._getTimeDiff(self.serverSet[serverKey]["timestamp"],
+                            currentTime) > SERVER_TIMEOUT
+                        and self.serverSet[serverKey]["Active"] == True):
                     self.serverSet[serverKey]["Active"] = False
+                    server = self.serverSet[serverKey]["server"]
+                    self._sendServerDownTrigger(server)
             threadLock.release()
             time.sleep(TIMEOUT_CLEANER_INTERVAL)
 
@@ -163,6 +174,19 @@ class TimeoutCleaner(threading.Thread):
         seconds_in_day = 24 * 60 * 60
         datetime.timedelta(0, 8, 562000)
         return difference.days * seconds_in_day + difference.seconds
+
+    def _sendServerDownTrigger(self, server):
+        # server failure trigger function
+        msg = SAMMessage(
+            MSG_TYPE_NETWORK_CONTROLLER_CMD,
+            Command(
+                cmdType = CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE,
+                cmdID = uuid.uuid1(),
+                attributes = {"serverDown":[server],
+                                "serverUp":[]}
+            )
+        )
+        self._messageAgent.sendMsg(NETWORK_CONTROLLER_QUEUE, msg)
 
 
 if __name__=="__main__":
