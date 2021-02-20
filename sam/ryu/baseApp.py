@@ -23,7 +23,8 @@ class BaseApp(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(BaseApp, self).__init__(*args, **kwargs)
         logging.getLogger("pika").setLevel(logging.WARNING)
-        logConfigur = LoggerConfigurator('logger', './log', 'ryuApp.log', level='info')
+        logConfigur = LoggerConfigurator('logger', './log',
+                                            'ryuApp.log', level='info')
         self.logger = logConfigur.getLogger()
         self._messageAgent = MessageAgent(self.logger)
         self._switchConfs = {}
@@ -36,22 +37,26 @@ class BaseApp(app_manager.RyuApp):
             content = yamlObj.load(f)
             self._switchConfs = content
 
-    def _add_flow(self, datapath, match, instructions, table_id=0, priority = ofproto_v1_3.OFP_DEFAULT_PRIORITY):
+    def _add_flow(self, datapath, match, instructions,
+                    table_id=0, priority = ofproto_v1_3.OFP_DEFAULT_PRIORITY):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         mod = parser.OFPFlowMod(
-            datapath=datapath, match=match, cookie=0, cookie_mask=0, table_id = table_id,
+            datapath=datapath, match=match, cookie=0, cookie_mask=0,
+            table_id = table_id,
             command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
             priority=priority,flags=ofproto.OFPFF_SEND_FLOW_REM,
             instructions=instructions
         )
         datapath.send_msg(mod)
 
-    def _del_flow(self, datapath, match, table_id=0, priority = ofproto_v1_3.OFP_DEFAULT_PRIORITY):
+    def _del_flow(self, datapath, match, table_id=0,
+                    priority = ofproto_v1_3.OFP_DEFAULT_PRIORITY):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         mod = parser.OFPFlowMod(
-            datapath=datapath, match=match, cookie=0, cookie_mask=0, table_id = table_id,
+            datapath=datapath, match=match, cookie=0, cookie_mask=0,
+            table_id = table_id,
             command=ofproto.OFPFC_DELETE, idle_timeout=0, hard_timeout=0,
             priority=priority,flags=ofproto.OFPFF_SEND_FLOW_REM,
             out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY
@@ -86,7 +91,8 @@ class BaseApp(app_manager.RyuApp):
         return self._switchConfs[dpid].switchType == "SWITCH_TYPE_DCNGATEWAY"
 
     def _build_arp(self, opcode, src_mac, src_ip, dst_mac, dst_ip):
-        e = ethernet.ethernet(dst=dst_mac, src=src_mac, ethertype=ether_types.ETH_TYPE_ARP)
+        e = ethernet.ethernet(dst=dst_mac, src=src_mac,
+                                ethertype=ether_types.ETH_TYPE_ARP)
         a = arp.arp(hwtype=1, proto=ether_types.ETH_TYPE_IP, hlen=6, plen=4,
                     opcode=opcode, src_mac=src_mac, src_ip=src_ip,
                     dst_mac=dst_mac, dst_ip=dst_ip)
@@ -97,7 +103,8 @@ class BaseApp(app_manager.RyuApp):
         return p
 
     def _build_icmp_dest_unreach(self, src_mac, src_ip, dst_mac, dst_ip):
-        e = ethernet.ethernet(dst=dst_mac, src=src_mac, ethertype=ether_types.ETH_TYPE_IP)
+        e = ethernet.ethernet(dst=dst_mac, src=src_mac,
+                                ethertype=ether_types.ETH_TYPE_IP)
         ipv4Header = ipv4.ipv4(src=src_ip, dst=dst_ip)
         icmpHeader = icmp.dest_unreach()
         p = packet.Packet()

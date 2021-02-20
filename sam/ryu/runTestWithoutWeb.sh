@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -rf ./log
+
 if [ "$1" == "UFFR" ]
 then
     echo "ryu-manager start UFFR"

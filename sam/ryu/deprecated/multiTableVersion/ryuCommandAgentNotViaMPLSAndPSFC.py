@@ -3,7 +3,7 @@
 
 import logging
 
-from ryu.controller import event
+from ryu.controller import event as ryuControllerEvent
 from ryu.base.app_manager import *
 from ryu.lib import hub
 

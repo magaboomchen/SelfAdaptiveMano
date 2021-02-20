@@ -9,6 +9,7 @@ import pytest
 from ryu.controller import dpset
 
 from sam.ryu.topoCollector import TopoCollector
+from sam.base.command import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
@@ -104,3 +105,19 @@ class TestFRR(TestBase):
         logging.info("Sometimes, we can't delete VNFI, you should delete it manually"
             "Command: sudo docker stop name1"
             )
+
+    def sendHandleServerFailureCmd(self):
+        logging.info("sendHandleServerFailureCmd")
+        server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
+        server.setServerID(SFF1_SERVERID)
+        server.setControlNICIP(SFF1_CONTROLNIC_IP)
+        server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
+        server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
+        msg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD,
+            Command(
+                cmdType=CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE,
+                cmdID=uuid.uuid1(),
+                attributes={"serverDown":[server]}
+            )
+        )
+        self._messageAgent.sendMsg(NETWORK_CONTROLLER_QUEUE, msg)

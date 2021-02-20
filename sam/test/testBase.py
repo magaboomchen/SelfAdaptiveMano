@@ -71,17 +71,20 @@ SFF1_DATAPATH_IP = "2.2.0.69"
 SFF1_DATAPATH_MAC = "52:54:00:ad:18:c2"
 SFF1_CONTROLNIC_IP = "192.168.122.134"
 SFF1_CONTROLNIC_MAC = "52:54:00:80:ea:94"
+SFF1_SERVERID = 10003
 
 SFF2_DATAPATH_IP = "2.2.0.71"
 # SFF2_DATAPATH_MAC = "52:54:00:5a:14:f0"
 SFF2_DATAPATH_MAC = "52:54:00:7b:56:86"
 SFF2_CONTROLNIC_IP = "192.168.122.135"
 SFF2_CONTROLNIC_MAC = "52:54:00:1f:51:12"
+SFF2_SERVERID = 10004
 
 SFF3_DATAPATH_IP = "2.2.0.99"
 SFF3_DATAPATH_MAC = "52:54:00:f7:34:25"
 SFF3_CONTROLNIC_IP = "192.168.122.208"
 SFF3_CONTROLNIC_MAC = "52:54:00:D5:A7:0C"
+SFF3_SERVERID = 10005
 
 logging.basicConfig(level=logging.INFO)
 
@@ -228,7 +231,7 @@ class TestBase(object):
             vnfiSequence.append([])
             for iN in range(1):
                 server = Server("ens3",SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
-                server.setServerID(SERVERID_OFFSET + 1)
+                server.setServerID(SFF1_SERVERID)
                 server.setControlNICIP(SFF1_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
@@ -244,7 +247,7 @@ class TestBase(object):
             vnfiSequence.append([])
             
             server = Server("ens3",SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
-            server.setServerID(SERVERID_OFFSET + 1)
+            server.setServerID(SFF1_SERVERID)
             server.setControlNICIP(SFF1_CONTROLNIC_IP)
             server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
@@ -253,7 +256,7 @@ class TestBase(object):
             vnfiSequence[index].append(vnfi)
 
             server = Server("ens3",SFF2_DATAPATH_IP, SERVER_TYPE_NFVI)
-            server.setServerID(SERVERID_OFFSET + 2)
+            server.setServerID(SFF2_SERVERID)
             server.setControlNICIP(SFF2_CONTROLNIC_IP)
             server.setControlNICMAC(SFF2_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF2_DATAPATH_MAC)
@@ -264,13 +267,8 @@ class TestBase(object):
         return vnfiSequence
 
     def genUniDirection10BackupForwardingPathSet(self):
-        # primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
         primaryForwardingPath = {1:[[(0,10001),(0,1),(0,2),(0,10002)],[(1,10002),(1,2),(1,1),(1,10001)]]}
         mappingType = MAPPING_TYPE_UFRR
-        # {(srcID,dstID,pathID):forwardingPath}
-        # backupForwardingPath = {
-        #     1:{(1,2,2):[[1,3,2,10002],[10002,2,3,1,10001]]}
-        # }
         backupForwardingPath = {
             1:{
                 (("failureNodeID", 2), ("repairMethod", "fast-reroute"), ("repairSwitchID", 1), ("newPathID", 2)):
@@ -281,15 +279,8 @@ class TestBase(object):
             backupForwardingPath)
 
     def genUniDirection11BackupForwardingPathSet(self):
-        # primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
         primaryForwardingPath = {1:[[(0,10001),(0,1),(0,2),(0,10002)],[(1,10002),(1,2),(1,1),(1,10001)]]}
         mappingType = MAPPING_TYPE_UFRR
-        # {(srcID,dstID,pathID):forwardingPath}
-        # backupForwardingPath = {
-        #     1:{(1,2,2):[[1,3,10003],[10003,3,1,10001]],
-        #         (2,10002,3):[[2,3,10003],[10003,3,1,10001]]
-        #     }
-        # }
         backupForwardingPath = {
             1:{
                 (("failureNodeID", 2), ("repairMethod", "fast-reroute"), ("repairSwitchID", 1), ("newPathID", 2)):
@@ -302,23 +293,11 @@ class TestBase(object):
             backupForwardingPath)
 
     def genBiDirection10BackupForwardingPathSet(self):
-        # primaryForwardingPath = {
-        #     1:[[10001,1,2,10002],[10002,2,1,10001]],
-        #     128:[[10001,1,2,10002],[10002,2,1,10001]]
-        # }
         primaryForwardingPath = {
             1: [[(0, 10001), (0, 1), (0, 2), (0, 10002)], [(1, 10002), (1, 2), (1, 1), (1, 10001)]],
             128: [[(0, 10001), (0, 1), (0, 2), (0, 10002)], [(1, 10002), (1, 2), (1, 1), (1, 10001)]]
         }
         mappingType = MAPPING_TYPE_UFRR
-        # {(srcID,dstID,pathID):forwardingPath}
-        # backupForwardingPath = {
-        #     1:{(1,2,2):[[1,3,2,10002],[10002,2,3,1,10001]]
-        #     },
-        #     128:{
-        #         (1,2,129):[[1,3,2,10002],[10002,2,3,1,10001]]
-        #     }
-        # }
         backupForwardingPath = {
             1:{
                 (("failureNodeID", 2), ("repairMethod", "fast-reroute"), ("repairSwitchID", 1), ("newPathID", 2)):
@@ -344,7 +323,7 @@ class TestBase(object):
             vnfiSequence.append([])
 
             server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
-            server.setServerID(SERVERID_OFFSET + 2)
+            server.setServerID(SFF1_SERVERID)
             server.setControlNICIP(SFF1_CONTROLNIC_IP)
             server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
@@ -353,7 +332,7 @@ class TestBase(object):
             vnfiSequence[index].append(vnfi)
 
             server = Server("ens3", SFF2_DATAPATH_IP, SERVER_TYPE_NFVI)
-            server.setServerID(SERVERID_OFFSET + 3)
+            server.setServerID(SFF2_SERVERID)
             server.setControlNICIP(SFF2_CONTROLNIC_IP)
             server.setControlNICMAC(SFF2_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF2_DATAPATH_MAC)
@@ -362,7 +341,7 @@ class TestBase(object):
             vnfiSequence[index].append(vnfi)
 
             server = Server("ens3", SFF3_DATAPATH_IP, SERVER_TYPE_NFVI)
-            server.setServerID(SERVERID_OFFSET + 4)
+            server.setServerID(SFF3_SERVERID)
             server.setControlNICIP(SFF3_CONTROLNIC_IP)
             server.setControlNICMAC(SFF3_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF3_DATAPATH_MAC)
@@ -373,15 +352,8 @@ class TestBase(object):
         return vnfiSequence
 
     def genUniDirection12BackupForwardingPathSet(self):
-        # primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
         primaryForwardingPath = {1:[[(0,10001),(0,1),(0,2),(0,10003)],[(1,10003),(1,2),(1,1),(1,10001)]]}
         mappingType = MAPPING_TYPE_UFRR
-        # {(srcID,dstID,pathID):forwardingPath}
-        # backupForwardingPath = {
-        #     1:{(1,2,2):[[1,3,10005],[10003,5,1,10001]],
-        #         (2,10002,3):[[2,10004],[10004,2,1,10001]]
-        #     }
-        # }
         backupForwardingPath = {
             1:{
                 (("failureNodeID", 2), ("repairMethod", "fast-reroute"), ("repairSwitchID", 1), ("newPathID", 2)):

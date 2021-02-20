@@ -91,7 +91,7 @@ class TestNotViaClass(TestFRR):
         assert cmdRply.cmdID == self.addSFCCmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-        # exercise: mapping SFC
+        # exercise: mapping SFCI
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,
             MSG_TYPE_NETWORK_CONTROLLER_CMD,

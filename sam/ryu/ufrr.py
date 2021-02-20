@@ -8,7 +8,7 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.controller import dpset
-from ryu.controller import event
+from ryu.controller import event as ryuControllerEvent
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ipv4
@@ -265,10 +265,15 @@ class UFRR(FRR):
                         stageCount)
 
     def _getNewPathIDFromKey(self, key):
-        if key[3][0] == "newPathID":
-            return key[3][1]
+        keyDict = self._parseBackupPathKey(key)
+        if "newPathID" in keyDict.keys():
+            return keyDict["newPathID"]
         else:
             raise ValueError("Unknown key")
+        # if key[3][0] == "newPathID":
+        #     return key[3][1]
+        # else:
+        #     raise ValueError("Unknown key")
 
     def _installRouteOnBackupPath(self, sfci, direction, currentDpid,
             nextDpid, dstIP, pathID, stageCount):

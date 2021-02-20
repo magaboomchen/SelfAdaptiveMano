@@ -137,19 +137,3 @@ class TestUFRRClass(TestFRR):
             "After the test, "
             "Press any key to quit!")
         raw_input()
-
-    def sendHandleServerFailureCmd(self):
-        logging.info("sendHandleServerFailureCmd")
-        server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
-        server.setServerID(SERVERID_OFFSET + 1)
-        server.setControlNICIP(SFF1_CONTROLNIC_IP)
-        server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
-        server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
-        msg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD,
-            Command(
-                cmdType=CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE,
-                cmdID=uuid.uuid1(),
-                attributes={"serverDown":[server]}
-            )
-        )
-        self._messageAgent.sendMsg(NETWORK_CONTROLLER_QUEUE, msg)

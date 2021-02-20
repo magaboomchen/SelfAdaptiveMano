@@ -23,6 +23,13 @@ Yuxuan Zhang needs to give a design of P4 controller according to our requiremen
 
 We need to discuss together and then work it out.
 
+# Development Mode
+Inspired by github-flow, we don't need a dev branch.
+
+You can create a new branch to develop a module in your charge.
+
+As long as you test your modules, you can merge your branch into master.
+
 # BUG LIST
 
 vnfcontroller

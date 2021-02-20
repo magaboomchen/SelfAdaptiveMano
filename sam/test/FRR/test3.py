@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 """
-3 switches topology
+3 switches triangle topology which is same to test2's topology
 test UFFR/NotVia-PSFC/End-to-endProtection
 """
 
@@ -59,6 +59,7 @@ MODE_NOTVIA_PSFC = "2"
 MODE_END2END_PROTECTION = "3"
 MODE_DIRECT_REMAPPING = "4"
 MODE_SEND_RECV_INBOUND_TRAFFIC = "5"
+MODE_STOP_S2 = "6"
 
 
 class TriangleTopo( Topo ):
@@ -228,6 +229,7 @@ class ManoTester(object):
                     "Mode {3}: End-to-end Protection\n"
                     "Mode {4}: Direct Remapping\n"
                     "Mode {5}: send and recv inbound traffic\n"
+                    "Mode {6}: stop s2\n"
                     "cli: start interactive cli\n"
                     "quit: to quit".format(
                         MODE_UFRR,
@@ -235,7 +237,8 @@ class ManoTester(object):
                         MODE_NOTVIA_PSFC,
                         MODE_END2END_PROTECTION,
                         MODE_DIRECT_REMAPPING,
-                        MODE_SEND_RECV_INBOUND_TRAFFIC
+                        MODE_SEND_RECV_INBOUND_TRAFFIC,
+                        MODE_STOP_S2
                     )
                 )
             print("Please input the mode number:")
@@ -251,6 +254,8 @@ class ManoTester(object):
                 self.sendReMappingCmd()
             elif self.mode == MODE_SEND_RECV_INBOUND_TRAFFIC:
                 self.sendRecvInBoundTraffic()
+            elif self.mode == MODE_STOP_S2:
+                self.stopS2()
             elif self.mode == "cli":
                 CLI(self.net)
             elif self.mode == "quit":
@@ -258,6 +263,10 @@ class ManoTester(object):
             else:
                 print("Your input is {0}".format(self.mode))
                 continue
+
+    def stopS2(self):
+        s2 = self.net.get('s2')
+        s2.stop()
 
     def testHandler(self):
         h1 = self.net.get('h1')
@@ -382,13 +391,21 @@ class ManoTester(object):
                 INGRESS_INTERFACE_NAME, INGRESS_MAC1, INGRESS_IP1, WEBSITE1_IP
             ))
             h1 = self.net.get('h1')
-            h1.cmdPrint("sudo python ./test3InBoundTrafficSendRecv.py"
+            h1.cmdPrint(
+                "sudo python ./test3InBoundTrafficSendRecv.py"
                 " -i {0} -dmac {1}".format(INGRESS_INTERFACE_NAME, INGRESS_MAC1))
             # tsr = Test3InBoundTrafficSendRecv(iface=INGRESS_INTERFACE_NAME,
             #     dmac=INGRESS_MAC1, sip=INGRESS_IP1, dip=WEBSITE1_IP)
             # tsr.start()
-        except:
+        except KeyboardInterrupt:
             print("stop send recv!")
+            h1.popen('killall test3InBoundTrafficSendRecv')
+            # We can't kill test3InBoundTrafficSendRecv python script
+            # However we find that entering into CLI
+            # can delete the python script
+            CLI(self.net)
+        except:
+            print('Unknown interupt reason')
 
 
 if __name__ == '__main__':
