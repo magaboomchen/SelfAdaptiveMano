@@ -1,15 +1,15 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.ryu.uibMaintainer import UIBMaintainer
+from sam.ryu.ribMaintainerBase import RIBMaintainerBase
 
 # TODO: test
 
 OVS_VLANID_OFFSET = 4096
 
-class NIBMaintainer(UIBMaintainer):
+class NotViaVLANIBMaintainer(RIBMaintainerBase):
     def __init__(self, *args, **kwargs):
-        super(NIBMaintainer, self).__init__(*args, **kwargs)
+        super(NotViaVLANIBMaintainer, self).__init__(*args, **kwargs)
         self.groupIDSets = {}
         self.sfciRIB = {}
         self.vlanIDs = []

@@ -19,9 +19,15 @@ from sam.measurement.dcnInfoBaseMaintainer import *
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.WARNING)
 
 DEFAULT_ZONE = ""
+
+MODE_UFRR = 0
+MODE_NOTVIA_REMAPPING = 1
+MODE_NOTVIA_PSFC = 2
+MODE_END2END_PROTECTION = 3
+MODE_DIRECT_REMAPPING = 4
 
 
 class TestOSFCAdderDeleterClass(TestBase):
@@ -172,7 +178,33 @@ class TestOSFCAdderDeleterClass(TestBase):
         # verify
         assert sfc.sfcUUID == self.sfc.sfcUUID
 
-    # @pytest.mark.skip(reason='Temporarly')
+    @pytest.mark.skip(reason='Temporarly')
+    def test_genABatchOfRequestAndAddSFCICmdsReuseVNFI(self):
+        # exercise
+        self._requestBatchQueue = Queue.Queue()
+        self.addSFCIRequest.attributes['mappingType'] = MAPPING_TYPE_UFRR
+        self._requestBatchQueue.put(self.addSFCIRequest)
+        self._requestBatchQueue.put(self.addSFCIRequest)
+
+        requestCmdBatch = self.oA.genABatchOfRequestAndAddSFCICmds(
+            self._requestBatchQueue)
+
+        # verify
+        for (request, cmd) in requestCmdBatch:
+            sfci = cmd.attributes['sfci']
+            self.logVNFISeq(sfci.vnfiSequence)
+            forwardingPathSet = sfci.forwardingPathSet
+            primaryForwardingPath = forwardingPathSet.primaryForwardingPath
+            backupForwardingPath = forwardingPathSet.backupForwardingPath
+            self.logger.info("forwardingPathSet:{0}".format(
+                forwardingPathSet))
+            raw_input()
+            # each time will print (vnfiID, serverID) information
+            # if program reuse vnfi, you will find that the same (vnfiID, serverID) twice
+
+            assert True == True
+
+    @pytest.mark.skip(reason='Temporarly')
     def test_genABatchOfRequestAndAddSFCICmdsUFRR(self):
         # exercise
         self._requestBatchQueue = Queue.Queue()
@@ -185,10 +217,10 @@ class TestOSFCAdderDeleterClass(TestBase):
         # verify
         for (request, cmd) in requestCmdBatch:
             sfci = cmd.attributes['sfci']
+            # self.logVNFISeq(sfci.vnfiSequence)
             forwardingPathSet = sfci.forwardingPathSet
             primaryForwardingPath = forwardingPathSet.primaryForwardingPath
             backupForwardingPath = forwardingPathSet.backupForwardingPath
-
             # self.logger.info("forwardingPathSet:{0}".format(
             #     forwardingPathSet))
 
@@ -199,6 +231,7 @@ class TestOSFCAdderDeleterClass(TestBase):
                         (('failureNodeID', 10005), ('repairMethod', 'fast-reroute'), ('repairSwitchID', 3), ('newPathID', 3)):
                             [[(0, 3), (0, 2), (0, 10003)], [(1, 10003), (1, 2), (1, 1), (1, 10001)]]}}
 
+    @pytest.mark.skip(reason='Temporarly')
     def test_genABatchOfRequestAndAddSFCICmdsNotViaPSFC(self):
         # exercise
         self._requestBatchQueue = Queue.Queue()
@@ -211,16 +244,49 @@ class TestOSFCAdderDeleterClass(TestBase):
         # verify
         for (request, cmd) in requestCmdBatch:
             sfci = cmd.attributes['sfci']
+            # self.logVNFISeq(sfci.vnfiSequence)
             forwardingPathSet = sfci.forwardingPathSet
             primaryForwardingPath = forwardingPathSet.primaryForwardingPath
             backupForwardingPath = forwardingPathSet.backupForwardingPath
-
             # self.logger.info("forwardingPathSet:{0}".format(
             #     forwardingPathSet))
 
-            assert primaryForwardingPath != {1: [[(0, 10001), (0, 1), (0, 3), (0, 10005)], [(1, 10005), (1, 3), (1, 1), (1, 10001)]]}
-            assert backupForwardingPath != {1: 
-                    {(('failureNodeID', 3), ('repairMethod', 'fast-reroute'), ('repairSwitchID', 1), ('newPathID', 2)):
-                            [[(0, 1), (0, 2), (0, 10003)], [(1, 10003), (1, 2), (1, 1), (1, 10001)]],
-                        (('failureNodeID', 10005), ('repairMethod', 'fast-reroute'), ('repairSwitchID', 3), ('newPathID', 3)):
-                            [[(0, 3), (0, 2), (0, 10003)], [(1, 10003), (1, 2), (1, 1), (1, 10001)]]}}
+            assert primaryForwardingPath != None
+            assert backupForwardingPath != None
+
+    # @pytest.mark.skip(reason='Temporarly')
+    def test_genABatchOfRequestAndAddSFCICmdsDPSFC(self):
+        # exercise
+        self._requestBatchQueue = Queue.Queue()
+        self.addSFCIRequest.attributes['mappingType'] = MAPPING_TYPE_E2EP
+        self._requestBatchQueue.put(self.addSFCIRequest)
+
+        requestCmdBatch = self.oA.genABatchOfRequestAndAddSFCICmds(
+            self._requestBatchQueue)
+
+        # verify
+        for (request, cmd) in requestCmdBatch:
+            sfci = cmd.attributes['sfci']
+            # self.logVNFISeq(sfci.vnfiSequence)
+            forwardingPathSet = sfci.forwardingPathSet
+            primaryForwardingPath = forwardingPathSet.primaryForwardingPath
+            backupForwardingPath = forwardingPathSet.backupForwardingPath
+            # self.logger.info("forwardingPathSet:{0}".format(
+            #     forwardingPathSet))
+
+            assert primaryForwardingPath != None
+            assert backupForwardingPath != None
+
+    def logVNFISeq(self, vnfiSequence):
+        self.logger.info("vnfiSequence")
+        for stage in range(len(vnfiSequence)):
+            vnfiList = vnfiSequence[stage]
+            for vnfi in vnfiList:
+                if type(vnfi.node) == Server:
+                    self.logger.info(
+                        "stage:{0}, vnfiID:{1} @ serverID:{2}".format(
+                            stage, vnfi.vnfiID, vnfi.node.getServerID()))
+                else:
+                    raise ValueError(
+                        "Unknown vnfi node type {0}".format(
+                            type(vnfi.node)))

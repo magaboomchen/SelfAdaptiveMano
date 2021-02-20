@@ -9,7 +9,7 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.controller import dpset
-# from ryu.controller import event as ryuControllerEvent
+from ryu.controller import event as ryuControllerEvent
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ipv4
@@ -80,13 +80,8 @@ class FRR(BaseApp):
             else:
                 raise ValueError("_addRoute2Classifier: invalid source")
             classifierMAC = direction['ingress'].getDatapathNICMac()
-            classifierIP = direction['ingress'].getDatapathNICIP()
-            classifierPort = self._getPortbyIP(datapath, classifierIP)
-            self.logger.debug("classifierPort:{0}".format(classifierPort))
-            if classifierPort == None:
-                raise ValueError("Can't get classifier output port")
             self._installRoute4Switch2Classifier(sfc.sfcUUID,
-                datapath, inPortNum, classifierMAC, classifierPort)
+                datapath, inPortNum, classifierMAC)
 
     def _getSwitchByClassifier(self, classifier):
         # dpid = classifier.getServerID()
@@ -140,7 +135,7 @@ class FRR(BaseApp):
         return port
 
     def _installRoute4Switch2Classifier(self, sfcUUID, datapath, inPortNum,
-            classifierMAC, outputPort):
+            classifierMAC):
         dpid = datapath.id
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -150,17 +145,16 @@ class FRR(BaseApp):
         actions = [
             parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=in_port_info.hw_addr),
-            parser.OFPActionSetField(eth_dst=classifierMAC),
-            parser.OFPActionOutput(outputPort)
+            parser.OFPActionSetField(eth_dst=classifierMAC)
         ]
         inst = [
             parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
-            # parser.OFPInstructionGotoTable(table_id=L2_TABLE)
+            parser.OFPInstructionGotoTable(table_id=L2_TABLE)
         ]
-        self._add_flow(datapath,match,inst,table_id=MAIN_TABLE,
+        self._add_flow(datapath,match,inst,table_id=IPV4_CLASSIFIER_TABLE,
             priority=3)
         self.ibm.addSFCFlowTableEntry(sfcUUID, dpid,
-            MAIN_TABLE, matchFields)
+            IPV4_CLASSIFIER_TABLE, matchFields)
 
     def getSFCIStageDstIP(self, sfci, stageCount, pathID):
         if stageCount<len(sfci.vnfiSequence):
@@ -190,13 +184,8 @@ class FRR(BaseApp):
             pathID = DIRECTION2_PATHID_OFFSET
         return pathID
 
-    def _getPrimaryPath(self, sfci, primaryPathID):
-        fpSet = sfci.forwardingPathSet
-        primaryFPDict = fpSet.primaryForwardingPath
-        if primaryPathID in primaryFPDict.keys():
-            primaryFP = primaryFPDict[primaryPathID]
-        else:
-            primaryFP = None
+    def _getPrimaryPath(self, sfci, pathID):
+        primaryFP = sfci.forwardingPathSet.primaryForwardingPath[pathID]
         return primaryFP
 
     def _getSrcDstServerInStage(self, stage):
@@ -261,12 +250,7 @@ class FRR(BaseApp):
         else:
             raise ValueError("Unknown backup path key:{0}".format(key))
 
-    def _parseBackupPathKey(self, key):
-        return dict((x, y) for x, y in key)
-
     def _getRepairSwitchIDAndFailureNodeIDAndNewPathIDFromKey(self, key):
-        # TODO: replace this function by _parseBackupPathKey() which return
-        # a dictionary in the future
         if key[0][0] == "failureNPoPID":
             # pSFC
             # ("failureNPoPID", (vnfLayerNum, bp, Xp)),
@@ -429,18 +413,11 @@ class FRR(BaseApp):
         else:
             raise ValueError("Unknown backup path key:{0}".format(key))
 
-    def _getBackupPaths(self, sfci, primaryPathID):
-        fpSet = sfci.forwardingPathSet
-        backupFPDict = fpSet.backupForwardingPath
-        if primaryPathID in backupFPDict.keys():
-            backupFP = backupFPDict[primaryPathID]
-        else:
-            backupFP = None
-        return backupFP
-        # return sfci.forwardingPathSet.backupForwardingPath[primaryPathID]
+    def _getBackupPaths(self,sfci,primaryPathID):
+        return sfci.forwardingPathSet.backupForwardingPath[primaryPathID]
 
-    def _getNextHopActionFields(self, sfci, direction,
-                                    currentDpid, nextDpid):
+    def _getNextHopActionFields(self, sfci, direction, currentDpid,
+            nextDpid):
         self.logger.debug("currentDpid:{0}, nextDpid:{1}".format(currentDpid,
             nextDpid))
         if nextDpid < SERVERID_OFFSET:
@@ -460,20 +437,20 @@ class FRR(BaseApp):
             srcMAC = self.L2.getMacByLocalPort(currentDpid, defaultOutPort)
         return (srcMAC, dstMAC, defaultOutPort)
 
-    def getServerByServerID(self, sfci, direction, serverID):
-        self.logger.debug("getServerByServerID:{0}".format(serverID))
+    def getServerByServerID(self, sfci, direction, nextDpid):
+        self.logger.debug("getServerByServerID")
         for vnf in sfci.vnfiSequence:
             for vnfi in vnf:
                 node = vnfi.node
-                if (isinstance(node, Server) 
-                        and node.getServerID() == serverID):
+                if isinstance(node,Server) and \
+                    node.getServerID() == nextDpid:
                     return node
         else:
             ingress = direction['ingress']
             egress = direction['egress']
-            if ingress.getServerID() == serverID:
+            if ingress.getServerID() == nextDpid:
                 return ingress
-            elif egress.getServerID() == serverID:
+            elif egress.getServerID() == nextDpid:
                 return egress
             else:
                 return None
@@ -483,7 +460,7 @@ class FRR(BaseApp):
         try:
             sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
-            self._delSFCIRoute(sfc, sfci)
+            self._delSFCIRoute(sfc,sfci)
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
             self.ibm.printUIBM()
         except Exception as ex:
@@ -542,10 +519,8 @@ class FRR(BaseApp):
         # Before delete this route, we must check whether other SFC use the same matchFields.
         count = self.ibm.countSFCRIB(dpid, matchFields)
         if count == 1: # If no, we can delete this route.
-            self._del_flow(datapath, match,
-                # table_id=IPV4_CLASSIFIER_TABLE,
-                table_id = MAIN_TABLE,
-                priority = 3)
+            self._del_flow(datapath, match, table_id=IPV4_CLASSIFIER_TABLE,
+                priority=3)
         else: # If yes, we can't delete this route.
             pass
         self.ibm.delSFCFlowTableEntry(sfcUUID)

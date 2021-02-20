@@ -9,11 +9,13 @@ import pytest
 from ryu.controller import dpset
 
 from sam.ryu.topoCollector import TopoCollector
+from sam.base.command import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
 
 logging.basicConfig(level=logging.INFO)
+
 
 class TestFRR(TestBase):
     def addSFCI2Classifier(self):
@@ -68,7 +70,7 @@ class TestFRR(TestBase):
 
         try:
             # In normal case, there should be a timeout error!
-            shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.208",
+            shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.135",
                 self.sfci.vnfiSequence[0][1].vnfiID)
             logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
@@ -80,7 +82,7 @@ class TestFRR(TestBase):
 
         try:
             # In normal case, there should be a timeout error!
-            shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.135",
+            shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.208",
                 self.sfci.vnfiSequence[0][2].vnfiID)
             logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
@@ -94,9 +96,9 @@ class TestFRR(TestBase):
         logging.info("teardown del SFCI from server")
         self.vC.uninstallVNF("t1", "123", "192.168.122.134",
                     self.sfci.vnfiSequence[0][0].vnfiID)
-        self.vC.uninstallVNF("t1", "123", "192.168.122.208",
-                    self.sfci.vnfiSequence[0][1].vnfiID)
         self.vC.uninstallVNF("t1", "123", "192.168.122.135",
+                    self.sfci.vnfiSequence[0][1].vnfiID)
+        self.vC.uninstallVNF("t1", "123", "192.168.122.208",
                     self.sfci.vnfiSequence[0][2].vnfiID)
         time.sleep(10)
         # Here is a bug
@@ -104,7 +106,18 @@ class TestFRR(TestBase):
             "Command: sudo docker stop name1"
             )
 
-
-
-
-
+    def sendHandleServerSoftwareFailureCmd(self):
+        logging.info("sendHandleServerFailureCmd")
+        server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
+        server.setServerID(SFF1_SERVERID)
+        server.setControlNICIP(SFF1_CONTROLNIC_IP)
+        server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
+        server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
+        msg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD,
+            Command(
+                cmdType=CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE,
+                cmdID=uuid.uuid1(),
+                attributes={"serverDown":[server]}
+            )
+        )
+        self._messageAgent.sendMsg(NETWORK_CONTROLLER_QUEUE, msg)

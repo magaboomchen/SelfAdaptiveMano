@@ -1,6 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+'''
+deprecated test
+needs modify forwarding path set format
+'''
+
 import sys
 import time
 import logging
@@ -54,13 +59,27 @@ class TestNotViaAndReMappingClass(TestFRR):
         self.killSFFController()
 
     def genUniDirection12BackupForwardingPathSet(self):
-        primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
-        mappingType = "NotVia"
+        # primaryForwardingPath = {1:[[10001,1,2,10002],[10002,2,1,10001]]}
+        primaryForwardingPath = {1:[[(0,10001),(0,1),(0,2),(0,10002)],[(1,10002),(1,2),(1,1),(1,10001)]]}
+        mappingType = MAPPING_TYPE_NOTVIA
         # {(srcID,dstID,pathID):forwardingPath}
+        # backupForwardingPath = {
+        #     1:{
+        #         (1,2,2):[[1,3,2]],
+        #         (2,1,3):[[2,3,1]]
+        #     }
+        # }
+        # To test notVia ryu app simplily, we set merge switch as the failure node
         backupForwardingPath = {
             1:{
-                (1,2,2):[[1,3,2]],
-                (2,1,3):[[2,3,1]]
+                (("failureLayerNodeID", (0,2)), ("repairMethod", "fast-reroute"),
+                    ("repairLayerSwitchID", (0, 1)),
+                    ("mergeLayerSwitchID", (0, 2)), ("newPathID", 2)):
+                        [[(0,1),(0,3),(0,10003)],[(1,10003),(1,3),(1,1),(1,10001)]],
+                (("failureLayerNodeID", (1,1)), ("repairMethod", "fast-reroute"),
+                    ("repairLayerSwitchID", (1, 2)),
+                    ("mergeLayerSwitchID", (1, 1)), ("newPathID", 3)):
+                        [[(1,2),(1,3),(1,1)]]
             }
         }
         return ForwardingPathSet(primaryForwardingPath, mappingType,

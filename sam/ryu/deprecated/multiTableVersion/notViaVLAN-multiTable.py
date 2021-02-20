@@ -8,7 +8,7 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.controller import dpset
-from ryu.controller import event
+from ryu.controller import event as ryuControllerEvent
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ipv4
@@ -21,7 +21,7 @@ from sam.ryu.conf.ryuConf import *
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
 from sam.ryu.baseApp import BaseApp
 from sam.ryu.conf.ryuConf import *
-from sam.ryu.nibMaintainer import NIBMaintainer
+from sam.ryu.notViaVLANIBMaintainer import NotViaVLANIBMaintainer
 from sam.ryu.frr import FRR
 from sam.base.messageAgent import *
 from sam.base.command import *
@@ -32,7 +32,7 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.serverController.serverManager.serverManager import *
 
 
-class NotVia(FRR):
+class NotViaVLAN(FRR):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
     _CONTEXTS = {
         'dpset': dpset.DPSet,
@@ -40,25 +40,25 @@ class NotVia(FRR):
         }
 
     def __init__(self, *args, **kwargs):
-        super(NotVia, self).__init__(*args, **kwargs)
-        self.logger.info("Initialize NotVia App !")
-        self.ibm = NIBMaintainer()
-        self.logger.info("NotVia App is running !")
+        super(NotViaVLAN, self).__init__(*args, **kwargs)
+        raise ValueError("Haven't refactor for new forwarding path set format")
+        self.logger.info("Initialize NotVia-VLAN App !")
+        self.ibm = NotViaVLANIBMaintainer()
+        self.logger.info("NotVia-VLAN App is running !")
 
     def _addSFCHandler(self, cmd):
-        self.logger.debug('*** NotVia App Received command= %s', cmd)
+        self.logger.debug('*** NotVia-VLAN App Received command= %s', cmd)
         try:
             sfc = cmd.attributes['sfc']
             self._addRoute2Classifier(sfc)
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
-                "Ryu app NotVia _addSFCHandler ")
+                "Ryu app NotVia-VLAN _addSFCHandler ")
             self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
 
-
     def _addSFCIHandler(self, cmd):
-        self.logger.debug('*** NotVia App Received command= %s', cmd)
+        self.logger.debug('*** NotVia-VLAN App Received command= %s', cmd)
         try:
             sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
@@ -66,7 +66,7 @@ class NotVia(FRR):
             self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
-                "Ryu app NotVia _addSFCIHandler ")
+                "Ryu app NotVia-VLAN _addSFCIHandler ")
             self._sendCmdRply(cmd.cmdID,CMD_STATE_FAIL)
 
     def _addSFCIRoute(self, sfc, sfci):
@@ -116,7 +116,7 @@ class NotVia(FRR):
         (srcMAC,dstMAC,defaultOutPort) = self._getNextHopActionFields(sfci,
             direction,currentDpid,nextDpid)
         if defaultOutPort == None:
-            raise ValueError("NotVia: can not get default out port")
+            raise ValueError("NotVia-VLAN: can not get default out port")
         self.logger.debug("Bucket1")
         self.logger.debug("srcMAC:{0},dstMAC:{1},outport:{2}".format(srcMAC,dstMAC,
             defaultOutPort))
@@ -233,7 +233,7 @@ class NotVia(FRR):
         (srcMAC,dstMAC,defaultOutPort) = self._getNextHopActionFields(sfci,
             direction, currentDpid, nextDpid)
         if defaultOutPort == None:
-            raise ValueError("NotVia: can not get default out port")
+            raise ValueError("NotVia-VLAN: can not get default out port")
         self.logger.debug("srcMAC:{0}, dstMAC:{1}, outport:{2}".format(srcMAC, dstMAC,
             defaultOutPort))
         actions = [

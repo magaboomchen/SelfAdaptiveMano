@@ -62,10 +62,10 @@ class Server(object):
         self._ifSet[ifName]["IP"] = controlNICIP
 
     def setControlNICMAC(self, controlNICMAC):
-        self._serverControlNICMAC = controlNICMAC
+        self._serverControlNICMAC = controlNICMAC.lower()
 
     def setDataPathNICMAC(self, datapathNICMAC):
-        self._serverDatapathNICMAC = datapathNICMAC
+        self._serverDatapathNICMAC = datapathNICMAC.lower()
 
     def getServerID(self):
         return self._serverID
@@ -74,10 +74,11 @@ class Server(object):
         return self._serverType
 
     def updateControlNICMAC(self):
-        self._serverControlNICMAC = self._getHwAddrInKernel(self._controlIfName)
+        self._serverControlNICMAC \
+            = self._getHwAddrInKernel(self._controlIfName).lower()
 
     def updateDataPathNICMAC(self):
-        self._serverDatapathNICMAC = self._getHwAddrInDPDK()
+        self._serverDatapathNICMAC = self._getHwAddrInDPDK().lower()
 
     def updateIfSet(self):
         # update all interface information controlled by linux kernel
@@ -86,7 +87,7 @@ class Server(object):
             self._ifSet[ifName] = {}
             # get mac address
             mac = self._getHwAddrInKernel(ifName)
-            self._ifSet[ifName]["MAC"] = mac
+            self._ifSet[ifName]["MAC"] = mac.lower()
             # get ip addresses
             ipList = self._getIPList(ifName)
             self._ifSet[ifName]["IP"] = ipList
@@ -99,10 +100,10 @@ class Server(object):
             logging.info('{key}:{value}'.format(key = key, value = value))
 
     def getControlNICMac(self):
-        return self._serverControlNICMAC
+        return self._serverControlNICMAC.lower()
 
     def getDatapathNICMac(self):
-        return self._serverDatapathNICMAC
+        return self._serverDatapathNICMAC.lower()
 
     def getControlNICIP(self):
         ifName = self._controlIfName
@@ -139,7 +140,7 @@ class Server(object):
 
     def _getHwAddrInKernel(self, ifName):
         ethMac = get_mac_address(interface=ifName)
-        return ethMac
+        return ethMac.lower()
 
     def _getIPList(self, ifName):
         addresses = [i['addr'] for i in ifaddresses(ifName).setdefault(AF_INET,[{'addr':'No IP addr'}])]

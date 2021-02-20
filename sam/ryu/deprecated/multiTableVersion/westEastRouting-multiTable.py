@@ -4,7 +4,6 @@
 import logging
 import copy
 
-import networkx as nx
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
@@ -17,12 +16,11 @@ from ryu.lib.packet import arp
 from ryu.lib.packet import ether_types
 from ryu.topology import event, switches 
 from ryu.controller import dpset
-from ryu.base.app_manager import *
+import networkx as nx
 
 from sam.ryu.conf.ryuConf import *
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
 from sam.ryu.baseApp import BaseApp
-
 
 class WestEastRouting(BaseApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -36,8 +34,6 @@ class WestEastRouting(BaseApp):
         self.dpset = kwargs['dpset']
         self.topoCollector = kwargs['TopoCollector']
         _EVENTS = [TopologyChangeEvent]
-
-        self.L2 = lookup_service_brick('L2')
 
         self._westEastRIB = {}  # {dpid:{matchFields:inst,matchFields:inst}}, store current rib entry
         self._cacheWestEastRIB = {}  # store new tmp rib entry
@@ -123,12 +119,11 @@ class WestEastRouting(BaseApp):
             actions = [
                 parser.OFPActionDecNwTtl(),
                 parser.OFPActionSetField(eth_src=link.src.hw_addr),
-                parser.OFPActionSetField(eth_dst=link.dst.hw_addr),
-                parser.OFPActionOutput(out_port)
+                parser.OFPActionSetField(eth_dst=link.dst.hw_addr)
             ]
             inst = [
                 parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
-                # parser.OFPInstructionGotoTable(table_id=L2_TABLE)
+                parser.OFPInstructionGotoTable(table_id=L2_TABLE)
             ]
 
             if not self._cacheWestEastRIB.has_key(srcDpid):
@@ -157,7 +152,7 @@ class WestEastRouting(BaseApp):
                     match = ofproto_v1_3_parser.OFPMatch(
                         **matchFields
                     )
-                    self._add_flow(datapath, match, inst, table_id=MAIN_TABLE, priority=1)
+                    self._add_flow(datapath, match, inst, table_id=WEST_EAST_TABLE, priority=1)
             else:
                 self.logger.debug("old table set has this dpid && new tables set has this dpid")
                 for matchFieldsJson in self._cacheWestEastRIB[dpid].iterkeys():
@@ -167,7 +162,7 @@ class WestEastRouting(BaseApp):
                         match = ofproto_v1_3_parser.OFPMatch(
                             **matchFields
                         )
-                        self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=1)
+                        self._del_flow(datapath, match, table_id=WEST_EAST_TABLE, priority=1)
                     else:
                         self.logger.debug("new entry is not in old rib")
                     self._westEastRIB[dpid][matchFieldsJson] = self._cacheWestEastRIB[dpid][matchFieldsJson]
@@ -176,7 +171,7 @@ class WestEastRouting(BaseApp):
                         **matchFields
                     )
                     inst = self._cacheWestEastRIB[dpid][matchFieldsJson]
-                    self._add_flow(datapath, match, inst, table_id=MAIN_TABLE, priority=1)
+                    self._add_flow(datapath, match, inst, table_id=WEST_EAST_TABLE, priority=1)
 
                 westEastRIBofADpidTmp = copy.copy(self._westEastRIB[dpid])
                 for matchFieldsJson in westEastRIBofADpidTmp.iterkeys():
@@ -189,7 +184,7 @@ class WestEastRouting(BaseApp):
                         match = ofproto_v1_3_parser.OFPMatch(
                             **matchFields
                         )
-                        self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=1)
+                        self._del_flow(datapath, match, table_id=WEST_EAST_TABLE, priority=1)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def _switchFeaturesHandler(self, ev):
@@ -210,15 +205,15 @@ class WestEastRouting(BaseApp):
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
         self.logger.debug("_switch_features_handler: Add_flow")
-        self._add_flow(datapath, match, inst, table_id=MAIN_TABLE, priority=0)
+        self._add_flow(datapath, match, inst, table_id=WEST_EAST_TABLE, priority=0)
 
         # Initialize switch
-        # match = parser.OFPMatch(
-        #     eth_type=ether_types.ETH_TYPE_IP,ipv4_dst="2.2.0.0/16"
-        # )
-        # instructions = [parser.OFPInstructionGotoTable(table_id=WEST_EAST_TABLE)]
-        # self.logger.debug("_switch_features_handler: Add_flow")
-        # self._add_flow(datapath,match,instructions,table_id=IPV4_CLASSIFIER_TABLE, priority=2)
+        match = parser.OFPMatch(
+            eth_type=ether_types.ETH_TYPE_IP,ipv4_dst="2.2.0.0/16"
+        )
+        instructions = [parser.OFPInstructionGotoTable(table_id=WEST_EAST_TABLE)]
+        self.logger.debug("_switch_features_handler: Add_flow")
+        self._add_flow(datapath,match,instructions,table_id=IPV4_CLASSIFIER_TABLE, priority=2)
         self._westEastRIB[datapath.id] = {}
         self._switchesLANArpTable[datapath.id] = {}
 
@@ -243,7 +238,7 @@ class WestEastRouting(BaseApp):
                 self.logger.warning("Convert Single Target Shortest Path to Shortest Path Tree failed.")
                 continue
             self._genATargeSwitchWestEastRIB(spt, dpid)
-        # self._updateAllSwitchWestEastRIB()
+        self._updateAllSwitchWestEastRIB()
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
@@ -268,7 +263,7 @@ class WestEastRouting(BaseApp):
         dpid = datapath.id
         self.logger.debug("westEastRouting._packet_in_handler, dpid:%d, in_port:%d" %(dpid, in_port) )
 
-        if msg.table_id == MAIN_TABLE:
+        if msg.table_id == WEST_EAST_TABLE:
             if eth.ethertype == ether_types.ETH_TYPE_IP:
                 ipHeader = pkt.get_protocol(ipv4.ipv4)
                 self.logger.debug("WestEast app get an IPv4 packet, dst ip:%s" %(ipHeader.dst))
@@ -291,7 +286,9 @@ class WestEastRouting(BaseApp):
                             in_port=ofproto_v1_3.OFPP_CONTROLLER,
                             actions=actions, data=data)
                         datapath.send_msg(out)
-            elif eth.ethertype == ether_types.ETH_TYPE_ARP:
+
+        elif msg.table_id == L2_TABLE:
+            if eth.ethertype == ether_types.ETH_TYPE_ARP:
                 self.logger.debug("WestEast app get an arp frame")
                 arpHeader = pkt.get_protocol(arp.arp)
 
@@ -314,14 +311,13 @@ class WestEastRouting(BaseApp):
                         actions = [
                             parser.OFPActionDecNwTtl(),
                             parser.OFPActionSetField(eth_src=in_port_info.hw_addr),
-                            parser.OFPActionSetField(eth_dst=mac),
-                            parser.OFPActionOutput(in_port)
+                            parser.OFPActionSetField(eth_dst=mac)
                         ]
                         inst = [
                             parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
-                            # parser.OFPInstructionGotoTable(table_id=L2_TABLE)
+                            parser.OFPInstructionGotoTable(table_id=L2_TABLE)
                         ]
 
                         self.logger.debug("_packet_in_handler: Add_flow")
-                        self._add_flow(datapath, match, inst, table_id=MAIN_TABLE, priority=1)
+                        self._add_flow(datapath, match, inst, table_id=WEST_EAST_TABLE, priority=1)
                         self._LANRIB[self._dict2OrderJson(matchFields)] = inst

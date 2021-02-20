@@ -1,14 +1,18 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.ryu.uibMaintainer import UIBMaintainer
+import math
+
+from sam.ryu.ribMaintainerBase import RIBMaintainerBase
 
 # TODO: test
 
 OVS_MPLSLabel_OFFSET = 0
+MIN_MPLS_LABEL = 0
+MAX_MPLS_LABEL = math.pow(2,20)
 
 
-class NotViaMPLSIBMaintainer(UIBMaintainer):
+class NotViaMPLSIBMaintainer(RIBMaintainerBase):
     def __init__(self, *args, **kwargs):
         super(NotViaMPLSIBMaintainer, self).__init__(*args, **kwargs)
         self.groupIDSets = {}
@@ -18,6 +22,8 @@ class NotViaMPLSIBMaintainer(UIBMaintainer):
 
     def assignMPLSLabel(self, sfciID, pathID):
         newMPLSLabel = self.genAvailableMiniNum4List(self.mplsLabelList)
+        if newMPLSLabel < MIN_MPLS_LABEL or newMPLSLabel > MAX_MPLS_LABEL:
+            raise ValueError("Invalid mpls label:{0}".format(newMPLSLabel))
         self.mplsLabelList.append(newMPLSLabel)
         self.labelAndSFCIMapping[(sfciID,pathID)] = newMPLSLabel
         return newMPLSLabel + OVS_MPLSLabel_OFFSET

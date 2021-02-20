@@ -2,8 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 """
-3 switches topology
-test UFFR/NotVia/ReMapping
+3 switches triangle topology which is same to test2's topology
+test UFFR/NotVia-PSFC/End-to-endProtection
 """
 
 import re
@@ -26,6 +26,7 @@ from functools import partial
 
 from sam.base.messageAgent import *
 from sam.base.command import *
+from sam.test.FRR.test3InBoundTrafficSendRecv import *
 
 # KVM Bridge
 INT_TO_CLASSIFIER = 'eth1'
@@ -44,11 +45,21 @@ WEBSITE1_GATEWAY_IP = "2.2.0.33"
 INGRESS_IP1 = "1.1.1.2"
 INGRESS_IP1_PREFIX = 8
 INGRESS_MAC1 = None
+INGRESS_INTERFACE_NAME = None
 
 # Gateway
 GATEWAY1_OUTBOUND_IP = "1.1.1.1"
 GATEWAY1_OUTBOUND_IP_prefix = 8
 GATEWAY1_OUTBOUND_MAC =  None
+
+# test mode
+MODE_UFRR = "0"
+MODE_NOTVIA_REMAPPING = "1"
+MODE_NOTVIA_PSFC = "2"
+MODE_END2END_PROTECTION = "3"
+MODE_DIRECT_REMAPPING = "4"
+MODE_SEND_RECV_INBOUND_TRAFFIC = "5"
+MODE_START_STOP_SWITCH = "6"
 
 
 class TriangleTopo( Topo ):
@@ -135,11 +146,14 @@ class NetConfigurator(object):
         h1 = self._net.get('h1')
         # ip and mac address
         h1.setIP(INGRESS_IP1, prefixLen=INGRESS_IP1_PREFIX)
+        global INGRESS_MAC1
         INGRESS_MAC1 = h1.MAC()
         # default route
         s1 = self._net.get('s1')
         gateway1Intf = s1.intf('s1-eth1')
         defInt = h1.defaultIntf()
+        global INGRESS_INTERFACE_NAME
+        INGRESS_INTERFACE_NAME = str(defInt.name)
         defRoute = "dev " + str(defInt.name) + " via " + GATEWAY1_OUTBOUND_IP
         h1.setDefaultRoute( defRoute )
 
@@ -147,6 +161,7 @@ class NetConfigurator(object):
         h2 = self._net.get('h2')
         # ip and mac address
         h2.setIP(WEBSITE1_IP, prefixLen=WEBSITE1_IP_PREFIX)
+        global WEBSITE1_MAC
         WEBSITE1_MAC = h2.MAC()
         # default route
         defInt = h2.defaultIntf()
@@ -207,25 +222,69 @@ class ManoTester(object):
 
     def startTest(self):
         while True:
-            print(
-                "Mode 0: UFRR\n"
-                "Mode 1: NotVia + Remapping\n"
-                "Mode 2: Direct remapping\n"
-                "cli: start interactive cli\n"
-                "quit: to quit"
-                )
-            print("Please input the mode number:")
+            print("\nPlease input the mode number: "
+                    "(Input help to check mode number)")
             self.mode = raw_input()
-            if self.mode == "0" or self.mode == "1":
+            if self.mode in [
+                MODE_UFRR,
+                MODE_NOTVIA_REMAPPING,
+                MODE_NOTVIA_PSFC,
+                MODE_END2END_PROTECTION
+            ]:
                 self.testHandler()
-            elif self.mode == "2":
+            elif self.mode == MODE_DIRECT_REMAPPING:
                 self.sendReMappingCmd()
+            elif self.mode == MODE_SEND_RECV_INBOUND_TRAFFIC:
+                self.sendRecvInBoundTraffic()
+            elif self.mode == MODE_START_STOP_SWITCH:
+                print("Please input start/stop switchName")
+                switchCmd = raw_input().strip('\n')
+                print(switchCmd)
+                action = switchCmd.split(' ')[0]
+                switchName = switchCmd.split(' ')[1]
+                self.startStopSwitch(action, switchName)
             elif self.mode == "cli":
                 CLI(self.net)
             elif self.mode == "quit":
                 break
+            elif self.mode == "help":
+                print(
+                        "\n* Mode Number list *\n"
+                        "Mode {0}: UFRR\n"
+                        "Mode {1}: NotVia + Remapping\n"
+                        "Mode {2}: NotVia + PSFC\n"
+                        "Mode {3}: End-to-end Protection\n"
+                        "Mode {4}: Direct Remapping\n"
+                        "Mode {5}: send and recv inbound traffic\n"
+                        "Mode {6}: stop switch\n"
+                        "cli: start interactive cli\n"
+                        "quit: to quit\n".format(
+                            MODE_UFRR,
+                            MODE_NOTVIA_REMAPPING,
+                            MODE_NOTVIA_PSFC,
+                            MODE_END2END_PROTECTION,
+                            MODE_DIRECT_REMAPPING,
+                            MODE_SEND_RECV_INBOUND_TRAFFIC,
+                            MODE_START_STOP_SWITCH
+                        )
+                    )
+                raw_input()
             else:
+                print("Your input is {0}".format(self.mode))
                 continue
+
+    def startStopSwitch(self, action, switchName):
+        print("switchName:{0}".format(switchName))
+        try:
+            switch = self.net.get(switchName)
+            if action == 'start':
+                switch.start()
+            elif action == 'stop':
+                switch.stop()
+            else:
+                print("Unknown action")
+        except:
+            print("Get an error")
 
     def testHandler(self):
         h1 = self.net.get('h1')
@@ -242,7 +301,7 @@ class ManoTester(object):
         time.sleep(self.SLEEP_TIME)
         s2 = self.net.get('s2')
         self.disableDpdkServer(s2, 'eth2')
-        if self.mode == "1":
+        if self.mode == MODE_NOTVIA_REMAPPING:
             self.sendReMappingCmd()
         time.sleep(self.SLEEP_TIME * 2)
         self.endMeasureE2EDelay(h1, h2)
@@ -339,8 +398,32 @@ class ManoTester(object):
 
     def sendReMappingCmd(self):
         print("sendReMappingCmd")
-        msg = SAMMessage(MSG_TYPE_TESTER_CMD, Command(cmdType=CMD_TYPE_TESTER_REMAP_SFCI, cmdID=uuid.uuid1()))
+        msg = SAMMessage(MSG_TYPE_TESTER_CMD, Command(
+            cmdType=CMD_TYPE_TESTER_REMAP_SFCI, cmdID=uuid.uuid1()))
         self._messageAgent.sendMsg(MININET_TESTER_QUEUE, msg)
+
+    def sendRecvInBoundTraffic(self):
+        try:
+            print("sendRecvInBoundTraffic")
+            print("iface:{0}, dmac:{1}, sip:{2}, dip:{3}".format(
+                INGRESS_INTERFACE_NAME, INGRESS_MAC1, INGRESS_IP1, WEBSITE1_IP
+            ))
+            h1 = self.net.get('h1')
+            h1.cmdPrint(
+                "sudo python ./test3InBoundTrafficSendRecv.py"
+                " -i {0} -dmac {1}".format(INGRESS_INTERFACE_NAME, INGRESS_MAC1))
+            # tsr = Test3InBoundTrafficSendRecv(iface=INGRESS_INTERFACE_NAME,
+            #     dmac=INGRESS_MAC1, sip=INGRESS_IP1, dip=WEBSITE1_IP)
+            # tsr.start()
+        except KeyboardInterrupt:
+            print("stop send recv!")
+            h1.popen('killall test3InBoundTrafficSendRecv')
+            # We can't kill test3InBoundTrafficSendRecv python script
+            # However we find that entering into CLI
+            # can delete the python script
+            CLI(self.net)
+        except:
+            print('Unknown interupt reason')
 
 
 if __name__ == '__main__':
@@ -373,3 +456,4 @@ if __name__ == '__main__':
 topos = {
     'TriangleTopo': TriangleTopo
 }
+
