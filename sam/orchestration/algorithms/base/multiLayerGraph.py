@@ -71,17 +71,17 @@ class MultiLayerGraph(object):
                 raise ValueError("Invalid link type:{0}".format(type(link)))
             self.abandonLinkIDList.append(linkID)
 
-    def trans2MLG(self):
+    def trans2MLG(self, capacityAwareFlag=True):
         gList = []
         for stage in range(self.sfcLength+1):
-            g = self.genOneLayer(stage)
+            g = self.genOneLayer(stage, capacityAwareFlag)
             gList.append(g)
 
         mLG = nx.compose_all(gList)
         self._connectLayersInMLG(mLG)
         self.multiLayerGraph = mLG
 
-    def genOneLayer(self, stage):
+    def genOneLayer(self, stage, capacityAwareFlag=True):
         G = nx.DiGraph()
         edgeList = []
 
@@ -103,13 +103,13 @@ class MultiLayerGraph(object):
             if (self._dib.isServerID(link.srcID) 
                     or self._dib.isServerID(link.dstID)):
                 continue
-            if (self._dib.hasEnoughLinkResource(link, expectedBandwidth,
+            if ((self._dib.hasEnoughLinkResource(link, expectedBandwidth,
                     self.zoneName) 
                 and self._dib.hasEnoughSwitchResource(link.srcID,
                     expectedTCAM, self.zoneName)
                 and self._dib.hasEnoughSwitchResource(link.dstID,
                     expectedTCAM, self.zoneName)
-                ):
+                ) or (  not capacityAwareFlag  )):
                 if not self._isAbandonLink(link):
                     edgeList.append((srcLayerNodeID, dstLayerNodeID, weight))
             else:
@@ -124,7 +124,6 @@ class MultiLayerGraph(object):
         # self.logger.debug("edges number:{0}".format(len(G.edges)))
 
         connectionFlag = nx.is_weakly_connected(copy.deepcopy(G))
-
         if connectionFlag == False:
             self.logger.debug("is_connected:{0}".format(connectionFlag))
             # nx.draw(G, with_labels=True)

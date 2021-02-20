@@ -42,24 +42,33 @@ class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
             sfc = self.request.attributes['sfc']
             c = sfc.getSFCLength()
 
-            mlg = MultiLayerGraph()
-            mlg.loadInstance4dibAndRequest(self._dib, 
-                self.request, WEIGHT_TYPE_DELAY_MODEL)
-            mlg.trans2MLG()
+            capacityAwareFlag = True
+            while True:
+                try:
+                    mlg = MultiLayerGraph()
+                    mlg.loadInstance4dibAndRequest(self._dib, 
+                        self.request, WEIGHT_TYPE_DELAY_MODEL)
+                    mlg.trans2MLG(capacityAwareFlag)
 
-            ingSwitchID = self.requestIngSwitchID[rIndex]
-            egSwitchID = self.requestEgSwitchID[rIndex]
+                    ingSwitchID = self.requestIngSwitchID[rIndex]
+                    egSwitchID = self.requestEgSwitchID[rIndex]
 
-            try:
-                path = mlg.getPath(0, ingSwitchID, c, egSwitchID)
-                path = self._selectNPoPNodeAndServers(path, rIndex)
-                self.logger.debug("path:{0}".format(path))
-            except Exception as ex:
-                ExceptionProcessor(self.logger).logException(ex)
-                self.logger.warning(
-                    "Can't find valid primary path for request {0}".format(
-                        rIndex))
-                break
+                    path = mlg.getPath(0, ingSwitchID, c, egSwitchID)
+                    path = self._selectNPoPNodeAndServers(path, rIndex)
+                    self.logger.debug("path:{0}".format(path))
+                    break
+                except Exception as ex:
+                    ExceptionProcessor(self.logger).logException(ex)
+                    self.logger.warning(
+                        "Can't find valid primary path for"
+                        "request {0} under resource constraint".format(rIndex))
+                    if capacityAwareFlag == True:
+                        capacityAwareFlag = False
+                    else:
+                        raise ValueError(
+                            "Can't find valid primary path for"
+                            "request {0} even without resource capacity"
+                            "constraint".format(rIndex))
 
             primaryPathDictCopy = copy.deepcopy(self.primaryPathDict)
             primaryPathDictCopy[rIndex] = path

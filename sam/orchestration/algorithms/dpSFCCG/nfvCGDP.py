@@ -504,6 +504,11 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             elif self.cgModel.status == GRB.INFEASIBLE:
                 self._tackleInfeasibleModel()
                 self._saveSolution()
+            elif self.cgModel.status in (GRB.INF_OR_UNBD, GRB.UNBOUNDED):
+                self.logger.error('The relaxed model cannot be solved '
+                    'because it is unbounded')
+                raise ValueError('The relaxed model cannot be solved '
+                    'because it is unbounded')
             else:
                 self.logger.warning("unknown model status:{0}".format(self.cgModel.status))
                 raise ValueError("Partial LP unknown model status")
@@ -525,6 +530,8 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         self.logger.debug('The model is infeasible; relaxing the constraints')
         orignumvars = self.cgModel.NumVars
         self.cgModel.feasRelaxS(0, False, False, True)
+        # IntegralityFocus setting
+        self.cgModel.setParam('IntegralityFocus', 1)
         self.cgModel.optimize()
         if self.cgModel.status in (GRB.INF_OR_UNBD, GRB.INFEASIBLE, GRB.UNBOUNDED):
             self.logger.error('The relaxed model cannot be solved '
@@ -651,7 +658,8 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             primaryPathSolutions = self.modelYVar.select(rIndex,'*','*','*',
                 '*', 'p')
             for solution in primaryPathSolutions:
-                if solution.X == 1:
+                # if solution.X == 1:
+                if solution.X >= 1 - (1e-3):
                     (ingSwitchID, egSwitchID, vnfSeqStr, 
                         pathIndex) = self._getSolutionVarIndexTuple(solution)
                     sdc = (ingSwitchID, egSwitchID, vnfSeqStr)
@@ -671,7 +679,8 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             backupPathSolutions = self.modelYVar.select(rIndex,'*','*','*',
                 '*', 'b')
             for solution in backupPathSolutions:
-                if solution.X == 1:
+                # if solution.X == 1:
+                if solution.X >= 1 - (1e-3):
                     (ingSwitchID, egSwitchID, vnfSeqStr, 
                         pathIndex) = self._getSolutionVarIndexTuple(solution)
                     sdc = (ingSwitchID, egSwitchID, vnfSeqStr)

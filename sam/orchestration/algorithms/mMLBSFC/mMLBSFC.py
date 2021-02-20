@@ -211,17 +211,6 @@ class MMLBSFC(MMLPSFC):
             sfc = self.request.attributes['sfc']
             c = sfc.getSFCLength()
 
-            mlg = MultiLayerGraph()
-            mlg.loadInstance4dibAndRequest(self._dib, 
-                self.request, WEIGHT_TYPE_DELAY_MODEL)
-            if self.failureType == "node":
-                mlg.addAbandonNodes(self.failureElementList)
-            elif self.failureType == "link":
-                mlg.addAbandonLinks(self.failureElementList)
-            else:
-                pass
-            mlg.trans2MLG()
-
             fp = self._getPrimaryForwardingPath(rIndex)
             try:
                 if not self._hasRepairSwitch(fp, self.failureElementList):
@@ -233,21 +222,41 @@ class MMLBSFC(MMLPSFC):
                 continue
             egSwitchID = self.requestEgSwitchID[rIndex]
 
-            try:
-                path = mlg.getPath(layerNum, repairSwitchID, c, egSwitchID)
-                path = self._selectNPoPNodeAndServers(path, rIndex)
-                self.logger.debug("path:{0}".format(path))
-            except Exception as ex:
-                ExceptionProcessor(self.logger).logException(ex)
-                self.logger.warning(
-                    "Can't find valid backup path for request {0}".format(
-                        rIndex))
-                self.logger.warning("primary forwarding path: {0}".format(fp))
-                self.logger.warning("failureElementList:{0}".format(
-                    self.failureElementList))
-                self.logger.warning("repairSwitchID: {0}".format(
-                    repairSwitchID))
-                break
+            capacityAwareFlag = True
+            while True:
+                try:
+                    mlg = MultiLayerGraph()
+                    mlg.loadInstance4dibAndRequest(self._dib, 
+                        self.request, WEIGHT_TYPE_DELAY_MODEL)
+                    if self.failureType == "node":
+                        mlg.addAbandonNodes(self.failureElementList)
+                    elif self.failureType == "link":
+                        mlg.addAbandonLinks(self.failureElementList)
+                    else:
+                        pass
+                    mlg.trans2MLG(capacityAwareFlag)
+                    path = mlg.getPath(layerNum, repairSwitchID, c, egSwitchID)
+                    path = self._selectNPoPNodeAndServers(path, rIndex)
+                    self.logger.debug("path:{0}".format(path))
+                    break
+                except Exception as ex:
+                    ExceptionProcessor(self.logger).logException(ex)
+                    self.logger.warning(
+                        "Can't find valid backup path for request {0}"
+                        " under resource capacity constraints".format(
+                            rIndex))
+                    self.logger.warning("primary forwarding path: {0}".format(fp))
+                    self.logger.warning("failureElementList:{0}".format(
+                        self.failureElementList))
+                    self.logger.warning("repairSwitchID: {0}".format(
+                        repairSwitchID))
+                    if capacityAwareFlag == True:
+                        capacityAwareFlag = False
+                    else:
+                        raise ValueError(
+                            "Can't find valid backup path for"
+                            "request {0} even without resource capacity"
+                            "constraint".format(rIndex))
 
             uFPSDict = copy.deepcopy(self.unaffectedForwardingPathSegDict)
             forwardingPathSetDict = self._genForwardingPathSet4Scenario(

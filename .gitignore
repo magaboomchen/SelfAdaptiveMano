@@ -35,6 +35,8 @@
 
 # Data
 *.pcap
+*.lp
+*.ilp
 
 # Log
 log/**
