@@ -473,7 +473,7 @@ class FRR(BaseApp):
             for entry in entrys:
                 datapath = self.dpset.get(int(str(dpid), 0))
                 parser = datapath.ofproto_parser
-                matchFields = entry["match"]
+                matchFields = entry["matchFields"]
                 match = parser.OFPMatch(**matchFields)
                 tableID = entry["tableID"]
                 self._del_flow(datapath, match, table_id=tableID, priority=1)

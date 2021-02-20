@@ -58,7 +58,7 @@ class NotViaNATAndPSFC(FRR):
             " command={0}".format(cmd))
         try:
             serverDownList = cmd.attributes['serverDown']
-            self._shutdownServersPort(serverDownList)
+            self._tackleServerFailure(serverDownList)
             # TODO: process serverUp in the future
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
@@ -66,7 +66,7 @@ class NotViaNATAndPSFC(FRR):
         finally:
             pass
 
-    def _shutdownServersPort(self, serverDownList):
+    def _tackleServerFailure(self, serverDownList):
         for server in serverDownList:
             serverID = server.getServerID()
             self._pSFCHandleNodeFailure(serverID)
@@ -156,6 +156,7 @@ class NotViaNATAndPSFC(FRR):
             sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
             self._addSFCIRoute(sfc, sfci)
+            self.pSFCIbm.addSFCI(sfci)
             self._sendCmdRply(cmd.cmdID, CMD_STATE_SUCCESSFUL)
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
@@ -449,7 +450,6 @@ class NotViaNATAndPSFC(FRR):
         primaryPathID = self._getPathID(direction["ID"])
         primaryFP = self._getPrimaryPath(sfci, primaryPathID)
         backupFPs = self._getBackupPaths(sfci, primaryPathID)
-        self.pSFCIbm.addSFCI(sfci)
         for key, backupPath in backupFPs.items():
             if not self._isPSFCBackupPath(key):
                 continue

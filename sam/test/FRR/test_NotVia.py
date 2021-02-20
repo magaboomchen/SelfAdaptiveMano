@@ -79,6 +79,13 @@ class TestNotViaClass(TestFRR):
             "Then press any key to continue!")
         raw_input()
 
+        self._deploySFC()
+        self._deploySFCI()
+
+        logging.info("Press any key to quit!")
+        raw_input()
+
+    def _deploySFC(self):
         # exercise: mapping SFC
         self.addSFCCmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,
@@ -91,6 +98,7 @@ class TestNotViaClass(TestFRR):
         assert cmdRply.cmdID == self.addSFCCmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
+    def _deploySFCI(self):
         # exercise: mapping SFCI
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,
@@ -102,6 +110,3 @@ class TestNotViaClass(TestFRR):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-        logging.info("Press any key to quit!")
-        raw_input()

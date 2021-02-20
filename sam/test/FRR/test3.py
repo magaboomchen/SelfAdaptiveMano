@@ -59,7 +59,7 @@ MODE_NOTVIA_PSFC = "2"
 MODE_END2END_PROTECTION = "3"
 MODE_DIRECT_REMAPPING = "4"
 MODE_SEND_RECV_INBOUND_TRAFFIC = "5"
-MODE_STOP_S2 = "6"
+MODE_START_STOP_SWITCH = "6"
 
 
 class TriangleTopo( Topo ):
@@ -222,26 +222,8 @@ class ManoTester(object):
 
     def startTest(self):
         while True:
-            print(
-                    "Mode {0}: UFRR\n"
-                    "Mode {1}: NotVia + Remapping\n"
-                    "Mode {2}: NotVia + PSFC\n"
-                    "Mode {3}: End-to-end Protection\n"
-                    "Mode {4}: Direct Remapping\n"
-                    "Mode {5}: send and recv inbound traffic\n"
-                    "Mode {6}: stop s2\n"
-                    "cli: start interactive cli\n"
-                    "quit: to quit".format(
-                        MODE_UFRR,
-                        MODE_NOTVIA_REMAPPING,
-                        MODE_NOTVIA_PSFC,
-                        MODE_END2END_PROTECTION,
-                        MODE_DIRECT_REMAPPING,
-                        MODE_SEND_RECV_INBOUND_TRAFFIC,
-                        MODE_STOP_S2
-                    )
-                )
-            print("Please input the mode number:")
+            print("\nPlease input the mode number: "
+                    "(Input help to check mode number)")
             self.mode = raw_input()
             if self.mode in [
                 MODE_UFRR,
@@ -254,19 +236,55 @@ class ManoTester(object):
                 self.sendReMappingCmd()
             elif self.mode == MODE_SEND_RECV_INBOUND_TRAFFIC:
                 self.sendRecvInBoundTraffic()
-            elif self.mode == MODE_STOP_S2:
-                self.stopS2()
+            elif self.mode == MODE_START_STOP_SWITCH:
+                print("Please input start/stop switchName")
+                switchCmd = raw_input().strip('\n')
+                print(switchCmd)
+                action = switchCmd.split(' ')[0]
+                switchName = switchCmd.split(' ')[1]
+                self.startStopSwitch(action, switchName)
             elif self.mode == "cli":
                 CLI(self.net)
             elif self.mode == "quit":
                 break
+            elif self.mode == "help":
+                print(
+                        "\n* Mode Number list *\n"
+                        "Mode {0}: UFRR\n"
+                        "Mode {1}: NotVia + Remapping\n"
+                        "Mode {2}: NotVia + PSFC\n"
+                        "Mode {3}: End-to-end Protection\n"
+                        "Mode {4}: Direct Remapping\n"
+                        "Mode {5}: send and recv inbound traffic\n"
+                        "Mode {6}: stop switch\n"
+                        "cli: start interactive cli\n"
+                        "quit: to quit\n".format(
+                            MODE_UFRR,
+                            MODE_NOTVIA_REMAPPING,
+                            MODE_NOTVIA_PSFC,
+                            MODE_END2END_PROTECTION,
+                            MODE_DIRECT_REMAPPING,
+                            MODE_SEND_RECV_INBOUND_TRAFFIC,
+                            MODE_START_STOP_SWITCH
+                        )
+                    )
+                raw_input()
             else:
                 print("Your input is {0}".format(self.mode))
                 continue
 
-    def stopS2(self):
-        s2 = self.net.get('s2')
-        s2.stop()
+    def startStopSwitch(self, action, switchName):
+        print("switchName:{0}".format(switchName))
+        try:
+            switch = self.net.get(switchName)
+            if action == 'start':
+                switch.start()
+            elif action == 'stop':
+                switch.stop()
+            else:
+                print("Unknown action")
+        except:
+            print("Get an error")
 
     def testHandler(self):
         h1 = self.net.get('h1')

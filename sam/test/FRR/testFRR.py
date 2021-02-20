@@ -106,7 +106,7 @@ class TestFRR(TestBase):
             "Command: sudo docker stop name1"
             )
 
-    def sendHandleServerFailureCmd(self):
+    def sendHandleServerSoftwareFailureCmd(self):
         logging.info("sendHandleServerFailureCmd")
         server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
         server.setServerID(SFF1_SERVERID)

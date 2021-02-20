@@ -29,8 +29,6 @@ class TestPSFCClass(TestFRR):
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genUniDirectionSFC(classifier)
         self.sfci = self.genUniDirection12BackupSFCI()
-        # self.sfciID = self.sfci.sfciID
-        # self.vnfiSequence = self.sfci.vnfiSequence
 
         self.mediator = MediatorStub()
         self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfc)
@@ -76,6 +74,25 @@ class TestPSFCClass(TestFRR):
             "Then press any key to continue!")
         raw_input()
 
+        self._deploySFC()
+        self._deploySFCI()
+
+        logging.info("Please input any key to test "
+            "server software failure\n"
+            "After the test, "
+            "Press any key to quit!")
+        raw_input()
+        self.sendHandleServerSoftwareFailureCmd()
+
+        logging.info("Please input '6',"
+            "then input 'stop s2' to stop switch s2\n"
+            "After the test, Press any key to quit!")
+        raw_input()
+
+        logging.info("Press any key to quit!")
+        raw_input()
+
+    def _deploySFC(self):
         # exercise: mapping SFC
         self.addSFCCmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,
@@ -88,6 +105,7 @@ class TestPSFCClass(TestFRR):
         assert cmdRply.cmdID == self.addSFCCmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
+    def _deploySFCI(self):
         # exercise: mapping SFCI
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,
@@ -99,18 +117,3 @@ class TestPSFCClass(TestFRR):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-        logging.info("Please input any key to test "
-            "server software failure\n"
-            "After the test, "
-            "Press any key to quit!")
-        raw_input()
-        self.sendHandleServerFailureCmd()
-
-        logging.info("Please break down sff 1\n"
-            "After the test, "
-            "Press any key to quit!")
-        raw_input()
-
-        logging.info("Press any key to quit!")
-        raw_input()

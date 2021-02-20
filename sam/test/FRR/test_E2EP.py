@@ -24,16 +24,18 @@ class TestE2EProtectionClass(TestFRR):
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
+        self.killAllModule()
 
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genUniDirectionSFC(classifier)
         self.sfci = self.genUniDirection12BackupSFCI()
-        self.sfciID = self.sfci.sfciID
-        self.vnfiSequence = self.sfci.vnfiSequence
 
         self.mediator = MediatorStub()
+        self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfc)
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
+
+        self._messageAgent = MessageAgent()
 
         self.runClassifierController()
         self.addSFCI2Classifier()
@@ -69,6 +71,34 @@ class TestE2EProtectionClass(TestFRR):
         logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
         raw_input()
+
+        self._deploySFC()
+        self._deploySFCI()
+
+        logging.info("Please input any key to test "
+            "server software failure\n"
+            "After the test, "
+            "Press any key to quit!")
+        raw_input()
+        self.sendHandleServerSoftwareFailureCmd()
+
+        logging.info("Press any key to quit!")
+        raw_input()
+
+    def _deploySFC(self):
+        # exercise: mapping SFC
+        self.addSFCCmd.cmdID = uuid.uuid1()
+        self.sendCmd(NETWORK_CONTROLLER_QUEUE,
+            MSG_TYPE_NETWORK_CONTROLLER_CMD,
+            self.addSFCCmd)
+
+        # verify
+        logging.info("Start listening on mediator queue")
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.addSFCCmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+
+    def _deploySFCI(self):
         # exercise: mapping SFCI
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,
@@ -80,6 +110,3 @@ class TestE2EProtectionClass(TestFRR):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-        logging.info("Press any key to quit!")
-        raw_input()
