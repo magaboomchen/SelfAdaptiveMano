@@ -7,7 +7,7 @@ import logging
 import time
 from sam.base.socketConverter import *
 from sam.test.testBase import *
-from sam.serverController.sffController.test.unit.test_sffSFCIAdder import *
+# from sam.serverController.sffController.test.unit.test_sffSFCIAdder import *
 
 
 def sendDirection0Traffic():

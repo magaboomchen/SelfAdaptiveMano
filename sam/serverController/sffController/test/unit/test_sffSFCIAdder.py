@@ -25,7 +25,7 @@ from sam.serverController.sffController.test.unit.fixtures import sendDirection1
 MANUAL_TEST = True
 
 TESTER_SERVER_DATAPATH_IP = "192.168.124.1"
-TESTER_SERVER_DATAPATH_MAC = "fe:54:00:42:26:44"
+TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"
 
 logging.basicConfig(level=logging.INFO)
 
@@ -33,12 +33,14 @@ class TestSFFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addSFCI(self):
         # setup
+        self.sP = ShellProcessor()
+        self.clearQueue()
+
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier)
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
-        self.sP = ShellProcessor()
-        self.clearQueue()
+
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
             TESTER_SERVER_DATAPATH_MAC)
         self.vC = VNFControllerStub()
@@ -102,7 +104,7 @@ class TestSFFSFCIAdderClass(TestBase):
         frame.show()
         if frame[ARP].op == 2 and frame[ARP].psrc == SFF1_DATAPATH_IP:
             mac = frame[ARP].hwsrc
-            assert mac.upper() == SFF1_DATAPATH_MAC
+            assert mac.upper() == SFF1_DATAPATH_MAC.upper()
 
 
     def verifyDirection0Traffic(self):
