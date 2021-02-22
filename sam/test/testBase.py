@@ -190,21 +190,21 @@ class TestBase(object):
             'ID': 0,
             'source': {"IPv4":"*"},
             'ingress': classifier,
-            'match': {'srcIP': "*",'dstIP':WEBSITE_REAL_IP,
+            'match': {'srcIP': "*",'dstIP': WEBSITE_REAL_IP,
                 'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
-            'destination': {"IPv4":WEBSITE_REAL_IP}
+            'destination': {"IPv4": WEBSITE_REAL_IP}
         }
         direction2 = {
             'ID': 1,
-            'source': {"IPv4":WEBSITE_REAL_IP},
+            'source': {"IPv4": WEBSITE_REAL_IP},
             'ingress': classifier,
             'match': {'srcIP': WEBSITE_REAL_IP,'dstIP': "*",
                 'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
             'destination': "*"
         }
-        directions = [direction1,direction2]
+        directions = [direction1, direction2]
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions=directions,
             attributes={'zone':""}, routingMorphic=MORPHIC_IPV4)
@@ -230,7 +230,7 @@ class TestBase(object):
         for index in range(SFCLength):
             vnfiSequence.append([])
             for iN in range(1):
-                server = Server("ens3",SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
+                server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
                 server.setServerID(SFF1_SERVERID)
                 server.setControlNICIP(SFF1_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF1_CONTROLNIC_MAC)

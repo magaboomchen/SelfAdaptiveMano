@@ -43,21 +43,22 @@ class SIBMaintainer(BessInfoBaseMaintainer):
     def __init__(self, *args, **kwargs):
         super(SIBMaintainer, self).__init__(*args, **kwargs)
         self._sfcSet = {}   # {sfcUUID:[sfciID]}
+        self._vnfiDict = {} # {vnfiID:vnfi}
 
     def addLogger(self, logger):
         self.logger = logger
 
-    def getModuleNameSuffix(self,vnfiID,directionID):
+    def getModuleNameSuffix(self, vnfiID, directionID):
         return "_" + str(vnfiID) + "_" + str(directionID)
 
-    def getModuleName(self,mclass,vnfiID,directionID):
+    def getModuleName(self, mclass, vnfiID, directionID):
         return str(mclass) + self.getModuleNameSuffix(vnfiID,directionID)
 
-    def getVdev(self,vnfiID,directionID):
+    def getVdev(self, vnfiID, directionID):
         suffix = self.getModuleNameSuffix(vnfiID,directionID)
         return  "net_vhost" + suffix + ",iface=/tmp/vsock" + suffix
 
-    def getNextVNFID(self,sfci,vnf,directionID):
+    def getNextVNFID(self, sfci, vnf, directionID):
         vnfiSequence = copy.deepcopy(sfci.vnfiSequence)
         if directionID == 0:
             pass
@@ -76,21 +77,34 @@ class SIBMaintainer(BessInfoBaseMaintainer):
                 else:
                     return VNF_TYPE_CLASSIFIER
 
-    def getUpdateValue(self,sfciID,nextVNFID):
-        value = (sfciID & 0xFFF) + ((nextVNFID & 0XF) << 12)
+    def getUpdateValue(self, sfciID, nextVNFID):
+        value = ((nextVNFID & 0XF) << 12) + (sfciID & 0xFFF)
         return value
 
-    def assignSFFWM2OGate(self,vnfID,directionID):
-        OGateList = self.getModuleOGateNumList("wm2")
-        oGateNum = self.genAvailableMiniNum4List(OGateList)
-        self.addOGate2Module("wm2",(vnfID,directionID),oGateNum)
+    def assignSFFWM2OGate(self, vnfID, directionID):
+        if self.hasModuleOGate("wm2", (vnfID,directionID)):
+            oGateNum = self.getModuleOGate("wm2", (vnfID,directionID))
+        else:
+            OGateList = self.getModuleOGateNumList("wm2")
+            oGateNum = self.genAvailableMiniNum4List(OGateList)
+            self.addOGate2Module("wm2", (vnfID,directionID), oGateNum)
         return oGateNum
 
-    def getSFFWM2MatchValue(self,sfciID,vnfID,directionID):
-        value = (10<<24) + ((vnfID & 0XF)<<20) + ((sfciID & 0xFFF) << 8) + ((directionID & 0x1) <<7)
+    def getSFFWM2MatchValue(self, sfciID, vnfID, directionID):
+        value = (10<<24) + ((vnfID & 0XF)<<20) \
+                + ((sfciID & 0xFFF) << 8) + ((directionID & 0x1) <<7)
         return value
-    
+
     def show(self):
         self.logger.info("sfcSet:{0}".format(self._sfcSet))
         self.logger.info("modules:{0}".format(self._modules))
         self.logger.info("links:{0}".format(self._links))
+
+    def hasVNFI(self, vnfiID):
+        return self._vnfiDict.has_key(vnfiID)
+
+    def addVNFI(self, vnfi):
+        self._vnfiDict[vnfi.vnfiID] = vnfi
+
+    def delVNFI(self, vnfiID):
+        self._vnfiDict.pop(vnfiID, None)

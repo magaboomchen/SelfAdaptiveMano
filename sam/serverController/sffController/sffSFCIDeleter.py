@@ -43,6 +43,7 @@ class SFFSFCIDeleter(BessControlPlane):
                     self._delRules(server,sfci,sfc.directions,vnfi)
                     self._delModules(server,sfc.directions,sfci,vnfi)
                     self.sibms.show()
+                    sibm.delVNFI(vnfi.vnfiID)
                 else:
                     continue
 

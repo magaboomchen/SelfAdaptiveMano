@@ -39,14 +39,21 @@ class SFFSFCIAdder(BessControlPlane):
                     if not self.sibms.hasSibm(serverID):
                         self.sffSFCInitializer.initClassifier(server)
                     sibm = self.sibms.getSibm(serverID)
-                    self._addModules(server,sfc.directions,sfci,vnfi)
-                    self._addRules(server,sfci,sfc.directions,vnfi)
-                    self._addLinks(server,sfc.directions,vnfi)
+                    if sibm.hasVNFI(vnfi.vnfiID):
+                        # reassign sfci to an existed vnfi
+                        # don't need add new modules and links
+                        self.logger.warning("reassign an existed vnfi")
+                        self._addRules(server, sfci, sfc.directions, vnfi)
+                    else:
+                        self._addModules(server, sfc.directions, sfci, vnfi)
+                        self._addRules(server, sfci, sfc.directions, vnfi)
+                        self._addLinks(server, sfc.directions, vnfi)
                     self.sibms.show()
+                    sibm.addVNFI(vnfi)
                 else:
                     continue
 
-    def _addModules(self,server,directions,sfci,vnfi):
+    def _addModules(self, server, directions, sfci, vnfi):
         vnfiID = vnfi.vnfiID
         serverID = server.getServerID()
         sibm = self.sibms.getSibm(serverID)
@@ -118,12 +125,18 @@ class SFFSFCIAdder(BessControlPlane):
                 nameUpdate = sibm.getModuleName("Update",vnfiID,directionID)
                 sfciID = sfci.sfciID
                 srcIPValue = self._sc.ip2int(server.getDatapathNICIP())
-                nextVNFID = sibm.getNextVNFID(sfci,vnfi,directionID)
-                dstIPValue = sibm.getUpdateValue(sfciID,nextVNFID)
+                nextVNFID = sibm.getNextVNFID(sfci, vnfi, directionID)
+                dstIPValue = sibm.getUpdateValue(sfciID, nextVNFID)
+                dstIPValue = (dstIPValue >> 8) & 0xFF
                 argument = Any()
+                # Here is a bug: sfciID can't larger than 255
+                # To debug, please refactor Update.cc/.h module and module_msg.proto in bess.
+                # In details, add "value_mask" in UpdateArg()
+                # https://github.com/NetSys/bess/wiki/Writing-Your-Own-Module
+                # https://github.com/NetSys/bess/blob/ae52fc5804290fc3116daf2aef52226fafcedf5d/core/modules/update.cc
                 argument.Pack( module_msg_pb2.UpdateArg( fields=[
                     {"offset":26, "size":4, "value":srcIPValue},
-                    {"offset":31, "size":2, "value":dstIPValue}
+                    {"offset":31, "size":1, "value":dstIPValue}
                     ]))
 
                 response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
@@ -138,10 +151,9 @@ class SFFSFCIAdder(BessControlPlane):
                     name=nameIPChecksum,mclass="IPChecksum",arg=argument))
                 self._checkResponse(response)
 
-
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
-    def _addRules(self,server,sfci,directions,vnfi):
+    def _addRules(self, server, sfci, directions, vnfi):
         sfciID = sfci.sfciID
         vnfiID = vnfi.vnfiID
         vnfID = vnfi.vnfID
@@ -157,9 +169,9 @@ class SFFSFCIAdder(BessControlPlane):
                 directionID = direction["ID"]
                 # add rule to wm2
 
-                oGate = sibm.assignSFFWM2OGate(vnfiID,directionID)
-                value = sibm.getSFFWM2MatchValue(sfciID,vnfID,directionID)
-                value = self._sc.int2Bytes(value,4)
+                oGate = sibm.assignSFFWM2OGate(vnfiID, directionID)
+                value = sibm.getSFFWM2MatchValue(sfciID, vnfID, directionID)
+                value = self._sc.int2Bytes(value, 4)
                 argument = Any()
                 arg = module_msg_pb2.WildcardMatchCommandAddArg(gate=oGate,
                     values=[{"value_bin": value }],
