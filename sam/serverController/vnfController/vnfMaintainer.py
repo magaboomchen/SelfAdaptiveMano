@@ -10,24 +10,32 @@ VNFI_STATE_PROCESSING = 'VNFI_STATE_PROCESSING'
 VNFI_STATE_DEPLOYED = 'VNFI_STATE_DEPLOYED'
 VNFI_STATE_FAILED = 'VNFI_STATE_FAILED'
 
+
 class VNFIDeployStatus(object):
     def __init__(self, vnfi, state):
         self.vnfi = vnfi
         self.state = state
         self.containerID = None 
         self.vioStart = None  # start port of virtio in dpdk vdev
-        self.cpuStart = None # start numebr of CPU used for dpdk arg -l
+        self.cpus = None # allocated cpus [nodeNum][]
         self.error = None # error of the docker
+
 
 class VNFIMaintainer(object):
     def __init__(self):
         self._vnfiSet = {}   # {sfciID: {vnfiID: VNFIDeployStatus}}
-     
+
     def addSFCI(self, sfciID):
         self._vnfiSet[sfciID] = {}
-    
+
+    def hasSFCI(self, sfciID):
+        return self._vnfiSet.has_key(sfciID)
+
     def addVNFI(self, sfciID, vnfi):
         self._vnfiSet[sfciID][vnfi.vnfiID] = VNFIDeployStatus(vnfi, VNFI_STATE_PROCESSING)
+
+    def hasVNFI(self, sfciID, vnfi):
+        return self._vnfiSet[sfciID].has_key(vnfi.vnfiID)
 
     def setVNFIState(self, sfciID, vnfi, state):
         self._vnfiSet[sfciID][vnfi.vnfiID].state = state 
@@ -38,8 +46,8 @@ class VNFIMaintainer(object):
     def setVNFIVIOStart(self, sfciID, vnfi, vioStart):
         self._vnfiSet[sfciID][vnfi.vnfiID].vioStart = vioStart
 
-    def setVNFICPUStart(self, sfciID, vnfi, cpuStart):
-        self._vnfiSet[sfciID][vnfi.vnfiID].cpuStart = cpuStart
+    def setVNFICPU(self, sfciID, vnfi, cpus):
+        self._vnfiSet[sfciID][vnfi.vnfiID].cpus = cpus
 
     def setVNFIError(self, sfciID, vnfi, error):
         self._vnfiSet[sfciID][vnfi.vnfiID].error = error

@@ -7,6 +7,7 @@ import time
 
 import pytest
 
+from sam import base
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
@@ -28,17 +29,14 @@ SFF0_DATAPATH_MAC = "52:54:00:5a:14:f0"
 SFF0_CONTROLNIC_IP = "192.168.0.201"
 SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 
-LB_VIP = "10.1.1.200"
-LB_DST = ["10.1.2.1", "10.1.2.2", "10.1.2.3"]
-
 logging.basicConfig(level=logging.INFO)
 
-class TestVNFAddLB(TestBase):
+class TestVNFAddMON(TestBase):
     @pytest.fixture(scope="function")
-    def setup_addLB(self):
+    def setup_addMON(self):
         # setup
         self.resetRabbitMQConf(
-            "/home/t1/Projects/SelfAdaptiveMano/sam/base/rabbitMQConf.conf",
+            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
             "192.168.0.158", "mq", "123456")
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_LB])
@@ -60,16 +58,10 @@ class TestVNFAddLB(TestBase):
 
         yield
         # teardown
-        self.delVNFI4Server()
+        # here we can't remove kill the container because we should test its tcp server in the server node (TODO)
+        self.delVNFI4Server()   
         self.killSFFController()
         self.killVNFController()
-
-    # def resetRabbitMQConf(self, filePath, serverIP,
-    #         serverUser, serverPasswd):
-    #     with open(filePath, 'w') as f:
-    #         f.write("RABBITMQSERVERIP = '{0}'\n".format(serverIP))
-    #         f.write("RABBITMQSERVERUSER = '{0}'\n".format(serverUser))
-    #         f.write("RABBITMQSERVERPASSWD = '{0}'\n".format(serverPasswd))
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
@@ -83,19 +75,10 @@ class TestVNFAddLB(TestBase):
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
-                config = {}
-                config['LB'] = LBTuple(LB_VIP, LB_DST)
-                vnfi = VNFI(VNF_TYPE_LB, vnfType=VNF_TYPE_LB, 
-                    vnfiID=uuid.uuid1(), config=config, node=server)
+                vnfi = VNFI(VNF_TYPE_MONITOR, vnfType=VNF_TYPE_MONITOR, 
+                    vnfiID=uuid.uuid1(), node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
-
-    # def runSFFController(self):
-    #     filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/sffController/sffControllerCommandAgent.py"
-    #     self.sP.runPythonScript(filePath)
-
-    # def killSFFController(self):
-    #     self.sP.killPythonScript("sffControllerCommandAgent.py")
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")
@@ -106,12 +89,6 @@ class TestVNFAddLB(TestBase):
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-    # def runVNFController(self):
-    #     filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/vnfController/vnfController.py"
-    #     self.sP.runPythonScript(filePath)
-
-    # def killVNFController(self):
-    #     self.sP.killPythonScript("vnfController.py")
     '''
     def addVNFI2Server(self):
         logging.info("setup add SFCI to server")
@@ -137,7 +114,7 @@ class TestVNFAddLB(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
 
-    def test_addLB(self, setup_addLB):
+    def test_addMON(self, setup_addMON):
         # exercise
         logging.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
@@ -146,7 +123,10 @@ class TestVNFAddLB(TestBase):
 
         # verifiy
         self.verifyCmdRply()
+        time.sleep(2)
         self.verifyDirection0Traffic()
+        self.verifyDirection1Traffic()
+        self.verifyDirection0Traffic()  # repeat and test the flow aggregation
         self.verifyDirection1Traffic()
 
     def verifyDirection0Traffic(self):
@@ -154,7 +134,7 @@ class TestVNFAddLB(TestBase):
         self._checkEncapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection0Traffic2SFF(self):
-        filePath = "./fixtures/sendLBDirection0Traffic.py"
+        filePath = "../fixtures/sendMONDirection0Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
@@ -171,14 +151,14 @@ class TestVNFAddLB(TestBase):
         assert condition
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].dst in LB_DST
+        assert innerPkt[IP].dst in WEBSITE_REAL_IP
 
     def verifyDirection1Traffic(self):
         self._sendDirection1Traffic2SFF()
         self._checkDecapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection1Traffic2SFF(self):
-        filePath = "./fixtures/sendLBDirection1Traffic.py"
+        filePath = "../fixtures/sendMONDirection1Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
@@ -194,7 +174,7 @@ class TestVNFAddLB(TestBase):
         assert condition == True
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].src == LB_VIP
+        assert innerPkt[IP].src == WEBSITE_REAL_IP
 
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)

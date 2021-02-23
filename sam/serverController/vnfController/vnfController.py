@@ -1,13 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
-from sam.base.messageAgent import *
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.command import *
 from sam.base.server import *
+from sam.base.messageAgent import *
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.vnfController.vcConfig import vcConfig
 from sam.serverController.vnfController.vnfiAdder import *
@@ -15,6 +13,7 @@ from sam.serverController.vnfController.vnfiDeleter import *
 from sam.serverController.vnfController.vnfMaintainer import *
 from sam.serverController.vnfController.sourceAllocator import *
 from sam.serverController.vnfController.argParser import ArgParser
+
 
 class VNFController(object):
     def __init__(self, zoneName=""):
@@ -71,16 +70,21 @@ class VNFController(object):
     def _sfciAddHandler(self, cmd):
         sfciID = cmd.attributes['sfci'].sfciID
         self.logger.info('Adding sfci %s.' % sfciID)
-        # TODO: if sfciID in vnfMaintainer?
-        self._vnfiMaintainer.addSFCI(sfciID)
-        vnfSeq = cmd.attributes['sfci'].vnfiSequence
         success = True
+        if self._vnfiMaintainer.hasSFCI(sfciID):
+            return success
+        else:
+            self._vnfiMaintainer.addSFCI(sfciID)
+        vnfSeq = cmd.attributes['sfci'].vnfiSequence
         for vnf in vnfSeq:
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):
-                    # TODO: if vnfi in vnfMaintainer?
                     self.logger.info('Adding vnfi %s.' % vnfi.vnfiID)
-                    self._vnfiMaintainer.addVNFI(sfciID, vnfi)
+                    if self._vnfiMaintainer.hasVNFI(sfciID, vnfi):
+                        # reassign an vnfi
+                        continue
+                    else:
+                        self._vnfiMaintainer.addVNFI(sfciID, vnfi)
 
                     # get vioAllocator of server
                     serverID = vnfi.node.getServerID()
@@ -88,14 +92,14 @@ class VNFController(object):
                         self._vioManager[serverID] = SourceAllocator(serverID, vcConfig.MAX_VIO_NUM)
                     vioAllo = self._vioManager[serverID]
                     if serverID not in self._cpuManager:
-                        self._cpuManager[serverID] = SourceAllocator(serverID, vcConfig.MAX_CPU_NUM, start=vcConfig.CPU_START)
+                        self._cpuManager[serverID] = CPUAllocator(serverID, vnfi.node.getCoreNUMADistribution(), notAvaiCPU=vcConfig.NOT_AVAI_CPU)
                     cpuAllo = self._cpuManager[serverID]
                     try:
-                        containerID, cpuStart, vioStart = self._vnfiAdder.addVNFI(vnfi, vioAllo, cpuAllo)
+                        containerID, cpus, vioStart = self._vnfiAdder.addVNFI(vnfi, vioAllo, cpuAllo)
                         self._vnfiMaintainer.setVNFIState(sfciID, vnfi, VNFI_STATE_DEPLOYED)
                         self._vnfiMaintainer.setVNFIContainerID(sfciID, vnfi, containerID)
                         self._vnfiMaintainer.setVNFIVIOStart(sfciID, vnfi, vioStart)
-                        self._vnfiMaintainer.setVNFICPUStart(sfciID, vnfi, cpuStart)
+                        self._vnfiMaintainer.setVNFICPU(sfciID, vnfi, cpus)
                     except Exception as exp:
                         self.logger.error('Error occurs when adding vnfi: %s' % exp)
                         self._vnfiMaintainer.setVNFIState(sfciID, vnfi, VNFI_STATE_FAILED)
