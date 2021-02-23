@@ -80,7 +80,7 @@ class VNFController(object):
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):
                     self.logger.info('Adding vnfi %s.' % vnfi.vnfiID)
-                    if self._vnfiMaintainer.hasVNFI(sfciID, vnfi):
+                    if self._vnfiMaintainer.hasVNFI(vnfi):
                         # reassign an vnfi
                         continue
                     else:

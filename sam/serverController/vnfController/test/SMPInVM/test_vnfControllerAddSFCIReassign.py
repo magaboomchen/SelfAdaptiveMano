@@ -43,25 +43,29 @@ class TestVNFSFCIAdderClass(TestBase):
         self.killAllModule()
 
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genBiDirectionSFC(classifier)
-        self.sfci = self.genBiDirection10BackupSFCI()
+        self.sfc1 = self.genBiDirectionSFC(classifier)
+        self.sfci1 = self.genBiDirection10BackupSFCI()
+        self.sfc2 = self.genBiDirectionSFC(classifier)
+        self.sfci2 = self.genBiDirection10BackupSFCI()
+        self._reassignVNFI2SFCI()
+
         self.mediator = MediatorStub()
-
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
-            TESTER_SERVER_DATAPATH_MAC)
-
-        self.runSFFController()
-        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
-        self.addSFCI2SFF()
+                                            TESTER_SERVER_DATAPATH_MAC)
 
         # setup
         self.runVNFController()
+        self.runSFFController()
 
         yield
         # teardown
         self.delVNFI4Server()
         self.killSFFController()
         self.killVNFController()
+
+    def _reassignVNFI2SFCI(self):
+        vnfiID = self.sfci1.vnfiSequence[0][0].vnfiID
+        self.sfci2.vnfiSequence[0][0].vnfiID = vnfiID
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
@@ -76,54 +80,50 @@ class TestVNFSFCIAdderClass(TestBase):
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
                 vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
-                    vnfiID=uuid.uuid1(), node=server)
+                            vnfiID=uuid.uuid1(), node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
-    def addSFCI2SFF(self):
-        logging.info("setup add SFCI to sff")
-        self.addSFCICmd.cmdID = uuid.uuid1()
-        self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
-        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.addSFCICmd.cmdID
-        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-    '''
-    def addVNFI2Server(self):
-        logging.info("setup add SFCI to server")
-        try:
-            # In normal case, there should be a timeout error!
-            shellCmdRply = self.vC.installVNF("t1", "t1@netlab325", "192.168.0.156",
-                self.sfci.vnfiSequence[0][0].vnfiID)
-            logging.info(
-                "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
-                None,
-                shellCmdRply['stdout'].read().decode('utf-8'),
-                shellCmdRply['stderr'].read().decode('utf-8')))
-        except:
-            logging.info("If raise IOError: reading from stdin while output is captured")
-            logging.info("Then pytest should use -s option!")
-    '''
-    def delVNFI4Server(self):
-        logging.warning("Deleting VNFII")
-        self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
-        self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
-        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.delSFCICmd.cmdID
-        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-    def test_addSFCI(self, setup_addSFCI):
+    def test_addSFCIReassignVNFI(self, setup_addSFCI):
         # exercise
         logging.info("exercise")
-        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
-        self.sendCmd(VNF_CONTROLLER_QUEUE,
-                        MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
+        self.addSFCI1()
+        self.addSFCI2()
 
         # verifiy
-        self.verifyCmdRply()
         self.verifyDirection0Traffic()
         self.verifyDirection1Traffic()
+
+    def addSFCI1(self):
+        self.addSFCI1Cmd = self.mediator.genCMDAddSFCI(self.sfc1, self.sfci1)
+        self.sendCmd(SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCI1Cmd)
+        self.verifyCmd1Rply()
+
+        self.addSFCI1Cmd.cmdID = uuid.uuid1()
+        self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.addSFCI1Cmd)
+        self.verifyCmd1Rply()
+
+    def addSFCI2(self):
+        self.addSFCI2Cmd = self.mediator.genCMDAddSFCI(self.sfc2, self.sfci2)
+        self.sendCmd(SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCI2Cmd)
+        self.verifyCmd2Rply()
+
+        self.addSFCI2Cmd.cmdID = uuid.uuid1()
+        self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.addSFCI2Cmd)
+        self.verifyCmd2Rply()
+
+    def verifyCmd1Rply(self):
+        # verify cmd1
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.addSFCI1Cmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+
+    def verifyCmd2Rply(self):
+        # verify cmd2
+        logging.info("verify cmd2")
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.addSFCI2Cmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def verifyDirection0Traffic(self):
         self._sendDirection0Traffic2SFF()
@@ -149,7 +149,6 @@ class TestVNFSFCIAdderClass(TestBase):
         innerPkt = frame.getlayer('IP')[1]
         assert innerPkt[IP].dst == WEBSITE_REAL_IP
 
-
     def verifyDirection1Traffic(self):
         self._sendDirection1Traffic2SFF()
         self._checkDecapsulatedTraffic(inIntf="ens8")
@@ -173,9 +172,10 @@ class TestVNFSFCIAdderClass(TestBase):
         innerPkt = frame.getlayer('IP')[1]
         assert innerPkt[IP].src == WEBSITE_REAL_IP
 
-
-    def verifyCmdRply(self):
+    def delVNFI4Server(self):
+        logging.warning("Deleting VNFII")
+        self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc1, self.sfci1)
+        self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.addSFCICmd.cmdID
+        assert cmdRply.cmdID == self.delSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
