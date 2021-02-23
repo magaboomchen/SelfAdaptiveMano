@@ -39,12 +39,15 @@ class TestVNFAddFW(TestBase):
         self.resetRabbitMQConf(
             base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
             "192.168.0.158", "mq", "123456")
+        self.sP = ShellProcessor()
+        self.clearQueue()
+        self.killAllModule()
+
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_FW])
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
-        self.sP = ShellProcessor()
-        self.clearQueue()
+
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
             TESTER_SERVER_DATAPATH_MAC)
 
@@ -117,7 +120,7 @@ class TestVNFAddFW(TestBase):
     '''
 
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
+        logging.warning("Deleting VNFII")
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)

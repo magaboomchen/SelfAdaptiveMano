@@ -26,14 +26,7 @@ from sam.serverController.classifierController import *
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.199"
 TESTER_SERVER_DATAPATH_MAC = "52:54:00:a8:b0:a1"
-# TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
-# TESTER_SERVER_DATAPATH_MAC = "18:66:da:86:4c:16"
 TESTER_DATAPATH_INTERFACE = "ens8"
-
-# SFF0_DATAPATH_IP = "2.2.0.38"
-# SFF0_DATAPATH_MAC = "00:1b:21:c0:8f:98"
-# SFF0_CONTROLNIC_IP = "192.168.0.201"
-# SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 
 SFF0_DATAPATH_IP = "2.2.0.200"
 SFF0_DATAPATH_MAC = "52:54:00:5a:14:f0"
@@ -58,15 +51,13 @@ logging.getLogger("pika").setLevel(logging.WARNING)
 class TestVNFAddVPN(TestBase):
     @pytest.fixture(scope="function")
     def setup_addVPN(self):
-        logging.debug("{0}".format(base.__file__))
-        # raw_input()
         # setup
-        self.sP = ShellProcessor()
-        self.clearQueue()
-
         self.resetRabbitMQConf(
             base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
             "192.168.0.158", "mq", "123456")
+        self.sP = ShellProcessor()
+        self.clearQueue()
+        self.killAllModule()
 
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
             TESTER_SERVER_DATAPATH_MAC)

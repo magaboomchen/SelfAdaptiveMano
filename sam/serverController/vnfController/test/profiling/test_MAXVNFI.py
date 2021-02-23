@@ -21,17 +21,19 @@ from sam.serverController.classifierController import *
 
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
-TESTER_SERVER_DATAPATH_MAC = "f4:e9:d4:a3:53:a0"
+TESTER_SERVER_DATAPATH_MAC = "00:1b:21:c0:8f:ae"
 
 SFF0_DATAPATH_IP = "2.2.0.38"
 SFF0_DATAPATH_MAC = "00:1b:21:c0:8f:98"
 SFF0_CONTROLNIC_IP = "192.168.0.173"
 SFF0_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
 
-MAX_SFCI = 10
+# fast click doesn't support NUMA architecture!
+MAX_SFCI = 5
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
+
 
 class TestVNFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
@@ -39,6 +41,7 @@ class TestVNFSFCIAdderClass(TestBase):
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
+        self.killAllModule()
 
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.mediator = MediatorStub()

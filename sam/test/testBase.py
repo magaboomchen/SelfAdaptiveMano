@@ -37,7 +37,6 @@ from sam.mediator import mediator
 from sam.measurement import measurer
 
 OUTTER_CLIENT_IP = "1.1.1.1"
-# WEBSITE_REAL_IP = "2.2.0.34"
 WEBSITE_REAL_IP = "3.3.3.3"
 
 TEST_SERVERID = 19999

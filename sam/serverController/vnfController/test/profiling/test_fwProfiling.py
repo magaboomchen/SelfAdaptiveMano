@@ -1,6 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+'''
+manual send traffic
+
+enp4s0 10Gbps intel 82599es
+sudo python ./sendSFCTraffic.py -i enp4s0 -smac 00:1b:21:c0:8f:ae -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.32.1.1 -isip 1.1.1.1 -idip 3.3.3.3
+'''
+
 import logging
 from scapy.all import *
 import time
@@ -22,7 +29,7 @@ from sam.serverController.classifierController import *
 
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
-TESTER_SERVER_DATAPATH_MAC = "f4:e9:d4:a3:53:a0"
+TESTER_SERVER_DATAPATH_MAC = "00:1b:21:c0:8f:ae"
 
 SFF0_DATAPATH_IP = "2.2.0.38"
 SFF0_DATAPATH_MAC = "00:1b:21:c0:8f:98"
@@ -32,12 +39,14 @@ SFF0_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
 
+
 class TestVNFAddFW(TestBase):
     @pytest.fixture(scope="function")
     def setup_addFW(self):
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
+        self.killAllModule()
 
         rabbitMQFilePath = server.__file__.split("server.py")[0] \
             + "rabbitMQConf.conf"
@@ -89,7 +98,8 @@ class TestVNFAddFW(TestBase):
             srcPort=(1234, 1234), dstPort=(80, 80)))
         rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=WEBSITE_REAL_IP, dstAddr=OUTTER_CLIENT_IP,
             srcPort=(80, 80), dstPort=(1234, 1234)))
-        rules.append(ACLTuple(ACL_ACTION_DENY))
+        # rules.append(ACLTuple(ACL_ACTION_DENY))
+        rules.append(ACLTuple(ACL_ACTION_ALLOW))
         return rules
 
 
