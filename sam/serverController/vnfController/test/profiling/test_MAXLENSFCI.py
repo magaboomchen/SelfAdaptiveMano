@@ -43,6 +43,7 @@ class TestVNFSFCIAdderClass(TestBase):
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
+        self.killAllModule()
 
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.mediator = MediatorStub()

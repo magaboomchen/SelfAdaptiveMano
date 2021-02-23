@@ -12,7 +12,6 @@ from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
 from sam.base.command import *
-from sam.base.acl import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
@@ -32,9 +31,9 @@ SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 logging.basicConfig(level=logging.INFO)
 
 
-class TestVNFAddFW(TestBase):
+class TestVNFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
-    def setup_addFW(self):
+    def setup_addSFCI(self):
         # setup
         self.resetRabbitMQConf(
             base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
@@ -44,25 +43,29 @@ class TestVNFAddFW(TestBase):
         self.killAllModule()
 
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_FW])
-        self.sfci = self.genBiDirection10BackupSFCI()
+        self.sfc1 = self.genBiDirectionSFC(classifier)
+        self.sfci1 = self.genBiDirection10BackupSFCI()
+        self.sfc2 = self.genBiDirectionSFC(classifier)
+        self.sfci2 = self.genBiDirection10BackupSFCI()
+        self._reassignVNFI2SFCI()
+
         self.mediator = MediatorStub()
-
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
-            TESTER_SERVER_DATAPATH_MAC)
-
-        self.runSFFController()
-        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
-        self.addSFCI2SFF()
+                                            TESTER_SERVER_DATAPATH_MAC)
 
         # setup
         self.runVNFController()
+        self.runSFFController()
 
         yield
         # teardown
         self.delVNFI4Server()
         self.killSFFController()
         self.killVNFController()
+
+    def _reassignVNFI2SFCI(self):
+        vnfiID = self.sfci1.vnfiSequence[0][0].vnfiID
+        self.sfci2.vnfiSequence[0][0].vnfiID = vnfiID
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
@@ -76,75 +79,58 @@ class TestVNFAddFW(TestBase):
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
-                config = {}
-                config['ACL'] = self.genTestFWRules()
-                vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
-                    vnfiID=uuid.uuid1(), config=config, node=server)
+                vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
+                            vnfiID=uuid.uuid1(), node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
-    def genTestFWRules(self):
-        rules = []
-        #rules = parseACLFile('/home/t1/Projects/Classbench/fw4_1k')
-        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
-            srcPort=(1234, 1234), dstPort=(80, 80)))
-        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=WEBSITE_REAL_IP, dstAddr=OUTTER_CLIENT_IP,
-            srcPort=(80, 80), dstPort=(1234, 1234)))
-        rules.append(ACLTuple(ACL_ACTION_DENY))
-        return rules
-
-    def addSFCI2SFF(self):
-        logging.info("setup add SFCI to sff")
-        self.addSFCICmd.cmdID = uuid.uuid1()
-        self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
-        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.addSFCICmd.cmdID
-        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-    '''
-    def addVNFI2Server(self):
-        logging.info("setup add SFCI to server")
-        try:
-            # In normal case, there should be a timeout error!
-            shellCmdRply = self.vC.installVNF("t1", "t1@netlab325", "192.168.0.156",
-                self.sfci.vnfiSequence[0][0].vnfiID)
-            logging.info(
-                "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
-                None,
-                shellCmdRply['stdout'].read().decode('utf-8'),
-                shellCmdRply['stderr'].read().decode('utf-8')))
-        except:
-            logging.info("If raise IOError: reading from stdin while output is captured")
-            logging.info("Then pytest should use -s option!")
-    '''
-
-    def delVNFI4Server(self):
-        logging.warning("Deleting VNFII")
-        self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
-        self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
-        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.delSFCICmd.cmdID
-        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-    def test_addFW(self, setup_addFW):
+    def test_addSFCIReassignVNFI(self, setup_addSFCI):
         # exercise
         logging.info("exercise")
-        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
-        self.sendCmd(VNF_CONTROLLER_QUEUE,
-            MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
+        self.addSFCI1()
+        self.addSFCI2()
 
         # verifiy
-        self.verifyCmdRply()
         self.verifyDirection0Traffic()
         self.verifyDirection1Traffic()
+
+    def addSFCI1(self):
+        self.addSFCI1Cmd = self.mediator.genCMDAddSFCI(self.sfc1, self.sfci1)
+        self.sendCmd(SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCI1Cmd)
+        self.verifyCmd1Rply()
+
+        self.addSFCI1Cmd.cmdID = uuid.uuid1()
+        self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.addSFCI1Cmd)
+        self.verifyCmd1Rply()
+
+    def addSFCI2(self):
+        self.addSFCI2Cmd = self.mediator.genCMDAddSFCI(self.sfc2, self.sfci2)
+        self.sendCmd(SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCI2Cmd)
+        self.verifyCmd2Rply()
+
+        self.addSFCI2Cmd.cmdID = uuid.uuid1()
+        self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.addSFCI2Cmd)
+        self.verifyCmd2Rply()
+
+    def verifyCmd1Rply(self):
+        # verify cmd1
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.addSFCI1Cmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+
+    def verifyCmd2Rply(self):
+        # verify cmd2
+        logging.info("verify cmd2")
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.addSFCI2Cmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def verifyDirection0Traffic(self):
         self._sendDirection0Traffic2SFF()
         self._checkEncapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection0Traffic2SFF(self):
-        filePath = "../fixtures/sendFWDirection0Traffic.py"
+        filePath = "../fixtures/sendDirection0Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
@@ -163,13 +149,12 @@ class TestVNFAddFW(TestBase):
         innerPkt = frame.getlayer('IP')[1]
         assert innerPkt[IP].dst == WEBSITE_REAL_IP
 
-
     def verifyDirection1Traffic(self):
         self._sendDirection1Traffic2SFF()
         self._checkDecapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection1Traffic2SFF(self):
-        filePath = "../fixtures/sendFWDirection1Traffic.py"
+        filePath = "../fixtures/sendDirection1Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
@@ -187,9 +172,10 @@ class TestVNFAddFW(TestBase):
         innerPkt = frame.getlayer('IP')[1]
         assert innerPkt[IP].src == WEBSITE_REAL_IP
 
-
-    def verifyCmdRply(self):
+    def delVNFI4Server(self):
+        logging.warning("Deleting VNFII")
+        self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc1, self.sfci1)
+        self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.addSFCICmd.cmdID
+        assert cmdRply.cmdID == self.delSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-

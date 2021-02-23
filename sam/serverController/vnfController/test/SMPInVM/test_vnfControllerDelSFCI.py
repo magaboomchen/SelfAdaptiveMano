@@ -29,6 +29,7 @@ SFF0_CONTROLNIC_IP = "192.168.0.201"
 SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 logging.basicConfig(level=logging.INFO)
 
+
 class TestVNFSFCIDeleterClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_delSFCI(self):
@@ -36,16 +37,15 @@ class TestVNFSFCIDeleterClass(TestBase):
         self.resetRabbitMQConf(
             base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
             "192.168.0.158", "mq", "123456")
+        self.sP = ShellProcessor()
+        self.clearQueue()
+        self.killAllModule()
+
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier)
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
-        self.sP = ShellProcessor()
-        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
-        self.sP.runShellCommand(
-            "sudo rabbitmqctl purge_queue VNF_CONTROLLER_QUEUE")
-        #self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
-        #    TESTER_SERVER_DATAPATH_MAC)
+
         self.runSFFController()
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.addSFCI2SFF()

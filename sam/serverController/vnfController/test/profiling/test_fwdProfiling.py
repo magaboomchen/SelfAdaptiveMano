@@ -1,6 +1,17 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+'''
+manual send traffic
+
+eno2 1Gbps
+sudo python ./sendSFCTraffic.py -i eno2 -smac 18:66:da:86:4c:16 -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.16.1.1 -isip 1.1.1.1 -idip 3.3.3.3
+sudo python ./sendSFCTraffic.py -i eno2 -smac 18:66:da:86:4c:16 -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.16.2.1 -isip 1.1.1.1 -idip 3.3.3.3
+
+enp4s0 10Gbps intel 82599es
+sudo python ./sendSFCTraffic.py -i enp4s0 -smac 00:1b:21:c0:8f:ae -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.16.1.1 -isip 1.1.1.1 -idip 3.3.3.3
+'''
+
 import logging
 from scapy.all import *
 import time
@@ -31,12 +42,14 @@ SFF0_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
 
+
 class TestVNFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addSFCI(self):
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
+        self.killAllModule()
 
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier)
@@ -84,7 +97,7 @@ class TestVNFSFCIAdderClass(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
+        logging.warning("Deleting VNFII")
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
@@ -108,11 +121,3 @@ class TestVNFSFCIAdderClass(TestBase):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-'''
-sudo python ./sendSFCTraffic.py -i eno2 -smac 18:66:da:86:4c:16 -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.16.1.1 -isip 1.1.1.1 -idip 2.2.0.34
-sudo python ./sendSFCTraffic.py -i eno2 -smac 18:66:da:86:4c:16 -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.16.2.1 -isip 1.1.1.1 -idip 2.2.0.34
-
-
-
-'''

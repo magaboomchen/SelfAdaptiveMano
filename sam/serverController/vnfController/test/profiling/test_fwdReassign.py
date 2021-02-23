@@ -4,8 +4,12 @@
 '''
 manual send traffic
 
+eno2 1Gbps
+sudo python ./sendSFCTraffic.py -i eno2 -smac 18:66:da:86:4c:16 -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.16.1.1 -isip 1.1.1.1 -idip 3.3.3.3
+sudo python ./sendSFCTraffic.py -i eno2 -smac 18:66:da:86:4c:16 -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.16.2.1 -isip 1.1.1.1 -idip 3.3.3.3
+
 enp4s0 10Gbps intel 82599es
-sudo python ./sendSFCTraffic.py -i enp4s0 -smac 00:1b:21:c0:8f:ae -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.32.1.1 -isip 1.1.1.1 -idip 3.3.3.3
+sudo python ./sendSFCTraffic.py -i enp4s0 -smac 00:1b:21:c0:8f:ae -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.16.1.1 -isip 1.1.1.1 -idip 3.3.3.3
 '''
 
 import logging
@@ -19,7 +23,6 @@ from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
 from sam.base.command import *
-from sam.base.acl import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
@@ -29,7 +32,7 @@ from sam.serverController.classifierController import *
 
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
-TESTER_SERVER_DATAPATH_MAC = "00:1b:21:c0:8f:ae"
+TESTER_SERVER_DATAPATH_MAC = "f4:e9:d4:a3:53:a0"
 
 SFF0_DATAPATH_IP = "2.2.0.38"
 SFF0_DATAPATH_MAC = "00:1b:21:c0:8f:98"
@@ -40,38 +43,37 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
 
 
-class TestVNFAddFW(TestBase):
+class TestVNFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
-    def setup_addFW(self):
+    def setup_addSFCI(self):
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
 
-        rabbitMQFilePath = server.__file__.split("server.py")[0] \
-            + "rabbitMQConf.conf"
-        logging.info(rabbitMQFilePath)
-        self.resetRabbitMQConf(rabbitMQFilePath, "192.168.0.194",
-            "mq", "123456")
-
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_FW])
-        self.sfci = self.genBiDirection10BackupSFCI()
+        self.sfc1 = self.genBiDirectionSFC(classifier)
+        self.sfci1 = self.genBiDirection10BackupSFCI()
+        self.sfc2 = self.genBiDirectionSFC(classifier)
+        self.sfci2 = self.genBiDirection10BackupSFCI()
+        self._reassignVNFI2SFCI()
+
+        self.mediator = MediatorStub()
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
             TESTER_SERVER_DATAPATH_MAC)
-        self.mediator = MediatorStub()
 
         self.runSFFController()
         self.runVNFController()
-
-        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
-        self.addSFCI2SFF()
 
         yield
         # teardown
         self.delVNFI4Server()
         self.killSFFController()
         self.killVNFController()
+
+    def _reassignVNFI2SFCI(self):
+        vnfiID = self.sfci1.vnfiSequence[0][0].vnfiID
+        self.sfci2.vnfiSequence[0][0].vnfiID = vnfiID
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
@@ -85,23 +87,10 @@ class TestVNFAddFW(TestBase):
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
-                config = {}
-                config['ACL'] = self.genTestFWRules()
-                vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
-                    vnfiID=uuid.uuid1(), config=config, node=server)
+                vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
+                    vnfiID=uuid.uuid1(), node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
-
-    def genTestFWRules(self):
-        rules = []
-        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
-            srcPort=(1234, 1234), dstPort=(80, 80)))
-        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=WEBSITE_REAL_IP, dstAddr=OUTTER_CLIENT_IP,
-            srcPort=(80, 80), dstPort=(1234, 1234)))
-        # rules.append(ACLTuple(ACL_ACTION_DENY))
-        rules.append(ACLTuple(ACL_ACTION_ALLOW))
-        return rules
-
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")
@@ -113,28 +102,51 @@ class TestVNFAddFW(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delVNFI4Server(self):
-        logging.warning("DeletingÂ VNFI")
-        self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
+        logging.warning("Deleting VNFII")
+        self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc1, self.sfci1)
         self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.delSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-    def test_addFW(self, setup_addFW):
+    def test_addSFCI(self, setup_addSFCI):
         # exercise
         logging.info("exercise")
-        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
-        self.sendCmd(VNF_CONTROLLER_QUEUE,
-            MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
+        self.addSFCI1()
+        self.addSFCI2()
 
         # verifiy
-        self.verifyCmdRply()
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
         raw_input()
 
-    def verifyCmdRply(self):
+    def addSFCI1(self):
+        self.addSFCI1Cmd = self.mediator.genCMDAddSFCI(self.sfc1, self.sfci1)
+        self.sendCmd(SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCI1Cmd)
+        self.verifyCmd1Rply()
+
+        self.addSFCI1Cmd.cmdID = uuid.uuid1()
+        self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.addSFCI1Cmd)
+        self.verifyCmd1Rply()
+
+    def addSFCI2(self):
+        self.addSFCI2Cmd = self.mediator.genCMDAddSFCI(self.sfc2, self.sfci2)
+        self.sendCmd(SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCI2Cmd)
+        self.verifyCmd2Rply()
+
+        self.addSFCI2Cmd.cmdID = uuid.uuid1()
+        self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.addSFCI2Cmd)
+        self.verifyCmd2Rply()
+
+    def verifyCmd1Rply(self):
+        # verify cmd1
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.addSFCICmd.cmdID
+        assert cmdRply.cmdID == self.addSFCI1Cmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
+    def verifyCmd2Rply(self):
+        # verify cmd2
+        logging.info("verify cmd2")
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.addSFCI2Cmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL

@@ -1,6 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+'''
+manual send traffic
+
+enp4s0 10Gbps intel 82599es
+sudo python ./sendSFCTraffic.py -i enp4s0 -smac 00:1b:21:c0:8f:ae -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.112.1.1 -isip 1.1.1.1 -idip 3.3.3.3
+'''
+
 import logging
 from scapy.all import *
 import time
@@ -36,12 +43,14 @@ NAT_MAX_PORT = 65530
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
 
+
 class TestVNFAddNAT(TestBase):
     @pytest.fixture(scope="function")
     def setup_addNAT(self):
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
+        self.killAllModule()
 
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_NAT])

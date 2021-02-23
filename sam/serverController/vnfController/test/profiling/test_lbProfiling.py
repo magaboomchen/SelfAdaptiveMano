@@ -1,6 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+'''
+manual send traffic
+
+enp4s0 10Gbps intel 82599es
+sudo python ./sendSFCTraffic.py -i enp4s0 -smac 00:1b:21:c0:8f:ae -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.80.1.1 -isip 1.1.1.1 -idip 3.3.3.3
+'''
+
 import logging
 from scapy.all import *
 import time
@@ -35,12 +42,14 @@ LB_DST = ["10.1.2.1", "10.1.2.2", "10.1.2.3"]
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
 
+
 class TestVNFAddLB(TestBase):
     @pytest.fixture(scope="function")
     def setup_addLB(self):
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
+        self.killAllModule()
 
         rabbitMQFilePath = server.__file__.split("server.py")[0] \
             + "rabbitMQConf.conf"
