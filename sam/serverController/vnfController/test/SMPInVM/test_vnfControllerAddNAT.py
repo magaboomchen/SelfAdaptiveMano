@@ -7,10 +7,12 @@ import time
 
 import pytest
 
+from sam import base
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
 from sam.base.command import *
+from sam.base.nat import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
@@ -27,18 +29,22 @@ SFF0_DATAPATH_MAC = "52:54:00:5a:14:f0"
 SFF0_CONTROLNIC_IP = "192.168.0.201"
 SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 
+NAT_PIP = "8.0.8.8"
+NAT_MIN_PORT = 11111
+NAT_MAX_PORT = 11111
+
 logging.basicConfig(level=logging.INFO)
 
 
-class TestVNFSFCIAdderClass(TestBase):
+class TestVNFAddNAT(TestBase):
     @pytest.fixture(scope="function")
-    def setup_addSFCI(self):
+    def setup_addNAT(self):
         # setup
         self.resetRabbitMQConf(
-            "/home/t1/Projects/SelfAdaptiveMano/sam/base/rabbitMQConf.conf",
+            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
             "192.168.0.158", "mq", "123456")
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genBiDirectionSFC(classifier)
+        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_NAT])
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
         self.sP = ShellProcessor()
@@ -61,13 +67,6 @@ class TestVNFSFCIAdderClass(TestBase):
         self.killSFFController()
         self.killVNFController()
 
-    # def resetRabbitMQConf(self, filePath, serverIP,
-    #         serverUser, serverPasswd):
-    #     with open(filePath, 'w') as f:
-    #         f.write("RABBITMQSERVERIP = '{0}'\n".format(serverIP))
-    #         f.write("RABBITMQSERVERUSER = '{0}'\n".format(serverUser))
-    #         f.write("RABBITMQSERVERPASSWD = '{0}'\n".format(serverPasswd))
-
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
         vnfiSequence = []
@@ -80,17 +79,13 @@ class TestVNFSFCIAdderClass(TestBase):
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
-                vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
-                    vnfiID=uuid.uuid1(), node=server)
+                config = {}
+                config['NAT'] = NATTuple(NAT_PIP, NAT_MIN_PORT, NAT_MAX_PORT)
+                vnfi = VNFI(VNF_TYPE_NAT, vnfType=VNF_TYPE_NAT, 
+                    vnfiID=uuid.uuid1(), config=config, node=server)
+                vnfi.maxCPUNum = 1
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
-
-    # def runSFFController(self):
-    #     filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/sffController/sffControllerCommandAgent.py"
-    #     self.sP.runPythonScript(filePath)
-
-    # def killSFFController(self):
-    #     self.sP.killPythonScript("sffControllerCommandAgent.py")
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")
@@ -101,12 +96,6 @@ class TestVNFSFCIAdderClass(TestBase):
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-    # def runVNFController(self):
-    #     filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/vnfController/vnfController.py"
-    #     self.sP.runPythonScript(filePath)
-
-    # def killVNFController(self):
-    #     self.sP.killPythonScript("vnfController.py")
     '''
     def addVNFI2Server(self):
         logging.info("setup add SFCI to server")
@@ -132,7 +121,7 @@ class TestVNFSFCIAdderClass(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
 
-    def test_addSFCI(self, setup_addSFCI):
+    def test_addNAT(self, setup_addNAT):
         # exercise
         logging.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
@@ -149,7 +138,7 @@ class TestVNFSFCIAdderClass(TestBase):
         self._checkEncapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection0Traffic2SFF(self):
-        filePath = "./fixtures/sendDirection0Traffic.py"
+        filePath = "../fixtures/sendNATDirection0Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
@@ -166,15 +155,14 @@ class TestVNFSFCIAdderClass(TestBase):
         assert condition
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].dst == WEBSITE_REAL_IP
-
+        assert innerPkt[IP].src == '8.0.8.8'
 
     def verifyDirection1Traffic(self):
         self._sendDirection1Traffic2SFF()
         self._checkDecapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection1Traffic2SFF(self):
-        filePath = "./fixtures/sendDirection1Traffic.py"
+        filePath = "../fixtures/sendNATDirection1Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
@@ -190,8 +178,7 @@ class TestVNFSFCIAdderClass(TestBase):
         assert condition == True
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].src == WEBSITE_REAL_IP
-
+        assert innerPkt[IP].dst == '3.0.0.4'
 
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)

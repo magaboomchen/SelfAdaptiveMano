@@ -1,5 +1,8 @@
+natpattern :: IPRewriterPatterns(NAT 8.0.8.8 11111-11111 - -)
+
 // The first line is the declaration of IPRewriterPatterns, i.e. "nat :: IPRewriterPatterns(NAT pubIP minport-maxport - -)"
 rw :: IPRewriter(pattern NAT 0 1, pass 1, TCP_GUARANTEE 1000, UDP_GUARANTEE 1000);
+
 
 in0 :: FromDPDKDevice(0);
 out0 :: ToDPDKDevice(0, N_QUEUES 1);

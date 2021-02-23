@@ -10,10 +10,11 @@ rt :: RadixIPsecLookup(
 //      0.0.0.0/0 4.4.4.4 1 234 \<11FF0183A9471ABE01FFFA04103BB102>  \<11FF0183A9471ABE01FFFA04103BB202>  300 64
 //      );
 
+
 in0 :: FromDPDKDevice(0);
-out0 :: ToDPDKDevice(0);
+out0 :: ToDPDKDevice(0, N_QUEUES 1);
 in1 :: FromDPDKDevice(1);
-out1 ::ToDPDKDevice(1);
+out1 ::ToDPDKDevice(1, N_QUEUES 1);
 
 // 0 -> 1
 class_left :: Classifier(12/0806 20/0001,  // ARP query
@@ -77,3 +78,4 @@ ipip_left -> Unstrip(14) -> [0]cb_left;
 cb_left[0] -> Strip(34) -> CheckIPHeader2() -> rt;
 ipip_right -> Unstrip(14) -> [0]cb_right;
 cb_right[0] -> Strip(34) -> CheckIPHeader2(0) -> rt;
+

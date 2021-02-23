@@ -82,6 +82,7 @@ SFF3_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 
 logging.basicConfig(level=logging.INFO)
 
+
 class TestBase(object):
     MAXSFCIID = 0
     sfciCounter = 0

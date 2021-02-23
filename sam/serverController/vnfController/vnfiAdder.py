@@ -12,6 +12,7 @@ from sam.serverController.sffController.sibMaintainer import *
 from sam.serverController.vnfController.sourceAllocator import *
 from sam.serverController.vnfController.vcConfig import vcConfig
 
+
 class VNFIAdder(object):
     def __init__(self, dockerPort):
         self._sibm = SIBMaintainer()
@@ -43,7 +44,7 @@ class VNFIAdder(object):
             for cpu in each:
                 cpuStr = cpuStr + '%d,' % cpu
         cpuStr = cpuStr[:-1]
-        
+
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.vnfiID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.vnfiID, 1).split(',')
