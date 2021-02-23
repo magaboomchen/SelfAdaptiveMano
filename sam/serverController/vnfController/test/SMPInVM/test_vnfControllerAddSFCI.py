@@ -7,11 +7,11 @@ import time
 
 import pytest
 
+from sam import base
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
 from sam.base.command import *
-from sam.base.acl import *
 from sam.base.socketConverter import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
@@ -31,19 +31,21 @@ SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 logging.basicConfig(level=logging.INFO)
 
 
-class TestVNFAddFW(TestBase):
+class TestVNFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
-    def setup_addFW(self):
+    def setup_addSFCI(self):
         # setup
         self.resetRabbitMQConf(
-            "/home/t1/Projects/SelfAdaptiveMano/sam/base/rabbitMQConf.conf",
+            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
             "192.168.0.158", "mq", "123456")
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_FW])
+        self.sfc = self.genBiDirectionSFC(classifier)
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
         self.sP = ShellProcessor()
-        self.clearQueue()
+        self.sP.runShellCommand("sudo rabbitmqctl purge_queue MEDIATOR_QUEUE")
+        self.sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue VNF_CONTROLLER_QUEUE")
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
             TESTER_SERVER_DATAPATH_MAC)
 
@@ -60,13 +62,6 @@ class TestVNFAddFW(TestBase):
         self.killSFFController()
         self.killVNFController()
 
-    # def resetRabbitMQConf(self, filePath, serverIP,
-    #         serverUser, serverPasswd):
-    #     with open(filePath, 'w') as f:
-    #         f.write("RABBITMQSERVERIP = '{0}'\n".format(serverIP))
-    #         f.write("RABBITMQSERVERUSER = '{0}'\n".format(serverUser))
-    #         f.write("RABBITMQSERVERPASSWD = '{0}'\n".format(serverPasswd))
-
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
         vnfiSequence = []
@@ -79,29 +74,10 @@ class TestVNFAddFW(TestBase):
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
-                config = {}
-                config['ACL'] = self.genTestFWRules()
-                vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
-                    vnfiID=uuid.uuid1(), config=config, node=server)
+                vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
+                    vnfiID=uuid.uuid1(), node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
-
-    def genTestFWRules(self):
-        rules = []
-        #rules = parseACLFile('/home/t1/Projects/Classbench/fw4_1k')
-        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
-            srcPort=(1234, 1234), dstPort=(80, 80)))
-        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=WEBSITE_REAL_IP, dstAddr=OUTTER_CLIENT_IP,
-            srcPort=(80, 80), dstPort=(1234, 1234)))
-        rules.append(ACLTuple(ACL_ACTION_DENY))
-        return rules
-
-    # def runSFFController(self):
-    #     filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/sffController/sffControllerCommandAgent.py"
-    #     self.sP.runPythonScript(filePath)
-
-    # def killSFFController(self):
-    #     self.sP.killPythonScript("sffControllerCommandAgent.py")
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")
@@ -112,12 +88,6 @@ class TestVNFAddFW(TestBase):
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-    # def runVNFController(self):
-    #     filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/vnfController/vnfController.py"
-    #     self.sP.runPythonScript(filePath)
-
-    # def killVNFController(self):
-    #     self.sP.killPythonScript("vnfController.py")
     '''
     def addVNFI2Server(self):
         logging.info("setup add SFCI to server")
@@ -142,7 +112,8 @@ class TestVNFAddFW(TestBase):
         assert cmdRply.cmdID == self.delSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-    def test_addFW(self, setup_addFW):
+
+    def test_addSFCI(self, setup_addSFCI):
         # exercise
         logging.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
@@ -159,7 +130,7 @@ class TestVNFAddFW(TestBase):
         self._checkEncapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection0Traffic2SFF(self):
-        filePath = "./fixtures/sendFWDirection0Traffic.py"
+        filePath = "../fixtures/sendDirection0Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
@@ -184,7 +155,7 @@ class TestVNFAddFW(TestBase):
         self._checkDecapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection1Traffic2SFF(self):
-        filePath = "./fixtures/sendFWDirection1Traffic.py"
+        filePath = "../fixtures/sendDirection1Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):

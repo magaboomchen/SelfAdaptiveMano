@@ -4,7 +4,7 @@ import logging
 import time
 from sam.base.socketConverter import *
 from sam.test.testBase import *
-from sam.serverController.vnfController.test.test_vnfControllerAddFW import *
+from sam.serverController.vnfController.test.SMPInVM.test_vnfControllerAddFW import *
 
 def sendDirection0Traffic():
     data = "Hello World"

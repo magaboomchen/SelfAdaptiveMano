@@ -7,6 +7,7 @@ import time
 
 import pytest
 
+from sam import base
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
@@ -33,7 +34,7 @@ class TestVNFSFCIDeleterClass(TestBase):
     def setup_delSFCI(self):
         # setup
         self.resetRabbitMQConf(
-            "/home/t1/Projects/SelfAdaptiveMano/sam/base/rabbitMQConf.conf",
+            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
             "192.168.0.158", "mq", "123456")
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier)
@@ -54,14 +55,7 @@ class TestVNFSFCIDeleterClass(TestBase):
 
         self.killSFFController()
         self.killVNFController()
-    
-    # def resetRabbitMQConf(self, filePath, serverIP,
-    #         serverUser, serverPasswd):
-    #     with open(filePath, 'w') as f:
-    #         f.write("RABBITMQSERVERIP = '{0}'\n".format(serverIP))
-    #         f.write("RABBITMQSERVERUSER = '{0}'\n".format(serverUser))
-    #         f.write("RABBITMQSERVERPASSWD = '{0}'\n".format(serverPasswd))
-    
+      
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
         vnfiSequence = []
@@ -79,13 +73,6 @@ class TestVNFSFCIDeleterClass(TestBase):
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
-    # def runSFFController(self):
-    #     filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/sffController/sffControllerCommandAgent.py"
-    #     self.sP.runPythonScript(filePath)
-
-    # def killSFFController(self):
-    #     self.sP.killPythonScript("sffControllerCommandAgent.py")
-
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
@@ -94,13 +81,6 @@ class TestVNFSFCIDeleterClass(TestBase):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-    # def runVNFController(self):
-    #     filePath = "~/Projects/SelfAdaptiveMano/sam/serverController/vnfController/vnfController.py"
-    #     self.sP.runPythonScript(filePath)
-
-    # def killVNFController(self):
-    #     self.sP.killPythonScript("vnfController.py")
 
     def test_delSFCI(self, setup_delSFCI):
         # exercise
