@@ -12,13 +12,11 @@ from ryu.controller import event as ryuControllerEvent
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ipv4
-# from ryu.lib.packet import arp
 from ryu.lib.packet import ether_types
 from ryu.topology import switches
 from ryu.base.app_manager import *
 
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
-# from sam.ryu.baseApp import BaseApp
 from sam.ryu.conf.ryuConf import *
 from sam.ryu.ufrrIBMaintainer import *
 from sam.ryu.frr import FRR

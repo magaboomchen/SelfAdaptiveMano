@@ -12,8 +12,8 @@ from sam.base.command import *
 from sam.ryu.conf.ryuConf import *
 from sam.ryu.baseApp import BaseApp
 
-DCNGATEWAY_INBOUND_PORT = 1
-SWITCH_CLASSIFIER_PORT = 3
+# DCNGATEWAY_INBOUND_PORT = 1
+# SWITCH_CLASSIFIER_PORT = 3
 
 
 class RyuCommandAgent(BaseApp):

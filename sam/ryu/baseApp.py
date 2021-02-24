@@ -23,8 +23,8 @@ class BaseApp(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(BaseApp, self).__init__(*args, **kwargs)
         logging.getLogger("pika").setLevel(logging.WARNING)
-        logConfigur = LoggerConfigurator('logger', './log',
-                                            'ryuApp.log', level='info')
+        logConfigur = LoggerConfigurator(__name__, './log',
+                                            'baseApp.log', level='info')
         self.logger = logConfigur.getLogger()
         self._messageAgent = MessageAgent(self.logger)
         self._switchConfs = {}

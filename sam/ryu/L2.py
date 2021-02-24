@@ -39,9 +39,8 @@ class L2(BaseApp):
         self._peerPortTable = {}    # switch's peer switch's port
         self._switchesLANMacTable = {}  # {dpid:{mac:port}}
 
-        logConfigur = LoggerConfigurator('logger', './log', 'ryuAppL2.log', level='info')
+        logConfigur = LoggerConfigurator(__name__, './log', 'ryuAppL2.log', level='debug')
         self.logger = logConfigur.getLogger()
-        self.logger.setLevel(logging.WARNING)
 
     def getLocalPortIDByMac(self, mac):
         for dpid in self._switchesLANMacTable.keys():
@@ -319,12 +318,14 @@ class L2(BaseApp):
 
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocol(ethernet.ethernet)
+
         if eth.ethertype == ether_types.ETH_TYPE_LLDP:
             return  # ignore lldp packet
 
         dpid = datapath.id
-        self.logger.debug("L2._packet_in_handler, dpid:%d, in_port:%d" %(dpid, in_port) )
         if eth.ethertype == ether_types.ETH_TYPE_ARP:
+            self.logger.debug("\nL2._packet_in_handler, dpid:%d, in_port:%d" %(dpid, in_port))
+
             self.logger.debug("get an arp")
             arpHeader = pkt.get_protocol(arp.arp)
 
@@ -399,11 +400,12 @@ class L2(BaseApp):
                 self.logger.debug("This arp is from other LAN, drop it")
 
         elif eth.ethertype == ether_types.ETH_TYPE_IP:
-            # mplsFrame = pkt.get_protocol(mpls.mpls)
-            # if mplsFrame:
-            #     self.logger.warning("get a miss match mpls frame:{0}".format(mplsFrame))
-
             ipv4Pkt = pkt.get_protocol(ipv4.ipv4)
+            if ipv4Pkt.dst == "255.255.255.255":
+                return 
+
+            self.logger.debug("\nL2._packet_in_handler, dpid:%d, in_port:%d" %(dpid, in_port))
+
             self.logger.warning(
                 "from dpid: {0} get a miss match ether frame:"
                 "{1} with ipv4 dst:{2}".format(

@@ -66,7 +66,7 @@ if __name__=="__main__":
     argParser = ArgParser()
     NICPCIAddress = argParser.getArgs()['nicPciAddress']   # example: 0000:00:08.0
     controllNICName = argParser.getArgs()['controllNicName']   # example: ens3
-    serverType = argParser.getArgs()['serverType']   # example: vnfi, classifier
+    serverType = argParser.getArgs()['serverType']   # example: nfvi, classifier
     datapathNICIP = argParser.getArgs()['datapathNicIP']   # example: 2.2.0.38
 
     serverAgent = ServerAgent(controllNICName, serverType, datapathNICIP, NICPCIAddress)
