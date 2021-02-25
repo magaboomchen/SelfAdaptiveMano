@@ -8,10 +8,9 @@ import logging
 import pytest
 from ryu.controller import dpset
 
+from sam import base
 from sam.ryu.topoCollector import TopoCollector
-from sam.base.slo import *
-from sam.base.server import *
-from sam.base.command import *
+from sam.base.path import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
@@ -48,10 +47,13 @@ SFF3_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
 SFF3_SERVERID = 10005
 
 
-class TestUFRRClass(TestFRR):
+class TestPSFCClass(TestFRR):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
         # setup
+        self.resetRabbitMQConf(
+            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
+            "192.168.0.194", "mq", "123456")
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
@@ -73,9 +75,7 @@ class TestUFRRClass(TestFRR):
         self.runSFFController()
         self.addSFCI2SFF()
 
-        # self.vC = VNFControllerStub()
-        # time.sleep(5)
-        self.runVNFController()
+        self.vC = VNFControllerStub()
         self.addVNFI2Server()
 
         yield
@@ -85,43 +85,20 @@ class TestUFRRClass(TestFRR):
         self.delSFCI2Classifier()
         self.killClassifierController()
         self.killSFFController()
-        self.killVNFController()
 
-    def addVNFI2Server(self):
-        self.sendCmd(VNF_CONTROLLER_QUEUE,
-            MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
-        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.addSFCICmd.cmdID
-        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-    def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
-        self.sendCmd(VNF_CONTROLLER_QUEUE,
-            MSG_TYPE_VNF_CONTROLLER_CMD , self.delSFCICmd)
-        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.delSFCICmd.cmdID
-        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-    def genUniDirectionSFC(self, classifier):
-        sfcUUID = uuid.uuid1()
-        vNFTypeSequence = [VNF_TYPE_FORWARD]
-        maxScalingInstanceNumber = 1
-        backupInstanceNumber = 0
-        applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
-        direction1 = {
-            'ID': 0,
-            'source': {"IPv4":"*"},
-            'ingress': classifier,
-            'match': {'srcIP': "*",'dstIP': WEBSITE_REAL_IP,
-                'srcPort': "*",'dstPort': "*",'proto': "*"},
-            'egress': classifier,
-            'destination': {"IPv4":WEBSITE_REAL_IP}
+    def genUniDirection12BackupForwardingPathSet(self):
+        primaryForwardingPath = {1:[[(0,10001),(0,1),(0,2),(0,10003)],[(1,10003),(1,2),(1,1),(1,10001)]]}
+        mappingType = MAPPING_TYPE_NOTVIA_PSFC
+        # To test notVia ryu app simplily, we set merge switch as the failure node
+        backupForwardingPath = {
+            1:{
+                (("failureNPoPID", (0, 2, (1,))),
+                ("repairMethod", "increaseBackupPathPrioriy")):
+                    [[(0, 1), (0, 3), (0, 10005)], [(1, 10005), (1, 3), (1, 1)]]
+            }
         }
-        directions = [direction1]
-        slo = SLO(latencyBound=35, throughput=10)
-        return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions, slo=slo)
-
+        return ForwardingPathSet(primaryForwardingPath, mappingType,
+            backupForwardingPath)
     def gen12BackupVNFISequence(self, SFCLength=1):
         # hard-code function
         vnfiSequence = []
@@ -158,13 +135,13 @@ class TestUFRRClass(TestFRR):
         return vnfiSequence
 
     # @pytest.mark.skip(reason='Temporarly')
-    def test_UFRRAddUniSFCI(self, setup_addUniSFCI):
+    def test_addUniSFCI(self, setup_addUniSFCI):
         logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
         raw_input()
 
-        self.addSFC2NetworkController()
-        self.addSFCI2NetworkController()
+        self._deploySFC()
+        self._deploySFCI()
 
         logging.info("Please input any key to test "
             "server software failure\n"
@@ -173,12 +150,15 @@ class TestUFRRClass(TestFRR):
         raw_input()
         self.sendHandleServerSoftwareFailureCmd()
 
-        logging.info("Please input mode 0 into mininet\n"
-            "After the test, "
-            "Press any key to quit!")
+        logging.info("Please input '6',"
+            "then input 'stop s2' to stop switch s2\n"
+            "After the test, Press any key to quit!")
         raw_input()
 
-    def addSFC2NetworkController(self):
+        logging.info("Press any key to quit!")
+        raw_input()
+
+    def _deploySFC(self):
         # exercise: mapping SFC
         self.addSFCCmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,
@@ -191,7 +171,7 @@ class TestUFRRClass(TestFRR):
         assert cmdRply.cmdID == self.addSFCCmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-    def addSFCI2NetworkController(self):
+    def _deploySFCI(self):
         # exercise: mapping SFCI
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,

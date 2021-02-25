@@ -8,6 +8,7 @@ import logging
 import pytest
 from ryu.controller import dpset
 
+from sam import base
 from sam.ryu.topoCollector import TopoCollector
 from sam.base.path import *
 from sam.base.shellProcessor import ShellProcessor
@@ -46,10 +47,13 @@ SFF3_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
 SFF3_SERVERID = 10005
 
 
-class TestE2EProtectionClass(TestFRR):
+class TestNotViaClass(TestFRR):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
         # setup
+        self.resetRabbitMQConf(
+            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
+            "192.168.0.194", "mq", "123456")
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
@@ -57,13 +61,13 @@ class TestE2EProtectionClass(TestFRR):
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genUniDirectionSFC(classifier)
         self.sfci = self.genUniDirection12BackupSFCI()
+        # self.sfciID = self.sfci.sfciID
+        # self.vnfiSequence = self.sfci.vnfiSequence
 
         self.mediator = MediatorStub()
         self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfc)
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
-
-        self._messageAgent = MessageAgent()
 
         self.runClassifierController()
         self.addSFCI2Classifier()
@@ -84,15 +88,22 @@ class TestE2EProtectionClass(TestFRR):
 
     def genUniDirection12BackupForwardingPathSet(self):
         primaryForwardingPath = {1:[[(0,10001),(0,1),(0,2),(0,10003)],[(1,10003),(1,2),(1,1),(1,10001)]]}
-        mappingType = MAPPING_TYPE_E2EP
+        mappingType = MAPPING_TYPE_NOTVIA_PSFC
+        # To test notVia ryu app simplily, we set merge switch as the failure node
         backupForwardingPath = {
-            1: {
-                ('repairMethod', 'increaseBackupPathPrioriy'):
-                    [[(0, 10001), (0, 1), (0, 3), (0, 10005)], [(1, 10005), (1, 3), (1, 1), (1, 10001)]]
-                }
+            1:{
+                (("failureLayerNodeID", (0,2)), ("repairMethod", "fast-reroute"),
+                    ("repairLayerSwitchID", (0, 1)),
+                    ("mergeLayerSwitchID", (0, 2)), ("newPathID", 2)):
+                        [[(0,1),(0,3),(0,2)]],
+                (("failureLayerNodeID", (1,1)), ("repairMethod", "fast-reroute"),
+                    ("repairLayerSwitchID", (1, 2)),
+                    ("mergeLayerSwitchID", (1, 1)), ("newPathID", 3)):
+                        [[(1,2),(1,3),(1,1)]]
+            }
         }
-        return ForwardingPathSet(primaryForwardingPath, mappingType, backupForwardingPath)
-
+        return ForwardingPathSet(primaryForwardingPath, mappingType,
+            backupForwardingPath)
     def gen12BackupVNFISequence(self, SFCLength=1):
         # hard-code function
         vnfiSequence = []
@@ -136,13 +147,6 @@ class TestE2EProtectionClass(TestFRR):
 
         self._deploySFC()
         self._deploySFCI()
-
-        logging.info("Please input any key to test "
-            "server software failure\n"
-            "After the test, "
-            "Press any key to quit!")
-        raw_input()
-        self.sendHandleServerSoftwareFailureCmd()
 
         logging.info("Press any key to quit!")
         raw_input()

@@ -182,6 +182,10 @@ class L2(BaseApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
+
+        # clear all flow in switch
+        # # # self._clear_flow(datapath, MAIN_TABLE)
+
         # install table-miss flow entry
         #
         # We specify NO BUFFER to max_len of the output action due to
@@ -319,15 +323,25 @@ class L2(BaseApp):
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocol(ethernet.ethernet)
 
+        dpid = datapath.id
+
         if eth.ethertype == ether_types.ETH_TYPE_LLDP:
             return  # ignore lldp packet
 
-        dpid = datapath.id
+        # if in_port == 49:
+        #     self.logger.debug("\nL2._packet_in_handler, dpid:%d, in_port:%d" %(dpid, in_port))
+        #     self.logger.debug("pkt:{0}".format(pkt))
+
         if eth.ethertype == ether_types.ETH_TYPE_ARP:
             self.logger.debug("\nL2._packet_in_handler, dpid:%d, in_port:%d" %(dpid, in_port))
 
             self.logger.debug("get an arp")
             arpHeader = pkt.get_protocol(arp.arp)
+
+            if arpHeader.opcode == arp.ARP_REPLY:
+                self.logger.debug("get an arp reply, dst_mac:{0}, src_mac:{1}, dst_ip:{2}, src_ip:{3}".format(
+                    arpHeader.dst_mac, arpHeader.src_mac, arpHeader.dst_ip, arpHeader.src_ip
+                ))
 
             # Isolate broadcast domain
             self.logger.debug( "arpHeader.dst_ip:%s, net:%s"  %(arpHeader.dst_ip, self._getLANNet(datapath.id)) )

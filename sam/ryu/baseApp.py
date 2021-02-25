@@ -133,8 +133,8 @@ class BaseApp(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         for port in ports:
-            src_mac = port.hw_addr
-            # self.logger.debug("Send arp request, src_mac:%s", src_mac)
+            # src_mac = port.hw_addr
+            src_mac = "12:34:56:78:9a:bc"
             self.logger.debug(
                 "Send arp request "
                 "dpid:{0}, dstIP:{1},"

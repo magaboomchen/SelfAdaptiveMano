@@ -324,6 +324,7 @@ class TestBase(object):
             server.setControlNICIP(SFF1_CONTROLNIC_IP)
             server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
+            server.updateResource()
             vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
                 vnfiID=uuid.uuid1(), node=server)
             vnfiSequence[index].append(vnfi)
@@ -333,6 +334,7 @@ class TestBase(object):
             server.setControlNICIP(SFF2_CONTROLNIC_IP)
             server.setControlNICMAC(SFF2_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF2_DATAPATH_MAC)
+            server.updateResource()
             vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
                 vnfiID=uuid.uuid1(), node=server)
             vnfiSequence[index].append(vnfi)
@@ -342,6 +344,7 @@ class TestBase(object):
             server.setControlNICIP(SFF3_CONTROLNIC_IP)
             server.setControlNICMAC(SFF3_CONTROLNIC_MAC)
             server.setDataPathNICMAC(SFF3_DATAPATH_MAC)
+            server.updateResource()
             vnfi = VNFI(vnfID=VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
                 vnfiID=uuid.uuid1(), node=server)
             vnfiSequence[index].append(vnfi)

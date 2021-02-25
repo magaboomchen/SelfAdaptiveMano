@@ -126,7 +126,7 @@ class FRR(BaseApp):
         port = None
         for tryNumber in range(maxTryNumber):
             # get mac by arp table
-            dstMac = self.wer.getMacByIp(dpid,ipAddress)
+            dstMac = self.wer.getMacByIp(dpid, ipAddress)
             if dstMac == None:
                 self._broadcastArpRequest(datapath,ipAddress)
                 time.sleep(0.25)

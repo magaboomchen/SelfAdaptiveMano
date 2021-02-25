@@ -32,6 +32,8 @@ from sam.serverController.serverManager.serverManager import *
 class UFRR(FRR):
     def __init__(self, *args, **kwargs):
         super(UFRR, self).__init__(*args, **kwargs)
+        logConfigur = LoggerConfigurator(__name__, './log', 'ufrr.log', level='info')
+        self.logger = logConfigur.getLogger()
         self.logger.info("Initialize UFRR App !")
         self.ibm = UFRRIBMaintainer()
         self.logger.info("UFRR App is running !")

@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+'''
+sudo python sendInboundTraffic.py -i eno2 -sip 2.2.0.36 -dip 2.2.0.33 -smac 18:66:da:86:4c:16 -dmac cc:37:ab:a0:a8:41
+'''
+
 import time
 
 from scapy.all import *
@@ -34,7 +38,7 @@ def sendInboundTraffic2Classifier(iface, smac, dmac, sip, dip):
     data = "Hello World"
     ether = Ether(src=smac, dst=dmac)
     ip = IP(src=sip,dst=dip)
-    tcp = TCP(sport=1234,dport=80)
+    tcp = TCP(sport=1234, dport=80)
     frame = ether / ip / tcp /Raw(load=data)
     sendp(frame,iface=iface)
 
@@ -47,4 +51,7 @@ if __name__=="__main__":
     dmac = argParser.getArgs()['dmac']
     sip = argParser.getArgs()['sip']
     dip = argParser.getArgs()['dip']
-    sendInboundTraffic2Classifier(iface, smac, dmac, sip, dip)
+
+    while True:
+        time.sleep(1)
+        sendInboundTraffic2Classifier(iface, smac, dmac, sip, dip)

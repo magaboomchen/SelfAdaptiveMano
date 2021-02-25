@@ -126,6 +126,17 @@ class ClassifierInitializer(BessControlPlane):
 
             cibm.addModule("wm2","WildcardMatch")
 
+            # # ArpRequestBPF()
+            # argument = Any()
+            # arg = module_msg_pb2.BPFArg(
+
+
+            # )
+            # argument.Pack(arg)
+            # response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
+            #     name="arBPF", mclass="ArpResponderBPF", arg=argument))
+            # self._checkResponse(response)
+
             # ArpResponder()
             argument = Any()
             arg = module_msg_pb2.ArpResponderArg()

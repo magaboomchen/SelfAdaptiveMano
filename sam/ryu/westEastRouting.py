@@ -22,6 +22,7 @@ from ryu.base.app_manager import *
 from sam.ryu.conf.ryuConf import *
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
 from sam.ryu.baseApp import BaseApp
+from sam.base.loggerConfigurator import LoggerConfigurator
 
 
 class WestEastRouting(BaseApp):
@@ -49,7 +50,8 @@ class WestEastRouting(BaseApp):
         self._cacheLinks = {}
         self._cacheHosts = {}
 
-        self.logger.setLevel(logging.ERROR)
+        logConfigur = LoggerConfigurator(__name__, './log', 'westEastRouting.log', level='info')
+        self.logger = logConfigur.getLogger()
 
     def getMacByIp(self,dpid,ipAddress):
         if self._switchesLANArpTable.has_key(dpid) and \
@@ -88,10 +90,10 @@ class WestEastRouting(BaseApp):
         for keys in stsPath.iterkeys():
             path = stsPath[keys]
             self.logger.debug("path:{0}".format(path))
-            self.logger.debug("typeOfPath:{0}".format(type(path)))
+            # self.logger.debug("typeOfPath:{0}".format(type(path)))
             targetDPID = path[-1]
             path.reverse()
-            self.logger.debug("typeOfPath:{0}".format(type(path)))
+            # self.logger.debug("typeOfPath:{0}".format(type(path)))
             for index in range(len(path)-1):
                 dstDpid = path[index]
                 srcDpid = path[index+1]
@@ -157,7 +159,7 @@ class WestEastRouting(BaseApp):
                     match = ofproto_v1_3_parser.OFPMatch(
                         **matchFields
                     )
-                    self._add_flow(datapath, match, inst, table_id=MAIN_TABLE, priority=1)
+                    # self._add_flow(datapath, match, inst, table_id=MAIN_TABLE, priority=1)
             else:
                 self.logger.debug("old table set has this dpid && new tables set has this dpid")
                 for matchFieldsJson in self._cacheWestEastRIB[dpid].iterkeys():
@@ -167,7 +169,7 @@ class WestEastRouting(BaseApp):
                         match = ofproto_v1_3_parser.OFPMatch(
                             **matchFields
                         )
-                        self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=1)
+                        # self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=1)
                     else:
                         self.logger.debug("new entry is not in old rib")
                     self._westEastRIB[dpid][matchFieldsJson] = self._cacheWestEastRIB[dpid][matchFieldsJson]
@@ -176,7 +178,7 @@ class WestEastRouting(BaseApp):
                         **matchFields
                     )
                     inst = self._cacheWestEastRIB[dpid][matchFieldsJson]
-                    self._add_flow(datapath, match, inst, table_id=MAIN_TABLE, priority=1)
+                    # self._add_flow(datapath, match, inst, table_id=MAIN_TABLE, priority=1)
 
                 westEastRIBofADpidTmp = copy.copy(self._westEastRIB[dpid])
                 for matchFieldsJson in westEastRIBofADpidTmp.iterkeys():
@@ -189,7 +191,7 @@ class WestEastRouting(BaseApp):
                         match = ofproto_v1_3_parser.OFPMatch(
                             **matchFields
                         )
-                        self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=1)
+                        # self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=1)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def _switchFeaturesHandler(self, ev):
@@ -204,13 +206,13 @@ class WestEastRouting(BaseApp):
         # 128, OVS will send Packet-In with invalid buffer_id and
         # truncated packet data. In that case, we cannot output packets
         # correctly.  The bug has been fixed in OVS v2.1.0.
-        match = parser.OFPMatch()
-        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-                                          ofproto.OFPCML_NO_BUFFER)]
-        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                                             actions)]
-        self.logger.debug("_switch_features_handler: Add_flow")
-        self._add_flow(datapath, match, inst, table_id=MAIN_TABLE, priority=0)
+        # match = parser.OFPMatch()
+        # actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
+        #                                   ofproto.OFPCML_NO_BUFFER)]
+        # inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
+        #                                      actions)]
+        # self.logger.debug("_switch_features_handler: Add_flow")
+        # self._add_flow(datapath, match, inst, table_id=MAIN_TABLE, priority=0)
 
         # Initialize switch
         # match = parser.OFPMatch(
@@ -268,20 +270,49 @@ class WestEastRouting(BaseApp):
         dpid = datapath.id
         self.logger.debug("westEastRouting._packet_in_handler, dpid:%d, in_port:%d" %(dpid, in_port) )
 
+
+        # '''_packet_in_handler(): deal with arp packet'''
+        #     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
+        #     def _packet_in_handler(self, ev):
+        #         if ev.msg.msg_len < ev.msg.total_len:
+        #             self.logger.debug("packet truncated: only %s of %s bytes",
+        #                             ev.msg.msg_len, ev.msg.total_len)
+        #         msg = ev.msg
+        #         datapath = msg.datapath
+        #         ofproto = datapath.ofproto
+        #         parser = datapath.ofproto_parser
+                
+        #         pkt = packet.Packet(msg.data)
+        #         arppkt = pkt.get_protocol(arp.arp)
+
+        #         if arppkt != None:
+        #             # print("Packet in: arp broadcast")
+        #             for nodeid in range(self.node_num):
+        #                 actions = [parser.OFPActionOutput(self.switch_host_port[nodeid])]
+        #                 datapath = self.nodeid_datapath[nodeid]
+        #                 out = parser.OFPPacketOut(
+        #                     datapath=datapath,
+        #                     buffer_id=ofproto.OFP_NO_BUFFER,
+        #                     in_port=ofproto.OFPP_CONTROLLER,
+        #                     actions=actions, data=msg.data)
+        #                 datapath.send_msg(out)
+
+
         if msg.table_id == MAIN_TABLE:
             if eth.ethertype == ether_types.ETH_TYPE_IP:
                 ipHeader = pkt.get_protocol(ipv4.ipv4)
-                self.logger.debug("WestEast app get an IPv4 packet, dst ip:%s" %(ipHeader.dst))
+                self.logger.info("WestEast app get an IPv4 packet, dst ip:%s" %(ipHeader.dst))
                 if self._isLANIP(ipHeader.dst, self._getLANNet(datapath.id)):
                     # If dst is local host: send arp request to all port
                     ports = self.dpset.get_ports(datapath.id)
                     for port in ports:
                         src_mac = port.hw_addr
-                        self.logger.debug("Send arp request, src_mac:%s", src_mac)
+                        # src_mac = "12:12:12:12:12:12"
+                        self.logger.info("Send arp request, src_mac:%s", src_mac)
                         src_ip = self._getSwitchGatewayIP(datapath.id)
                         dst_mac = "FF:FF:FF:FF:FF:FF"
                         dst_ip = ipHeader.dst
-                        data = self._build_arp(arp.ARP_REQUEST,src_mac, src_ip, dst_mac, dst_ip)
+                        data = self._build_arp(arp.ARP_REQUEST, src_mac, src_ip, dst_mac, dst_ip)
 
                         out_port = port.port_no
                         actions = [parser.OFPActionOutput(out_port)]
