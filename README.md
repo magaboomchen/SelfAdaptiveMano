@@ -45,6 +45,9 @@ In details, add "value_maks" arg to Update() to only update vnfID in SFF.
 integration
 * None
 
+ryu
+* _del_flow() needs add out_port and out_group to make sure the correctness. Refactor all api reference by other module.
+
 # TODO LIST
 
 Readme.md

@@ -31,13 +31,13 @@ class E2EProtectionIBMaintainer(RIBMaintainerBase):
             self.sfciRIB[sfciID][pathID] = {}
         if not self.sfciRIB[sfciID][pathID].has_key(dpid):
             self.sfciRIB[sfciID][pathID][dpid] = []
-        self.sfciRIB[sfciID][pathID][dpid].append(
-            {
+        newEntry = {
                 "tableID":tableID,
                 "matchFields":matchFields, "priority":priority,
                 "actions":actions, "inst":inst
             }
-        )
+        self.sfciRIB[sfciID][pathID][dpid].append(newEntry)
+        self.logger.debug("add sfci to e2ep flow table:{0}".format(newEntry))
 
     def hasSFCIFlowTable(self, sfciID, pathID, dpid, matchFields):
         if not self.sfciRIB.has_key(sfciID):

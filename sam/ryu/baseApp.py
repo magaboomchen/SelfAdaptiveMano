@@ -51,15 +51,21 @@ class BaseApp(app_manager.RyuApp):
         datapath.send_msg(mod)
 
     def _del_flow(self, datapath, match, table_id=0,
-                    priority = ofproto_v1_3.OFP_DEFAULT_PRIORITY):
+                    priority = ofproto_v1_3.OFP_DEFAULT_PRIORITY,
+                    outPort = None,
+                    outGroup = None):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
+        if outPort == None:
+            outPort = ofproto.OFPP_ANY
+        if outGroup == None:
+            outGroup = ofproto.OFPG_ANY
         mod = parser.OFPFlowMod(
             datapath=datapath, match=match, cookie=0, cookie_mask=0,
             table_id = table_id,
             command=ofproto.OFPFC_DELETE, idle_timeout=0, hard_timeout=0,
-            priority=priority,flags=ofproto.OFPFF_SEND_FLOW_REM,
-            out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY
+            priority=priority, flags=ofproto.OFPFF_SEND_FLOW_REM,
+            out_port=outPort, out_group=outGroup
         )
         datapath.send_msg(mod)
 

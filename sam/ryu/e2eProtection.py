@@ -22,12 +22,15 @@ from sam.base.path import *
 from sam.base.socketConverter import *
 from sam.base.vnf import *
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.serverManager.serverManager import *
 
 
 class E2EProtection(FRR):
     def __init__(self, *args, **kwargs):
         super(E2EProtection, self).__init__(*args, **kwargs)
+        logConfigur = LoggerConfigurator(__name__, './log', 'e2eProtection.log', level='debug')
+        self.logger = logConfigur.getLogger()
         self.logger.info("Initialize E2EProtection App !")
         self.ibm = E2EProtectionIBMaintainer()
         self.logger.info("E2EProtection App is running !")
@@ -68,8 +71,6 @@ class E2EProtection(FRR):
     def _e2eProtectionHandleNodeFailure(self, nodeID):
         affectedSFCIIDList \
             = self._getAffectedSFCIIDListByFailureNodeID(nodeID)
-        self.logger.debug("affcted sfciID list:{0}".format(
-                                            affectedSFCIIDList))
         for sfciID, primaryPathID in affectedSFCIIDList:
             # for a primary path with primaryPathID, it's corresponding
             # backup path's pathID is primaryPathID+1
@@ -90,6 +91,9 @@ class E2EProtection(FRR):
                     self.logger.debug("valid primaryPathID")
                 if self._isPathHasFailureNodeID(primaryFP, failureNodeID):
                     affectedSFCIIDList.append((sfciID, primaryPathID))
+                    self.logger.debug(
+                        "affected sfciID:{0}, primaryPathID:{1}".format(
+                            sfciID, primaryPathID))
         return affectedSFCIIDList
 
     def _isPathHasFailureNodeID(self, primaryFP, failureNodeID):
@@ -116,11 +120,15 @@ class E2EProtection(FRR):
                 priority = entry["priority"]
                 actions = entry["actions"]
                 inst = entry["inst"]
+                outPort = actions[-1].port
                 if priority == LOWER_BACKUP_ENTRY_PRIORITY:
-                    self._del_flow(datapath, match, tableID, priority)
+                    self.logger.debug(
+                        "_del_flow dpid:{0}, match:{1}, priority:{2}".format(
+                            dpid, match, priority))
+                    self._del_flow(datapath, match, tableID, priority, outPort=outPort)
                     self._add_flow(datapath, match, inst, tableID,
                                     priority=UPPER_BACKUP_ENTRY_PRIORITY)
-                    priority = UPPER_BACKUP_ENTRY_PRIORITY
+                    entry["priority"] = UPPER_BACKUP_ENTRY_PRIORITY
 
     def _addSFCIHandler(self, cmd):
         self.logger.debug(
