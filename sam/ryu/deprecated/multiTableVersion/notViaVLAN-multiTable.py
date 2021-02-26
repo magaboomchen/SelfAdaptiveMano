@@ -121,7 +121,7 @@ class NotViaVLAN(FRR):
         self.logger.debug("srcMAC:{0},dstMAC:{1},outport:{2}".format(srcMAC,dstMAC,
             defaultOutPort))
         actions = [
-            parser.OFPActionDecNwTtl(),
+            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionOutput(defaultOutPort)
@@ -143,7 +143,7 @@ class NotViaVLAN(FRR):
             self.logger.debug("srcMAC:{0}, dstMAC:{1}, vlanID:{2}, outport:{2}".format(
                     srcMAC,dstMAC,vlanID,backupOutPort))
             actions = [
-                parser.OFPActionDecNwTtl(),
+                # parser.OFPActionDecNwTtl(),
                 parser.OFPActionSetField(eth_src=srcMAC),
                 parser.OFPActionSetField(eth_dst=dstMAC),
                 parser.OFPActionPushVlan(ether_types.ETH_TYPE_8021Q),
@@ -249,7 +249,7 @@ class NotViaVLAN(FRR):
 
         self.logger.debug("_packet_in_handler: Add_flow")
         self._add_flow(datapath, match, inst, table_id=VLAN_TABLE,
-            priority=1)
+            priority=2)
         self.ibm.addSFCIFlowTableEntry(sfci.sfciID,currentDpid,
             VLAN_TABLE, matchFields)
 
@@ -279,7 +279,7 @@ class NotViaVLAN(FRR):
 
         self.logger.debug("_packet_in_handler: Add_flow")
         self._add_flow(datapath, match, inst, table_id=VLAN_TABLE,
-            priority=1)
+            priority=2)
         self.ibm.addSFCIFlowTableEntry(sfci.sfciID,currentDpid,
             VLAN_TABLE, matchFields)
 
@@ -322,7 +322,7 @@ class NotViaVLAN(FRR):
         )
         inst = [parser.OFPInstructionGotoTable(table_id = NOTVIA_TABLE)]
         self._add_flow(datapath, match, inst,
-            table_id = IPV4_CLASSIFIER_TABLE, priority=2)
+            table_id = IPV4_CLASSIFIER_TABLE, priority=3)
 
     def _sendCmdRply(self, cmdID, cmdState):
         cmdRply = CommandReply(cmdID, cmdState)

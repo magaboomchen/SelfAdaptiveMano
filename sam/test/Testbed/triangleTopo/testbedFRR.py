@@ -15,7 +15,7 @@ from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
 
 TESTER_SERVER_DATAPATH_MAC = "18:66:da:85:f9:ed"
-OUTTER_CLIENT_IP = "1.1.1.1"
+OUTTER_CLIENT_IP = "1.1.1.2"
 WEBSITE_REAL_IP = "3.3.3.3"
 
 CLASSIFIER_DATAPATH_IP = "2.2.0.36"
@@ -206,3 +206,18 @@ class TestbedFRR(TestBase):
 
         return vnfiSequence
 
+    def sendHandleServerSoftwareFailureCmd(self):
+        logging.info("sendHandleServerFailureCmd")
+        server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
+        server.setServerID(SFF1_SERVERID)
+        server.setControlNICIP(SFF1_CONTROLNIC_IP)
+        server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
+        server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
+        msg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD,
+            Command(
+                cmdType=CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE,
+                cmdID=uuid.uuid1(),
+                attributes={"serverDown":[server]}
+            )
+        )
+        self._messageAgent.sendMsg(NETWORK_CONTROLLER_QUEUE, msg)

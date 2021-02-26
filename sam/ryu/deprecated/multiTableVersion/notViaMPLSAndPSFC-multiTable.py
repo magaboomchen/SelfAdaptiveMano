@@ -32,7 +32,7 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.serverController.serverManager.serverManager import *
 
 MAX_MPLS_TTL = 64
-# https://ryu.readthedocs.io/en/latest/ofproto_v1_3_ref.html
+# https://ryu.readthedocs.io/en/latest/ofproto_v1_4_ref.html
 # OFPActionDecMplsTtl
 # OFPActionPopMpls
 # OFPActionSetMplsTtl
@@ -129,7 +129,7 @@ class NotViaMPLSAndPSFC(FRR):
         self.logger.debug("srcMAC:{0},dstMAC:{1},outport:{2}".format(srcMAC,dstMAC,
             defaultOutPort))
         actions = [
-            parser.OFPActionDecNwTtl(),
+            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionOutput(defaultOutPort)
@@ -152,7 +152,7 @@ class NotViaMPLSAndPSFC(FRR):
             self.logger.debug("srcMAC:{0}, dstMAC:{1}, mplsLabel:{2}, outport:{2}".format(
                     srcMAC, dstMAC, mplsLabel, backupOutPort))
             actions = [
-                parser.OFPActionDecNwTtl(),
+                # parser.OFPActionDecNwTtl(),
                 parser.OFPActionSetField(eth_src=srcMAC),
                 parser.OFPActionSetField(eth_dst=dstMAC),
                 # parser.OFPActionPushMpls(ether_types.ETH_TYPE_MPLS),
@@ -266,7 +266,7 @@ class NotViaMPLSAndPSFC(FRR):
 
         self.logger.debug("_packet_in_handler: Add_flow")
         self._add_flow(datapath, match, inst, table_id=MPLS_TABLE,
-            priority=1)
+            priority=2)
         self.ibm.addSFCIFlowTableEntry(sfci.sfciID, currentDpid,
             MPLS_TABLE, matchFields)
 
@@ -321,7 +321,7 @@ class NotViaMPLSAndPSFC(FRR):
 
         self.logger.debug("_packet_in_handler: Add_flow")
         self._add_flow(datapath, match, inst, table_id=MPLS_TABLE,
-            priority=1)
+            priority=2)
         self.ibm.addSFCIFlowTableEntry(sfci.sfciID, currentDpid,
             MPLS_TABLE, matchFields)
 
@@ -365,7 +365,7 @@ class NotViaMPLSAndPSFC(FRR):
         )
         inst = [parser.OFPInstructionGotoTable(table_id = NOTVIAPSFC_TABLE)]
         self._add_flow(datapath, match, inst,
-            table_id = IPV4_CLASSIFIER_TABLE, priority=2)
+            table_id = IPV4_CLASSIFIER_TABLE, priority=3)
 
     def _sendCmdRply(self, cmdID, cmdState):
         cmdRply = CommandReply(cmdID, cmdState)

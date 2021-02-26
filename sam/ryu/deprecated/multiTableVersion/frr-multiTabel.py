@@ -62,26 +62,26 @@ class FRR(BaseApp):
             datapath = self.dpset.get(int(str(dpid), 0))
             source = direction['source']
             # if source in [None, "*"]:
-            #     inPortNum = DCNGATEWAY_INBOUND_PORT
+            #     inPortIndex = DCNGATEWAY_INBOUND_PORT
             # elif source.has_key("IPv4"):
-            #     inPortNum = self._getPortbyIP(datapath,source["IPv4"])
-            #     if inPortNum == None:
+            #     inPortIndex = self._getPortbyIP(datapath,source["IPv4"])
+            #     if inPortIndex == None:
             #         raise ValueError("_addRoute2Classifier: invalid source")
             # else:
             #     raise ValueError("_addRoute2Classifier: invalid source")
             if source.has_key("IPv4"):
                 ipv4Address = source["IPv4"]
                 if ipv4Address in [None, "*"]:
-                    inPortNum = DCNGATEWAY_INBOUND_PORT
+                    inPortIndex = DCNGATEWAY_INBOUND_PORT
                 else:
-                    inPortNum = self._getPortbyIP(datapath, source["IPv4"])
-                    if inPortNum == None:
+                    inPortIndex = self._getPortbyIP(datapath, source["IPv4"])
+                    if inPortIndex == None:
                         raise ValueError("_addRoute2Classifier: invalid source")
             else:
                 raise ValueError("_addRoute2Classifier: invalid source")
             classifierMAC = direction['ingress'].getDatapathNICMac()
             self._installRoute4Switch2Classifier(sfc.sfcUUID,
-                datapath, inPortNum, classifierMAC)
+                datapath, inPortIndex, classifierMAC)
 
     def _getSwitchByClassifier(self, classifier):
         # dpid = classifier.getServerID()
@@ -134,16 +134,16 @@ class FRR(BaseApp):
                 continue
         return port
 
-    def _installRoute4Switch2Classifier(self, sfcUUID, datapath, inPortNum,
+    def _installRoute4Switch2Classifier(self, sfcUUID, datapath, inPortIndex,
             classifierMAC):
         dpid = datapath.id
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        matchFields={'eth_type':ether_types.ETH_TYPE_IP, 'in_port':inPortNum}
+        matchFields={'eth_type':ether_types.ETH_TYPE_IP, 'in_port':inPortIndex}
         match = parser.OFPMatch(**matchFields)
-        in_port_info = self.dpset.get_port(dpid, inPortNum)
+        in_port_info = self.dpset.get_port(dpid, inPortIndex)
         actions = [
-            parser.OFPActionDecNwTtl(),
+            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=in_port_info.hw_addr),
             parser.OFPActionSetField(eth_dst=classifierMAC)
         ]
@@ -476,7 +476,7 @@ class FRR(BaseApp):
                 matchFields = entry["matchFields"]
                 match = parser.OFPMatch(**matchFields)
                 tableID = entry["tableID"]
-                self._del_flow(datapath, match, table_id=tableID, priority=1)
+                self._del_flow(datapath, match, table_id=tableID, priority=2)
                 if entry.has_key("groupID"):
                     groupID = entry["groupID"]
                     self._delSFCIGroupTable(datapath, groupID)

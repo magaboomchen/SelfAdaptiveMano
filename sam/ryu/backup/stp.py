@@ -48,7 +48,7 @@ class SimpleSwitch13(simple_switch_13.SimpleSwitch13):
             mod = parser.OFPFlowMod(
                 datapath, command=ofproto.OFPFC_DELETE,
                 out_port=ofproto.OFPP_ANY, out_group=ofproto.OFPG_ANY,
-                priority=1, match=match)
+                priority=2, match=match)
             datapath.send_msg(mod)
 
     @set_ev_cls(stplib.EventPacketIn, MAIN_DISPATCHER)

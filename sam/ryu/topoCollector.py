@@ -95,6 +95,9 @@ class TopoCollector(BaseApp):
         self.logger.info("add link:{0}".format(link))
         self._sendEvent(TopologyChangeEvent())
 
+    def getLink(self, srcDpid, dstDpid):
+        return self.links[(srcDpid, dstDpid)]
+
     @set_ev_cls(event.EventLinkDelete)
     def _delLink(self,ev):
         link = ev.link

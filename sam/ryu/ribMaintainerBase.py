@@ -4,6 +4,7 @@
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 from sam.base.socketConverter import *
+from sam.ryu.conf.ryuConf import *
 
 # TODO: test
 
@@ -16,21 +17,33 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
         self.sfciRIB = {}
         self.compSfciRIB = {}
         self._sc = SocketConverter()
+        self.maxGroupID = 0
         logConfigur = LoggerConfigurator(__name__, './log',
             'RIBMaintainerBase.log', level='debug')
         self.logger = logConfigur.getLogger()
 
     def assignGroupID(self, dpid):
-        if not self.groupIDSets.has_key(dpid):
-            self.groupIDSets[dpid] = [0]
-            return 0
+        if CURRENT_ENV == PICA8_ENV:
+            self.maxGroupID = self.maxGroupID + 1
+            return self.maxGroupID
+        elif CURRENT_ENV == MININET_ENV:
+            if not self.groupIDSets.has_key(dpid):
+                self.groupIDSets[dpid] = [0]
+                return 0
+            else:
+                groupID = self.genAvailableMiniNum4List(self.groupIDSets[dpid])
+                self.groupIDSets[dpid].append(groupID)
+                return groupID
         else:
-            groupID = self.genAvailableMiniNum4List(self.groupIDSets[dpid])
-            self.groupIDSets[dpid].append(groupID)
-            return groupID
+            raise ValueError("Unknown envirnoment {0}".format(CURRENT_ENV))
 
     def delGroupID(self, dpid, groupID):
-        self.groupIDSets[dpid].remove(groupID)
+        if CURRENT_ENV == PICA8_ENV:
+            pass
+        elif CURRENT_ENV == MININET_ENV:
+            self.groupIDSets[dpid].remove(groupID)
+        else:
+            raise ValueError("Unknown envirnoment {0}".format(CURRENT_ENV))
 
     def addSFCFlowTableEntry(self, sfcUUID, dpid, tableID, matchFields):
         if not self.sfcRIB.has_key(sfcUUID):

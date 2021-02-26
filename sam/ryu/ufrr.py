@@ -26,6 +26,7 @@ from sam.base.path import *
 from sam.base.socketConverter import *
 from sam.base.vnf import *
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.serverManager.serverManager import *
 
 
@@ -78,21 +79,42 @@ class UFRR(FRR):
     def _shutdownSwitchPort(self, dpid, portID):
         # reference
         # https://github.com/faucetsdn/ryu/blob/master/ryu/lib/stplib.py
-        self.logger.debug(
-            "shutdown switch:{0}'s port:{1}".format(
-                dpid, portID))
-        datapath = self.dpset.get(int(str(dpid),0))
+        self.logger.debug("shutdown switch:{0}'s port:{1}".format(
+                                                        dpid, portID))
+        datapath = self.dpset.get(int(str(dpid), 0))
 
         ofp = datapath.ofproto
         ofp_parser = datapath.ofproto_parser
 
         hw_addr = self.L2.getMacByLocalPort(dpid, portID)
+        self.logger.debug("corresponding switch port's hw_addr:{0}".format(hw_addr))
 
-        config = ofp.OFPPC_PORT_DOWN
-        mask = 0b1100101
-        advertise = (ofp.OFPPF_COPPER)
-        req = ofp_parser.OFPPortMod(datapath, portID, hw_addr, config,
-                                    mask, advertise)
+        config = ofp.OFPPC_PORT_DOWN | ofp.OFPPC_NO_RECV | ofp.OFPPC_NO_FWD | ofp.OFPPC_NO_PACKET_IN
+
+        advertise = (ofp.OFPPF_10MB_HD | ofp.OFPPF_100MB_FD |
+                        ofp.OFPPF_1GB_FD | ofp.OFPPF_COPPER |
+                        ofp.OFPPF_AUTONEG | ofp.OFPPF_PAUSE |
+                        ofp.OFPPF_PAUSE_ASYM)
+        if ofp.OFP_VERSION == ofproto_v1_3.OFP_VERSION:
+            # https://ryu.readthedocs.io/en/latest/ofproto_v1_3_ref.html
+            # mask = 0b1100101
+            mask = (ofp.OFPPC_PORT_DOWN | ofp.OFPPC_NO_RECV |
+                    ofp.OFPPC_NO_FWD | ofp.OFPPC_NO_PACKET_IN)
+            req = ofp_parser.OFPPortMod(datapath, portID, hw_addr, config,
+                                        mask, advertise)
+        elif ofp.OFP_VERSION == ofproto_v1_4.OFP_VERSION:
+            # https://ryu.readthedocs.io/en/latest/ofproto_v1_4_ref.html
+            mask = (ofp.OFPPC_PORT_DOWN | ofp.OFPPC_NO_RECV |
+                    ofp.OFPPC_NO_FWD | ofp.OFPPC_NO_PACKET_IN)
+            advertise = (ofp.OFPPF_10MB_HD | ofp.OFPPF_100MB_FD |
+                        ofp.OFPPF_1GB_FD | ofp.OFPPF_COPPER |
+                        ofp.OFPPF_AUTONEG | ofp.OFPPF_PAUSE |
+                        ofp.OFPPF_PAUSE_ASYM)
+            properties = [ofp_parser.OFPPortModPropEthernet(advertise)]
+            req = ofp_parser.OFPPortMod(datapath, portID, hw_addr, config,
+                                        mask, properties)
+        else:
+            raise ValueError("Unknown ofp version:{0}".format(ofp))
         datapath.send_msg(req)
 
     def _addSFCIHandler(self, cmd):
@@ -132,7 +154,10 @@ class UFRR(FRR):
             (srcServerID, dstServerID) = self._getSrcDstServerInStage(segPath)
             # add route
             for i in range(1, len(segPath)-1):
+                prevNodeID = segPath[i-1][1]
                 currentSwitchID = segPath[i][1]
+                inPortIndex = self._getInputPortOfDstNode(sfci, direction,
+                                                prevNodeID, currentSwitchID)
                 groupID = self.ibm.assignGroupID(currentSwitchID)
                 self.logger.info("dpid:{0}".format(currentSwitchID))
                 self.logger.info("assignGroupID:{0}".format(groupID))
@@ -145,11 +170,11 @@ class UFRR(FRR):
                 self._addUFRRSFCIGroupTable(currentSwitchID,
                     nextNodeID, sfci, direction, stageCount, groupID)
                 self._addUFRRSFCIFlowtable(currentSwitchID,
-                    sfci, stageCount, primaryPathID, dstIP, groupID)
+                    sfci, stageCount, primaryPathID, inPortIndex, dstIP, groupID)
 
     def _addUFRRSFCIGroupTable(self, currentDpid, nextDpid, sfci,
                                 direction, stageCount, groupID):
-        datapath = self.dpset.get(int(str(currentDpid),0))
+        datapath = self.dpset.get(int(str(currentDpid), 0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         buckets = []
@@ -162,7 +187,6 @@ class UFRR(FRR):
         self.logger.info("srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
             srcMAC, dstMAC, defaultOutPort))
         actions = [
-            parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionOutput(defaultOutPort)
@@ -186,12 +210,9 @@ class UFRR(FRR):
                     " newDstIP:{2}, outport:{3}".format(
                         srcMAC, dstMAC, newDstIP, backupOutPort))
             actions = [
-                parser.OFPActionDecNwTtl(),
                 parser.OFPActionSetField(eth_src=srcMAC),
                 parser.OFPActionSetField(eth_dst=dstMAC),
                 parser.OFPActionSetField(ipv4_dst=newDstIP),
-                # only available for openflow 1.5
-                # parser.OFPActionSetField(ipv4_dst=(newDstIP,"0.0.0.255")),
                 parser.OFPActionOutput(backupOutPort)
             ]
             watch_port = backupOutPort
@@ -205,14 +226,16 @@ class UFRR(FRR):
         datapath.send_msg(req)
 
     def _addUFRRSFCIFlowtable(self, currentDpid, sfci, stageCount,
-                                pathID, dstIP, groupID):
+                                pathID, inPortIndex, dstIP, groupID):
         self.logger.info("_addUFRRSFCIFlowtable")
         sfciID = sfci.sfciID
         datapath = self.dpset.get(int(str(currentDpid),0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        matchFields = {'eth_type': ether_types.ETH_TYPE_IP,
-            'ipv4_dst': dstIP}
+        matchFields = {
+                        'in_port': inPortIndex,
+                        'eth_type': ether_types.ETH_TYPE_IP,
+                        'ipv4_dst': dstIP}
         match = parser.OFPMatch(**matchFields)
 
         actions = [
@@ -222,7 +245,7 @@ class UFRR(FRR):
             parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)
         ]
         self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
-            priority=2)
+                        priority=3)
         vnfID = sfci.getVNFTypeByStageNum(stageCount)
         self.ibm.addSFCIUFRRFlowTableEntry(
             currentDpid, sfciID, vnfID, pathID, {"goto group": groupID}
@@ -257,10 +280,13 @@ class UFRR(FRR):
                     continue
                 dstIP = self.getSFCIStageDstIP(sfci, stageCount, pathID)
                 for i in range(1,len(segPath)-1):
+                    prevNodeID = segPath[i-1][1]
                     currentSwitchID = segPath[i][1]
                     nextNodeID = segPath[i+1][1]
+                    inPortIndex = self._getInputPortOfDstNode(sfci, direction,
+                                                    prevNodeID, currentSwitchID)
                     self._installRouteOnBackupPath(sfci, direction,
-                        currentSwitchID, nextNodeID, dstIP, pathID,
+                        currentSwitchID, nextNodeID, inPortIndex, dstIP, pathID,
                         stageCount)
 
     def _getNewPathIDFromKey(self, key):
@@ -269,20 +295,18 @@ class UFRR(FRR):
             return keyDict["newPathID"]
         else:
             raise ValueError("Unknown key")
-        # if key[3][0] == "newPathID":
-        #     return key[3][1]
-        # else:
-        #     raise ValueError("Unknown key")
 
     def _installRouteOnBackupPath(self, sfci, direction, currentDpid,
-            nextDpid, dstIP, pathID, stageCount):
+            nextDpid, inPortIndex, dstIP, pathID, stageCount):
         self.logger.info("_installRouteOnBackupPath")
         self.logger.info("currentDpid:{0}".format(currentDpid))
         datapath = self.dpset.get(int(str(currentDpid), 0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        matchFields={'eth_type':ether_types.ETH_TYPE_IP,
-            'ipv4_dst':dstIP+"/32"}
+        matchFields={   
+                        'in_port': inPortIndex,
+                        'eth_type':ether_types.ETH_TYPE_IP,
+                        'ipv4_dst':dstIP+"/32"}
         match = parser.OFPMatch(**matchFields)
 
         # get default src/dst ether and default OutPort
@@ -294,7 +318,6 @@ class UFRR(FRR):
             "srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
                 srcMAC, dstMAC, defaultOutPort))
         actions = [
-            parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionOutput(defaultOutPort)
@@ -302,13 +325,12 @@ class UFRR(FRR):
 
         inst = [
             parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                actions),
-            # parser.OFPInstructionGotoTable(table_id=L2_TABLE)
+                actions)
         ]
 
         self.logger.debug("_installRouteOnBackupPath Add_flow")
         self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
-            priority=2)
+                        priority=3)
         vnfID = sfci.getVNFTypeByStageNum(stageCount)
         self.ibm.addSFCIUFRRFlowTableEntry(
             currentDpid, sfci.sfciID, vnfID, pathID,
@@ -329,19 +351,6 @@ class UFRR(FRR):
         # 128, OVS will send Packet-In with invalid buffer_id and
         # truncated packet data. In that case, we cannot output packets
         # correctly.  The bug has been fixed in OVS v2.1.0.
-        # match = parser.OFPMatch()
-        # actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-        #                                   ofproto.OFPCML_NO_BUFFER)]
-        # inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-        #                                      actions)]
-        # self._add_flow(datapath, match, inst, table_id = MAIN_TABLE, priority=0)
-
-        # # initial IPV4_CLASSIFIER_TABLE
-        # match = parser.OFPMatch(
-        #     eth_type=ether_types.ETH_TYPE_IP,ipv4_dst="10.0.0.0/8"
-        # )
-        # inst = [parser.OFPInstructionGotoTable(table_id = UFRR_TABLE)]
-        # self._add_flow(datapath, match, inst, table_id = IPV4_CLASSIFIER_TABLE, priority=2)
 
     def _sendCmdRply(self, cmdID, cmdState):
         cmdRply = CommandReply(cmdID,cmdState)

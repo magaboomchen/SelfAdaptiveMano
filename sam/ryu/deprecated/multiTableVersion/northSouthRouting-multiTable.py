@@ -176,7 +176,7 @@ class NorthSouthRouting(BaseApp):
             link = self._cacheLinks[(srcDpid,dstDpid)]
             out_port = link.src.port_no
             actions = [
-                parser.OFPActionDecNwTtl(),
+                # parser.OFPActionDecNwTtl(),
                 parser.OFPActionSetField(eth_src=link.src.hw_addr),
                 parser.OFPActionSetField(eth_dst=link.dst.hw_addr)
             ]
@@ -205,7 +205,7 @@ class NorthSouthRouting(BaseApp):
             eth_type=ether_types.ETH_TYPE_IP
         )
         instructions = [parser.OFPInstructionGotoTable(table_id=NORTH_SOUTH_TABLE)]
-        self._add_flow(datapath,match,instructions,table_id=IPV4_CLASSIFIER_TABLE, priority=1)
+        self._add_flow(datapath,match,instructions,table_id=IPV4_CLASSIFIER_TABLE, priority=2)
 
         match = parser.OFPMatch()
         actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
@@ -289,7 +289,7 @@ class NorthSouthRouting(BaseApp):
         srcMac = outPort.hw_addr
         dstMac = self._defaultDCNGatewayPeerSwitchMac
         actions = [
-            parser.OFPActionDecNwTtl(),
+            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMac),
             parser.OFPActionSetField(eth_dst=dstMac),
             parser.OFPActionOutput(DEFAULT_DCN_GATEWAY_OUTBOUND_PORT_NUMBER)
@@ -328,7 +328,7 @@ class NorthSouthRouting(BaseApp):
                     match = parser.OFPMatch(
                         **matchFields
                     )
-                    self._add_flow(datapath, match, inst, table_id=NORTH_SOUTH_TABLE, priority=1)
+                    self._add_flow(datapath, match, inst, table_id=NORTH_SOUTH_TABLE, priority=2)
             else:
                 self.logger.debug("old table set has this dpid && new tables set has this dpid")
                 for matchFieldsJson in self._cacheNorthSouthRIB[dpid].iterkeys():
@@ -338,7 +338,7 @@ class NorthSouthRouting(BaseApp):
                         match = parser.OFPMatch(
                             **matchFields
                         )
-                        self._del_flow(datapath, match, table_id=NORTH_SOUTH_TABLE, priority=1)
+                        self._del_flow(datapath, match, table_id=NORTH_SOUTH_TABLE, priority=2)
                     else:
                         self.logger.debug("new entry is not in old rib")
 
@@ -349,7 +349,7 @@ class NorthSouthRouting(BaseApp):
                         **matchFields
                     )
                     inst = self._cacheNorthSouthRIB[dpid][matchFieldsJson]
-                    self._add_flow(datapath, match, inst, table_id=NORTH_SOUTH_TABLE, priority=1)
+                    self._add_flow(datapath, match, inst, table_id=NORTH_SOUTH_TABLE, priority=2)
 
                 northSouthRIBofADpidTmp = copy.copy(self._northSouthRIB[dpid])
                 for matchFieldsJson in northSouthRIBofADpidTmp.iterkeys():
@@ -362,4 +362,4 @@ class NorthSouthRouting(BaseApp):
                         match = parser.OFPMatch(
                             **matchFields
                         )
-                        self._del_flow(datapath, match, table_id=NORTH_SOUTH_TABLE, priority=1)
+                        self._del_flow(datapath, match, table_id=NORTH_SOUTH_TABLE, priority=2)

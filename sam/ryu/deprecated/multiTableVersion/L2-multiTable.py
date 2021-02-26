@@ -110,12 +110,12 @@ class L2(BaseApp):
         # IPv4
         match = parser.OFPMatch(eth_dst=portMac,
             eth_type=ether_types.ETH_TYPE_IP)
-        self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=1)
+        self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=2)
 
         # VLAN
         match = parser.OFPMatch(eth_dst=portMac, vlan_vid=(0x1000, 0x1000))
         # eth_type=ether_types.ETH_TYPE_8021Q)
-        self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=2)
+        self._del_flow(datapath, match, table_id=MAIN_TABLE, priority=3)
 
     def _addPeerPort(self, datapath, link):
         localPort = link.src
@@ -200,7 +200,7 @@ class L2(BaseApp):
                                           ofproto.OFPCML_NO_BUFFER)]
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
                                              actions)]
-        self._add_flow(datapath, match, inst, table_id = L2_TABLE, priority=2)
+        self._add_flow(datapath, match, inst, table_id = L2_TABLE, priority=3)
 
         self._switchesLANMacTable[datapath.id] = {}
 
@@ -326,7 +326,7 @@ class L2(BaseApp):
                     match = parser.OFPMatch(eth_dst=arpHeader.src_mac)
                     actions = [parser.OFPActionOutput(in_port)]
                     inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions)]
-                    self._add_flow(datapath, match, inst, table_id=L2_TABLE, priority=1)
+                    self._add_flow(datapath, match, inst, table_id=L2_TABLE, priority=2)
 
                 if arpHeader.opcode == arp.ARP_REQUEST:
                     if arpHeader.dst_ip == self._getSwitchGatewayIP(datapath.id):

@@ -26,7 +26,7 @@ from ryu.exception import RyuException
 from ryu.ofproto import ofproto_v1_0
 from ryu.ofproto import ofproto_v1_2
 from ryu.ofproto import ofproto_v1_3
-from ryu.ofproto import ofproto_v1_4
+from ryu.ofproto import ofproto_v1_3
 from ryu.ofproto import ofproto_v1_5
 from ryu.lib import ofctl_v1_0
 from ryu.lib import ofctl_v1_2
@@ -44,7 +44,7 @@ supported_ofctl = {
     ofproto_v1_0.OFP_VERSION: ofctl_v1_0,
     ofproto_v1_2.OFP_VERSION: ofctl_v1_2,
     ofproto_v1_3.OFP_VERSION: ofctl_v1_3,
-    ofproto_v1_4.OFP_VERSION: ofctl_v1_4,
+    ofproto_v1_3.OFP_VERSION: ofctl_v1_4,
     ofproto_v1_5.OFP_VERSION: ofctl_v1_5,
 }
 
@@ -478,7 +478,7 @@ class StatsController(ControllerBase):
         port_info = self.dpset.port_state[int(dp.id)].get(port_no)
         if port_info:
             port_config.setdefault('hw_addr', port_info.hw_addr)
-            if dp.ofproto.OFP_VERSION < ofproto_v1_4.OFP_VERSION:
+            if dp.ofproto.OFP_VERSION < ofproto_v1_3.OFP_VERSION:
                 port_config.setdefault('advertise', port_info.advertised)
             else:
                 port_config.setdefault('properties', port_info.properties)
@@ -503,7 +503,7 @@ class RestStatsApi(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION,
                     ofproto_v1_2.OFP_VERSION,
                     ofproto_v1_3.OFP_VERSION,
-                    ofproto_v1_4.OFP_VERSION,
+                    ofproto_v1_3.OFP_VERSION,
                     ofproto_v1_5.OFP_VERSION]
     _CONTEXTS = {
         'dpset': dpset.DPSet,

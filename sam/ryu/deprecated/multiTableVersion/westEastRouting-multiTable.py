@@ -8,7 +8,7 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from ryu.ofproto import ofproto_v1_3_parser
+from ryu.ofproto import ofproto_v1_4_parser
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import ipv4
@@ -117,7 +117,7 @@ class WestEastRouting(BaseApp):
             link = self._cacheLinks[srcDpid,dstDpid]
             out_port = link.src.port_no
             actions = [
-                parser.OFPActionDecNwTtl(),
+                # parser.OFPActionDecNwTtl(),
                 parser.OFPActionSetField(eth_src=link.src.hw_addr),
                 parser.OFPActionSetField(eth_dst=link.dst.hw_addr)
             ]
@@ -149,29 +149,29 @@ class WestEastRouting(BaseApp):
                     self.logger.debug("_updateAllSwitchWestEastRIB: Add_flow to dpid:%d" %(dpid) )
                     self.logger.debug("matchFieldsJson:", matchFieldsJson)
                     matchFields = self._orderJson2dict(matchFieldsJson)
-                    match = ofproto_v1_3_parser.OFPMatch(
+                    match = ofproto_v1_4_parser.OFPMatch(
                         **matchFields
                     )
-                    self._add_flow(datapath, match, inst, table_id=WEST_EAST_TABLE, priority=1)
+                    self._add_flow(datapath, match, inst, table_id=WEST_EAST_TABLE, priority=2)
             else:
                 self.logger.debug("old table set has this dpid && new tables set has this dpid")
                 for matchFieldsJson in self._cacheWestEastRIB[dpid].iterkeys():
                     if self._westEastRIB[dpid].has_key(matchFieldsJson):
                         self.logger.debug("new entry is in old rib")
                         matchFields = self._orderJson2dict(matchFieldsJson)
-                        match = ofproto_v1_3_parser.OFPMatch(
+                        match = ofproto_v1_4_parser.OFPMatch(
                             **matchFields
                         )
-                        self._del_flow(datapath, match, table_id=WEST_EAST_TABLE, priority=1)
+                        self._del_flow(datapath, match, table_id=WEST_EAST_TABLE, priority=2)
                     else:
                         self.logger.debug("new entry is not in old rib")
                     self._westEastRIB[dpid][matchFieldsJson] = self._cacheWestEastRIB[dpid][matchFieldsJson]
                     matchFields = self._orderJson2dict(matchFieldsJson)
-                    match = ofproto_v1_3_parser.OFPMatch(
+                    match = ofproto_v1_4_parser.OFPMatch(
                         **matchFields
                     )
                     inst = self._cacheWestEastRIB[dpid][matchFieldsJson]
-                    self._add_flow(datapath, match, inst, table_id=WEST_EAST_TABLE, priority=1)
+                    self._add_flow(datapath, match, inst, table_id=WEST_EAST_TABLE, priority=2)
 
                 westEastRIBofADpidTmp = copy.copy(self._westEastRIB[dpid])
                 for matchFieldsJson in westEastRIBofADpidTmp.iterkeys():
@@ -181,10 +181,10 @@ class WestEastRouting(BaseApp):
                         self.logger.debug("_updateAllSwitchWestEastRIB: del_flow from dpid:%d" %(dpid) )
                         self.logger.debug(matchFieldsJson)
                         matchFields = self._orderJson2dict(matchFieldsJson)
-                        match = ofproto_v1_3_parser.OFPMatch(
+                        match = ofproto_v1_4_parser.OFPMatch(
                             **matchFields
                         )
-                        self._del_flow(datapath, match, table_id=WEST_EAST_TABLE, priority=1)
+                        self._del_flow(datapath, match, table_id=WEST_EAST_TABLE, priority=2)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def _switchFeaturesHandler(self, ev):
@@ -213,7 +213,7 @@ class WestEastRouting(BaseApp):
         )
         instructions = [parser.OFPInstructionGotoTable(table_id=WEST_EAST_TABLE)]
         self.logger.debug("_switch_features_handler: Add_flow")
-        self._add_flow(datapath,match,instructions,table_id=IPV4_CLASSIFIER_TABLE, priority=2)
+        self._add_flow(datapath,match,instructions,table_id=IPV4_CLASSIFIER_TABLE, priority=3)
         self._westEastRIB[datapath.id] = {}
         self._switchesLANArpTable[datapath.id] = {}
 
@@ -309,7 +309,7 @@ class WestEastRouting(BaseApp):
                         )
 
                         actions = [
-                            parser.OFPActionDecNwTtl(),
+                            # parser.OFPActionDecNwTtl(),
                             parser.OFPActionSetField(eth_src=in_port_info.hw_addr),
                             parser.OFPActionSetField(eth_dst=mac)
                         ]
@@ -319,5 +319,5 @@ class WestEastRouting(BaseApp):
                         ]
 
                         self.logger.debug("_packet_in_handler: Add_flow")
-                        self._add_flow(datapath, match, inst, table_id=WEST_EAST_TABLE, priority=1)
+                        self._add_flow(datapath, match, inst, table_id=WEST_EAST_TABLE, priority=2)
                         self._LANRIB[self._dict2OrderJson(matchFields)] = inst

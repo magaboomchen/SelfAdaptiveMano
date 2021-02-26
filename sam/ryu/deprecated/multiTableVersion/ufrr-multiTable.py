@@ -120,7 +120,7 @@ class UFRR(FRR):
         self.logger.info("srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
             srcMAC, dstMAC, defaultOutPort))
         actions = [
-            parser.OFPActionDecNwTtl(),
+            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionOutput(defaultOutPort)
@@ -144,7 +144,7 @@ class UFRR(FRR):
                     " newDstIP:{2}, outport:{3}".format(
                         srcMAC, dstMAC, newDstIP, backupOutPort))
             actions = [
-                parser.OFPActionDecNwTtl(),
+                # parser.OFPActionDecNwTtl(),
                 parser.OFPActionSetField(eth_src=srcMAC),
                 parser.OFPActionSetField(eth_dst=dstMAC),
                 parser.OFPActionSetField(ipv4_dst=newDstIP),
@@ -247,7 +247,7 @@ class UFRR(FRR):
             "srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
                 srcMAC, dstMAC, defaultOutPort))
         actions = [
-            parser.OFPActionDecNwTtl(),
+            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
         ]
@@ -260,7 +260,7 @@ class UFRR(FRR):
 
         self.logger.debug("_installRouteOnBackupPath Add_flow")
         self._add_flow(datapath, match, inst, table_id=UFRR_TABLE,
-            priority=1)
+            priority=2)
         vnfID = sfci.getVNFTypeByStageNum(stageCount)
         self.ibm.addSFCIUFRRFlowTableEntry(
             currentDpid, sfci.sfciID, vnfID, pathID,
@@ -293,7 +293,7 @@ class UFRR(FRR):
             eth_type=ether_types.ETH_TYPE_IP,ipv4_dst="10.0.0.0/8"
         )
         inst = [parser.OFPInstructionGotoTable(table_id = UFRR_TABLE)]
-        self._add_flow(datapath, match, inst, table_id = IPV4_CLASSIFIER_TABLE, priority=2)
+        self._add_flow(datapath, match, inst, table_id = IPV4_CLASSIFIER_TABLE, priority=3)
 
     def _sendCmdRply(self, cmdID, cmdState):
         cmdRply = CommandReply(cmdID,cmdState)

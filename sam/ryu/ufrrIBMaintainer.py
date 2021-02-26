@@ -28,14 +28,15 @@ class UFRRIBMaintainer(RIBMaintainerBase):
             'UFRRIBMaintainer.log', level='debug')
         self.logger = logConfigur.getLogger()
 
-    def assignGroupID(self, dpid):
-        if not self.groupIDSets.has_key(dpid):
-            self.groupIDSets[dpid] = [0]
-            return 0
-        else:
-            groupID = self.genAvailableMiniNum4List(self.groupIDSets[dpid])
-            self.groupIDSets[dpid].append(groupID)
-            return groupID
+    # duplicated function in ribMaintainer
+    # def assignGroupID(self, dpid):
+        # if not self.groupIDSets.has_key(dpid):
+        #     self.groupIDSets[dpid] = [0]
+        #     return 0
+        # else:
+        #     groupID = self.genAvailableMiniNum4List(self.groupIDSets[dpid])
+        #     self.groupIDSets[dpid].append(groupID)
+        #     return groupID
 
     def countSwitchGroupTable(self, dpid):
         count = 0

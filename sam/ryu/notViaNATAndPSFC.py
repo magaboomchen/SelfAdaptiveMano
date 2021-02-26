@@ -218,7 +218,7 @@ class NotViaNATAndPSFC(FRR):
         self.logger.debug("srcMAC:{0},dstMAC:{1},"
             "outport:{2}".format(srcMAC, dstMAC, defaultOutPort))
         actions = [
-            parser.OFPActionDecNwTtl(),
+            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionOutput(defaultOutPort)
@@ -242,7 +242,7 @@ class NotViaNATAndPSFC(FRR):
                     " newDstIP:{2}, outport:{3}".format(
                         srcMAC, dstMAC, newDstIP, backupOutPort))
             actions = [
-                parser.OFPActionDecNwTtl(),
+                # parser.OFPActionDecNwTtl(),
                 parser.OFPActionSetField(eth_src=srcMAC),
                 parser.OFPActionSetField(eth_dst=dstMAC),
                 parser.OFPActionSetField(ipv4_dst=newDstIP),
@@ -331,7 +331,7 @@ class NotViaNATAndPSFC(FRR):
         return layerNum
 
     def _installRouteOnBackupPath(self, sfci, direction, currentDpid,
-                                    nextDpid, dstIP, priority=1):
+                                    nextDpid, dstIP, priority=2):
         self.logger.debug("_installRouteOnBackupPath")
         self.logger.info("currentDpid:{0}".format(currentDpid))
         datapath = self.dpset.get(int(str(currentDpid), 0))
@@ -350,7 +350,7 @@ class NotViaNATAndPSFC(FRR):
             "srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
                 srcMAC, dstMAC, defaultOutPort))
         actions = [
-            parser.OFPActionDecNwTtl(),
+            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionOutput(defaultOutPort)
@@ -406,7 +406,7 @@ class NotViaNATAndPSFC(FRR):
             "srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
                 srcMAC, dstMAC, defaultOutPort))
         actions = [
-            parser.OFPActionDecNwTtl(),
+            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionSetField(ipv4_dst=newDstIP),
@@ -442,7 +442,7 @@ class NotViaNATAndPSFC(FRR):
 
         self.logger.debug("_installLastRouteOnBackupPath Add_flow")
         self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
-            priority=1)
+            priority=2)
         self.ibm.addSFCIFlowTableEntry(sfci.sfciID, currentDpid,
             MAIN_TABLE, matchFields)
 
@@ -493,7 +493,7 @@ class NotViaNATAndPSFC(FRR):
             "srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
                 srcMAC, dstMAC, defaultOutPort))
         actions = [
-            parser.OFPActionDecNwTtl(),
+            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionOutput(defaultOutPort)
@@ -548,7 +548,7 @@ class NotViaNATAndPSFC(FRR):
         # )
         # inst = [parser.OFPInstructionGotoTable(table_id = MAIN_TABLE)]
         # self._add_flow(datapath, match, inst,
-        #     table_id = IPV4_CLASSIFIER_TABLE, priority=2)
+        #     table_id = IPV4_CLASSIFIER_TABLE, priority=3)
 
     @set_ev_cls(event.EventSwitchLeave)
     def _delSwitchHandler(self, ev):

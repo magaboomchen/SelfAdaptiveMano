@@ -160,7 +160,10 @@ class E2EProtection(FRR):
             (srcServerID, dstServerID) = self._getSrcDstServerInStage(segPath)
             # add route
             for i in range(1, len(segPath)-1):
+                prevNodeID = segPath[i-1][1]
                 currentSwitchID = segPath[i][1]
+                inPortIndex = self._getInputPortOfDstNode(sfci, direction,
+                                                prevNodeID, currentSwitchID)
                 self.logger.info("dpid:{0}".format(currentSwitchID))
                 nextNodeID = segPath[i+1][1]
 
@@ -170,17 +173,20 @@ class E2EProtection(FRR):
 
                 self._addE2EPSFCIFlowtable(currentSwitchID, nextNodeID,
                                             sfci, direction, primaryPathID,
+                                            inPortIndex, 
                                             dstIP, PRIMARY_ENTRY_PRIORITY)
 
     def _addE2EPSFCIFlowtable(self, currentDpid, nextDpid, 
-                                sfci, direction,
-                                pathID, dstIP, priority):
+                                sfci, direction, pathID, 
+                                inPortIndex, dstIP, priority):
         self.logger.info("_addE2EPSFCIFlowtable")
         sfciID = sfci.sfciID
         datapath = self.dpset.get(int(str(currentDpid), 0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        matchFields = {'eth_type': ether_types.ETH_TYPE_IP,
+        matchFields = {
+            'in_port': inPortIndex,
+            'eth_type': ether_types.ETH_TYPE_IP,
             'ipv4_dst': dstIP}
         match = parser.OFPMatch(**matchFields)
 
@@ -191,7 +197,6 @@ class E2EProtection(FRR):
         self.logger.info("srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
             srcMAC, dstMAC, defaultOutPort))
         actions = [
-            parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionOutput(defaultOutPort)
@@ -221,11 +226,14 @@ class E2EProtection(FRR):
                     continue
                 dstIP = self.getSFCIStageDstIP(sfci, stageCount, primaryPathID)
                 for i in range(1, len(segPath)-1):
+                    prevNodeID = segPath[i-1][1]
                     currentSwitchID = segPath[i][1]
+                    inPortIndex = self._getInputPortOfDstNode(sfci, direction,
+                                                    prevNodeID, currentSwitchID)
                     nextNodeID = segPath[i+1][1]
                     self._addE2EPSFCIFlowtable(currentSwitchID, nextNodeID,
                                                 sfci, direction,
-                                                primaryPathID+1, dstIP,
+                                                primaryPathID+1, inPortIndex, dstIP,
                                                 LOWER_BACKUP_ENTRY_PRIORITY)
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)

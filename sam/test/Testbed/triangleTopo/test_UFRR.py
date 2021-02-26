@@ -16,7 +16,6 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
 from sam.test.Testbed.triangleTopo.testbedFRR import *
 
-
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
 
@@ -75,7 +74,7 @@ class TestUFRRClass(TestbedFRR):
             "After the test, "
             "Press any key to quit!")
         raw_input()
-        # self.sendHandleServerSoftwareFailureCmd()
+        self.sendHandleServerSoftwareFailureCmd()
         # TODO: kill serverAgent to test server failure protection
 
         logging.info("Please input mode 0 into mininet\n"

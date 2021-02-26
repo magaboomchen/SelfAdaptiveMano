@@ -1781,7 +1781,7 @@ class OfCtl_after_v1_2(OfCtl):
 
         actions = []
         if dec_ttl:
-            actions.append(ofp_parser.OFPActionDecNwTtl())
+            actions.append(ofp_# parser.OFPActionDecNwTtl())
         if src_mac:
             actions.append(ofp_parser.OFPActionSetField(eth_src=src_mac))
         if dst_mac:

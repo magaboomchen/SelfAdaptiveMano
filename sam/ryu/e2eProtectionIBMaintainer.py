@@ -8,7 +8,7 @@ from sam.ryu.ribMaintainerBase import RIBMaintainerBase
 
 # TODO: test
 
-PRIMARY_ENTRY_PRIORITY = 2
+PRIMARY_ENTRY_PRIORITY = 3
 LOWER_BACKUP_ENTRY_PRIORITY = 0
 UPPER_BACKUP_ENTRY_PRIORITY = 5
 

@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 '''
-sudo python ./triangleInBoundTrafficSendRecv.py -i eth0 -sip 1.1.1.1 -dip 3.3.3.3
+sudo python ./triangleInBoundTrafficSendRecv.py -i eth0 -sip 1.1.1.2 -dip 3.3.3.3
 '''
 
 import time
