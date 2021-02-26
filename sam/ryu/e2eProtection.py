@@ -119,8 +119,8 @@ class E2EProtection(FRR):
                 match = parser.OFPMatch(**matchFields)
                 priority = entry["priority"]
                 actions = entry["actions"]
-                inst = entry["inst"]
                 outPort = actions[-1].port
+                inst = entry["inst"]
                 if priority == LOWER_BACKUP_ENTRY_PRIORITY:
                     self.logger.debug(
                         "_del_flow dpid:{0}, match:{1}, priority:{2}".format(

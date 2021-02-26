@@ -23,6 +23,7 @@ from sam.base.path import *
 from sam.base.socketConverter import *
 from sam.base.vnf import *
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.serverManager.serverManager import *
 
 
@@ -35,6 +36,9 @@ class NotViaNATAndPSFC(FRR):
 
     def __init__(self, *args, **kwargs):
         super(NotViaNATAndPSFC, self).__init__(*args, **kwargs)
+        logConfigur = LoggerConfigurator(__name__, './log',
+                                        'notViaNATAndPSFC.log', level='info')
+        self.logger = logConfigur.getLogger()
         self.logger.info("Initialize NotViaNATAndPSFC App !")
         self.ibm = NotViaNATIBMaintainer()
         self.pSFCIbm = PSFCIBMaintainer()
@@ -142,9 +146,14 @@ class NotViaNATAndPSFC(FRR):
                 match = parser.OFPMatch(**matchFields)
                 priority = entry["priority"]
                 actions = entry["actions"]
+                # TODO: hard code, please judge actions' type, e.g. outport or group
+                outPort = actions[-1].port
                 inst = entry["inst"]
                 if priority == LOWER_BACKUP_ENTRY_PRIORITY:
-                    self._del_flow(datapath, match, tableID, priority)
+                    self.logger.debug(
+                        "_del_flow dpid:{0}, match:{1}, priority:{2}".format(
+                            dpid, match, priority))
+                    self._del_flow(datapath, match, tableID, priority, outPort=outPort)
                     self._add_flow(datapath, match, inst, tableID,
                                     priority=UPPER_BACKUP_ENTRY_PRIORITY)
                     priority = UPPER_BACKUP_ENTRY_PRIORITY
@@ -187,7 +196,13 @@ class NotViaNATAndPSFC(FRR):
             (srcServerID,dstServerID) = self._getSrcDstServerInStage(segPath)
             # add route
             for i in range(1,len(segPath)-1):
+                prevNodeID = segPath[i-1][1]
                 currentSwitchID = segPath[i][1]
+                inPortIndex = self._getInputPortOfDstNode(sfci, direction,
+                                                            prevNodeID, currentSwitchID)
+                self.logger.debug(
+                    "inPortIndex:{0} prevNodeID:{1}, currentSwitchID:{2}".format(
+                        inPortIndex, prevNodeID, currentSwitchID))
                 groupID = self.ibm.assignGroupID(currentSwitchID)
                 self.logger.debug("dpid:{0}".format(currentSwitchID))
                 self.logger.debug("assignGroupID:{0}".format(groupID))
@@ -200,7 +215,7 @@ class NotViaNATAndPSFC(FRR):
                 self._addNotViaSFCIGroupTable(currentSwitchID,
                     nextNodeID, sfci, direction, stageCount, groupID)
                 self._addNotViaSFCIFlowtable(currentSwitchID,
-                    sfci.sfciID, dstIP, groupID)
+                    sfci.sfciID, inPortIndex, dstIP, groupID)
 
     def _addNotViaSFCIGroupTable(self, currentDpid, nextDpid, sfci,
                                     direction, stageCount, groupID):
@@ -211,14 +226,13 @@ class NotViaNATAndPSFC(FRR):
         # get default src/dst ether and default OutPort
         (srcMAC, dstMAC, defaultOutPort) \
             = self._getNextHopActionFields(sfci, direction, currentDpid,
-                nextDpid)
+                                            nextDpid)
         if defaultOutPort == None:
             raise ValueError("NotViaNATAndPSFC: can not get default out port")
         self.logger.debug("Bucket1")
         self.logger.debug("srcMAC:{0},dstMAC:{1},"
             "outport:{2}".format(srcMAC, dstMAC, defaultOutPort))
         actions = [
-            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionOutput(defaultOutPort)
@@ -242,7 +256,6 @@ class NotViaNATAndPSFC(FRR):
                     " newDstIP:{2}, outport:{3}".format(
                         srcMAC, dstMAC, newDstIP, backupOutPort))
             actions = [
-                # parser.OFPActionDecNwTtl(),
                 parser.OFPActionSetField(eth_src=srcMAC),
                 parser.OFPActionSetField(eth_dst=dstMAC),
                 parser.OFPActionSetField(ipv4_dst=newDstIP),
@@ -259,7 +272,7 @@ class NotViaNATAndPSFC(FRR):
         datapath.send_msg(req)
 
     def _getNewDstIP(self, currentDpid, nextDpid, sfci, direction,
-            stageCount):
+                        stageCount):
         primaryPathID = self._getPathID(direction["ID"])
         backupPaths = self._getBackupPaths(sfci, primaryPathID)
         for key in backupPaths.iterkeys():
@@ -271,12 +284,13 @@ class NotViaNATAndPSFC(FRR):
         else:
             return None
 
-    def _addNotViaSFCIFlowtable(self, currentDpid, sfciID, dstIP, groupID):
+    def _addNotViaSFCIFlowtable(self, currentDpid, sfciID, inPortIndex, dstIP, groupID):
         self.logger.debug("_addNotViaSFCIFlowtable")
         datapath = self.dpset.get(int(str(currentDpid),0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         matchFields = {
+            'in_port': inPortIndex,
             'eth_type':ether_types.ETH_TYPE_IP,
             'ipv4_dst':dstIP}
         match = parser.OFPMatch(**matchFields)
@@ -286,9 +300,9 @@ class NotViaNATAndPSFC(FRR):
             parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)
         ]
         self._add_flow(datapath, match, inst,
-                        table_id=MAIN_TABLE, priority = 1)
+                        table_id=MAIN_TABLE, priority=3)
         self.ibm.addSFCIFlowTableEntry(sfciID, currentDpid,
-            MAIN_TABLE, matchFields, groupID)
+                                        MAIN_TABLE, matchFields, groupID)
 
     def _installBackupPaths(self, sfci, direction):
         primaryPathID = self._getPathID(direction["ID"])
@@ -306,19 +320,28 @@ class NotViaNATAndPSFC(FRR):
                     continue
                 dstIP = self.getSFCIStageDstIP(sfci, stageCount, pathID)
                 self.logger.debug("dstIP:{0}; stageCount:{1}".format(
-                    dstIP, stageCount))
+                                    dstIP, stageCount))
                 for i in range(1, len(segPath)-1):
+                    prevNodeID = segPath[i-1][1]
                     currentSwitchID = segPath[i][1]
                     nextNodeID = segPath[i+1][1]
+                    inPortIndex = self._getInputPortOfDstNode(sfci, direction,
+                                                                prevNodeID, currentSwitchID)
+                    self.logger.debug(
+                        "inPortIndex:{0} prevNodeID:{1}, currentSwitchID:{2}".format(
+                            inPortIndex, prevNodeID, currentSwitchID))
                     self._installRouteOnBackupPath(sfci, direction,
-                        currentSwitchID, nextNodeID, dstIP)
+                        currentSwitchID, nextNodeID, inPortIndex, dstIP)
                     if i == len(segPath)-2:
                         nextDpidOnPrimaryFP \
                             = self._getNotViaByPassPathLastNodesNextDpid(
                                 key, primaryFP)
+                        inPortIndex = self._getInputPortOfDstNode(sfci, direction,
+                                                        currentSwitchID, nextNodeID)
                         self._installLastRouteOnBackupPath(sfci, direction,
-                            nextNodeID, nextDpidOnPrimaryFP, dstIP, stageCount,
-                            primaryPathID)
+                                                            nextNodeID, nextDpidOnPrimaryFP,
+                                                            inPortIndex, dstIP, stageCount,
+                                                            primaryPathID)
 
     def _getStageCount4Key(self, key):
         keyDict = self._parseBackupPathKey(key)
@@ -331,13 +354,15 @@ class NotViaNATAndPSFC(FRR):
         return layerNum
 
     def _installRouteOnBackupPath(self, sfci, direction, currentDpid,
-                                    nextDpid, dstIP, priority=2):
+                                    nextDpid, inPortIndex, dstIP, priority=3):
         self.logger.debug("_installRouteOnBackupPath")
         self.logger.info("currentDpid:{0}".format(currentDpid))
         datapath = self.dpset.get(int(str(currentDpid), 0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        matchFields={'eth_type': ether_types.ETH_TYPE_IP,
+        matchFields={
+            'in_port': inPortIndex,
+            'eth_type': ether_types.ETH_TYPE_IP,
             'ipv4_dst': dstIP+"/32"}
         match = parser.OFPMatch(**matchFields)
 
@@ -350,7 +375,6 @@ class NotViaNATAndPSFC(FRR):
             "srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
                 srcMAC, dstMAC, defaultOutPort))
         actions = [
-            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionOutput(defaultOutPort)
@@ -358,16 +382,14 @@ class NotViaNATAndPSFC(FRR):
 
         inst = [
             parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                actions),
-            # parser.OFPInstructionGotoTable(table_id=L2_TABLE)
+                actions)
         ]
 
-        self.logger.debug("_installRouteOnBackupPath "
-            "Add_flow with priority:{0}".format(priority))
+        self.logger.debug("Add_flow with priority:{0}".format(priority))
         self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
-            priority=priority)
+                        priority=priority)
         self.ibm.addSFCIFlowTableEntry(sfci.sfciID, currentDpid,
-            MAIN_TABLE, matchFields)
+                                        MAIN_TABLE, matchFields)
 
     def _getNotViaByPassPathLastNodesNextDpid(self, key, primaryFP):
         keyDict = self._parseBackupPathKey(key)
@@ -385,14 +407,17 @@ class NotViaNATAndPSFC(FRR):
 
     def _installLastRouteOnBackupPath(self, sfci, direction,
                                         currentDpid, nextDpidOnPrimaryPath,
+                                        inPortIndex,
                                         dstIP, stageCount, primaryPathID):
         self.logger.debug("_installLastRouteOnBackupPath")
-        self.logger.debug("dstIP:{0}, currentDpid:{1}".format(
-            dstIP, currentDpid))
+        self.logger.debug("in_port:{0}, dstIP:{1}, currentDpid:{2}".format(
+                            inPortIndex, dstIP, currentDpid))
         datapath = self.dpset.get(int(str(currentDpid), 0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        matchFields={'eth_type':ether_types.ETH_TYPE_IP,
+        matchFields={
+            'in_port': inPortIndex,
+            'eth_type':ether_types.ETH_TYPE_IP,
             'ipv4_dst': dstIP+"/32"}
         match = parser.OFPMatch(**matchFields)
 
@@ -406,7 +431,6 @@ class NotViaNATAndPSFC(FRR):
             "srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
                 srcMAC, dstMAC, defaultOutPort))
         actions = [
-            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionSetField(ipv4_dst=newDstIP),
@@ -415,8 +439,7 @@ class NotViaNATAndPSFC(FRR):
 
         inst = [
             parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-                actions),
-            # parser.OFPInstructionGotoTable(table_id=MAIN_TABLE)
+                actions)
         ]
 
         # WARNINGS! We find that OvS doesn't support MPLS POP following a goto table.
@@ -440,11 +463,9 @@ class NotViaNATAndPSFC(FRR):
         # with this scenario.
         # All in all, We tend to use nat to realize notvia and PSFC.
 
-        self.logger.debug("_installLastRouteOnBackupPath Add_flow")
-        self._add_flow(datapath, match, inst, table_id=MAIN_TABLE,
-            priority=2)
+        self._add_flow(datapath, match, inst, table_id=MAIN_TABLE, priority=3)
         self.ibm.addSFCIFlowTableEntry(sfci.sfciID, currentDpid,
-            MAIN_TABLE, matchFields)
+                        MAIN_TABLE, matchFields)
 
     def _installPSFCPaths(self, sfci, direction):
         primaryPathID = self._getPathID(direction["ID"])
@@ -467,20 +488,37 @@ class NotViaNATAndPSFC(FRR):
                     currentSwitchID = segPath[i][1]
                     if currentSwitchID >= SERVERID_OFFSET:
                         continue
+                    else:
+                        if i != 0:
+                            prevNodeID = segPath[i-1][1]
+                        else:
+                            prevNodeID = self._getPSFCPathSrcNodeID(primaryFP, key)
+                    inPortIndex = self._getInputPortOfDstNode(sfci, direction,
+                                                    prevNodeID, currentSwitchID)
+                    self.logger.debug(
+                        "inPortIndex:{0} prevNodeID:{1}, currentSwitchID:{2}".format(
+                            inPortIndex, prevNodeID, currentSwitchID))
                     nextNodeID = segPath[i+1][1]
                     self._installRouteOnPSFCPath(sfci, direction, key,
-                        currentSwitchID, nextNodeID, dstIP)
+                        currentSwitchID, nextNodeID, inPortIndex, dstIP)
                 stageCount = stageCount + 1
 
+    def _getPSFCPathSrcNodeID(self, primaryFP, key):
+        keyDict = self._parseBackupPathKey(key)
+        (vnfLayerNum, bp, Xp) = keyDict["failureNPoPID"]
+        return primaryFP[vnfLayerNum][0][1]
+
     def _installRouteOnPSFCPath(self, sfci, direction, key, currentDpid,
-                                    nextDpid, dstIP,
+                                    nextDpid, inPortIndex, dstIP,
                                     priority=LOWER_BACKUP_ENTRY_PRIORITY):
         self.logger.debug("_installRouteOnPSFCPath")
         self.logger.info("currentDpid:{0}".format(currentDpid))
         datapath = self.dpset.get(int(str(currentDpid), 0))
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        matchFields={'eth_type': ether_types.ETH_TYPE_IP,
+        matchFields={
+            'in_port': inPortIndex,
+            'eth_type': ether_types.ETH_TYPE_IP,
             'ipv4_dst': dstIP+"/32"}
         match = parser.OFPMatch(**matchFields)
 
@@ -493,7 +531,6 @@ class NotViaNATAndPSFC(FRR):
             "srcMAC:{0}, dstMAC:{1}, outport:{2}".format(
                 srcMAC, dstMAC, defaultOutPort))
         actions = [
-            # parser.OFPActionDecNwTtl(),
             parser.OFPActionSetField(eth_src=srcMAC),
             parser.OFPActionSetField(eth_dst=dstMAC),
             parser.OFPActionOutput(defaultOutPort)
@@ -503,8 +540,7 @@ class NotViaNATAndPSFC(FRR):
                 actions),
         ]
 
-        self.logger.debug("_installRouteOnPSFCPath "
-            "Add_flow with priority:{0}".format(priority))
+        self.logger.debug("Add_flow with priority:{0}".format(priority))
         self._add_flow(datapath, match, inst,
                         table_id=MAIN_TABLE,
                         priority=priority)
@@ -526,29 +562,6 @@ class NotViaNATAndPSFC(FRR):
         # 128, OVS will send Packet-In with invalid buffer_id and
         # truncated packet data. In that case, we cannot output packets
         # correctly.  The bug has been fixed in OVS v2.1.0.
-        # match = parser.OFPMatch()
-        # actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-        #                                   ofproto.OFPCML_NO_BUFFER)]
-        # inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-        #                                      actions)]
-        # self._add_flow(datapath, match, inst, table_id = MAIN_TABLE,
-        #     priority=0)
-
-        # match = parser.OFPMatch()
-        # actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER,
-        #                                   ofproto.OFPCML_NO_BUFFER)]
-        # inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,
-        #                                      actions)]
-        # self._add_flow(datapath, match, inst, table_id = MPLS_TABLE,
-        #     priority=0)
-
-        # # initial IPV4_CLASSIFIER_TABLE
-        # match = parser.OFPMatch(
-        #     eth_type=ether_types.ETH_TYPE_IP,ipv4_dst="10.0.0.0/8"
-        # )
-        # inst = [parser.OFPInstructionGotoTable(table_id = MAIN_TABLE)]
-        # self._add_flow(datapath, match, inst,
-        #     table_id = IPV4_CLASSIFIER_TABLE, priority=3)
 
     @set_ev_cls(event.EventSwitchLeave)
     def _delSwitchHandler(self, ev):

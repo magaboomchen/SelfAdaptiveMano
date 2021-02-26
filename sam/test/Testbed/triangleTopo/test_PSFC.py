@@ -14,7 +14,6 @@ from sam.base.path import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
-# from sam.test.FRR.testFRR import TestFRR
 from sam.test.Testbed.triangleTopo.testbedFRR import *
 
 logging.basicConfig(level=logging.INFO)
@@ -81,46 +80,17 @@ class TestPSFCClass(TestbedFRR):
             "Then press any key to continue!")
         raw_input()
 
-        self._deploySFC()
-        self._deploySFCI()
+        self.addSFC2NetworkController()
+        self.addSFCI2NetworkController()
 
-        logging.info("Please input any key to test "
+        logging.info("Please input 'ssf' to test "
             "server software failure\n"
             "After the test, "
-            "Press any key to quit!")
-        raw_input()
-        self.sendHandleServerSoftwareFailureCmd()
+            "Press any key to continue!")
+        self.testName = raw_input()
+        if self.testName == "ssf":
+            self.sendHandleServerSoftwareFailureCmd()
 
-        logging.info("Please input '6',"
-            "then input 'stop s2' to stop switch s2\n"
+        logging.info("Please input 'ovs-vsctl del-br br1' to disable switch s2. "
             "After the test, Press any key to quit!")
         raw_input()
-
-        logging.info("Press any key to quit!")
-        raw_input()
-
-    def _deploySFC(self):
-        # exercise: mapping SFC
-        self.addSFCCmd.cmdID = uuid.uuid1()
-        self.sendCmd(NETWORK_CONTROLLER_QUEUE,
-            MSG_TYPE_NETWORK_CONTROLLER_CMD,
-            self.addSFCCmd)
-
-        # verify
-        logging.info("Start listening on mediator queue")
-        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.addSFCCmd.cmdID
-        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-    def _deploySFCI(self):
-        # exercise: mapping SFCI
-        self.addSFCICmd.cmdID = uuid.uuid1()
-        self.sendCmd(NETWORK_CONTROLLER_QUEUE,
-            MSG_TYPE_NETWORK_CONTROLLER_CMD,
-            self.addSFCICmd)
-
-        # verify
-        logging.info("Start listening on mediator queue")
-        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.addSFCICmd.cmdID
-        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
