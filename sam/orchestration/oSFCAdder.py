@@ -305,7 +305,7 @@ class OSFCAdder(object):
         return forwardingPathSetsDict
 
     def _forwardingPathSetsDict2Cmd(self, forwardingPathSetsDict,
-            requestBatchList):
+                                        requestBatchList):
         self.logger.info("requestFPSet:{0}".format(forwardingPathSetsDict))
         cmdList = []
         for rIndex in range(len(requestBatchList)):
@@ -315,7 +315,7 @@ class OSFCAdder(object):
             sfci = request.attributes['sfci']
             sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
             sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
-                sfci.forwardingPathSet)
+                                                    sfci.forwardingPathSet)
             cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
                 'sfc':sfc, 'sfci':sfci, 'zone':zoneName
             })

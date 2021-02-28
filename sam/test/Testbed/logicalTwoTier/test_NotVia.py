@@ -1,11 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-'''
-You need setup PICA8 switch testbed.
-Wired switch and server's port as Onenote: Verify RYU
-'''
-
 import sys
 import time
 import logging
@@ -15,17 +10,17 @@ from ryu.controller import dpset
 
 from sam import base
 from sam.ryu.topoCollector import TopoCollector
-from sam.base.server import *
-from sam.base.command import *
+from sam.base.path import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
-from sam.test.Testbed.triangleTopo.testbedFRR import *
+from sam.test.fixtures.vnfControllerStub import *
+from sam.test.Testbed.logicalTwoTier.testbedFRR import *
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
 
 
-class TestUFRRClass(TestbedFRR):
+class TestNotViaClass(TestbedFRR):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
         # setup
@@ -45,8 +40,6 @@ class TestUFRRClass(TestbedFRR):
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
 
-        self._messageAgent = MessageAgent()
-
         self.runClassifierController()
         self.addSFCI2Classifier()
 
@@ -63,10 +56,28 @@ class TestUFRRClass(TestbedFRR):
         self.delSFCI2Classifier()
         self.killClassifierController()
         self.killSFFController()
-        self.killVNFController()
+
+    def genUniDirection12BackupForwardingPathSet(self):
+        primaryForwardingPath = {1:[[(0,10001),(0,1),(0,2),(0,10003)],[(1,10003),(1,2),(1,1),(1,10001)]]}
+        mappingType = MAPPING_TYPE_NOTVIA_PSFC
+        # To test notVia ryu app simplily, we set merge switch as the failure node
+        backupForwardingPath = {
+            1:{
+                (("failureLayerNodeID", (0,2)), ("repairMethod", "fast-reroute"),
+                    ("repairLayerSwitchID", (0, 1)),
+                    ("mergeLayerSwitchID", (0, 2)), ("newPathID", 2)):
+                        [[(0,1),(0,3),(0,2)]],
+                (("failureLayerNodeID", (1,1)), ("repairMethod", "fast-reroute"),
+                    ("repairLayerSwitchID", (1, 2)),
+                    ("mergeLayerSwitchID", (1, 1)), ("newPathID", 3)):
+                        [[(1,2),(1,3),(1,1)]]
+            }
+        }
+        return ForwardingPathSet(primaryForwardingPath, mappingType,
+                                    backupForwardingPath)
 
     # @pytest.mark.skip(reason='Temporarly')
-    def test_UFRRAddUniSFCI(self, setup_addUniSFCI):
+    def test_addUniSFCI(self, setup_addUniSFCI):
         logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
         raw_input()
@@ -74,15 +85,6 @@ class TestUFRRClass(TestbedFRR):
         self.addSFC2NetworkController()
         self.addSFCI2NetworkController()
 
-        logging.info("Please input any key to test "
-            "server software failure\n"
-            "After the test, "
-            "Press any key to quit!")
-        raw_input()
-        self.sendHandleServerSoftwareFailureCmd()
-        # TODO: kill serverAgent to test server failure protection
-
-        logging.info("Please input mode 0 into mininet\n"
-            "After the test, "
-            "Press any key to quit!")
+        logging.info("Input 'ovs-ofctl mod-port br1 ge-1/1/26 down' to test notvia")
+        logging.info("After test, press any key to quit!")
         raw_input()

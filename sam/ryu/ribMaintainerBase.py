@@ -17,15 +17,16 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
         self.sfciRIB = {}
         self.compSfciRIB = {}
         self._sc = SocketConverter()
-        self.maxGroupID = 0
+        self.maxGroupIDDict = {"picaSwitch1": 0, "picaSwitch2": 0}
         logConfigur = LoggerConfigurator(__name__, './log',
             'RIBMaintainerBase.log', level='debug')
         self.logger = logConfigur.getLogger()
 
     def assignGroupID(self, dpid):
         if CURRENT_ENV == PICA8_ENV:
-            self.maxGroupID = self.maxGroupID + 1
-            return self.maxGroupID
+            self.maxGroupIDDict["picaSwitch1"] \
+                = self.maxGroupIDDict["picaSwitch1"] + 1
+            return self.maxGroupIDDict["picaSwitch1"]
         elif CURRENT_ENV == MININET_ENV:
             if not self.groupIDSets.has_key(dpid):
                 self.groupIDSets[dpid] = [0]
@@ -34,6 +35,17 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
                 groupID = self.genAvailableMiniNum4List(self.groupIDSets[dpid])
                 self.groupIDSets[dpid].append(groupID)
                 return groupID
+        elif CURRENT_ENV = PICA8_UFRR_LOGICAL_TWO_TIER_ENV:
+            if dpid in [0, 1, 2]:
+                self.maxGroupIDDict["picaSwitch1"] \
+                    = self.maxGroupIDDict["picaSwitch1"] + 1
+                return self.maxGroupIDDict["picaSwitch1"]
+            elif dpid in [3, 4, 5]:
+                self.maxGroupIDDict["picaSwitch2"] \
+                    = self.maxGroupIDDict["picaSwitch2"] + 1
+                return self.maxGroupIDDict["picaSwitch2"]
+            else:
+                raise ValueError("Unknown dpid {0}".format(dpid))
         else:
             raise ValueError("Unknown envirnoment {0}".format(CURRENT_ENV))
 
@@ -42,6 +54,8 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
             pass
         elif CURRENT_ENV == MININET_ENV:
             self.groupIDSets[dpid].remove(groupID)
+        elif CURRENT_ENV = PICA8_UFRR_LOGICAL_TWO_TIER_ENV:
+            pass
         else:
             raise ValueError("Unknown envirnoment {0}".format(CURRENT_ENV))
 

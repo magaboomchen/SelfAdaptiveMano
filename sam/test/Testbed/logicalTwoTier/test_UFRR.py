@@ -1,11 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-'''
-You need setup PICA8 switch testbed.
-Wired switch and server's port as Onenote: Verify RYU
-'''
-
 import sys
 import time
 import logging
@@ -19,7 +14,7 @@ from sam.base.server import *
 from sam.base.command import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
-from sam.test.Testbed.triangleTopo.testbedFRR import *
+from sam.test.Testbed.logicalTwoTier.testbedFRR import *
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)

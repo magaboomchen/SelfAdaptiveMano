@@ -156,6 +156,9 @@ class TestBase(object):
         filePath = serverManager.__file__
         self.sP.runPythonScript(filePath)
 
+    def killServerManager(self):
+        self.sP.killPythonScript("serverManager.py")
+
     def genUniDirectionSFC(self, classifier):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_FORWARD]

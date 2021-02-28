@@ -37,7 +37,7 @@ MORPHIC_CONTENT = "MORPHIC_CONTENT"
 
 class SFCI(object):
     def __init__(self, sfciID, vnfiSequence, sloRealTimeValue=None,
-            forwardingPathSet=None):
+                    forwardingPathSet=None):
         self.sfciID = sfciID
         self.vnfiSequence = vnfiSequence    # only show the direction1
         self.sloRealTimeValue = sloRealTimeValue
