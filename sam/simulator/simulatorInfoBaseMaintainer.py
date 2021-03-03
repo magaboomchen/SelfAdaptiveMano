@@ -16,10 +16,16 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
     def __init__(self):
         super(SimulatorInfoBaseMaintainer, self).__init__()
         self.pIO = PickleIO()
+        self.links = {}
+        self.switches = {}
+        self.servers = {}
 
     def loadTopology(self, topoFilePath)
         self.topologyDict = self.pIO.readPickleFile(topoFilePath)
         # more details in /sam/simulator/test/readme.md
+        self.links = self.topologyDict["links"]
+        self.switches = self.topologyDict["switches"]
+        self.servers = self.topologyDict["servers"]
 
     def turnOffSwitch(self, switch):
         pass
@@ -45,4 +51,5 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         pass
         # Flow Identifier is a unique id of each flow
         # E.g. IPv4 destination address of a flow is an identifier
+
 
