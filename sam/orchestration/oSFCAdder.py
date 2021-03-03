@@ -31,6 +31,7 @@ class OSFCAdder(object):
         self.logger = logger
         self._via = VNFIIDAssigner()
         self._sc = SocketConverter()
+        self.zoneName = None
 
     def genAddSFCCmd(self, request):
         self.request = request
@@ -306,7 +307,7 @@ class OSFCAdder(object):
 
     def _forwardingPathSetsDict2Cmd(self, forwardingPathSetsDict,
                                         requestBatchList):
-        self.logger.info("requestFPSet:{0}".format(forwardingPathSetsDict))
+        self.logger.debug("requestFPSet:{0}".format(forwardingPathSetsDict))
         cmdList = []
         for rIndex in range(len(requestBatchList)):
             request = requestBatchList[rIndex]

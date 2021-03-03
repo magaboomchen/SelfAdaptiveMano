@@ -62,7 +62,7 @@ class FRR(BaseApp):
             source = direction['source']
             if source.has_key("IPv4"):
                 ipv4Address = source["IPv4"]
-                if ipv4Address in [None, "*"]:
+                if ipv4Address in [None, "*", "0.0.0.0"]:
                     inPortIndex = DCNGATEWAY_INBOUND_PORT
                 else:
                     inPortIndex = self._getPortbyIP(datapath, source["IPv4"])

@@ -20,7 +20,7 @@ from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintaine
 class Simulator(object):
     def __init__(self):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'simulator.log', level='debug')
+                            'simulator.log', level='debug')
         self.logger = logConfigur.getLogger()
         self.logger.setLevel(logging.DEBUG)
         self.logger.info("Init simulator.")
@@ -30,9 +30,11 @@ class Simulator(object):
         self._sib = SimulatorInfoBaseMaintainer()
 
         self._messageAgent = MessageAgent(self.logger)
-        # please install rabbitmq in your VM
-        # TODO: set RabbitMqServer ip, user, passwd into your settings
-        self._messageAgent.setRabbitMqServer("192.168.0.194", "mq", "123456")
+        # set RabbitMqServer ip, user, passwd into your settings
+        # For example, your virtual machine's ip address is 192.168.5.124
+        # your rabbitmqServerUserName is "mq"
+        # your rabbitmqServerUserCode is "123456"
+        self._messageAgent.setRabbitMqServer("192.168.5.124", "mq", "123456")
         self._messageAgent.startRecvMsg(SIMULATOR_QUEUE)
 
     def startSimulator(self):
@@ -52,7 +54,7 @@ class Simulator(object):
             ExceptionProcessor(self.logger).logException(ex, "simulator")
 
     def _commandHandler(self,cmd):
-        self.logger.debug(" Simulator gets a command")
+        self.logger.debug(" Simulator gets a command ")
         self._cm.addCmd(cmd)
         try:
             if cmd.cmdType == CMD_TYPE_ADD_SFC:
@@ -67,8 +69,10 @@ class Simulator(object):
                 self._getServerSetHandler(cmd)
             elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
                 self._getTopologyHandler(cmd)
-            elif cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
-                self._getSFCIStateHandler(cmd)
+            # elif cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
+            #     self._getSFCIStateHandler(cmd)
+            elif cmd.cmdType == CMD_TYPE_GET_FLOW_SET:
+                self._getFlowSetHandler(cmd)
             else:
                 raise ValueError("Unkonwn command type.")
             self._cm.changeCmdState(cmd.cmdID, CMD_STATE_SUCCESSFUL)
@@ -105,7 +109,11 @@ class Simulator(object):
         pass
         # TODO
 
-    def _getSFCIStateHandler(self, cmd):
+    # def _getSFCIStateHandler(self, cmd):
+    #     pass
+    #     # TODO
+
+    def _getFlowSetHandler(self, cmd):
         pass
         # TODO
 

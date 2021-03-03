@@ -1,24 +1,24 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-SWITCH_TYPE_FORWARD = "SWITCH_TYPE_FORWARD" # 仅支持转发的交换机
-SWITCH_TYPE_NPOP = "SWITCH_TYPE_NPOP" # 连接该交换机的服务器还支持部署VNF
-SWITCH_TYPE_DCNGATEWAY = "SWITCH_TYPE_DCNGATEWAY"   # 数据中心网关
+SWITCH_TYPE_FORWARD = "SWITCH_TYPE_FORWARD" # this switch only connect other switch or classifer
+SWITCH_TYPE_NPOP = "SWITCH_TYPE_NPOP" # those servers connecting this switch can provide VNF
+SWITCH_TYPE_DCNGATEWAY = "SWITCH_TYPE_DCNGATEWAY"   # datacenter gateway
 
 SWITCH_DEFAULT_TCAM_SIZE = 2000
 
 
 class Switch(object):
     def __init__(self, switchID, switchType, lanNet=None, programmable=False,
-        tcamSize=SWITCH_DEFAULT_TCAM_SIZE, tcamUsage=0):
-        self.switchID = switchID    # 全网唯一标识
+                    tcamSize=SWITCH_DEFAULT_TCAM_SIZE, tcamUsage=0):
+        self.switchID = switchID    # unique id in network
         self.switchType = switchType
-        self.lanNet = lanNet    # 该交换机连接的服务器集群的IPv4网段
-        self.programmable = programmable    # 该交换机是否支持可编程
-        self.tcamSize = tcamSize    # 该交换机的TCAM容量
-        self.tcamUsage = tcamUsage  # 该交换机的TCAM使用量
-        self.supportNF = [] # 该交换机支持的NF列表，比如[NF_TYPE_FW]
-        self.supportVNF = []    # 该交换机支持的VNF列表，比如[VNF_TYPE_FW]
+        self.lanNet = lanNet    # the IP net address of this switches. All servers connecting this switches are in this IP net address
+        self.programmable = programmable    # bool type, '1' if this switch is a P4 switch
+        self.tcamSize = tcamSize
+        self.tcamUsage = tcamUsage
+        self.supportNF = [] # e.g. [NF_TYPE_FW]
+        self.supportVNF = []    # e.g. [VNF_TYPE_FW]
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

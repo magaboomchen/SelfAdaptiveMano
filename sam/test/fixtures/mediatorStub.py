@@ -33,3 +33,21 @@ class MediatorStub(OrchestrationStub):
         attr = {'sfc':sfc}
         cmd = Command(CMD_TYPE_DEL_SFC,cmdID,attr)
         return cmd
+
+    def genCMDGetTopology(self):
+        cmdID = uuid.uuid1()
+        attr = {}
+        cmd = Command(CMD_TYPE_GET_TOPOLOGY, cmdID, attr)
+        return cmd
+
+    def genCMDGetServerSet(self):
+        cmdID = uuid.uuid1()
+        attr = {}
+        cmd = Command(CMD_TYPE_GET_SERVER_SET, cmdID, attr)
+        return cmd
+
+    def genCMDGetFlowSet(self):
+        cmdID = uuid.uuid1()
+        attr = {}
+        cmd = Command(CMD_TYPE_GET_FLOW_SET, cmdID, attr)
+        return cmd

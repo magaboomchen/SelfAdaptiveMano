@@ -268,6 +268,6 @@ class E2EProtection(FRR):
     def _sendCmdRply(self, cmdID, cmdState):
         cmdRply = CommandReply(cmdID,cmdState)
         cmdRply.attributes["source"] = {"ryu uffr"}
-        rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY,cmdRply)
+        rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY, cmdRply)
         queue = MEDIATOR_QUEUE
-        self._messageAgent.sendMsg(queue,rplyMsg)
+        self._messageAgent.sendMsg(queue, rplyMsg)

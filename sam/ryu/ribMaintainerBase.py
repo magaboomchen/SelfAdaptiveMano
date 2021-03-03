@@ -35,7 +35,7 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
                 groupID = self.genAvailableMiniNum4List(self.groupIDSets[dpid])
                 self.groupIDSets[dpid].append(groupID)
                 return groupID
-        elif CURRENT_ENV = PICA8_UFRR_LOGICAL_TWO_TIER_ENV:
+        elif CURRENT_ENV == PICA8_UFRR_LOGICAL_TWO_TIER_ENV:
             if dpid in [0, 1, 2]:
                 self.maxGroupIDDict["picaSwitch1"] \
                     = self.maxGroupIDDict["picaSwitch1"] + 1
@@ -54,7 +54,7 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
             pass
         elif CURRENT_ENV == MININET_ENV:
             self.groupIDSets[dpid].remove(groupID)
-        elif CURRENT_ENV = PICA8_UFRR_LOGICAL_TWO_TIER_ENV:
+        elif CURRENT_ENV == PICA8_UFRR_LOGICAL_TWO_TIER_ENV:
             pass
         else:
             raise ValueError("Unknown envirnoment {0}".format(CURRENT_ENV))

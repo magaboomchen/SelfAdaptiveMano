@@ -194,6 +194,7 @@ class NorthSouthRouting(BaseApp):
         # correctly.  The bug has been fixed in OVS v2.1.0.
 
         self._northSouthRIB[datapath.id] = {}
+        self.logger.warning("switch add dpid:{0}".format(datapath.id))
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
