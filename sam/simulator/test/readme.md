@@ -78,19 +78,21 @@ attributes = {
 }
 
 ### CMD_TYPE_GET_FLOW_SET
-attributes = {}
+attributes = {
+    "flows": self.flows # see flow.py
+}
 
 
 
 # 测试用例
 
-* 部署一条SFCI，NF部署在server和P4上
-
-* 删除一条SFCI
-
 * 收集拓扑信息
 
 * 收集服务器集信息
+
+* 部署一条SFCI，NF部署在server和P4上
+
+* 删除一条SFCI
 
 * 收集流信息
     * 每个SFCI可以按照流的下一个服务功能来分成多个截断。比如对于服务链Ingress->Firewall->IDS->Egress来说，该服务功能链实例有3个阶段分别是第0阶段“->Firewall”，第1阶段“->IDS”和第2阶段“->Egress”。
