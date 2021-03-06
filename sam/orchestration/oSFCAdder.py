@@ -23,6 +23,7 @@ from sam.orchestration.algorithms.dpSFCCG.dpSFCCG import *
 from sam.orchestration.algorithms.mMLPSFC.mMLPSFC import *
 from sam.orchestration.algorithms.mMLBSFC.mMLBSFC import *
 from sam.orchestration.algorithms.base.resourceAllocator import *
+from sam.orchestration.algorithms.base.performanceModel import *
 
 
 class OSFCAdder(object):
@@ -325,6 +326,8 @@ class OSFCAdder(object):
 
     def _getVNFISeqFromForwardingPathSet(self, sfc, forwardingPathSet):
         sfcLength = len(sfc.vNFTypeSequence)
+        tD = sfc.getSFCTrafficDemand()
+        pM = PerformanceModel()
         vSeq = []
         for stage in range(sfcLength):
             vnfType = sfc.vNFTypeSequence[stage]
@@ -333,6 +336,7 @@ class OSFCAdder(object):
             for server in serverList:
                 vnfiID = self._via._assignVNFIID(vnfType, server.getServerID())
                 vnfi = VNFI(vnfType, vnfType, vnfiID, None, server)
+                vnfi.maxCPUNum = pM.getExpectedServerResource(vnfType, tD)[0]
                 vnfiList.append(vnfi)
             vSeq.append(vnfiList)
         return vSeq

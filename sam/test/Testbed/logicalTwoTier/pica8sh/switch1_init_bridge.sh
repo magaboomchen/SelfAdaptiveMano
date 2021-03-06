@@ -28,6 +28,7 @@ ovs-vsctl set bridge br5 other_config:disable-in-band=true
 ovs-vsctl set bridge br6 other_config:disable-in-band=true
 ovs-vsctl set bridge br7 other_config:disable-in-band=true
 
+# define addPort function
 addPort()
 {
     echo "add interface" $2 "to bridge" $1

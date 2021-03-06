@@ -12,41 +12,9 @@ from sam.ryu.topoCollector import TopoCollector
 from sam.base.command import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.messageAgent import *
+from sam.mediator.mediator import *
 from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
-
-TESTER_SERVER_DATAPATH_MAC = "18:66:da:85:f9:ed"
-OUTTER_CLIENT_IP = "1.1.1.2"
-WEBSITE_REAL_IP = "3.3.3.3"
-
-CLASSIFIER_DATAPATH_IP = "2.2.0.36"
-CLASSIFIER_DATAPATH_MAC = "00:1b:21:c0:8f:ae"
-CLASSIFIER_CONTROL_IP = "192.168.0.194"
-CLASSIFIER_SERVERID = 10001
-
-SFF1_DATAPATH_IP = "2.2.0.66"
-SFF1_DATAPATH_MAC = "b8:ca:3a:65:f7:fa"
-SFF1_CONTROLNIC_IP = "192.168.8.17"
-SFF1_CONTROLNIC_MAC = "b8:ca:3a:65:f7:f8"
-SFF1_SERVERID = 10002
-
-SFF2_DATAPATH_IP = "2.2.0.68"
-SFF2_DATAPATH_MAC = "ec:f4:bb:da:39:45"
-SFF2_CONTROLNIC_IP = "192.168.8.18"
-SFF2_CONTROLNIC_MAC = "ec:f4:bb:da:39:44"
-SFF2_SERVERID = 10003
-
-SFF3_DATAPATH_IP = "2.2.0.98"
-SFF3_DATAPATH_MAC = "00:1b:21:c0:8f:98"
-SFF3_CONTROLNIC_IP = "192.168.0.173"
-SFF3_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
-SFF3_SERVERID = 10004
-
-SFF4_DATAPATH_IP = "2.2.0.100"
-SFF4_DATAPATH_MAC = "00:1b:21:c0:8f:98"
-SFF4_CONTROLNIC_IP = "192.168.0.127"
-SFF4_CONTROLNIC_MAC = "18:66:da:85:f9:ee"
-SFF4_SERVERID = 10005
 
 
 class TestbedFRR(TestBase):
@@ -55,59 +23,64 @@ class TestbedFRR(TestBase):
 
     def addSFCI2Classifier(self):
         self.logger.info("setup add SFCI to classifier")
-        self.addSFCICmd.cmdID = uuid.uuid1()
-        self.sendCmd(SERVER_CLASSIFIER_CONTROLLER_QUEUE,
-                        MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, self.addSFCICmd)
+        queueName = self._messageAgent.genQueueName(
+            SERVER_CLASSIFIER_CONTROLLER_QUEUE, self.zoneName)
+        self.sendCmd(queueName, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
+                        self.addSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delSFCI2Classifier(self):
         self.logger.info("teardown delete SFCI to classifier")
-        self.delSFCICmd.cmdID = uuid.uuid1()
-        self.sendCmd(SERVER_CLASSIFIER_CONTROLLER_QUEUE,
-                        MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, self.delSFCICmd)
+        queueName = self._messageAgent.genQueueName(
+            SERVER_CLASSIFIER_CONTROLLER_QUEUE, self.zoneName)
+        self.sendCmd(queueName, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD,
+                        self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.delSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def addSFCI2SFF(self):
         self.logger.info("setup add SFCI to sff")
-        self.addSFCICmd.cmdID = uuid.uuid1()
-        self.sendCmd(SFF_CONTROLLER_QUEUE,
-                        MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
+        queueName = self._messageAgent.genQueueName(
+            SFF_CONTROLLER_QUEUE, self.zoneName)
+        self.sendCmd(queueName, MSG_TYPE_SFF_CONTROLLER_CMD,
+                        self.addSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delSFCI2SFF(self):
         self.logger.info("teardown delete SFCI to sff")
-        self.delSFCICmd.cmdID = uuid.uuid1()
-        self.sendCmd(SFF_CONTROLLER_QUEUE,
-                        MSG_TYPE_SFF_CONTROLLER_CMD , self.delSFCICmd)
+        queueName = self._messageAgent.genQueueName(
+            SFF_CONTROLLER_QUEUE, self.zoneName)
+        self.sendCmd(queueName, MSG_TYPE_SFF_CONTROLLER_CMD,
+                        self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.delSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def addVNFI2Server(self):
-        self.addSFCICmd.cmdID = uuid.uuid1()
-        self.sendCmd(VNF_CONTROLLER_QUEUE,
-                        MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
+        queueName = self._messageAgent.genQueueName(
+            VNF_CONTROLLER_QUEUE, self.zoneName)
+        self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD,
+                        self.addSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delVNFI4Server(self):
         self.logger.warning("Deleting VNFI")
-        self.delSFCICmd.cmdID = uuid.uuid1()
-        self.sendCmd(VNF_CONTROLLER_QUEUE,
-                        MSG_TYPE_VNF_CONTROLLER_CMD , self.delSFCICmd)
+        queueName = self._messageAgent.genQueueName(
+            VNF_CONTROLLER_QUEUE, self.zoneName)
+        self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD,
+                        self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.delSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def addSFC2NetworkController(self):
-        self.addSFCCmd.cmdID = uuid.uuid1()
         queueName = self._messageAgent.genQueueName(
             NETWORK_CONTROLLER_QUEUE, self.zoneName)
         self.sendCmd(queueName,
@@ -120,7 +93,6 @@ class TestbedFRR(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def addSFCI2NetworkController(self):
-        self.addSFCICmd.cmdID = uuid.uuid1()
         queueName = self._messageAgent.genQueueName(
             NETWORK_CONTROLLER_QUEUE, self.zoneName)
         self.sendCmd(queueName,
@@ -131,6 +103,24 @@ class TestbedFRR(TestBase):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+
+    def addSFC2Mediator(self):
+        self.logger.info("Adding SFC")
+        self.sendCmd(MEDIATOR_QUEUE,
+                        MSG_TYPE_MEDIATOR_CMD,
+                        self.addSFCCmd)
+
+    def addSFCI2Mediator(self):
+        self.logger.info("Adding SFCI")
+        self.sendCmd(MEDIATOR_QUEUE,
+                        MSG_TYPE_MEDIATOR_CMD,
+                        self.addSFCICmd)
+
+    def delSFCIViaMediator(self):
+        self.logger.info("Deleting SFCI")
+        self.sendCmd(MEDIATOR_QUEUE,
+                        MSG_TYPE_MEDIATOR_CMD,
+                        self.delSFCICmd)
 
     def sendHandleServerSoftwareFailureCmd(self):
         self.logger.info("sendHandleServerFailureCmd")
@@ -146,7 +136,9 @@ class TestbedFRR(TestBase):
                 attributes={"serverDown":[server]}
             )
         )
-        self._messageAgent.sendMsg(NETWORK_CONTROLLER_QUEUE, msg)
+        queueName = self._messageAgent.genQueueName(
+            NETWORK_CONTROLLER_QUEUE, self.zoneName)
+        self._messageAgent.sendMsg(queueName, msg)
 
     def _updateDib(self):
         self._dib.updateServersByZone(self.topologyDict["servers"],
@@ -160,7 +152,7 @@ class TestbedFRR(TestBase):
 
     def runClassifierController(self):
         filePath = classifierControllerCommandAgent.__file__
-        self.sP.runPythonScript(filePath)
+        self.sP.runPythonScript(filePath+" "+PICA8_ZONE)
 
     def runSFFController(self):
         filePath = sffControllerCommandAgent.__file__
@@ -173,3 +165,118 @@ class TestbedFRR(TestBase):
     def runServerManager(self):
         filePath = serverManager.__file__
         self.sP.runPythonScript(filePath+" "+PICA8_ZONE)
+
+    def loadInstance(self):
+        instanceFilePath = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance"
+        self.instance = self.pIO.readPickleFile(instanceFilePath)
+        self.topologyDict = self.instance['topologyDict']
+        self.addSFCIRequests = self.instance['addSFCIRequests']
+
+    def loadSolution(self):
+        self.notViaPSFCSolutionFilePath \
+            = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance.NOTVIA_PSFC.solution"
+        self.pSFCNotViaSolution = self.pIO.readPickleFile(
+            self.notViaPSFCSolutionFilePath)
+
+        self.e2ePSolutionFilePath \
+            = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance.E2EP.solution"
+        self.e2eProtectionSolution = self.pIO.readPickleFile(
+            self.e2ePSolutionFilePath)
+
+        self.ufrrSolutionFilePath = solutionFileDir \
+            = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance.UFRR.solution"
+        self.mmlSFCSolution = self.pIO.readPickleFile(
+            self.ufrrSolutionFilePath)
+
+    def makeCmdList(self, forwardingPathSetDict):
+        self._makeRequestAddSFCICmdTupleList(forwardingPathSetDict)
+        self._makeAddSFCCmdList()
+        self._makeAddSFCICmdList()
+        self._makeDelSFCICmdList()
+
+    def _makeRequestAddSFCICmdTupleList(self, forwardingPathSetDict):
+        self.requestAddSFCICmdTupleList = []
+        self.requestAddSFCICmdTupleList.extend(
+            self.oSA._forwardingPathSetsDict2Cmd(forwardingPathSetDict,
+                                                    self.addSFCIRequests))
+        for index, RequestAddSFCICmdTuple in enumerate(self.requestAddSFCICmdTupleList):
+            addSFCICmd = RequestAddSFCICmdTuple[1]
+            addSFCICmd.attributes['zone'] = PICA8_ZONE
+            sfc = addSFCICmd.attributes['sfc']
+            sfc.vNFTypeSequence = [VNF_TYPE_FORWARD] * len(sfc.vNFTypeSequence)
+            sfc.attributes['zone'] = PICA8_ZONE
+            sfci = addSFCICmd.attributes['sfci']
+            vnfiSequence = sfci.vnfiSequence
+            for vnfisList in vnfiSequence:
+                for vnfi in vnfisList:
+                    vnfi.vnfType = VNF_TYPE_FORWARD
+                    vnfi.maxCPUNum = 1
+
+    def _makeAddSFCCmdList(self):
+        self.addSFCCmdList = []
+        for index, RequestAddSFCICmdTuple in enumerate(self.requestAddSFCICmdTupleList):
+            addSFCICmd = RequestAddSFCICmdTuple[1]
+            addSFCCmd = copy.deepcopy(addSFCICmd)
+            addSFCCmd.cmdType = CMD_TYPE_ADD_SFC
+            addSFCCmd.cmdID = uuid.uuid1()
+            addSFCCmd.attributes.pop('sfci')
+            self.addSFCCmdList.append(addSFCCmd)
+
+    def _makeAddSFCICmdList(self):
+        self.addSFCICmdList = []
+        for index, RequestAddSFCICmdTuple in enumerate(self.requestAddSFCICmdTupleList):
+            addSFCICmd = copy.deepcopy(RequestAddSFCICmdTuple[1])
+            addSFCICmd.cmdID = uuid.uuid1()
+            self.addSFCICmdList.append(addSFCICmd)
+
+    def _makeDelSFCICmdList(self):
+        self.delSFCICmdList = []
+        for index, RequestAddSFCICmdTuple in enumerate(self.requestAddSFCICmdTupleList):
+            addSFCICmd = RequestAddSFCICmdTuple[1]
+            delSFCICmd = copy.deepcopy(addSFCICmd)
+            delSFCICmd.cmdType = CMD_TYPE_DEL_SFCI
+            delSFCICmd.cmdID = uuid.uuid1()
+            self.delSFCICmdList.append(delSFCICmd)
+
+    def addExpectedCmdRply(self, cmd):
+        if not self.expectedCmdRplyDict.has_key(cmd.cmdID):
+            self.expectedCmdRplyDict[cmd.cmdID] = None
+        else:
+            self.logger.error("Duplicated cmdID")
+
+    def recvAllCmdReplysFromMediator(self, totalCmdReplyNum):
+        self.logger.info("totalCmdReplyNum: {0}".format(totalCmdReplyNum))
+        for _ in range(totalCmdReplyNum):
+            self.logger.info("recv {0}-th cmdReply".format(_))
+            # cmdRply = self.recvCmdRply(ORCHESTRATOR_QUEUE)
+            cmdRply = self.oS.recvCmdRply()
+            self.expectedCmdRplyDict[cmdRply.cmdID] = cmdRply
+
+            if self.hasGotAllCmdRply():
+                self.logger.info("Got all cmd reply! total number is :{0}".format(
+                    len(self.expectedCmdRplyDict)
+                ))
+                break
+            else:
+                if _ >= 0.98 * totalCmdReplyNum:
+                    self.findUnRecvedCmdReply()
+
+    def findUnRecvedCmdReply(self):
+        for cmdID, value in self.expectedCmdRplyDict.items():
+            if value == None:
+                self.logger.warning("haven't recv cmdID {0}".format(cmdID))
+
+    def hasGotAllCmdRply(self):
+        for cmdID, value in self.expectedCmdRplyDict.items():
+            if value == None:
+                return False
+        else:
+            return True
+
+    def verifyCmdViaMediator(self, cmd):
+        if cmd.cmdID not in self.expectedCmdRplyDict:
+            self.logger.error("Unknown cmd reply")
+            assert True == False
+        else:
+            cmdRply = self.expectedCmdRplyDict[cmd.cmdID]
+            assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL

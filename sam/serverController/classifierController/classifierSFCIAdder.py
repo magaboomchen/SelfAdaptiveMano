@@ -30,7 +30,7 @@ class ClassifierSFCIAdder(BessControlPlane):
         sfci = cmd.attributes['sfci']
         sfcUUID = sfc.sfcUUID
         sfciID = sfci.sfciID
-        self.logger.debug("addSFCI sfcUUID:{0}, sfciID:{1}".format(
+        self.logger.info("addSFCI sfcUUID:{0}, sfciID:{1}".format(
             sfcUUID, sfciID
         ))
         for direction in sfc.directions:

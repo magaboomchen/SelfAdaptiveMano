@@ -72,6 +72,8 @@ MSG_TYPE_SERVER_REPLY = "MSG_TYPE_SERVER_REPLY"
 # tester use case
 MSG_TYPE_TESTER_CMD = "MSG_TYPE_TESTER_CMD"
 
+MESSAGE_AGENT_MAX_QUEUE_SIZE = 99999
+
 
 class SAMMessage(object):
     def __init__(self, msgType, body):
@@ -101,7 +103,7 @@ class MessageAgent(object):
             self.logger = logger
         else:
             logConfigur = LoggerConfigurator(__name__, './log',
-                'messageAgent.log', level='warning')
+                'messageAgent.log', level='info')
             self.logger = logConfigur.getLogger()
         self.logger.info("Init MessaageAgent.")
         self.readRabbitMQConf()
@@ -155,7 +157,7 @@ class MessageAgent(object):
             try:
                 self._publisherConnection = self._connectRabbitMQServer()
                 channel = self._publisherConnection.channel()
-                channel.queue_declare(queue=dstQueueName,durable=True)
+                channel.queue_declare(queue=dstQueueName, durable=True)
                 channel.basic_publish(exchange='', routing_key=dstQueueName,
                     body=self._encodeMessage(message),
                     properties=pika.BasicProperties(delivery_mode = 2)
@@ -172,7 +174,7 @@ class MessageAgent(object):
                 break
 
     def startRecvMsg(self,srcQueueName):
-        self.logger.debug("MessageAgent.startRecvMsg().")
+        self.logger.debug("MessageAgent.startRecvMsg() on queue {0}".format(srcQueueName))
         if srcQueueName in self.msgQueues:
             self.logger.warning("Already listening on recv queue.")
         else:
@@ -301,10 +303,10 @@ class QueueReciever(threading.Thread):
                 ExceptionProcessor(self.logger).logException(ex,
                     "MessageAgent recvMsg failed")
 
-    def callback(self,ch, method, properties, body):
+    def callback(self, ch, method, properties, body):
         self.logger.debug(" [x] Received %r" % body)
         threadLock.acquire()
-        if self.msgQueue.qsize() < 99999:
+        if self.msgQueue.qsize() < MESSAGE_AGENT_MAX_QUEUE_SIZE:
             self.msgQueue.put(body)
         else:
             raise ValueError("MessageAgent recv qeueu full! Drop new msg!")

@@ -10,7 +10,7 @@ class VCConfig:
 
     DPDKINFO_BUF = 65535  # used for element DPDKInfo
 
-    DEBUG = True  # if you set debug=True, the container will not be removed even if the app is terminated.
+    DEBUG = False  # if you set debug=True, the container will not be removed even if the app is terminated.
                   # !!!please run docker rm XXX to free resources of the container.!!!
 
     DEFAULT_FASTCLICK = True

@@ -37,7 +37,17 @@ if __name__ == "__main__":
         pass
     try:
         sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue SFF_CONTROLLER_QUEUE_PICA8_ZONE")
+    except:
+        pass
+    try:
+        sP.runShellCommand(
             "sudo rabbitmqctl purge_queue VNF_CONTROLLER_QUEUE")
+    except:
+        pass
+    try:
+        sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue VNF_CONTROLLER_QUEUE_PICA8_ZONE")
     except:
         pass
     try:
@@ -47,12 +57,27 @@ if __name__ == "__main__":
         pass
     try:
         sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue SERVER_CLASSIFIER_CONTROLLER_QUEUE_PICA8_ZONE")
+    except:
+        pass
+    try:
+        sP.runShellCommand(
             "sudo rabbitmqctl purge_queue SERVER_MANAGER_QUEUE")
     except:
         pass
     try:
         sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue SERVER_MANAGER_QUEUE_PICA8_ZONE")
+    except:
+        pass
+    try:
+        sP.runShellCommand(
             "sudo rabbitmqctl purge_queue NETWORK_CONTROLLER_QUEUE")
+    except:
+        pass
+    try:
+        sP.runShellCommand(
+            "sudo rabbitmqctl purge_queue NETWORK_CONTROLLER_QUEUE_PICA8_ZONE")
     except:
         pass
     try:

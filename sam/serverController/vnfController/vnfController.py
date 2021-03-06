@@ -101,6 +101,7 @@ class VNFController(object):
                         self._vnfiMaintainer.setVNFIVIOStart(sfciID, vnfi, vioStart)
                         self._vnfiMaintainer.setVNFICPU(sfciID, vnfi, cpus)
                     except Exception as exp:
+                        ExceptionProcessor(self.logger).logException(exp, "Error occurs when adding vnfi: ")
                         self.logger.error('Error occurs when adding vnfi: %s' % exp)
                         self._vnfiMaintainer.setVNFIState(sfciID, vnfi, VNFI_STATE_FAILED)
                         self._vnfiMaintainer.setVNFIError(sfciID, vnfi, exp)    
@@ -113,6 +114,7 @@ class VNFController(object):
         try:
             sfciState = self._vnfiMaintainer.getSFCI(sfciID)
         except Exception as e:
+            ExceptionProcessor(self.logger).logException(e, "SFCI not maintained in vnf controller.")
             self.logger.error('SFCI %s not maintained in vnf controller.' % sfciID)
             return False
         success = True
@@ -124,6 +126,7 @@ class VNFController(object):
                 self._vnfiDeleter.deleteVNFI(sfciState[vnfiID], vioAllo, cpuAllo)
                 self._vnfiMaintainer.deleteVNFI(sfciID, vnfiID)
             except Exception as e:
+                ExceptionProcessor(self.logger).logException(e, "Error occurs when deleting vnfi:")
                 self.logger.error('Error occurs when deleting vnfi: %s' % e)
                 success = False
         if success:

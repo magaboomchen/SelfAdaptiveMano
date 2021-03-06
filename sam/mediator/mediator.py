@@ -23,10 +23,10 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 class Mediator(object):
     def __init__(self, mode):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'mediator.log', level='debug')
+            'mediator.log', level='info')
         self.logger = logConfigur.getLogger()
         self.logger.info("Init mediator.")
-        self.logger.setLevel(logging.DEBUG)
+        # self.logger.setLevel(logging.DEBUG)
 
         self._cm = CommandMaintainer()
         self._mode = mode
@@ -63,12 +63,14 @@ class Mediator(object):
         if cmd.cmdType == CMD_TYPE_ADD_SFC:
             if self._mode['classifierType'] == 'Server':
                 self._addSFC2ClassifierController(cmd)
+            # time.sleep(3)   # TODO: refactor this hardcode function: after add sfc to classifier, add sfc 2 netowrk controller
             self._addSFC2NetworkController(cmd)
         elif cmd.cmdType == CMD_TYPE_ADD_SFCI:
             if self._mode['classifierType'] == 'Server':
                 self._addSFCI2ClassifierController(cmd)
-            self._addSFCI2NetworkController(cmd)
             self._addSFCI2SFFController(cmd)
+            # time.sleep(3)   # TODO: refactor this hardcode function: after add sfc to classifier, add sfc 2 netowrk controller
+            self._addSFCI2NetworkController(cmd)
             # skip self._addSFCIs2Server(cmd), because we need install 
             # entry to sff before install vnf.
             # prepare child cmd first
@@ -342,6 +344,7 @@ class Mediator(object):
     def _exeCmdStateAction(self,cmdID):
         parentCmdID = self._cm.getParentCmdID(cmdID)
         if self._cm.isParentCmdSuccessful(parentCmdID):
+            self.logger.info("Command {0} is successful".format(parentCmdID))
             self._cm.changeCmdState(parentCmdID, CMD_STATE_SUCCESSFUL)
             cmdRply = self._genParentCmdRply(parentCmdID,
                 CMD_STATE_SUCCESSFUL)

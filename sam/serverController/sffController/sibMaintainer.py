@@ -103,8 +103,22 @@ class SIBMaintainer(BessInfoBaseMaintainer):
     def hasVNFI(self, vnfiID):
         return self._vnfiDict.has_key(vnfiID)
 
+    def hasReassignedVNFI(self, vnfiID):
+        if self._vnfiDict.has_key(vnfiID):
+            return len(self._vnfiDict[vnfiID]) not in [0,1]
+        else:
+            return False
+
     def addVNFI(self, vnfi):
-        self._vnfiDict[vnfi.vnfiID] = vnfi
+        if self._vnfiDict.has_key(vnfi.vnfiID):
+            self._vnfiDict[vnfi.vnfiID].append(vnfi)
+        else:
+            self._vnfiDict[vnfi.vnfiID] = [vnfi]
 
     def delVNFI(self, vnfiID):
-        self._vnfiDict.pop(vnfiID, None)
+        if self._vnfiDict.has_key(vnfiID):
+            self._vnfiDict[vnfiID].pop()
+            if self._vnfiDict[vnfiID] == []:
+                self._vnfiDict.pop(vnfiID, None)
+        else:
+            pass

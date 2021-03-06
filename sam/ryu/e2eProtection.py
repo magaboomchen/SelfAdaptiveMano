@@ -40,6 +40,7 @@ class E2EProtection(FRR):
             '*** FRR App Received command={0}'.format(cmd))
         try:
             sfc = cmd.attributes['sfc']
+            self.logger.info("add sfc: {0}".format(sfc.sfcUUID))
             self._addRoute2Classifier(sfc)
             self._sendCmdRply(cmd.cmdID, CMD_STATE_SUCCESSFUL)
         except Exception as ex:
@@ -136,6 +137,7 @@ class E2EProtection(FRR):
         try:
             sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
+            self.logger.info("add sfci: {0}".format(sfci.sfciID))
             self._addSFCIRoute(sfc, sfci)
             self.ibm.addSFCI(sfci)
             self._sendCmdRply(cmd.cmdID, CMD_STATE_SUCCESSFUL)
@@ -271,3 +273,16 @@ class E2EProtection(FRR):
         rplyMsg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY, cmdRply)
         queue = MEDIATOR_QUEUE
         self._messageAgent.sendMsg(queue, rplyMsg)
+
+    def _delSFCIHandler(self, cmd):
+        self.logger.info('*** e2eP App Received command={0}'.format(cmd))
+        try:
+            sfc = cmd.attributes['sfc']
+            sfci = cmd.attributes['sfci']
+            # TODO: delete route
+            # self._delSFCIRoute(sfc, sfci)
+            self._sendCmdRply(cmd.cmdID,CMD_STATE_SUCCESSFUL)
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex,
+                "e2eP _delSFCIHandler")
+            self._sendCmdRply(cmd.cmdID, CMD_STATE_FAIL)

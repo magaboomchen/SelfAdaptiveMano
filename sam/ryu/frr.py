@@ -20,7 +20,7 @@ from ryu.base.app_manager import *
 from sam.ryu.conf.ryuConf import *
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
 from sam.ryu.baseApp import BaseApp
-from sam.ryu.conf.ryuConf import DCNGATEWAY_INBOUND_PORT
+from sam.ryu.conf.ryuConf import DCNGATEWAY_INBOUND_PORT, ARP_TIMEOUT
 from sam.base.messageAgent import *
 from sam.base.command import *
 from sam.base.path import *
@@ -110,18 +110,18 @@ class FRR(BaseApp):
     # _switchesLANMacTable in L2.py.
     # in L2.py, check _switchesLANMacTable, if it unexisted, return None
     # and send arp request.
-    # if ufrr get None, time.sleep(0.25) then retry again,
-    # max try number is 4.
+    # if ufrr get None, time.sleep(ARP_TIMEOUT) then retry again,
+    # max try number is ARP_MAX_RETRY_NUM.
     def _getPortbyIP(self, datapath, ipAddress):
         dpid = datapath.id
-        maxTryNumber = 4
+        maxTryNumber = ARP_MAX_RETRY_NUM
         port = None
         for tryNumber in range(maxTryNumber):
             # get mac by arp table
             dstMac = self.wer.getMacByIp(dpid, ipAddress)
             if dstMac == None:
                 self._broadcastArpRequest(datapath,ipAddress)
-                time.sleep(0.25)
+                time.sleep(ARP_TIMEOUT)
                 continue
 
             # get port by mac table

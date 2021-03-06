@@ -49,6 +49,7 @@ class TestE2EProtectionClass(TestbedFRR):
             base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
             "192.168.0.194", "mq", "123456")
         self.sP = ShellProcessor()
+        self.sP.runShellCommand("rm -rf ./log")
         self.cleanLog()
         self.clearQueue()
         self.killAllModule()
@@ -70,10 +71,16 @@ class TestE2EProtectionClass(TestbedFRR):
         self.oSA.zoneName = PICA8_ZONE
         self.makeCmdList(self.e2eProtectionSolution)
 
+        self.oS = OrchestrationStub()
+        self.oS.startRecv()
+
         # self.runServerManager()
         self.runClassifierController()
         self.runSFFController()
         self.runVNFController()
+        self.runMediator()
+
+        self.expectedCmdRplyDict = {}
 
         yield
         # teardown
@@ -82,72 +89,15 @@ class TestE2EProtectionClass(TestbedFRR):
         self.killSFFController()
         self.killVNFController()
         self.killServerManager()
-
-    def loadInstance(self):
-        instanceFilePath = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance"
-        self.instance = self.pIO.readPickleFile(instanceFilePath)
-        self.topologyDict = self.instance['topologyDict']
-        self.addSFCIRequests = self.instance['addSFCIRequests']
-
-    def loadSolution(self):
-        self.notViaPSFCSolutionFilePath \
-            = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance.NOTVIA_PSFC.solution"
-        self.pSFCNotViaSolution = self.pIO.readPickleFile(
-            self.notViaPSFCSolutionFilePath)
-
-        self.e2ePSolutionFilePath \
-            = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance.E2EP.solution"
-        self.e2eProtectionSolution = self.pIO.readPickleFile(
-            self.e2ePSolutionFilePath)
-
-        self.ufrrSolutionFilePath = solutionFileDir \
-            = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance.UFRR.solution"
-        self.mmlSFCSolution = self.pIO.readPickleFile(
-            self.ufrrSolutionFilePath)
-
-    def makeCmdList(self, forwardingPathSetDict):
-        self._makeRequestAddSFCICmdTupleList(forwardingPathSetDict)
-        self._makeAddSFCCmdList()
-        self._makeAddSFCICmdList()
-        self._makeDelSFCICmdList()
-
-    def _makeRequestAddSFCICmdTupleList(self, forwardingPathSetDict):
-        self.requestAddSFCICmdTupleList = []
-        self.requestAddSFCICmdTupleList.extend(
-            self.oSA._forwardingPathSetsDict2Cmd(forwardingPathSetDict,
-                                                    self.addSFCIRequests))
-        for index, RequestAddSFCICmdTuple in enumerate(self.requestAddSFCICmdTupleList):
-            addSFCICmd = RequestAddSFCICmdTuple[1]
-            sfc = addSFCICmd.attributes['sfc']
-            sfc.vNFTypeSequence = [VNF_TYPE_FORWARD]
-
-    def _makeAddSFCCmdList(self):
-        self.addSFCCmdList = []
-        for index, RequestAddSFCICmdTuple in enumerate(self.requestAddSFCICmdTupleList):
-            addSFCICmd = RequestAddSFCICmdTuple[1]
-            addSFCCmd = copy.deepcopy(addSFCICmd)
-            addSFCCmd.cmdType = CMD_TYPE_ADD_SFC
-            addSFCCmd.attributes.pop('sfci')
-            self.addSFCCmdList.append(addSFCCmd)
-
-    def _makeAddSFCICmdList(self):
-        self.addSFCICmdList = []
-        for index, RequestAddSFCICmdTuple in enumerate(self.requestAddSFCICmdTupleList):
-            addSFCICmd = copy.deepcopy(RequestAddSFCICmdTuple[1])
-            self.addSFCICmdList.append(addSFCICmd)
-
-    def _makeDelSFCICmdList(self):
-        self.delSFCICmdList = []
-        for index, RequestAddSFCICmdTuple in enumerate(self.requestAddSFCICmdTupleList):
-            addSFCICmd = RequestAddSFCICmdTuple[1]
-            delSFCICmd = copy.deepcopy(addSFCICmd)
-            delSFCICmd.cmdType = CMD_TYPE_DEL_SFCI
-            self.delSFCICmdList.append(delSFCICmd)
+        self.killMediator()
 
     def test_addUniSFCI(self, setup_addUniSFCI):
+        time.sleep(2)
         self.logger.info("You need to start ryu-manager manually!"
             "Then press any key to continue!")
         raw_input()
+
+        # self.addSFCCmdList = self.addSFCCmdList[:1]
 
         self.addSFCIs()
 
@@ -161,26 +111,72 @@ class TestE2EProtectionClass(TestbedFRR):
         self.logger.info("Press any key to quit!")
         raw_input()
 
+    # With mediator with batch
     def addSFCIs(self):
-        for index, addSFCCmd in enumerate(self.addSFCCmdList):
+        for index in range(len(self.addSFCCmdList)):
             self.addSFCCmd = self.addSFCCmdList[index]
             self.addSFCICmd = self.addSFCICmdList[index]
-            self.addSFCI2Classifier()
-            # self.addSFCI2SFF()
-            # self.addVNFI2Server()
-            # self.logger.warning(self.addSFCCmd)
-            # raw_input()
-            self.addSFC2NetworkController()
-            self.addSFCI2NetworkController()
-            break
+            self.addExpectedCmdRply(self.addSFCCmd)
+            self.addExpectedCmdRply(self.addSFCICmd)
+            self.addSFC2Mediator()
+            self.addSFCI2Mediator()
 
+        # collect all cmdReply
+        self.recvAllCmdReplysFromMediator(len(self.addSFCCmdList) * 2)
+
+        # verify all cmdReply
+        for index in range(len(self.addSFCCmdList)):
+            self.addSFCCmd = self.addSFCCmdList[index]
+            self.verifyCmdViaMediator(self.addSFCCmd)
+            self.addSFCICmd = self.addSFCICmdList[index]
+            self.verifyCmdViaMediator(self.addSFCICmd)
+
+    # With mediator with batch
     def delSFCIs(self):
-        for index, delSFCICmd in enumerate(self.delSFCICmdList):
+        for index in range(len(self.addSFCCmdList)):
             self.delSFCICmd = self.delSFCICmdList[index]
-            self.delSFCI2Classifier()
-            # self.delSFCI2SFF()
-            # self.delVNFI4Server()
-            break
+            self.delSFCIViaMediator()
+
+        # collect all cmdReply
+        self.recvAllCmdReplysFromMediator(len(self.addSFCCmdList))
+
+        # verify all cmdReply
+        for index in range(len(self.addSFCCmdList)):
+            self.delSFCICmd = self.delSFCICmdList[index]
+            self.verifyCmdViaMediator(self.delSFCICmd)
+
+    # With mediator without batch
+    # def addSFCIs(self):
+    #     for index, addSFCCmd in enumerate(self.addSFCCmdList):
+    #         self.addSFCCmd = self.addSFCCmdList[index]
+    #         self.addSFCICmd = self.addSFCICmdList[index]
+    #         self.addSFC2Mediator()
+    #         self.addSFCI2Mediator()
+
+    # With mediator without batch
+    # def delSFCIs(self):
+    #     for index, delSFCICmd in enumerate(self.delSFCICmdList):
+    #         self.delSFCICmd = self.delSFCICmdList[index]
+    #         self.delSFCIViaMediator()
+
+    # Without mediator
+    # def addSFCIs(self):
+    #     for index, addSFCCmd in enumerate(self.addSFCCmdList):
+    #         self.addSFCCmd = self.addSFCCmdList[index]
+    #         self.addSFCICmd = self.addSFCICmdList[index]
+    #         self.addSFCI2Classifier()
+    #         self.addSFCI2SFF()
+    #         self.addVNFI2Server()
+    #         self.addSFC2NetworkController()
+    #         self.addSFCI2NetworkController()
+
+    # Without mediator
+    # def delSFCIs(self):
+    #     for index, delSFCICmd in enumerate(self.delSFCICmdList):
+    #         self.delSFCICmd = self.delSFCICmdList[index]
+    #         self.delSFCI2Classifier()
+    #         self.delSFCI2SFF()
+    #         self.delVNFI4Server()
 
     def sendHandleServerSoftwareFailureCmd(self):
         #TODO: 找一个承载SFCI最多的服务器来执行宕机测试

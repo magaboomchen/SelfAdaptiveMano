@@ -27,6 +27,7 @@ class SFFSFCIAdder(BessControlPlane):
         sfc = cmd.attributes['sfc']
         sfci = cmd.attributes['sfci']
         self._checkVNFISequence(sfci.vnfiSequence)
+        self.logger.info("Adding sfci: {0}".format(sfci.sfciID))
         for vnf in sfci.vnfiSequence:
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):

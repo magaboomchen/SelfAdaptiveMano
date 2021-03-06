@@ -39,9 +39,12 @@ class SFFSFCIDeleter(BessControlPlane):
                     if not self.sibms.hasSibm(serverID):
                         continue
                     sibm = self.sibms.getSibm(serverID)
-                    self._delLinks(server,sfc.directions,vnfi)
-                    self._delRules(server,sfci,sfc.directions,vnfi)
-                    self._delModules(server,sfc.directions,sfci,vnfi)
+                    if sibm.hasReassignedVNFI(vnfi.vnfiID):
+                        self._delRules(server, sfci, sfc.directions, vnfi, reassignedVNFI=True)
+                    else:
+                        self._delLinks(server, sfc.directions, vnfi)
+                        self._delRules(server, sfci, sfc.directions, vnfi)
+                        self._delModules(server, sfc.directions, sfci, vnfi)
                     self.sibms.show()
                     sibm.delVNFI(vnfi.vnfiID)
                 else:
@@ -90,7 +93,7 @@ class SFFSFCIDeleter(BessControlPlane):
 
                 stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
-    def _delRules(self,server,sfci,directions,vnfi):
+    def _delRules(self, server, sfci, directions, vnfi, reassignedVNFI=False):
         sfciID = sfci.sfciID
         vnfiID = vnfi.vnfiID
         vnfID = vnfi.vnfID
@@ -117,7 +120,8 @@ class SFFSFCIDeleter(BessControlPlane):
                 response = stub.ModuleCommand(bess_msg_pb2.CommandRequest(
                     name="wm2",cmd="delete",arg=argument))
                 self._checkResponse(response)
-                sibm.delModuleOGate("wm2",(vnfiID,directionID))
+                if not reassignedVNFI:
+                    sibm.delModuleOGate("wm2",(vnfiID,directionID))
 
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 

@@ -140,6 +140,12 @@ class TestBase(object):
     def killVNFController(self):
         self.sP.killPythonScript("vnfController.py")
 
+    def killServerManager(self):
+        self.sP.killPythonScript("serverManager.py")
+
+    def killMediator(self):
+        self.sP.killPythonScript("mediator.py")
+
     def runOrchestrator(self):
         filePath = orchestrator.__file__
         self.sP.runPythonScript(filePath)
@@ -156,8 +162,9 @@ class TestBase(object):
         filePath = serverManager.__file__
         self.sP.runPythonScript(filePath)
 
-    def killServerManager(self):
-        self.sP.killPythonScript("serverManager.py")
+    def runMediator(self):
+        filePath = mediator.__file__
+        self.sP.runPythonScript(filePath)
 
     def genUniDirectionSFC(self, classifier):
         sfcUUID = uuid.uuid1()
