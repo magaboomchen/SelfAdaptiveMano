@@ -69,6 +69,43 @@ class E2EProtection(FRR):
             serverID = server.getServerID()
             self._e2eProtectionHandleNodeFailure(serverID)
 
+    def getCurrentTimeInMs(self):
+        return time.time() * 1000.0
+
+    def _e2eProtectionHandleLinkFailure(self, linkID):
+        count = 0
+        affectedSFCIIDList \
+            = self._getAffectedSFCIIDListByFailureLinkID(linkID)
+        for sfciID, primaryPathID in affectedSFCIIDList:
+            # for a primary path with primaryPathID, it's corresponding
+            # backup path's pathID is primaryPathID+1
+            self._increaseSFCIBackupPathPriority(sfciID, primaryPathID+1)
+            count = count + 1
+
+        self.end = self.getCurrentTimeInMs()
+        self.logger.warning("update {0} entrys in time: {1} ms".format(
+            count, str(self.end-self.start)))
+
+    def _getAffectedSFCIIDListByFailureLinkID(self, failureLinkID):
+        self.logger.debug("failure link is {0}".format(failureLinkID))
+        affectedSFCIIDList = []
+        sfciDict = self.ibm.getSFCIDict()
+        for sfciID, sfci in sfciDict.items():
+            for directionID in [0, 1]:
+                primaryPathID = self._getPathID(directionID)
+                primaryFP = self._getPrimaryPath(sfci, primaryPathID)
+                backupFPs = self._getBackupPaths(sfci, primaryPathID)
+                if primaryFP == None or backupFPs == None:
+                    continue
+                else:
+                    self.logger.debug("valid primaryPathID")
+                if self._isPathHasFailureLinkID(primaryFP, failureLinkID):
+                    affectedSFCIIDList.append((sfciID, primaryPathID))
+                    self.logger.debug(
+                        "affected sfciID:{0}, primaryPathID:{1}".format(
+                            sfciID, primaryPathID))
+        return affectedSFCIIDList
+
     def _e2eProtectionHandleNodeFailure(self, nodeID):
         affectedSFCIIDList \
             = self._getAffectedSFCIIDListByFailureNodeID(nodeID)
@@ -106,9 +143,24 @@ class E2EProtection(FRR):
             else:
                 return False
 
+    def _isPathHasFailureLinkID(self, primaryFP, failureLinkID):
+        for segPath in primaryFP:
+            for index, currentLayerNodeID in enumerate(segPath):
+                if index >= len(segPath)-1:
+                    continue
+                (layerNum, currentNodeID) = currentLayerNodeID
+                nextLayerNodeID = segPath[index+1]
+                (layerNum, nextNodeID) = nextLayerNodeID
+                linkID = (currentNodeID, nextNodeID)
+                reverseLinkID = (nextNodeID, currentNodeID)
+                if linkID == failureLinkID or reverseLinkID == failureLinkID:
+                    return True
+            else:
+                return False
+
     def _increaseSFCIBackupPathPriority(self, sfciID, backupPathID):
         self.logger.debug("_increaseSFCIBackupPathPriority,"
-            " sfciID:{0}, backupPathID:{1}".format(sfciID, backupPathID))
+                            " sfciID:{0}, backupPathID:{1}".format(sfciID, backupPathID))
         dpidFIBEntryDict \
             = self.ibm.getSFCIFlowTableEntries(sfciID, backupPathID)
         for dpid, entryList in dpidFIBEntryDict.items():
@@ -127,8 +179,10 @@ class E2EProtection(FRR):
                         "_del_flow dpid:{0}, match:{1}, priority:{2}".format(
                             dpid, match, priority))
                     self._del_flow(datapath, match, tableID, priority, outPort=outPort)
+                    self.syncDatapath(datapath)
                     self._add_flow(datapath, match, inst, tableID,
                                     priority=UPPER_BACKUP_ENTRY_PRIORITY)
+                    self.syncDatapath(datapath)
                     entry["priority"] = UPPER_BACKUP_ENTRY_PRIORITY
 
     def _addSFCIHandler(self, cmd):
@@ -266,6 +320,34 @@ class E2EProtection(FRR):
         switch = ev.switch
         switchID = switch.dp.id
         self._e2eProtectionHandleNodeFailure(switchID)
+
+    @set_ev_cls(event.EventLinkDelete)
+    def _delLinkHandler(self, ev):
+        self.start = self.getCurrentTimeInMs()
+        link = ev.link
+        linkID = (link.src.dpid,link.dst.dpid)
+        self.logger.info("delLinkHandler linkID: {0}".format(linkID))
+        self._e2eProtectionHandleLinkFailure(linkID)
+
+    # @set_ev_cls(ofp_event.EventOFPPortStatus, MAIN_DISPATCHER)
+    # def _port_status_handler(self, ev):
+    #     msg = ev.msg
+    #     reason = msg.reason
+    #     port_no = msg.desc.port_no
+    #     datapath = msg.datapath
+    #     dpid = datapath.id
+    #     ofproto = datapath.ofproto
+    #     port = msg.desc
+
+    #     linkID = self._getAffectedLinkID(dpid, port_no)
+
+    #     if linkID != None and (reason == ofproto.OFPPR_DELETE or reason == ofproto.OFPPR_MODIFY):
+    #         self.logger.info("_port_status_handler, dpid: %d, port deleted/modify %s" %(dpid, port_no))
+    #         self._e2eProtectionHandleLinkFailure(linkID)
+
+    def _getAffectedLinkID(self, dpid, port_no):
+        # for server-switch link, use serverManager's heart beat detection
+        return self.topoCollector.getLinkIDByDpidAndPort(dpid, port_no)
 
     def _sendCmdRply(self, cmdID, cmdState):
         cmdRply = CommandReply(cmdID,cmdState)

@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
 import copy
 import time
 
@@ -19,6 +18,7 @@ from ryu.base.app_manager import *
 
 from sam.ryu.conf.ryuConf import *
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
+from sam.ryu.datapathStateSynchronizer import DatapathStateSynchronizer
 from sam.ryu.baseApp import BaseApp
 from sam.ryu.conf.ryuConf import DCNGATEWAY_INBOUND_PORT, ARP_TIMEOUT
 from sam.base.messageAgent import *
@@ -34,7 +34,8 @@ class FRR(BaseApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
     _CONTEXTS = {
         'dpset': dpset.DPSet,
-        'TopoCollector': TopoCollector
+        'TopoCollector': TopoCollector,
+        'DatapathStateSynchronizer': DatapathStateSynchronizer
         }
 
     def __init__(self, *args, **kwargs):
@@ -42,12 +43,16 @@ class FRR(BaseApp):
         self.logger.info("Initialize FRR App !")
         self.dpset = kwargs['dpset']
         self.topoCollector = kwargs['TopoCollector']
+        self.dss = kwargs['DatapathStateSynchronizer']
         self.L2 = lookup_service_brick('L2')
         self.wer = lookup_service_brick('WestEastRouting')
-        if self.L2 == None or self.wer == None:
-            self.logger.error("FRR service connection error."\
-                "You may need to sort app's start sequence")
-            return 
+        if self.L2 == None or self.wer == None or self.dss == None:
+            self.logger.error("FRR service connection error."
+                "L2:{0}, wer:{1}, dss:{2} "
+                "You may need to sort app's start sequence".format(
+                    self.L2, self.wer, self.dss
+                ))
+            raise ValueError("Can't start frr!")
         self.ibm = None
         self._sc = SocketConverter()
         self._sffType = SOFTWARE_SFF
@@ -490,3 +495,11 @@ class FRR(BaseApp):
         else: # If yes, we can't delete this route.
             pass
         self.ibm.delSFCFlowTableEntry(sfcUUID)
+
+    def syncDatapath(self, datapath):
+        self.dss.sendBarrierRequest(datapath)
+        while True:
+            if self.dss.getBarrierState(datapath) == True:
+                break
+            else:
+                time.sleep(1/100000.0)

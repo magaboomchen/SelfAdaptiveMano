@@ -135,6 +135,7 @@ class TestE2EProtectionClass(TestbedFRR):
     def delSFCIs(self):
         for index in range(len(self.addSFCCmdList)):
             self.delSFCICmd = self.delSFCICmdList[index]
+            self.addExpectedCmdRply(self.delSFCICmd)
             self.delSFCIViaMediator()
 
         # collect all cmdReply
@@ -144,39 +145,6 @@ class TestE2EProtectionClass(TestbedFRR):
         for index in range(len(self.addSFCCmdList)):
             self.delSFCICmd = self.delSFCICmdList[index]
             self.verifyCmdViaMediator(self.delSFCICmd)
-
-    # With mediator without batch
-    # def addSFCIs(self):
-    #     for index, addSFCCmd in enumerate(self.addSFCCmdList):
-    #         self.addSFCCmd = self.addSFCCmdList[index]
-    #         self.addSFCICmd = self.addSFCICmdList[index]
-    #         self.addSFC2Mediator()
-    #         self.addSFCI2Mediator()
-
-    # With mediator without batch
-    # def delSFCIs(self):
-    #     for index, delSFCICmd in enumerate(self.delSFCICmdList):
-    #         self.delSFCICmd = self.delSFCICmdList[index]
-    #         self.delSFCIViaMediator()
-
-    # Without mediator
-    # def addSFCIs(self):
-    #     for index, addSFCCmd in enumerate(self.addSFCCmdList):
-    #         self.addSFCCmd = self.addSFCCmdList[index]
-    #         self.addSFCICmd = self.addSFCICmdList[index]
-    #         self.addSFCI2Classifier()
-    #         self.addSFCI2SFF()
-    #         self.addVNFI2Server()
-    #         self.addSFC2NetworkController()
-    #         self.addSFCI2NetworkController()
-
-    # Without mediator
-    # def delSFCIs(self):
-    #     for index, delSFCICmd in enumerate(self.delSFCICmdList):
-    #         self.delSFCICmd = self.delSFCICmdList[index]
-    #         self.delSFCI2Classifier()
-    #         self.delSFCI2SFF()
-    #         self.delVNFI4Server()
 
     def sendHandleServerSoftwareFailureCmd(self):
         #TODO: 找一个承载SFCI最多的服务器来执行宕机测试

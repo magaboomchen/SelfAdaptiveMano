@@ -7,7 +7,6 @@ from scapy.all import *
 
 from sam.base.argParser import *
 from sam.base.socketConverter import *
-# from sam.test.testBase import *
 
 TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"
 CLASSIFIER_DATAPATH_MAC = "52:54:00:05:4D:7D"
@@ -51,7 +50,7 @@ class Test3InBoundTrafficSendRecv(object):
     def _init(self):
         for tryNum in range(self._initialTryNum):
             self.sendInboundTraffic2Classifier(self.iface,
-                self.sip, self.dip)
+                                        self.sip, self.dip)
 
     def _sendRecv(self):
         # formal send
@@ -63,7 +62,7 @@ class Test3InBoundTrafficSendRecv(object):
                 print("send {0}-th pkt".format(count))
                 count = count + 1
                 self.sendInboundTraffic2Classifier(self.iface,
-                    self.sip, self.dip)
+                                            self.sip, self.dip)
                 time.sleep(self._interval)
         except:
             print("close scapy!")

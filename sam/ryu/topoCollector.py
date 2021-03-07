@@ -98,6 +98,15 @@ class TopoCollector(BaseApp):
     def getLink(self, srcDpid, dstDpid):
         return self.links[(srcDpid, dstDpid)]
 
+    def getLinkIDByDpidAndPort(self, dpid, portIndex):
+        for linkID, link in self.links.items():
+            if (dpid in linkID
+                    and (link.src.port_no == portIndex
+                            or link.dst.port_no == portIndex)):
+                return linkID
+        else:
+            return None
+
     @set_ev_cls(event.EventLinkDelete)
     def _delLink(self,ev):
         link = ev.link

@@ -65,7 +65,7 @@ ovs-vsctl set-controller br5 tcp:192.168.0.194:6633
 ovs-vsctl set-controller br6 tcp:192.168.0.194:6633
 
 echo "add flow for Inbound traffic"
-/ovs/bin/ovs-ofctl add-flow br7 priority=2,in_port=48,dl_type=0x0800,nw_tos=0x03,actions=output:50
+# /ovs/bin/ovs-ofctl add-flow br7 priority=2,in_port=48,dl_type=0x0800,nw_tos=24,actions=output:50
 /ovs/bin/ovs-ofctl add-flow br7 priority=2,in_port=51,actions=output:50
-/ovs/bin/ovs-ofctl add-flow br7 priority=2,in_port=50,dl_type=0x0800,nw_tos=0x03,actions=output:48
+/ovs/bin/ovs-ofctl add-flow br7 priority=2,in_port=50,dl_type=0x0800,nw_tos=24,actions=output:48
 /ovs/bin/ovs-ofctl add-flow br7 priority=1,in_port=50,actions=output:51

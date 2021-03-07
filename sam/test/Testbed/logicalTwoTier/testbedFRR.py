@@ -209,6 +209,7 @@ class TestbedFRR(TestBase):
             vnfiSequence = sfci.vnfiSequence
             for vnfisList in vnfiSequence:
                 for vnfi in vnfisList:
+                    vnfi.vnfID = VNF_TYPE_FORWARD
                     vnfi.vnfType = VNF_TYPE_FORWARD
                     vnfi.maxCPUNum = 1
 
@@ -248,14 +249,12 @@ class TestbedFRR(TestBase):
         self.logger.info("totalCmdReplyNum: {0}".format(totalCmdReplyNum))
         for _ in range(totalCmdReplyNum):
             self.logger.info("recv {0}-th cmdReply".format(_))
-            # cmdRply = self.recvCmdRply(ORCHESTRATOR_QUEUE)
             cmdRply = self.oS.recvCmdRply()
             self.expectedCmdRplyDict[cmdRply.cmdID] = cmdRply
 
             if self.hasGotAllCmdRply():
                 self.logger.info("Got all cmd reply! total number is :{0}".format(
-                    len(self.expectedCmdRplyDict)
-                ))
+                                                                totalCmdReplyNum))
                 break
             else:
                 if _ >= 0.98 * totalCmdReplyNum:
@@ -275,7 +274,7 @@ class TestbedFRR(TestBase):
 
     def verifyCmdViaMediator(self, cmd):
         if cmd.cmdID not in self.expectedCmdRplyDict:
-            self.logger.error("Unknown cmd reply")
+            self.logger.error("Unknown cmd reply {0}".format(cmd))
             assert True == False
         else:
             cmdRply = self.expectedCmdRplyDict[cmd.cmdID]

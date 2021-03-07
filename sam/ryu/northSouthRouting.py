@@ -262,9 +262,7 @@ class NorthSouthRouting(BaseApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
         matchFields = {'eth_type':ether_types.ETH_TYPE_IP}
-        match = parser.OFPMatch(
-            **matchFields
-        )
+        match = parser.OFPMatch(**matchFields)
 
         outPort = self.dpset.get_port(self._defaultDCNGateway, DEFAULT_DCN_GATEWAY_OUTBOUND_PORT_NUMBER)
         srcMac = outPort.hw_addr
