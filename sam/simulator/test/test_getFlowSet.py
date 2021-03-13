@@ -27,6 +27,8 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import *
 from sam.simulator.test.testSimulatorBase import *
+from sam.simulator import simulator
+from time import sleep
 
 MANUAL_TEST = True
 
@@ -53,7 +55,10 @@ class TestGetFlowSetClass(TestSimulatorBase):
     def setup_getFlowSet(self):
         self.common_setup()
 
+        self.sP.runPythonScript(simulator.__file__)
+        sleep(1)
         yield
+        self.sP.killPythonScript(simulator.__file__)
         # teardown
         pass
 
