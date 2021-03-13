@@ -8,7 +8,7 @@ e.g. switch, server, link, sfc, sfci, vnfi, flow
 
 import uuid
 
-from sam.base.pickleIO
+from sam.base.pickleIO import PickleIO
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 
 
@@ -20,7 +20,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.switches = {}
         self.servers = {}
 
-    def loadTopology(self, topoFilePath)
+    def loadTopology(self, topoFilePath):
         self.topologyDict = self.pIO.readPickleFile(topoFilePath)
         # more details in /sam/simulator/test/readme.md
         self.links = self.topologyDict["links"]
