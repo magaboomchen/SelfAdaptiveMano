@@ -29,14 +29,14 @@ STATE_DELETED = "STATE_DELETED" # All resource of this sfc/sfci has been release
 # To get back SFCIID, please prune sfc/sfci from database
 STATE_PROTECTION_MODE = "STATE_PROTECTION_MODE" # when a failure happen, sfc/sfci will be in this state
 
-MORPHIC_IPV4 = "MORPHIC_IPV4"
-MORPHIC_IDENTITY = "MORPHIC_IDENTITY"
-MORPHIC_GEO = "MORPHIC_GEO"
-MORPHIC_CONTENT = "MORPHIC_CONTENT"
+# MORPHIC_IPV4 = "MORPHIC_IPV4"
+# MORPHIC_IDENTITY = "MORPHIC_IDENTITY"
+# MORPHIC_GEO = "MORPHIC_GEO"
+# MORPHIC_CONTENT = "MORPHIC_CONTENT"
 
 
 class SFCI(object):
-    def __init__(self, sfciID, vnfiSequence, sloRealTimeValue=None,
+    def __init__(self, sfciID, vnfiSequence=None, sloRealTimeValue=None,
                     forwardingPathSet=None):
         self.sfciID = sfciID
         self.vnfiSequence = vnfiSequence    # only show the direction1
@@ -134,7 +134,7 @@ class SFC(object):
         self.sFCIs = sFCIs  # {SFCIID:active, SFCIID:active},
                             # For switch, we use pathID to distinguish
                             # different direction; 
-                            # For bess, we use (src,dst) pair to distinguish
+                            # For bess, we use (src, dst) pair to distinguish
                             # different direction.
 
     def getSFCLength(self):

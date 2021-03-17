@@ -115,7 +115,7 @@ sfc规定了用户的哪些流要进入该sfc以及服务链的网络功能顺�
     "cmdType": "CMD_TYPE_ADD_SFC",
     "cmdID": "cd2a5ab8-57f6-11eb-9013-1866da864c17",
     "sfcUUID": "cd2a5ab8-57f6-11eb-90f3-1866da864c17",
-    "routingMorphic": "MORPHIC_IPV4",
+    "routingMorphic": <object "MORPHIC_IPV4">,
     "vNFTypeSequence": [
         6, 2
     ],
@@ -141,7 +141,7 @@ sfc规定了用户的哪些流要进入该sfc以及服务链的网络功能顺�
     "cmdType": "CMD_TYPE_ADD_SFC",
     "cmdID": "c32a5ab8-57f6-11eb-90f3-1866da864c17",
     "sfcUUID": "cd2a5ab8-57f6-11eb-90f3-1866da864c17",
-    "routingMorphic": "MORPHIC_IDENTITY",
+    "routingMorphic": <object "MORPHIC_IDENTITY">,
     "vNFTypeSequence": [
         6, 2
     ],
@@ -166,7 +166,7 @@ sfc规定了用户的哪些流要进入该sfc以及服务链的网络功能顺�
     "cmdType": "CMD_TYPE_ADD_SFC",
     "cmdID": "cd2a5a18-57f6-11eb-90f3-1866da864c17",
     "sfcUUID": "cd2a5ab8-57f6-11eb-90f3-1866da864c17",
-    "routingMorphic": "MORPHIC_GEO",
+    "routingMorphic": <object "MORPHIC_GEO">,
     "vNFTypeSequence": [
         6, 2
     ],
@@ -191,7 +191,7 @@ sfc规定了用户的哪些流要进入该sfc以及服务链的网络功能顺�
     "cmdType": "CMD_TYPE_ADD_SFC",
     "cmdID": "cd2a5ab8-57f6-11eb-90f3-1826da864c17",
     "sfcUUID": "cd2a5ab8-57f6-11eb-90f3-1866da864c17",
-    "routingMorphic": "MORPHIC_CONTENT",
+    "routingMorphic": <object "MORPHIC_CONTENT">,
     "vNFTypeSequence": [
         6, 2
     ],

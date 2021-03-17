@@ -45,13 +45,26 @@ class SocketConverter(object):
             result = result * 256 + int(b)
         return result
 
-    def int2Bytes(self,value, length):
+    def int2Bytes(self, value, bytesLength):
         result = []
-        for i in range(0, length):
+        for i in range(0, bytesLength):
             result.append(value >> (i * 8) & 0xff)
         result.reverse()
         result = bytes(bytearray(result))
         return result
+
+    # def int2BytesPython27(self, num):
+    #     # bugs: can't assign bytes length
+    #     num = hex(num).replace('0x','')
+    #     if len(num)%2 == 1:
+    #         num = '0' + num
+    #     return num.decode("hex")
+
+    def getFullMaskInHex(self, identifierBits):
+        fullMask = 0x0
+        for i in range(identifierBits):
+            fullMask = fullMask + ( 0x1 << i )
+        return hex(fullMask)
 
     def isInSameLAN(self, IP1, IP2, prefixNum):
         IPNum1 = self.ip2int(IP1)

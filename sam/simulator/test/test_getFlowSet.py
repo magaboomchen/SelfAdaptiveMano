@@ -71,4 +71,6 @@ class TestGetFlowSetClass(TestSimulatorBase):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.getFlowSetCmd.cmdID
         assert cmdRply.attributes.has_key("flows")
+        assert type(cmdRply.attributes["flows"]) == dict
+        assert len(cmdRply.attributes["flows"]) > 0
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
