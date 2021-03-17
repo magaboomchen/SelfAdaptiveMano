@@ -18,6 +18,12 @@ class PerformanceModel(object):
         #     'performanceModel.log', level='debug')
         # self.logger = logConfigur.getLogger()
 
+    def loadInterferenceModel(self, filepathToModel):
+        pass
+
+    def getThroughput(self, serverArchitecture, targetNFType, competitorsList):
+        pass
+
     def getLatencyOfLink(self, link, util):
         if not self._validateUtilization(util):
             pass

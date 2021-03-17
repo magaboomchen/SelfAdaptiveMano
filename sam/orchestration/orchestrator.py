@@ -67,13 +67,14 @@ class Orchestrator(object):
                 self._oib.addSFCRequestHandler(request, cmd)
                 self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
-                # if self._batchSize == NONE_BATCH_SIZE:
                 if self._batchMode == False:
-                    self._odir.getDCNInfo()
-                    cmd = self._osa.genAddSFCICmd(request)
-                    self._cm.addCmd(cmd)
-                    self._oib.addSFCIRequestHandler(request, cmd)
-                    self.sendCmd(cmd)
+                    raise ValueError("Deprecated function: genAddSFCICmd"
+                        "Please use batch mode!")
+                    # self._odir.getDCNInfo()
+                    # cmd = self._osa.genAddSFCICmd(request)
+                    # self._cm.addCmd(cmd)
+                    # self._oib.addSFCIRequestHandler(request, cmd)
+                    # self.sendCmd(cmd)
                 else:
                     self._requestBatchQueue.put(request)
                     if self._requestBatchQueue.qsize() >= self._batchSize:

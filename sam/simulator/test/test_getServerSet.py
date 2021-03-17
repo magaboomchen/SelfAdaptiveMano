@@ -71,4 +71,6 @@ class TestGetServerSetClass(TestSimulatorBase):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.getServerSetCmd.cmdID
         assert cmdRply.attributes.has_key("servers")
+        assert type(cmdRply.attributes["servers"]) == dict
+        assert len(cmdRply.attributes["servers"]) > 0
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL

@@ -82,6 +82,7 @@ attributes = {
     "flows": self.flows # see flow.py
 }
 
+其中self.flows是一个list，每个元素是一个sfci在把流量发到vnfID的网络功能时对应的flow对象。flow对象记录了该阶段这个sfci的流量的identifier（网络识别符号，比如目的IPv4地址），以及其流量大小
 
 
 # 测试用例
@@ -95,7 +96,7 @@ attributes = {
 * 删除一条SFCI
 
 * 收集流信息
-    * 每个SFCI可以按照流的下一个服务功能来分成多个截断。比如对于服务链Ingress->Firewall->IDS->Egress来说，该服务功能链实例有3个阶段分别是第0阶段“->Firewall”，第1阶段“->IDS”和第2阶段“->Egress”。
+    * 每个SFCI可以按照流的下一个服务功能来分成多个阶段。比如对于服务链Ingress->Firewall->IDS->Egress来说，该服务功能链实例有3个阶段分别是第0阶段“->Firewall”，第1阶段“->IDS”和第2阶段“->Egress”。
     * 每个SFCI的不同阶段对应着一个流
     * 每个流有一个唯一的标识符，比如对于IPv4的流就是其IPv4目的地址
     * 利用getSFCIFlowIdentifier函数来获取一个SFCI在不同阶段对应的flow的标识符
@@ -106,5 +107,10 @@ attributes = {
     * base/slo.py，其中availability暂时先固定为0.999；latencyBound为模拟出的端到端时延；throughput为模拟计算得到的吞吐量；dropRate为模拟计算得到的丢包率；
 -->
 
+## Cautions
+* pytest 测试用例的setup没有启动simulator，可以另开terminal启动simulator
+
 # TODO List
-SLOMO测量fastclick平台的吞吐量干扰模型
+* SLOMO测量fastclick平台的吞吐量干扰模型
+* 实现SLOMO的数据分析和建模模块，输出为pickle格式的性能干扰模型
+* simulator和你的算法(interferenceAware algorithm)需要能够载入(load)性能干扰模型

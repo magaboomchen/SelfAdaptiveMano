@@ -8,12 +8,42 @@ More information can be obtained in doc folder.
 
 Python2.7
 
-Ubuntu 16.04 LTS
+Ubuntu 16.04 LTS / 18.04 LTS
 
 # Installation
 please read INSTALL.md
 
-# FYI
+# For Yuming Liu's Information
+## TODO list
+* add interference algorithm (you may need to implement some other algorithm for comparison)
+* add interference model into sam/orchestration/algorithms/base/performanceModel.py
+    * add function: loadInterferenceModel(self, filepathToModel)
+    * add function: getThroughput(self, serverArchitecture, targetNFType, competitorsList)
+* implement simulator
+    * embed performanceModel into simulator
+    * export Throughput of each sfc to files
+    * you can analyse the files and draw figures for your essay
+* implement test for your algorithm in sam/orchestration/algorithms/interferenceAware/test
+    * setup 
+        * OSFCAdder()
+        * prepare some problem instances
+            * DCNInfoBaseMaintainer(): topology, server set
+            * RequestBatchList: user's sfc requests
+    * Call OSFCAdder.genABatchOfRequestAndAddSFCICmds() to generate ADD_SFCI_CMD
+        * genABatchOfRequestAndAddSFCICmds will call interferenceAware() to calculate the mapping results
+    * Save these cmds into files.
+    * Send these cmds to simulator, simulator needs to simulate all metrics such as Throughtput.
+    * Simulator save all results to files.
+    * Draw figures.
+
+# Development Mode
+Inspired by github-flow, we don't need a dev branch.
+
+You can create a new branch to develop a module in your charge.
+
+As long as you test your modules, you can merge your branch into master.
+
+# P4 development Information
 
 Please read files in "/doc/SoftwareRequirements/", "/doc/SoftwareDesign/" (Ignore the TODO sections)
 
@@ -22,13 +52,6 @@ Our architecture design is illustrated in Architecture-P4.pptx
 We need to give a design of P4 controller according to our requirements written in Architecture-P4.pptx.
 
 We need to discuss together and then work it out.
-
-# Development Mode
-Inspired by github-flow, we don't need a dev branch.
-
-You can create a new branch to develop a module in your charge.
-
-As long as you test your modules, you can merge your branch into master.
 
 # BUG LIST
 
