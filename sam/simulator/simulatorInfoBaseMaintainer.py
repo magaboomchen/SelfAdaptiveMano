@@ -35,7 +35,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         pass
         # CLI > switch 3 up
 
-    def turnOffLink(self, link)：
+    def turnOffLink(self, link):
         pass
 
     def turnOnLink(self, link):
@@ -47,9 +47,13 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
     def turnOffServer(self, server):
         pass
 
-    def getSFCIFlowIdentifier(self, sfci, stageIndex):
+    def getSFCIFlowIdentifierDict(self, sfci, stageIndex):
         pass
         # Flow Identifier is a unique id of each flow
         # E.g. IPv4 destination address of a flow is an identifier
-
-
+        # Flow's IdentifierDict refer to sam/base/flow.py
+        # <object routingMorphic> = <object sfc>.routingMorphic
+        # identifierDict = <object routingMorphic>.getIdentifierDict()
+        # identifierDict['value'] = <object routingMorphic>.encodeIdentifierForSFC(sfciID, vnfID)
+        # identifierDict['humanReadble'] = <object routingMorphic>.value2HumanReadable(identifierDict['value'])
+        # flow(identifierDict)

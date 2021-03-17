@@ -1,6 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+'''
+To add more mapping algorithms, you need add code in following functions:
+* genABatchOfRequestAndAddSFCICmds()
+* YOUR_MAPPING_ALGORITHM_API_CALLER()
+* YOUR_MAPPING_ALGOTIYHM()
+'''
+
+
 import uuid
 import copy
 
@@ -50,30 +58,30 @@ class OSFCAdder(object):
 
         return cmd
 
-    def genAddSFCICmd(self, request):
-        self.request = request
-        self._checkRequest()
+    # def genAddSFCICmd(self, request):
+    #     self.request = request
+    #     self._checkRequest()
 
-        self.sfc = self.request.attributes['sfc']
-        self.zoneName = self.sfc.attributes["zone"]
+    #     self.sfc = self.request.attributes['sfc']
+    #     self.zoneName = self.sfc.attributes["zone"]
 
-        self._mapIngressEgress()    # TODO: get sfc from database
-        self.logger.debug("sfc:{0}".format(self.sfc))
+    #     self._mapIngressEgress()    # TODO: get sfc from database
+    #     self.logger.debug("sfc:{0}".format(self.sfc))
 
-        self.sfci = self.request.attributes['sfci']
+    #     self.sfci = self.request.attributes['sfci']
 
-        self._mapVNFI()
-        self.logger.debug("sfci:{0}".format(self.sfci))
+    #     self._mapVNFI()
+    #     self.logger.debug("sfci:{0}".format(self.sfci))
 
-        self._mapForwardingPath()
-        self.logger.debug("ForwardingPath:{0}".format(
-            self.sfci.forwardingPathSet))
+    #     self._mapForwardingPath()
+    #     self.logger.debug("ForwardingPath:{0}".format(
+    #         self.sfci.forwardingPathSet))
 
-        cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
-            'sfc':self.sfc, 'sfci':self.sfci, 'zone':self.zoneName
-        })
+    #     cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
+    #         'sfc':self.sfc, 'sfci':self.sfci, 'zone':self.zoneName
+    #     })
 
-        return cmd
+    #     return cmd
 
     def _checkRequest(self):
         if self.request.requestType  == REQUEST_TYPE_ADD_SFCI or\
@@ -97,106 +105,89 @@ class OSFCAdder(object):
             destination = direction['destination']
             direction['egress'] = self._selectClassifier(destination)
 
-    def _selectClassifier(self, nodeIdentifier):
-        # if nodeIdentifier == None:
-        #     dcnGateway = self._getDCNGateway()
-        #     return self._getClassifierBySwitch(dcnGateway)
-        # else:
-        #     pass
+    # def _selectClassifier(self, nodeIdentifier):
+    #     if "IPv4" in nodeIdentifier:
+    #         nodeIP = nodeIdentifier["IPv4"]
+    #     else:
+    #         raise ValueError("Unsupport source/destination type")
 
-        if "IPv4" in nodeIdentifier:
-            nodeIP = nodeIdentifier["IPv4"]
-        else:
-            raise ValueError("Unsupport source/destination type")
+    #     if nodeIP == "*":
+    #         dcnGateway = self._getDCNGateway()
+    #         return self._getClassifierBySwitch(dcnGateway)
+    #     else:
+    #         for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
+    #             server = serverInfoDict['server']
+    #             serverType = server.getServerType()
+    #             if serverType != SERVER_TYPE_CLASSIFIER:
+    #                 continue
+    #             serverID = server.getServerID()
+    #             switch = self._dib.getConnectedSwitch(serverID, self.zoneName)
+    #             lanNet = switch.lanNet
+    #             if self._sc.isLANIP(nodeIP, lanNet):
+    #                 return server
+    #         else:
+    #             raise ValueError("Find ingress/egress failed")
 
-        if nodeIP == "*":
-            dcnGateway = self._getDCNGateway()
-            return self._getClassifierBySwitch(dcnGateway)
-        else:
-            # decouple orchestrator from control plane's setting such as LANIPPrefix
-            # for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
-            #     server = serverInfoDict['server']
-            #     ip = server.getDatapathNICIP()
-            #     serverType = server.getServerType()
-            #     if (self._sc.isInSameLAN(nodeIP, ip, LANIPPrefix)
-            #             and serverType == SERVER_TYPE_CLASSIFIER):
-            #         return server
-            # else:
-            #     raise ValueError("Find ingress/egress failed")
+    # def _getDCNGateway(self):
+    #     dcnGateway = None
+    #     switchesInfoDict = self._dib.getSwitchesByZone(self.zoneName)
+    #     # self.logger.warning(switchesInfoDict)
+    #     for switchInfoDict in switchesInfoDict.itervalues():
+    #         switch = switchInfoDict['switch']
+    #         # self.logger.debug(switch)
+    #         if switch.switchType == SWITCH_TYPE_DCNGATEWAY:
+    #             # self.logger.debug(
+    #             #     "switch.switchType:{0}".format(switch.switchType)
+    #             #     )
+    #             dcnGateway = switch
+    #             break
+    #     else:
+    #         raise ValueError("Find DCN Gateway failed")
+    #     return dcnGateway
 
-            for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
-                server = serverInfoDict['server']
-                serverType = server.getServerType()
-                if serverType != SERVER_TYPE_CLASSIFIER:
-                    continue
-                serverID = server.getServerID()
-                switch = self._dib.getConnectedSwitch(serverID, self.zoneName)
-                lanNet = switch.lanNet
-                if self._sc.isLANIP(nodeIP, lanNet):
-                    return server
-            else:
-                raise ValueError("Find ingress/egress failed")
+    # def _getClassifierBySwitch(self, switch):
+    #     self.logger.debug(self._dib.getServersByZone(self.zoneName))
+    #     for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
+    #         server = serverInfoDict['server']
+    #         self.logger.debug(server)
+    #         ip = server.getDatapathNICIP()
+    #         self.logger.debug(ip)
+    #         serverType = server.getServerType()
+    #         if serverType == SERVER_TYPE_CLASSIFIER:
+    #             self.logger.debug(
+    #                 "server type is classifier " \
+    #                 "ip:{0}, switch.lanNet:{1}".format(ip, switch.lanNet))
+    #         if self._sc.isLANIP(ip, switch.lanNet) and \
+    #             serverType == SERVER_TYPE_CLASSIFIER:
+    #             return server
+    #     else:
+    #         raise ValueError("Find ingress/egress failed")
 
-    def _getDCNGateway(self):
-        dcnGateway = None
-        switchesInfoDict = self._dib.getSwitchesByZone(self.zoneName)
-        # self.logger.warning(switchesInfoDict)
-        for switchInfoDict in switchesInfoDict.itervalues():
-            switch = switchInfoDict['switch']
-            # self.logger.debug(switch)
-            if switch.switchType == SWITCH_TYPE_DCNGATEWAY:
-                # self.logger.debug(
-                #     "switch.switchType:{0}".format(switch.switchType)
-                #     )
-                dcnGateway = switch
-                break
-        else:
-            raise ValueError("Find DCN Gateway failed")
-        return dcnGateway
+    # def _mapVNFI(self):
+    #     iNum = self.sfc.backupInstanceNumber
+    #     length = len(self.sfc.vNFTypeSequence)
+    #     vSeq = []
+    #     for stage in range(length):
+    #         vnfType = self.sfc.vNFTypeSequence[stage]
+    #         vnfiList = self._roundRobinSelectServers(vnfType, iNum)
+    #         vSeq.append(vnfiList)
+    #     self.sfci.vnfiSequence = vSeq
 
-    def _getClassifierBySwitch(self, switch):
-        self.logger.debug(self._dib.getServersByZone(self.zoneName))
-        for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
-            server = serverInfoDict['server']
-            self.logger.debug(server)
-            ip = server.getDatapathNICIP()
-            self.logger.debug(ip)
-            serverType = server.getServerType()
-            if serverType == SERVER_TYPE_CLASSIFIER:
-                self.logger.debug(
-                    "server type is classifier " \
-                    "ip:{0}, switch.lanNet:{1}".format(ip, switch.lanNet))
-            if self._sc.isLANIP(ip, switch.lanNet) and \
-                serverType == SERVER_TYPE_CLASSIFIER:
-                return server
-        else:
-            raise ValueError("Find ingress/egress failed")
+    # def _roundRobinSelectServers(self, vnfType, iNum):
+    #     vnfiList = []
+    #     for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
+    #         server = serverInfoDict['server']
+    #         if server.getServerType() == 'nfvi':
+    #             vnfi = VNFI(vnfType, vnfType, uuid.uuid1(), None, server)
+    #             vnfiList.append(vnfi)
+    #     return vnfiList
 
-    def _mapVNFI(self):
-        iNum = self.sfc.backupInstanceNumber
-        length = len(self.sfc.vNFTypeSequence)
-        vSeq = []
-        for stage in range(length):
-            vnfType = self.sfc.vNFTypeSequence[stage]
-            vnfiList = self._roundRobinSelectServers(vnfType, iNum)
-            vSeq.append(vnfiList)
-        self.sfci.vnfiSequence = vSeq
-
-    def _roundRobinSelectServers(self, vnfType, iNum):
-        vnfiList = []
-        for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
-            server = serverInfoDict['server']
-            if server.getServerType() == 'nfvi':
-                vnfi = VNFI(vnfType, vnfType, uuid.uuid1(), None, server)
-                vnfiList.append(vnfi)
-        return vnfiList
-
-    def _mapForwardingPath(self):
-        self._pC = PathComputer(self._dib, self.request, self.sfci,
-            self.logger)
-        self._pC.mapPrimaryFP()
-        if self.sfci.forwardingPathSet.mappingType != None:
-            self._pC.mapBackupFP()
+    # def _mapForwardingPath(self):
+    #     self._pC = PathComputer(self._dib, self.request, self.sfci,
+    #         self.logger)
+    #     self._pC.mapPrimaryFP()
+    #     if self.sfci.forwardingPathSet.mappingType != None:
+    #         self._pC.mapBackupFP()
 
     def genABatchOfRequestAndAddSFCICmds(self, requestBatchQueue):
         # while not requestBatchQueue.empty():
@@ -210,6 +201,8 @@ class OSFCAdder(object):
         cmdList = []
         for mappingType in requestDict.keys():
             requestBatchList =requestDict[mappingType]
+            # You can add more algorithms here
+            # mappingType is defined in sam/base/path.py
             if mappingType == MAPPING_TYPE_UFRR:
                 self.logger.info("ufrr")
                 forwardingPathSetsDict = self.ufrr(requestBatchList)
@@ -220,6 +213,9 @@ class OSFCAdder(object):
             elif mappingType == MAPPING_TYPE_NOTVIA_PSFC:
                 self.logger.info("PSFC NotVia")
                 forwardingPathSetsDict = self.notViaPSFC(requestBatchList)
+            elif mappingType == MAPPING_TYPE_INTERFERENCE:
+                self.logger.info("InterferenceAware")
+                forwardingPathSetsDict = self.interferenceAware(requestBatchList)
             elif mappingType == MAPPING_TYPE_NONE:
                 pass
             else:
@@ -241,7 +237,11 @@ class OSFCAdder(object):
             # self.logger.debug(request)
             # self.logger.debug("*****************")
             # raw_input()
-            mappingType = request.attributes['mappingType']
+            if request.attributes.has_key('mappingType'):
+                mappingType = request.attributes['mappingType']
+            else:
+                mappingType = DEFAULT_MAPPING_TYPE
+                request.attributes['mappingType'] = mappingType
             if mappingType not in requestDict.keys():
                 requestDict[mappingType] = []
             requestDict[mappingType].append(request)
@@ -306,6 +306,18 @@ class OSFCAdder(object):
 
         return forwardingPathSetsDict
 
+    def interferenceAware(self, requestBatchList):
+        # you can refer to def e2eProtection(self, requestBatchList) to write your algorithm's api
+        # call your algorithm's api here
+        pass
+        # implement your algorithm in sam/orchestration/algorithms/interferenceAware
+        # (Important) vnf<->server mapping is stored in requestBatchList
+        #   In details, each request in requestBatchList has a member sfci
+        #   The mapping info is stored in request.sfci.vnfiSequence (please refer to sam/base/vnf.py and sam/base/sfc.py)
+        # sfc path is stored in forwardingPathSetsDict
+        #   If you don't need to calculate path, just leave each path in forwardingPathSetsDict to default.
+        return forwardingPathSetsDict
+
     def _forwardingPathSetsDict2Cmd(self, forwardingPathSetsDict,
                                         requestBatchList):
         self.logger.debug("requestFPSet:{0}".format(forwardingPathSetsDict))
@@ -316,8 +328,9 @@ class OSFCAdder(object):
             zoneName = sfc.attributes['zone']
             sfci = request.attributes['sfci']
             sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
-            sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
-                                                    sfci.forwardingPathSet)
+            if sfci.vnfiSequence == None:
+                sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
+                                                        sfci.forwardingPathSet)
             cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
                 'sfc':sfc, 'sfci':sfci, 'zone':zoneName
             })

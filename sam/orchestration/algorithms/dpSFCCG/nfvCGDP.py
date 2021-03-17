@@ -27,8 +27,7 @@ from sam.orchestration.algorithms.base.multiLayerGraph import *
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
 from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import *
 
-
-INITIAL_PATH_PER_REQUEST_NUM = 5
+INITIAL_PATH_PER_REQUEST_NUM = 2
 
 
 class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):

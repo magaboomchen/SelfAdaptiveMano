@@ -19,6 +19,10 @@ from sam.base.server import *
 from sam.base.link import *
 from sam.base.command import *
 from sam.base.socketConverter import *
+from sam.base.routingMorphic import *
+from sam.base.test.fixtures.ipv4MorphicDict import *
+from sam.base.test.fixtures.ipv6MorphicDict import *
+from sam.base.test.fixtures.geoMorphicDict import *
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import *
 from sam.test.fixtures.orchestrationStub import *
@@ -212,9 +216,14 @@ class TestBase(object):
             'destination': "*"
         }
         directions = [direction1, direction2]
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(ipv4MorphicDictTemplate)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions=directions,
-            attributes={'zone':""}, routingMorphic=MORPHIC_IPV4)
+            attributes={'zone':""},
+            # routingMorphic=MORPHIC_IPV4
+            routingMorphic=routingMorphic
+            )
 
     def genUniDirection10BackupSFCI(self):
         vnfiSequence = self.gen10BackupVNFISequence()

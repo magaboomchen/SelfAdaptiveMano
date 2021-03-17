@@ -51,7 +51,7 @@ class BessControlPlane(object):
             self.logger.error( str(response.error) )
             raise ValueError('bess cmd failed.')
 
-    def _getWM2Rule(self,match):
+    def _getWM2Rule(self, match):
         values=[
             {"value_bin":b'\x00'},
             {"value_bin":b'\x00\x00\x00\x00'},

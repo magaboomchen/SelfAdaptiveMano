@@ -160,8 +160,8 @@ class FRR(BaseApp):
             vnfID = sfci.getVNFTypeByStageNum(stageCount)
         else:
             vnfID = VNF_TYPE_CLASSIFIER
-        sfcID = sfci.sfciID
-        ipNum = (10<<24) + ((vnfID & 0xF) << 20) + ((sfcID & 0xFFF) << 8) \
+        sfciID = sfci.sfciID
+        ipNum = (10<<24) + ((vnfID & 0xF) << 20) + ((sfciID & 0xFFF) << 8) \
                     + (pathID & 0xFF)
         return self._sc.int2ip(ipNum)
 
