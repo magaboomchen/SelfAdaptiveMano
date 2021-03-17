@@ -38,11 +38,11 @@ class UFRRIBMaintainer(RIBMaintainerBase):
         #     self.groupIDSets[dpid].append(groupID)
         #     return groupID
 
-    def countSwitchGroupTable(self, dpid):
-        count = 0
-        if dpid in self.groupIDSets.keys():
-            count = count + len(self.groupIDSets[dpid])
-        return count
+    # def countSwitchGroupTable(self, dpid):
+    #     count = 0
+    #     if dpid in self.groupIDSets.keys():
+    #         count = count + len(self.groupIDSets[dpid])
+    #     return count
 
     def addSFCIUFRRFlowTableEntry(self, dpid, 
                                     sfciID, vnfID, pathID,
