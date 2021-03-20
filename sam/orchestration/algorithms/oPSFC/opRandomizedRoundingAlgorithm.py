@@ -102,7 +102,10 @@ class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase, PathServerFiller):
         mlg = MultiLayerGraph()
         mlg.loadInstance4dibAndRequest(self._dib, self._requestInRRA,
             # WEIGHT_TYPE_0100_UNIFORAM_MODEL)
-            WEIGHT_TYPE_CONST)
+            # WEIGHT_TYPE_CONST)
+
+            WEIGHT_TYPE_CONST,
+            WEIGHT_TYPE_0100_UNIFORAM_MODEL)
         mlg.addAbandonNodeIDs([])
         mlg.addAbandonLinkIDs([])
         mlg.trans2MLG()
