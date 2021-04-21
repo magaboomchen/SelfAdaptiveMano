@@ -4,6 +4,8 @@
 import time
 import uuid
 
+import datetime
+
 from sam.base.messageAgent import *
 from sam.base.sfc import *
 from sam.base.switch import *
@@ -56,6 +58,7 @@ class Simulator(object):
     def _commandHandler(self,cmd):
         self.logger.debug(" Simulator gets a command ")
         self._cm.addCmd(cmd)
+        attributes={}
         try:
             if cmd.cmdType == CMD_TYPE_ADD_SFC:
                 self._addSFCHandler(cmd)
@@ -66,13 +69,13 @@ class Simulator(object):
             elif cmd.cmdType == CMD_TYPE_DEL_SFC:
                 self._delSFCHandler(cmd)
             elif cmd.cmdType == CMD_TYPE_GET_SERVER_SET:
-                self._getServerSetHandler(cmd)
+                attributes=self._getServerSetHandler(cmd)
             elif cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
-                self._getTopologyHandler(cmd)
+                attributes=self._getTopologyHandler(cmd)
             # elif cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
             #     self._getSFCIStateHandler(cmd)
             elif cmd.cmdType == CMD_TYPE_GET_FLOW_SET:
-                self._getFlowSetHandler(cmd)
+                attributes=self._getFlowSetHandler(cmd)
             else:
                 raise ValueError("Unkonwn command type.")
             self._cm.changeCmdState(cmd.cmdID, CMD_STATE_SUCCESSFUL)
@@ -90,11 +93,13 @@ class Simulator(object):
         # TODO
 
     def _addSFCIHandler(self, cmd):
-        pass
+        sfc=cmd.attributes['sfc']
+        sfci=cmd.attributes['sfci']
         # TODO
 
     def _delSFCIHandler(self, cmd):
-        pass
+        sfc=cmd.attributes['sfc']
+        sfci=cmd.attributes['sfci']
         # TODO
 
     def _delSFCHandler(self, cmd):
@@ -102,11 +107,13 @@ class Simulator(object):
         # TODO
 
     def _getServerSetHandler(self, cmd):
-        pass
+        {serverID:{"server":server, "Active": isActive, "timestamp":datetime.datetime.now()}}
+        return {}
         # TODO
 
     def _getTopologyHandler(self, cmd):
-        pass
+        # see ryu/topoCollector.py -> TopoCollector.get_topology_handler
+        return {}
         # TODO
 
     # def _getSFCIStateHandler(self, cmd):
@@ -114,7 +121,7 @@ class Simulator(object):
     #     # TODO
 
     def _getFlowSetHandler(self, cmd):
-        pass
+        return {}
         # TODO
 
 
