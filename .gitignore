@@ -75,3 +75,6 @@ results*/
 # Doc
 *.mp4
 *.docx
+
+# Test-related
+*_init_TEST
