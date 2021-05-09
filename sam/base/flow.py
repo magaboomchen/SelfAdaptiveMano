@@ -7,7 +7,7 @@ from sam.base.routingMorphic import *
 
 
 class Flow(object):
-    def __init__(self, identifierDict):
+    def __init__(self, identifierDict, trafficRate=None, trafficBandwidth=None):
         self.identifierDict = identifierDict # Identifier of a flow. identifierValue of '10.0.0.1' is 167772161
         # Identifier dict format:
         # {

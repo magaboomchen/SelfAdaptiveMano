@@ -48,7 +48,17 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.servers.update(self.topologyDict["servers"])
 
         for serverID, serverInfo in self.servers.items():
-            serverInfo['switchID']=[]
+            serverInfo['uplink2NUMA']={}
+            serverInfo['Status']={'coreAssign':{}}
+        
+        for switchID, switchInfo in self.switches.items():
+            switchInfo['Status']={'nextHop':{}}
+            switchInfo['switch'].tcamUsage=0
+        
+        for (srcNodeID,dstNodeID), linkInfo in self.links.items():
+            linkInfo['Status']={'usedBy':set()}
+
+        for serverID, serverInfo in self.servers.items():
             server=serverInfo['server']
             DatapathIP=server.getDatapathNICIP()
             for switchID, switchInfo in self.switches.items():
@@ -61,7 +71,10 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
             bw=server.getNICBandwidth()
             self.serverLinks[(serverID, switchID)]={'link':Link(serverID, switchID, bw), 'Active':True, 'Status':None}
             self.serverLinks[(switchID, serverID)]={'link':Link(switchID, serverID, bw), 'Active':True, 'Status':None}
-            serverInfo['switchID'].append(switchID)
+            serverInfo['uplink2NUMA'][switchID]=0
+
+        for (srcNodeID,dstNodeID), linkInfo in self.serverLinks.items():
+            linkInfo['Status']={'usedBy':set()}
 
     def turnOffSwitch(self, switchID):
         pass
