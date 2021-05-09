@@ -21,6 +21,9 @@ class NF:
 def predict(target:NF, competing:NF):
     nr_competitors = len(competing)
 
+    if nr_competitors==0:
+        return np.average(sens_models[target.nf, target.pkt, target.flow_count]['solo'])
+
     aggregate_cont = pd.DataFrame(columns=store_columns)
     for cNF in competing:
         vector = cont_dict[(cNF.nf, cNF.pkt, cNF.flow_count)]
@@ -62,3 +65,14 @@ def predict(target:NF, competing:NF):
     model = sens_models[target.nf, target.pkt, target.flow_count]['slomo']
     result = model.predict(composed_cont)[0]
     return result
+
+while True:
+    competingN=int(input())
+    nflist=[]
+    for i in range(competingN+1):
+        params=input().split()
+        nf=params[0]
+        pkt=int(params[1])
+        flow_count=int(params[2])
+        nflist.append(NF(nf,pkt,flow_count))
+    print(predict(nflist[0],nflist[1:]))
