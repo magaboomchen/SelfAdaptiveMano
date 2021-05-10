@@ -19,6 +19,7 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintainer
 from sam.base.routingMorphic import *
 from sam.base.path import *
+from sam.base.flow import Flow
 from Queue import Queue, Empty
 from getopt import getopt
 import random
@@ -463,9 +464,74 @@ class Simulator(object):
                     c_traffics=c_traffic_forward+c_traffic_backward
                     if c_traffics: # this competitor has traffic
                         competitors.append(NF(serverInfo['Status']['coreAssign'][coreID][2], self._sib.flows[c_traffics[0]]['pkt_size'], 4000000)) # no info about flow_count
-            input_pps_list=[self._sib.flows[traffic]['bw']()/8/self._sib.flows[traffic]['pkt_size'] for traffic in traffics]
+            input_pps_list=[self._sib.flows[traffic]['bw']()*1e6/8/self._sib.flows[traffic]['pkt_size'] for traffic in traffics]
             input_pps=sum(input_pps_list)
             response_ratio=min(predict(target, competitors)/input_pps,1.0)
+
+            identifierDict=sfc.routingMorphic.getIdentifierDict()
+            identifierDict['value']=sfc.routingMorphic.encodeIdentifierForSFC(sfci.sfciID, sfci.vnfiSequence[0][0].vnfID)
+            identifierDict['humanReadable']=sfc.routingMorphic.value2HumanReadable(identifierDict['value'])
+
+            for i, trafficID in enumerate(traffic_forward):
+                pps_in=input_pps_list[i]
+                result.append(Flow(identifierDict, pps_in/1e6, pps_in/1e6*8*self._sib.flows[trafficID]['pkt_size']))
+            for i, trafficID in enumerate(traffic_backward):
+                pps_in=input_pps_list[i+len(traffic_forward)]
+                result.append(Flow(identifierDict, pps_in/1e6, pps_in/1e6*8*self._sib.flows[trafficID]['pkt_size']))
+
+            no_traffic_fw=False
+            if 0 in traffics_by_dir: # forward
+                pathlist=sfci.forwardingPathSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+                path=pathlist[1]
+                for i, (_, nodeID) in path:
+                    if i==0 or i==len(path)-1: # ingress server and vnfi server
+                        if not self._sib.servers[nodeID]['Active']:
+                            no_traffic_fw=True
+                    else: # switch
+                        if not self._sib.switches[nodeID]['Active']:
+                            no_traffic_fw=True
+                    if i==len(path)-1:
+                        pass
+                    elif i==0 or i==len(path)-2: # server-switch link
+                        if not self._sib.serverLinks[(nodeID, path[i+1][1])]['Active']:
+                            no_traffic_fw=True
+                    else: # switch-switch link
+                        if not self._sib.links[(nodeID, path[i+1][1])]['Active']:
+                            no_traffic_fw=True
+            else:
+                no_traffic_fw=True
+
+            no_traffic_bw=False
+            if 1 in traffics_by_dir: # backward
+                pathlist=sfci.forwardingPathSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
+                path=pathlist[1]
+                for i, (_, nodeID) in path:
+                    if i==0 or i==len(path)-1: # ingress server and vnfi server
+                        if not self._sib.servers[nodeID]['Active']:
+                            no_traffic_bw=True
+                    else: # switch
+                        if not self._sib.switches[nodeID]['Active']:
+                            no_traffic_bw=True
+                    if i==len(path)-1:
+                        pass
+                    elif i==0 or i==len(path)-2: # server-switch link
+                        if not self._sib.serverLinks[(nodeID, path[i+1][1])]['Active']:
+                            no_traffic_bw=True
+                    else: # switch-switch link
+                        if not self._sib.links[(nodeID, path[i+1][1])]['Active']:
+                            no_traffic_bw=True
+            else:
+                no_traffic_bw=True
+
+            if not no_traffic_fw:
+                for i, trafficID in enumerate(traffic_forward):
+                    pps_in=input_pps_list[i]
+                    result.append(Flow(identifierDict, response_ratio*pps_in/1e6, response_ratio*pps_in/1e6*8*self._sib.flows[trafficID]['pkt_size']))
+            if not no_traffic_bw:
+                for i, trafficID in enumerate(traffic_backward):
+                    pps_in=input_pps_list[i+len(traffic_forward)]
+                    result.append(Flow(identifierDict, response_ratio*pps_in/1e6, response_ratio*pps_in/1e6*8*self._sib.flows[trafficID]['pkt_size']))
+
         return {'flows': result}
 
     def _op_input_handler(self, cmdstr):
