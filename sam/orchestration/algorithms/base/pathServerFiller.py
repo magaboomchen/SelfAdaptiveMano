@@ -158,11 +158,13 @@ class PathServerFiller(object):
         # for server in serverList:
         #     self.logger.debug("serverID:{0}".format(server.getServerID()))
 
+        startVNFStageNum = dividedPath[0][0][0]
+
         for index in range(len(serverList)):
             currentIndex = index
             nextIndex = index + 1
             serverID = serverList[currentIndex].getServerID()
-            dividedPath[currentIndex].append((currentIndex,serverID))
-            dividedPath[nextIndex].insert(0, (nextIndex, serverID))
+            dividedPath[currentIndex].append((currentIndex+startVNFStageNum,serverID))
+            dividedPath[nextIndex].insert(0, (nextIndex+startVNFStageNum, serverID))
         self.logger.debug("new dividedPath:{0}".format(dividedPath))
         return dividedPath
