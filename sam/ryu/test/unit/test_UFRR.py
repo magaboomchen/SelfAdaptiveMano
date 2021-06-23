@@ -15,6 +15,7 @@ from sam.test.fixtures.vnfControllerStub import *
 
 logging.basicConfig(level=logging.INFO)
 
+
 class TestUFRRClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
