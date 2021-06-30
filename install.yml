@@ -1,0 +1,38 @@
+- hosts: all
+  tags: install
+  tasks:
+    - apt_repository: repo='ppa:ubuntu-toolchain-r/test' codename={{ ansible_distribution_release }}
+      become: true
+      when: ansible_distribution == 'Ubuntu' and ansible_lsb.major_release|int < 18
+
+    - name: Install prerequisite packages
+      apt: name={{item}} update_cache=yes
+      become: true
+      with_items:
+        - python
+
+    - name: Install multi python packages
+      pip:
+        name:
+          - psutil
+          - pika
+          - netifaces
+          - getmac
+          - pytest
+          - MySQL-python
+          - networkx
+          - numpy
+          - pandas
+          - ryu
+          - tinyrpc==0.8
+          - ruamel.yaml
+          - matplotlib
+          - scapy
+          - grpcio
+          - grpcio-tools
+          - docker
+          - gurobipy
+
+    - name: SAM build dependencies installed
+      debug:
+        msg: "You are now ready use sam"

@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 '''
-Before state test, please run ch17/ufrr/logicalTwoTier/init_bridge.sh in pica8-switch1 and pica8-switch2
+Before start test, please run ch17/ufrr/logicalTwoTier/init_bridge.sh in pica8-switch1 and pica8-switch2
 '''
 
 import sys

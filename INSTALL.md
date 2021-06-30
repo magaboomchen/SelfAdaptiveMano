@@ -14,12 +14,27 @@ sudo python -m pip install -i https://pypi.gurobi.com gurobipy
 sudo python -m pip install ryu
 sudo python -m pip uninstall tinyrpc
 sudo python -m pip install tinyrpc==0.8
-sudo python -m pip install ruamel.yaml
+sudo python -m pip install eventlet==0.30.2
+sudo python -m pip install ruamel.yaml==0.9.7
 sudo python -m pip install matplotlib
 sudo python -m pip install scapy
 sudo python -m pip install grpcio
 sudo python -m pip install grpcio-tools
 sudo python -m pip install docker
+```
+
+```
+sudo python -m pip install enum34 psutil pika netifaces getmac pytest networkx numpy pandas gurobipy ryu tinyrpc==0.8 ruamel matplotlib scapy grpcio grpcio-tools docker
+```
+
+## Ansible-playbook
+delete python module enum and install enum34
+```
+sudo apt-get install -y software-properties-common
+sudo apt-add-repository -y ppa:ansible/ansible
+sudo apt-get update
+sudo apt-get install -y ansible
+ansible-playbook -i localhost, -c local ./install.yml
 ```
 
 ## SAM python environment
@@ -47,7 +62,7 @@ sudo apt-get install esl-erlang=1:20.3.8.26-1
 ### rabbitmq3.7.0-1 (please make sure the version number)
 ```
 echo "deb https://dl.bintray.com/rabbitmq/debian xenial main" | sudo tee /etc/apt/sources.list.d/bintray.rabbitmq.list
-wget -O- https://dl.bintray.com/rabbitmq/Keys/rabbitmq-release-signing-key.asc | sudo apt-key add -
+wget -Ohttps://dl.bintray.com/rabbitmq/Keys/rabbitmq-release-signing-key.asc | sudo apt-key add -
 sudo apt-get update
 sudo apt-get install rabbitmq-server
 systemctl start rabbitmq-server.service
