@@ -20,6 +20,8 @@ python ./serverAgent.py  0000:04:00.0 eno1 nfvi 2.2.0.100
 ## SFF4 192.168.0.127
 python ./serverAgent.py  0000:04:00.0 eno1 nfvi 2.2.0.98
 
+# init PICA8 switch for each test
+
 # datapath tester need send arp first!
 
 

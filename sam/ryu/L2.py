@@ -15,7 +15,7 @@ from ryu.lib.packet import ether_types
 from ryu.topology import event, switches 
 
 from sam.ryu.topoCollector import TopoCollector
-from sam.ryu.conf.genSwitchConf import SwitchConf
+from sam.ryu.conf.switchConfGenerator import SwitchConf
 from sam.ryu.conf.ryuConf import *
 from sam.ryu.baseApp import BaseApp
 from sam.base.loggerConfigurator import LoggerConfigurator

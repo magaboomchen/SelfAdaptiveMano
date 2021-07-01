@@ -15,7 +15,7 @@ sudo python -m pip install ryu
 sudo python -m pip uninstall tinyrpc
 sudo python -m pip install tinyrpc==0.8
 sudo python -m pip install eventlet==0.30.2
-sudo python -m pip install ruamel.yaml==0.9.7
+sudo python -m pip install ruamel.yaml==0.15.52
 sudo python -m pip install matplotlib
 sudo python -m pip install scapy
 sudo python -m pip install grpcio
@@ -25,6 +25,10 @@ sudo python -m pip install docker
 
 ```
 sudo python -m pip install enum34 psutil pika netifaces getmac pytest networkx numpy pandas gurobipy ryu tinyrpc==0.8 ruamel matplotlib scapy grpcio grpcio-tools docker
+```
+
+```
+apt-get install python-tk
 ```
 
 ## Ansible-playbook

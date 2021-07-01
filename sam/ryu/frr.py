@@ -408,8 +408,10 @@ class FRR(BaseApp):
 
     def getServerByServerID(self, sfci, direction, serverID):
         self.logger.debug("getServerByServerID:{0}".format(serverID))
+        self.logger.debug("vnfs list: {0}".format(sfci.vnfiSequence))
         for vnf in sfci.vnfiSequence:
             for vnfi in vnf:
+                self.logger.debug("vnfi: {0}".format(vnfi))
                 node = vnfi.node
                 if (isinstance(node, Server) 
                         and node.getServerID() == serverID):
@@ -422,6 +424,7 @@ class FRR(BaseApp):
             elif egress.getServerID() == serverID:
                 return egress
             else:
+                self.logger.warning("serverID {0} is None!".format(serverID))
                 return None
 
     def _delSFCIHandler(self, cmd):

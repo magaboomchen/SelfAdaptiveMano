@@ -16,7 +16,8 @@ from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ruamel import yaml
 
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.ryu.conf.genSwitchConf import SwitchConf
+# from sam.ryu.conf.switchConfGenerator import SwitchConf
+from sam.ryu.conf.switchConfGenerator import SwitchConf
 from sam.ryu.conf.ryuConf import *
 from sam.base.socketConverter import SocketConverter
 from sam.base.messageAgent import *

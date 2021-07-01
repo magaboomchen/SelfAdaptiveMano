@@ -263,7 +263,7 @@ class TestbedFRR(TestBase):
     def findUnRecvedCmdReply(self):
         for cmdID, value in self.expectedCmdRplyDict.items():
             if value == None:
-                self.logger.warning("haven't recv cmdID {0}".format(cmdID))
+                self.logger.warning("Waiting for cmdID {0}".format(cmdID))
 
     def hasGotAllCmdRply(self):
         for cmdID, value in self.expectedCmdRplyDict.items():
