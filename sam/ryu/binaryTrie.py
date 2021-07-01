@@ -11,6 +11,8 @@ if sys.version > '3':
 else:
     import Queue
 import copy
+import operator
+from sam.base.loggerConfigurator import LoggerConfigurator
 
 
 class BinaryTrieNode(object):
@@ -49,9 +51,9 @@ class BinaryTrieNode(object):
     def isRoot(self):
         return self.parent == None
 
-    def isInheritedInNexthopSet(self):
-        # print("nexthopSet: {0}   nexthopSet: {1}".format(self.nexthopSet, self.nexthopSet))
-        return self.inheritedNexthop in self.nexthopSet
+    # def isInheritedInNexthopSet(self):
+    #     # print("nexthopSet: {0}   nexthopSet: {1}".format(self.nexthopSet, self.nexthopSet))
+    #     return self.inheritedNexthop in self.nexthopSet
 
     # def __str__(self):
     #     return "{0} {1} {2}\n".format(self.lchild, self.rchild, self.depth)
@@ -59,10 +61,30 @@ class BinaryTrieNode(object):
 
 class BinaryTrie(object):
     def __init__(self, rules):
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'analyst.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.rules = rules
+        self.mostNexthop = self._findMostNexthop()
+        # print("mostNexthop: {0}".format(self.mostNexthop))
         # construct a binary tree according to the rules
-        self.root = BinaryTrieNode(nexthops=[-2], depth=0)
+        self.root = BinaryTrieNode(nexthops=[self.mostNexthop], depth=0)
         self.constructBinaryTrie()
+
+    def _findMostNexthop(self):
+        counterDict = {}
+        for rule in self.rules:
+            # self.logger.debug("rule: {0}".format(rule))
+            if rule.nexthop in counterDict:
+                counterDict[rule.nexthop] += 1
+            else:
+                counterDict[rule.nexthop] = 1
+        # self.logger.debug("counterDict: {0}".format(counterDict))
+        if counterDict != {}:
+            return max(counterDict.iteritems(), key=operator.itemgetter(1))[0]
+        else:
+            return None
 
     def constructBinaryTrie(self):
         for rule in self.rules:
@@ -128,7 +150,7 @@ class BinaryTrie(object):
 
     def preOrderTraversalToCountNextHop(self, node):
         # Do Something with node
-        if list(node.nexthopSet) not in [[None], [-2]]:
+        if list(node.nexthopSet) not in [[None]]:
             self.nexthopCount += 1
         if node.lchild != None:
             self.preOrderTraversalToCountNextHop(node.lchild)
@@ -156,20 +178,25 @@ class BinaryTrie(object):
             else:
                 return self.getInherited(parent)
         else:
-            print("current node is root")
+            pass
+            self.logger.debug("current node is root")
 
     def levelAccess(self):
         q = Queue.Queue()
         q.put(self.root)
         while not q.empty():
             currentNode = q.get()
-            print("depth: {0}\t" \
-                # " current node: {1}\t" \
-                # " parent: {2}\t" \
-                # " lchild: {3}\t" \
-                # " rchild: {4}\t" \
-                " nexthopSet: {5}".format(currentNode.depth, currentNode, currentNode.parent, currentNode.lchild, currentNode.rchild, currentNode.nexthopSet))
+            # self.logger.debug("depth: {0}\t" \
+            #     # " current node: {1}\t" \
+            #     # " parent: {2}\t" \
+            #     # " lchild: {3}\t" \
+            #     # " rchild: {4}\t" \
+            #     " nexthopSet: {5}".format(currentNode.depth, currentNode, currentNode.parent, currentNode.lchild, currentNode.rchild, currentNode.nexthopSet))
             if currentNode.lchild != None:
                 q.put(currentNode.lchild)
             if currentNode.rchild != None:
                 q.put(currentNode.rchild)
+
+    def isInheritedInNexthopSet(self, node):
+        inheritedNexthop = self.getInherited(node)
+        return inheritedNexthop in node.nexthopSet

@@ -22,6 +22,8 @@ class TestORTCClass(object):
                                             actions={"output nodeID": 1})
         self.urm.addSFCIUFRRFlowTableEntry(dpid=1, sfciID=2, vnfID=1, pathID=1,
                                             actions={"output nodeID": 2})
+        self.urm.addSFCIUFRRFlowTableEntry(dpid=1, sfciID=3, vnfID=1, pathID=1,
+                                            actions={"output nodeID": 2})
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_v4Compression(self, setup_addRuleSet1):

@@ -244,8 +244,10 @@ class UFRRIBMaintainer(RIBMaintainerBase):
             ipVersion = "v6"
         else:
             ipVersion = "v4"
-        self.logger.info(self.switchesUFRRTableInBinaryTrie["v4"].keys())
-        self.logger.info(self.switchesUFRRTableInBinaryTrie[ipVersion].keys())
+        # self.logger.info(self.switchesUFRRTableInBinaryTrie["v4"].keys())
+        # self.logger.info(self.switchesUFRRTableInBinaryTrie[ipVersion].keys())
+        if dpid not in self.switchesUFRRTableInBinaryTrie[ipVersion].keys():
+            return 0
         bT = self.switchesUFRRTableInBinaryTrie[ipVersion][dpid]
         # count of v4 should equal to v6
         rulesNum = bT.countRules()
@@ -263,7 +265,7 @@ class UFRRIBMaintainer(RIBMaintainerBase):
     def verifyEntry(self, dpid, firstKey, secondKey, thirdKey):
         # {'priority': 32, 'actions': {'output port': 24}}
         subEntry = self.switchesUFRRTable[dpid][firstKey][secondKey][thirdKey]
-        # print(subEntry)
+        # self.logger.debug(subEntry)
         # raw_input()
         comSubEntry = self._getComSubEntry(dpid, firstKey, secondKey, thirdKey)
         self._compareSubEntry(subEntry, comSubEntry)
@@ -327,11 +329,11 @@ class UFRRIBMaintainer(RIBMaintainerBase):
                         rules.append(rule)
                     else:
                         continue
-        if v6:
-            nullRule = Rule(0, 128, -1, v6=True)
-        else:
-            nullRule = Rule(0, 32, -1)
-        rules.append(nullRule)
+        # if v6:
+        #     nullRule = Rule(0, 128, -1, v6=True)
+        # else:
+        #     nullRule = Rule(0, 32, -1)
+        # rules.append(nullRule)
         return rules
 
     def __constructARule(self, v6, firstKey, secondKey, thirdKey, nexthop):
@@ -364,23 +366,18 @@ class UFRRIBMaintainer(RIBMaintainerBase):
             self.compressByORTC(bT)
 
     def compressByORTC(self, bT):
-
-        bT.levelAccess()
-
-        print("Trie node number: {0}".format(bT.countTrieNodes()))
+        # bT.levelAccess()
+        # self.logger.debug("Trie node number: {0}".format(bT.countTrieNodes()))
         self.passOne(bT)
 
-        bT.levelAccess()
-        
-        print("Trie node number: {0}".format(bT.countTrieNodes()))
+        # bT.levelAccess()
+        # self.logger.debug("Trie node number: {0}".format(bT.countTrieNodes()))
         self.passTwo(bT)
 
-        bT.levelAccess()
-
-        print("Trie node number: {0}".format(bT.countTrieNodes()))
+        # bT.levelAccess()
+        # self.logger.debug("Trie node number: {0}".format(bT.countTrieNodes()))
         self.passThree(bT)
-
-        bT.levelAccess()
+        # bT.levelAccess()
 
     def passOne(self, bT):
         '''
@@ -452,20 +449,20 @@ class UFRRIBMaintainer(RIBMaintainerBase):
         自顶向下，确定每个节点的nexthop
         '''
         root = bT.getRoot()
-        self.preOrderTraversalToChooseNextHop(root)
+        self.preOrderTraversalToChooseNextHop(bT, root)
 
-    def preOrderTraversalToChooseNextHop(self, node):
+    def preOrderTraversalToChooseNextHop(self, binaryTrie, node):
         # Do Something with node
-        if (not node.isRoot()) and node.isInheritedInNexthopSet():
+        if (not node.isRoot()) and binaryTrie.isInheritedInNexthopSet(node):
             node.nexthopSet = set([None])
         else:
             choosedNexthop = self._choose(node.nexthopSet)
             node.nexthopSet = set([choosedNexthop])
 
         if node.lchild != None:
-            self.preOrderTraversalToChooseNextHop(node.lchild)
+            self.preOrderTraversalToChooseNextHop(binaryTrie, node.lchild)
         if node.rchild != None:
-            self.preOrderTraversalToChooseNextHop(node.rchild)
+            self.preOrderTraversalToChooseNextHop(binaryTrie, node.rchild)
 
     def _choose(self, nexthopSet):
         my_list = list(nexthopSet)
