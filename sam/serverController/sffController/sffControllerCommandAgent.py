@@ -16,6 +16,7 @@ from sam.serverController.sffController.sibMaintainer import *
 from sam.serverController.sffController.sffSFCIAdder import *
 from sam.serverController.sffController.sffSFCIDeleter import *
 from sam.serverController.sffController.sffMonitor import *
+from sam.serverController.sffController.sffFailureEmulator import *
 from sam.serverController.sffController.argParser import ArgParser
 
 # TODO: finish sfci monitor
@@ -33,6 +34,7 @@ class SFFControllerCommandAgent(object):
         self.sffSFCIAdder = SFFSFCIAdder(self.sibms, self.logger)
         self.sffSFCIDeleter = SFFSFCIDeleter(self.sibms, self.logger)
         self.sffMonitor = SFFMonitor(self.sibms, self.logger)
+        self.sffFailureEmulator = SFFFailureEmulator(self.sibms, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
         self.queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, zoneName)
@@ -43,10 +45,32 @@ class SFFControllerCommandAgent(object):
             msg = self._messageAgent.getMsg(self.queueName)
             if msg.getMessageType() == MSG_TYPE_SFF_CONTROLLER_CMD:
                 self.logger.info("SFF controller get a command.")
+                cmd = msg.getbody()
+                self._commandsInfo[cmd.cmdID] = {"cmd":cmd,
+                    "state":CMD_STATE_PROCESSING}
+
+                self.logger.info("cmdID: {0}".format(cmd.cmdID))
+
+                # special commands
+                if cmd.cmdType in [ CMD_TYPE_PAUSE_BESS, CMD_TYPE_RESUME_BESS]:
+                    try:
+                        if cmd.cmdType == CMD_TYPE_PAUSE_BESS:
+                            self.sffFailureEmulator.emulateSoftwareFailure(cmd)
+                        elif cmd.cmdType == CMD_TYPE_RESUME_BESS:
+                            self.logger.info("recovery!")
+                            self.sffFailureEmulator.emulateSoftwareFailureRecovery(cmd)
+                        else:
+                            self.logger.error("Unkonwn sff command type.")
+                            raise ValueError("Unkonwn sff command type.")
+                    except ValueError as err:
+                        self.logger.error('sff controller command processing error: ' +
+                            repr(err))
+                    continue
+
+                self.logger.info("here")
+
+                # common commands
                 try:
-                    cmd = msg.getbody()
-                    self._commandsInfo[cmd.cmdID] = {"cmd":cmd,
-                        "state":CMD_STATE_PROCESSING}
                     if cmd.cmdType == CMD_TYPE_ADD_SFCI:
                         self.sffSFCIAdder.addSFCIHandler(cmd)
                     elif cmd.cmdType == CMD_TYPE_DEL_SFCI:

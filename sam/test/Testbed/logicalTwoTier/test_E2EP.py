@@ -84,6 +84,7 @@ class TestE2EProtectionClass(TestbedFRR):
 
         yield
         # teardown
+        self.recoveryServerSoftwareFailure()
         self.delSFCIs()
         self.killClassifierController()
         self.killSFFController()
@@ -97,7 +98,7 @@ class TestE2EProtectionClass(TestbedFRR):
             "Then press any key to continue!")
         raw_input()
 
-        # self.addSFCCmdList = self.addSFCCmdList[:1]
+        self.addSFCCmdList = self.addSFCCmdList[:1]
 
         # self.logger.warning("addSFCCmdList {0}".format(self.addSFCCmdList))
 
@@ -114,6 +115,7 @@ class TestE2EProtectionClass(TestbedFRR):
             "After the test, "
             "Press any key to quit!")
         raw_input()
+        self.makeServerSoftwareFailure()
         self.sendHandleServerSoftwareFailureCmd()
 
         self.logger.info("Press any key to quit!")
@@ -154,19 +156,33 @@ class TestE2EProtectionClass(TestbedFRR):
             self.delSFCICmd = self.delSFCICmdList[index]
             self.verifyCmdViaMediator(self.delSFCICmd)
 
-    def sendHandleServerSoftwareFailureCmd(self):
-        #TODO: 找一个承载SFCI最多的服务器来执行宕机测试
-        self.logger.info("sendHandleServerFailureCmd")
-        server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
-        server.setServerID(SFF1_SERVERID)
-        server.setControlNICIP(SFF1_CONTROLNIC_IP)
-        server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
-        server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
-        msg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD,
+    def makeServerSoftwareFailure(self):
+        self.logger.info("makeServerSoftwareFailure")
+        server = self._getTargetServer()
+
+        msg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD,
             Command(
-                cmdType=CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE,
+                cmdType=CMD_TYPE_PAUSE_BESS,
                 cmdID=uuid.uuid1(),
                 attributes={"serverDown":[server]}
             )
         )
-        self._messageAgent.sendMsg(NETWORK_CONTROLLER_QUEUE, msg)
+        # self._messageAgent.sendMsg(SFF_CONTROLLER_QUEUE, msg)
+        queueName = self._messageAgent.genQueueName(
+            SFF_CONTROLLER_QUEUE, self.zoneName)
+        self._messageAgent.sendMsg(queueName, msg)
+
+    def recoveryServerSoftwareFailure(self):
+        self.logger.info("recoveryServerSoftwareFailure")
+        server = self._getTargetServer()
+
+        msg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD,
+            Command(
+                cmdType=CMD_TYPE_RESUME_BESS,
+                cmdID=uuid.uuid1(),
+                attributes={"serverUp":[server]}
+            )
+        )
+        queueName = self._messageAgent.genQueueName(
+            SFF_CONTROLLER_QUEUE, self.zoneName)
+        self._messageAgent.sendMsg(queueName, msg)

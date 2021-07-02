@@ -17,6 +17,13 @@ from sam.test.testBase import *
 from sam.test.fixtures.vnfControllerStub import *
 
 
+SFF3_DATAPATH_IP = "2.2.0.100"
+SFF3_SERVERID = 10003
+SFF3_CONTROLNIC_IP = "192.168.0.173"
+SFF3_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
+SFF3_DATAPATH_MAC = "00:1b:21:c0:8f:98"
+
+
 class TestbedFRR(TestBase):
     def cleanLog(self):
         self.sP.runShellCommand("rm -rf ./log")
@@ -124,11 +131,11 @@ class TestbedFRR(TestBase):
 
     def sendHandleServerSoftwareFailureCmd(self):
         self.logger.info("sendHandleServerFailureCmd")
-        server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
-        server.setServerID(SFF1_SERVERID)
-        server.setControlNICIP(SFF1_CONTROLNIC_IP)
-        server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
-        server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
+        server = self._getTargetServer()
+
+        # emulate the failure detection delay
+        time.sleep(0.03)
+
         msg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD,
             Command(
                 cmdType=CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE,
@@ -139,6 +146,17 @@ class TestbedFRR(TestBase):
         queueName = self._messageAgent.genQueueName(
             NETWORK_CONTROLLER_QUEUE, self.zoneName)
         self._messageAgent.sendMsg(queueName, msg)
+        # self._messageAgent.sendMsg(NETWORK_CONTROLLER_QUEUE, msg)
+
+    def _getTargetServer(self):
+        #TODO: 找一个承载SFCI最多的服务器来执行宕机测试
+        server = Server("ens3", SFF3_DATAPATH_IP, SERVER_TYPE_NFVI)
+        server.setServerID(SFF3_SERVERID)
+        server.setControlNICIP(SFF3_CONTROLNIC_IP)
+        server.setControlNICMAC(SFF3_CONTROLNIC_MAC)
+        server.setDataPathNICMAC(SFF3_DATAPATH_MAC)
+
+        return server
 
     def _updateDib(self):
         self._dib.updateServersByZone(self.topologyDict["servers"],
