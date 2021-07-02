@@ -98,14 +98,14 @@ class TestE2EProtectionClass(TestbedFRR):
             "Then press any key to continue!")
         raw_input()
 
-        self.addSFCCmdList = self.addSFCCmdList[:1]
+        # self.addSFCCmdList = self.addSFCCmdList[:1]
 
         # self.logger.warning("addSFCCmdList {0}".format(self.addSFCCmdList))
 
         # self.logger.warning("\n\n\n")
 
         # self.logger.warning("addSFCICmdList {0}".format(self.addSFCICmdList[:1]))
-        
+
         # return None
 
         self.addSFCIs()
@@ -167,7 +167,6 @@ class TestE2EProtectionClass(TestbedFRR):
                 attributes={"serverDown":[server]}
             )
         )
-        # self._messageAgent.sendMsg(SFF_CONTROLLER_QUEUE, msg)
         queueName = self._messageAgent.genQueueName(
             SFF_CONTROLLER_QUEUE, self.zoneName)
         self._messageAgent.sendMsg(queueName, msg)

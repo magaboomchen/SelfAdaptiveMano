@@ -26,7 +26,6 @@ class Mediator(object):
             'mediator.log', level='info')
         self.logger = logConfigur.getLogger()
         self.logger.info("Init mediator.")
-        self.logger.setLevel(logging.DEBUG)
 
         self._cm = CommandMaintainer()
         self._mode = mode

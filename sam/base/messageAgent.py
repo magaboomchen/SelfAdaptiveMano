@@ -163,7 +163,8 @@ class MessageAgent(object):
                     properties=pika.BasicProperties(delivery_mode = 2)
                     # make message persistent
                     )
-                self.logger.debug(" [x] Sent %r" % message)
+                # self.logger.debug(" [x] Sent %r" % message)
+                self.logger.debug(" [x] Sent ")
                 channel.close()
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex,
@@ -304,7 +305,8 @@ class QueueReciever(threading.Thread):
                     "MessageAgent recvMsg failed")
 
     def callback(self, ch, method, properties, body):
-        self.logger.debug(" [x] Received %r" % body)
+        # self.logger.debug(" [x] Received %r" % body)
+        self.logger.debug(" [x] Received ")
         threadLock.acquire()
         if self.msgQueue.qsize() < MESSAGE_AGENT_MAX_QUEUE_SIZE:
             self.msgQueue.put(body)

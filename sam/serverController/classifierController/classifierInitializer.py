@@ -169,6 +169,10 @@ class ClassifierInitializer(BessControlPlane):
                 name="Sink1",mclass="Sink"))
             self._checkResponse(response)
 
+            response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
+                name="Sink2",mclass="Sink"))
+            self._checkResponse(response)
+
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
             # list all module
@@ -310,8 +314,13 @@ class ClassifierInitializer(BessControlPlane):
             self._checkResponse(response)
 
             #       ms -> outmerge
+            # response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
+            #     m1="ms",m2="outmerge",ogate=0,igate=0))
+            # self._checkResponse(response)
+
+            #       ms -> outmerge
             response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
-                m1="ms",m2="outmerge",ogate=0,igate=0))
+                m1="ms",m2="Sink2",ogate=0,igate=0))
             self._checkResponse(response)
 
             #   wm2:1 -> gdInit
