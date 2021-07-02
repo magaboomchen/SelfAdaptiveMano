@@ -172,6 +172,9 @@ class TestbedFRR(TestBase):
         self.topologyDict = self.instance['topologyDict']
         self.addSFCIRequests = self.instance['addSFCIRequests']
 
+        # for _ in self.addSFCIRequests[:1]:
+        #     self.logger.warning("addSFCIRequests: {0}".format(_))
+
     def loadSolution(self):
         self.notViaPSFCSolutionFilePath \
             = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance.NOTVIA_PSFC.solution"
@@ -182,6 +185,8 @@ class TestbedFRR(TestBase):
             = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance.E2EP.solution"
         self.e2eProtectionSolution = self.pIO.readPickleFile(
             self.e2ePSolutionFilePath)
+        
+        # self.logger.warning("self.e2eProtectionSolution: {0}".format(self.e2eProtectionSolution))
 
         self.ufrrSolutionFilePath = solutionFileDir \
             = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance.UFRR.solution"
@@ -206,6 +211,7 @@ class TestbedFRR(TestBase):
             sfc.vNFTypeSequence = [VNF_TYPE_FORWARD] * len(sfc.vNFTypeSequence)
             sfc.attributes['zone'] = PICA8_ZONE
             sfci = addSFCICmd.attributes['sfci']
+            # self.logger.warning("making sfci {0}".format(sfci))
             vnfiSequence = sfci.vnfiSequence
             for vnfisList in vnfiSequence:
                 for vnfi in vnfisList:

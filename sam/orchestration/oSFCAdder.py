@@ -328,9 +328,12 @@ class OSFCAdder(object):
             zoneName = sfc.attributes['zone']
             sfci = request.attributes['sfci']
             sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
-            if sfci.vnfiSequence == None:
+            # self.logger.warning("before sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
+            # if sfci.vnfiSequence == None:
+            if sfci.vnfiSequence in [None,[]]:
                 sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
                                                         sfci.forwardingPathSet)
+            # self.logger.warning("after sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
             cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
                 'sfc':sfc, 'sfci':sfci, 'zone':zoneName
             })
