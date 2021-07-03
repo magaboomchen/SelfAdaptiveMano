@@ -24,7 +24,7 @@ class VNFController(object):
 
         self._commandsInfo = {}
 
-        self._vnfiAdder = VNFIAdder(vcConfig.DOCKER_TCP_PORT)
+        self._vnfiAdder = VNFIAdder(vcConfig.DOCKER_TCP_PORT, self.logger)
         self._vnfiDeleter = VNFIDeleter(vcConfig.DOCKER_TCP_PORT)
 
         self._vnfiMaintainer = VNFIMaintainer()
@@ -79,9 +79,11 @@ class VNFController(object):
         for vnf in vnfSeq:
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):
-                    self.logger.info('Adding vnfi %s.' % vnfi.vnfiID)
+                    # self.logger.info('Adding vnfi %s.' % vnfi.vnfiID)
+                    self.logger.info("Deploy vnfi {0} at node {1}".format(vnfi.vnfiID, vnfi.node.getServerID()))
                     if self._vnfiMaintainer.hasVNFI(vnfi):
                         # reassign an vnfi
+                        self.logger.info("Reassign!")
                         continue
                     else:
                         self._vnfiMaintainer.addVNFI(sfciID, vnfi)

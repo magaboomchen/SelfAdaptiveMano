@@ -98,7 +98,7 @@ class TestE2EProtectionClass(TestbedFRR):
             "Then press any key to continue!")
         raw_input()
 
-        # self.addSFCCmdList = self.addSFCCmdList[:1]
+        # self.addSFCCmdList = self.addSFCCmdList[:10]
 
         # self.logger.warning("addSFCCmdList {0}".format(self.addSFCCmdList))
 

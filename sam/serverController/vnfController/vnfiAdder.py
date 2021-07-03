@@ -14,13 +14,15 @@ from sam.serverController.vnfController.vcConfig import vcConfig
 
 
 class VNFIAdder(object):
-    def __init__(self, dockerPort):
+    def __init__(self, dockerPort, logger):
         self._sibm = SIBMaintainer()
         self._dockerPort = dockerPort
+        self.logger = logger
 
     def addVNFI(self, vnfi, vioAllo, cpuAllo):  
         server = vnfi.node
         docker_url = 'tcp://%s:%d' % (server.getControlNICIP(), self._dockerPort)
+        self.logger.info("docker_url is {0}".format(docker_url))
         client = docker.DockerClient(base_url=docker_url, timeout=5)
 
         vnfiType = vnfi.vnfType
@@ -79,10 +81,12 @@ class VNFIAdder(object):
         containerName = 'vnf-%s' % vnfi.vnfiID
         try:
             #print(command)
+            self.logger.info("command is {0}".format(command))
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
             container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
                 volumes=volumes, detach=True, ports = {'%d/tcp' % vcConfig.MON_TCP_PORT: None})
-            #logging.info(container.logs())
+            # logging.info(container.logs())
+            self.logger.info("container's logs: {0}".format(container.logs()))
         except Exception as e:
             # free allocated CPU and virtioID
             cpuAllo.freeCPU(cpus)

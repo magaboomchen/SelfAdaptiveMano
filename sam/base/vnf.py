@@ -35,7 +35,7 @@ class VNFIStatus(object):
 
 class VNFI(object):
     def __init__(self, vnfID=None, vnfType=None, vnfiID=None,
-        config=None, node=None, vnfiStatus=None):
+                    config=None, node=None, vnfiStatus=None):
         self.vnfID = vnfID
         self.vnfType = vnfType
         self.vnfiID = vnfiID
