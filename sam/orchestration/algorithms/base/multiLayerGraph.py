@@ -35,13 +35,15 @@ class MultiLayerGraph(object):
             'MultiLayerGraph.log', level='debug')
         self.logger = logConfigur.getLogger()
 
-    def loadInstance4dibAndRequest(self, dib, request, weightType):
+    def loadInstance4dibAndRequest(self, dib, request, weightType,
+                                    connectingLinkWeightType=WEIGHT_TYPE_CONST):
         self._dib = dib
         self.request = request
         self.sfc = request.attributes['sfc']
         self.sfcLength = self.sfc.getSFCLength()
         self.zoneName = self.sfc.attributes['zone']
         self.weightType = weightType
+        self.connectingLinkWeightType = connectingLinkWeightType
         self.abandonNodeIDList = []
         self.abandonLinkIDList = []
 
@@ -143,17 +145,22 @@ class MultiLayerGraph(object):
     def _genLayerNodeID(self, nodeID, stage):
         return (stage, nodeID)
 
-    def getLinkWeight(self, link):
-        if self.weightType == WEIGHT_TYPE_CONST:
+    def getLinkWeight(self, link, isConnectingLink=False):
+        if isConnectingLink:
+            weightType = self.connectingLinkWeightType
+        else:
+            weightType = self.weightType
+
+        if weightType == WEIGHT_TYPE_CONST:
             return 1
-        elif self.weightType == WEIGHT_TYPE_PROPAGATION_DELAY_MODEL:
+        elif weightType == WEIGHT_TYPE_PROPAGATION_DELAY_MODEL:
             return self._getLinkPropagationLatency(link)
-        elif self.weightType == WEIGHT_TYPE_DELAY_MODEL:
+        elif weightType == WEIGHT_TYPE_DELAY_MODEL:
             linkUtil = self._getLinkUtil(link)
             return self._getLinkLatency(link, linkUtil)
-        elif self.weightType == WEIGHT_TYPE_01_UNIFORAM_MODEL:
+        elif weightType == WEIGHT_TYPE_01_UNIFORAM_MODEL:
             return random.random()
-        elif self.weightType == WEIGHT_TYPE_0100_UNIFORAM_MODEL:
+        elif weightType == WEIGHT_TYPE_0100_UNIFORAM_MODEL:
             return random.random() * 100
         else:
             raise ValueError("Unknown weight type.")
@@ -204,7 +211,7 @@ class MultiLayerGraph(object):
             if self._dib.hasEnoughNPoPServersResources(
                     nodeID, expectedCores, expectedMemory, expectedBandwidth,
                         self.zoneName, self.abandonNodeIDList):
-                weight = self.getLinkWeight(link)
+                weight = self.getLinkWeight(link, isConnectingLink=True)
                 # self.logger.debug("weight:{0}".format(weight))
                 # raw_input()
                 mLG.add_edge(srcLayerNodeID, dstLayerNodeID, weight=weight)

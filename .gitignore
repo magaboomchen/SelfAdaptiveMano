@@ -51,16 +51,20 @@ tmp/**
 backup/**
 build/**
 log/
+log*/
 topologyDataSet/
 SFC_info/
 topology/
 backup/
 solution/*
+solution*/
 instance/*
 .pytest_cache/
 __pycache__/
 samSimulation/
 sam/base/rabbitMQConf.conf
+results/
+results*/
 
 # Backup Files
 *~

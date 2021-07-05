@@ -39,6 +39,10 @@ class MessageAgentTester(object):
             time.sleep(2)
             msg = messageAgent.getMsg("task_queue")
 
+            break
+        
+        print("Finish!")
+
 if __name__=="__main__":
     logging.basicConfig(level=logging.INFO)
     SAMMessageTester()

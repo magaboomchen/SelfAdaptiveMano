@@ -10,6 +10,7 @@ column generation model
 '''
 
 import copy
+from random import randrange
 
 import numpy as np
 import gurobipy as gp
@@ -527,14 +528,28 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
 
         # Relax the constraints to make the model feasible
         self.logger.debug('The model is infeasible; relaxing the constraints')
-        orignumvars = self.cgModel.NumVars
+        originNumVars = self.cgModel.NumVars
         self.cgModel.feasRelaxS(0, False, False, True)
+
+        # More complext relax process
+        # originVars = self.cgModel.getVars()
+        # ubpen = [1.0]*originNumVars
+        # constrs = self.getCapacityRelatedConstraintsFromIIS()
+        # if constrs == []:
+        #     raise ValueError("Invalid relaxed model's constrs.")
+        # self.cgModel.feasRelax(0, False, originVars, None, ubpen, constrs, None)
+
         # IntegralityFocus setting
         self.cgModel.setParam('IntegralityFocus', 1)
+        self.cgModel.setParam('TimeLimit', 3000)
         self.cgModel.optimize()
+
         if self.cgModel.status in (GRB.INF_OR_UNBD, GRB.INFEASIBLE, GRB.UNBOUNDED):
             self.logger.error('The relaxed model cannot be solved '
-                'because it is infeasible or unbounded')
+                'because it is infeasible {0} or unbounded {1}'
+                ' or GRB.INF_OR_UNBD {2}'.format(
+                    GRB.INFEASIBLE, GRB.UNBOUNDED, GRB.INF_OR_UNBD
+                ))
             raise ValueError('The relaxed model cannot be solved '
                 'because it is infeasible or unbounded')
 
@@ -545,10 +560,27 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
                 'status {0}'.format(self.cgModel.status))
 
         self.logger.debug('Slack values:')
-        slacks = self.cgModel.getVars()[orignumvars:]
+        slacks = self.cgModel.getVars()[originNumVars:]
         for sv in slacks:
             if sv.X > 1e-6:
                 self.logger.debug('{0} = {1}'.format(sv.VarName, sv.X))
+
+    def getCapacityRelatedConstraintsFromIIS(self):
+        relatedConstrs = []
+        for c in self.cgModel.getConstrs():
+            self.logger.debug("c.IISConstr:{0},"
+                "c.constrName{1}".format(c.IISConstr,
+                                            c.constrName))
+            if c.IISConstr and self.isRelated2Capacity(c.constrName):
+                self.logger.warning("constraint {0}".format(c.constrName))
+                relatedConstrs.append(c)
+        return relatedConstrs
+
+    def isRelated2Capacity(self, constrName):
+        if constrName.find("apacity") != -1:
+            return True
+        else:
+            return False
 
     def getDualVariables(self):
         self._genDualVariables()
@@ -655,7 +687,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         self.forwardingPathSetsDict = {}
         for rIndex in range(len(self.requestList)):
             primaryPathSolutions = self.modelYVar.select(rIndex,'*','*','*',
-                '*', 'p')
+                                                            '*', 'p')
             for solution in primaryPathSolutions:
                 # if solution.X == 1:
                 if solution.X >= 1 - (1e-3):
@@ -671,14 +703,29 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
                     break
             else:
                 self.logUnZeroSolutionVar(primaryPathSolutions)
-                raise ValueError("Can't find primaryPathSolutions")
+                # raise ValueError("Can't find primaryPathSolutions")
+                self.logger.error("Can't find primaryPathSolutions, random selection")
+                selectedIdx = randrange(len(primaryPathSolutions))
+                for idx, solution in enumerate(primaryPathSolutions):
+                    if idx != selectedIdx:
+                        continue
+                    else:
+                        (ingSwitchID, egSwitchID, vnfSeqStr, pathIndex) \
+                                = self._getSolutionVarIndexTuple(solution)
+                        sdc = (ingSwitchID, egSwitchID, vnfSeqStr)
+                        primaryFP = self.configurations[sdc][pathIndex]
+                        primaryFP = self._selectNPoPNodeAndServers(primaryFP,
+                            rIndex)
+                        primaryForwardingPath = {1:
+                                primaryFP
+                            }
+                        break
 
             abandonServers = self._getNFVIInPrimaryPath(primaryFP)
 
             backupPathSolutions = self.modelYVar.select(rIndex,'*','*','*',
-                '*', 'b')
+                                                            '*', 'b')
             for solution in backupPathSolutions:
-                # if solution.X == 1:
                 if solution.X >= 1 - (1e-3):
                     (ingSwitchID, egSwitchID, vnfSeqStr, 
                         pathIndex) = self._getSolutionVarIndexTuple(solution)
@@ -689,7 +736,6 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
                     backupForwardingPath = {1:
                         {
                             (
-                                # ('*','*'),
                                 ("repairMethod", "increaseBackupPathPrioriy")
                             ): backupFP
                         }        
@@ -697,7 +743,27 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
                     break
             else:
                 self.logUnZeroSolutionVar(backupPathSolutions)
-                raise ValueError("Can't find backupPathSolutions")
+                # raise ValueError("Can't find backupPathSolutions")
+                self.logger.error("Can't find backupPathSolutions, random selection")
+                selectedIdx = randrange(len(backupPathSolutions))
+                for idx, solution in enumerate(backupPathSolutions):
+                    if idx != selectedIdx:
+                        continue
+                    else:
+                        (ingSwitchID, egSwitchID, vnfSeqStr, pathIndex) \
+                                = self._getSolutionVarIndexTuple(solution)
+                        sdc = (ingSwitchID, egSwitchID, vnfSeqStr)
+                        backupFP = self.configurations[sdc][pathIndex]
+                        backupFP = self._selectNPoPNodeAndServers(backupFP,
+                            rIndex, abandonServers)
+                        backupForwardingPath = {1:
+                            {
+                                (
+                                    ("repairMethod", "increaseBackupPathPrioriy")
+                                ): backupFP
+                            }        
+                        }
+                        break
 
             mappingType = MAPPING_TYPE_E2EP
             self.forwardingPathSetsDict[rIndex] = ForwardingPathSet(
@@ -736,7 +802,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             self.logger.info('Optimal Obj = {0}'.format(self.cgModel.objVal))
 
             self.yVarSolution = self.cgModel.getAttr('x', self.modelYVar)
-            for yKey,value in self.yVarSolution.items():
+            for yKey, value in self.yVarSolution.items():
                 (rIndex, ingSwitchID, egSwitchID,
                     vnfSeqStr, pathIndex, pb) = yKey
                 if value > 0:

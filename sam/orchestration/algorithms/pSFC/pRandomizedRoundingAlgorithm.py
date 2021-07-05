@@ -181,8 +181,10 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
         mlg = MultiLayerGraph()
         mlg.loadInstance4dibAndRequest(self._dib, 
             self._requestInRRA, 
-            WEIGHT_TYPE_0100_UNIFORAM_MODEL)
             # WEIGHT_TYPE_CONST)
+
+            WEIGHT_TYPE_CONST,
+            WEIGHT_TYPE_0100_UNIFORAM_MODEL)
         bp = self.requestPartialPathBp[pIndex]
         mlg.addAbandonNodeIDs([bp])
         mlg.addAbandonLinkIDs([])

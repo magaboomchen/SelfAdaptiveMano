@@ -52,10 +52,14 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
     def delGroupID(self, dpid, groupID):
         if CURRENT_ENV == PICA8_ENV:
             pass
+            # TODO
+            self.logger.error("todo")
         elif CURRENT_ENV == MININET_ENV:
             self.groupIDSets[dpid].remove(groupID)
         elif CURRENT_ENV == PICA8_UFRR_LOGICAL_TWO_TIER_ENV:
             pass
+            # TODO
+            self.logger.error("todo")
         else:
             raise ValueError("Unknown envirnoment {0}".format(CURRENT_ENV))
 
@@ -108,10 +112,22 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
         return count
 
     def countSwitchGroupTable(self, dpid):
-        count = 0
-        if dpid in self.groupIDSets.keys():
-            count = count + len(self.groupIDSets[dpid])
-        return count
+        if CURRENT_ENV == PICA8_ENV:
+            return self.maxGroupIDDict["picaSwitch1"]
+        elif CURRENT_ENV == MININET_ENV:
+            if dpid in self.groupIDSets.keys():
+                return len(self.groupIDSets[dpid])
+            else:
+                return 0
+        elif CURRENT_ENV == PICA8_UFRR_LOGICAL_TWO_TIER_ENV:
+            if dpid in [1, 5, 6]:
+                return self.maxGroupIDDict["picaSwitch1"]
+            elif dpid in [2, 3, 4]:
+                return self.maxGroupIDDict["picaSwitch2"]
+            else:
+                raise ValueError("Unknown dpid {0}".format(dpid))
+        else:
+            raise ValueError("Unknown envirnoment {0}".format(CURRENT_ENV))
 
     def addSFCIFlowTableEntry(self, sfciID, dpid, tableID, matchFields,
             groupID=None, actions=None, priority=0):
