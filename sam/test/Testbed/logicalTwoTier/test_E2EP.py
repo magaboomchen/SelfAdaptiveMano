@@ -71,6 +71,8 @@ class TestE2EProtectionClass(TestbedFRR):
         self.oSA.zoneName = PICA8_ZONE
         self.makeCmdList(self.e2eProtectionSolution)
 
+        self.logger.info("self.e2eProtectionSolution: {0}".format(self.e2eProtectionSolution))
+
         self.oS = OrchestrationStub()
         self.oS.startRecv()
 
@@ -98,7 +100,7 @@ class TestE2EProtectionClass(TestbedFRR):
             "Then press any key to continue!")
         raw_input()
 
-        # self.addSFCCmdList = self.addSFCCmdList[:10]
+        # self.addSFCCmdList = self.addSFCCmdList[:1]
 
         # self.logger.warning("addSFCCmdList {0}".format(self.addSFCCmdList))
 
@@ -120,68 +122,3 @@ class TestE2EProtectionClass(TestbedFRR):
 
         self.logger.info("Press any key to quit!")
         raw_input()
-
-    # With mediator with batch
-    def addSFCIs(self):
-        for index in range(len(self.addSFCCmdList)):
-            self.addSFCCmd = self.addSFCCmdList[index]
-            self.addSFCICmd = self.addSFCICmdList[index]
-            self.addExpectedCmdRply(self.addSFCCmd)
-            self.addExpectedCmdRply(self.addSFCICmd)
-            self.addSFC2Mediator()
-            self.addSFCI2Mediator()
-
-        # collect all cmdReply
-        self.recvAllCmdReplysFromMediator(len(self.addSFCCmdList) * 2)
-
-        # verify all cmdReply
-        for index in range(len(self.addSFCCmdList)):
-            self.addSFCCmd = self.addSFCCmdList[index]
-            self.verifyCmdViaMediator(self.addSFCCmd)
-            self.addSFCICmd = self.addSFCICmdList[index]
-            self.verifyCmdViaMediator(self.addSFCICmd)
-
-    # With mediator with batch
-    def delSFCIs(self):
-        for index in range(len(self.addSFCCmdList)):
-            self.delSFCICmd = self.delSFCICmdList[index]
-            self.addExpectedCmdRply(self.delSFCICmd)
-            self.delSFCIViaMediator()
-
-        # collect all cmdReply
-        self.recvAllCmdReplysFromMediator(len(self.addSFCCmdList))
-
-        # verify all cmdReply
-        for index in range(len(self.addSFCCmdList)):
-            self.delSFCICmd = self.delSFCICmdList[index]
-            self.verifyCmdViaMediator(self.delSFCICmd)
-
-    def makeServerSoftwareFailure(self):
-        self.logger.info("makeServerSoftwareFailure")
-        server = self._getTargetServer()
-
-        msg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD,
-            Command(
-                cmdType=CMD_TYPE_PAUSE_BESS,
-                cmdID=uuid.uuid1(),
-                attributes={"serverDown":[server]}
-            )
-        )
-        queueName = self._messageAgent.genQueueName(
-            SFF_CONTROLLER_QUEUE, self.zoneName)
-        self._messageAgent.sendMsg(queueName, msg)
-
-    def recoveryServerSoftwareFailure(self):
-        self.logger.info("recoveryServerSoftwareFailure")
-        server = self._getTargetServer()
-
-        msg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD,
-            Command(
-                cmdType=CMD_TYPE_RESUME_BESS,
-                cmdID=uuid.uuid1(),
-                attributes={"serverUp":[server]}
-            )
-        )
-        queueName = self._messageAgent.genQueueName(
-            SFF_CONTROLLER_QUEUE, self.zoneName)
-        self._messageAgent.sendMsg(queueName, msg)

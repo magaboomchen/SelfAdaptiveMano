@@ -28,11 +28,11 @@ from sam.serverController.serverManager.serverManager import *
 
 
 class NotViaNATAndPSFC(FRR):
-    OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
-    _CONTEXTS = {
-        'dpset': dpset.DPSet,
-        'TopoCollector': TopoCollector
-        }
+    # OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
+    # _CONTEXTS = {
+    #     'dpset': dpset.DPSet,
+    #     'TopoCollector': TopoCollector
+    #     }
 
     def __init__(self, *args, **kwargs):
         super(NotViaNATAndPSFC, self).__init__(*args, **kwargs)

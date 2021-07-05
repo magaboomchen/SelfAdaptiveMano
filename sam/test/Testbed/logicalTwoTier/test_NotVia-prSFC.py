@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
 
 
-class TestUFRRClass(TestbedFRR):
+class TestNotViaPrSFCClass(TestbedFRR):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
         # setup
@@ -43,7 +43,7 @@ class TestUFRRClass(TestbedFRR):
         self.killAllModule()
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'testUFRRrotectionClass.log', level='info')
+            'testNotViaPrSFCrotectionClass.log', level='info')
         self.logger = logConfigur.getLogger()
 
         self._messageAgent = MessageAgent()
@@ -57,9 +57,9 @@ class TestUFRRClass(TestbedFRR):
         self._updateDib()
         self.oSA = OSFCAdder(self._dib, self.logger)
         self.oSA.zoneName = PICA8_ZONE
-        self.makeCmdList(self.mmlSFCSolution)
+        self.makeCmdList(self.pSFCNotViaSolution)
 
-        self.logger.info("self.mmlSFCSolution: {0}".format(self.mmlSFCSolution))
+        self.logger.info("self.pSFCNotViaSolution: {0}".format(self.pSFCNotViaSolution))
 
         self.oS = OrchestrationStub()
         self.oS.startRecv()

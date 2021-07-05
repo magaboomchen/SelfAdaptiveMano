@@ -39,7 +39,7 @@ class L2(BaseApp):
         self._peerPortTable = {}    # switch's peer switch's port
         self._switchesLANMacTable = {}  # {dpid:{mac:port}}
 
-        logConfigur = LoggerConfigurator(__name__, './log', 'ryuAppL2.log', level='debug')
+        logConfigur = LoggerConfigurator(__name__, './log', 'ryuAppL2.log', level='warning')
         self.logger = logConfigur.getLogger()
 
     def getLocalPortIDByMac(self, mac):

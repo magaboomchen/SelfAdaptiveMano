@@ -46,7 +46,7 @@ class NorthSouthRouting(BaseApp):
         self._defaultDCNGateway = None
         self._defaultDCNGatewayPeerSwitchMac = None
 
-        logConfigur = LoggerConfigurator(__name__, './log', 'northSouthRouting.log', level='debug')
+        logConfigur = LoggerConfigurator(__name__, './log', 'northSouthRouting.log', level='warning')
         self.logger = logConfigur.getLogger()
 
     def _STSP(self,dpid):
@@ -120,6 +120,10 @@ class NorthSouthRouting(BaseApp):
             self._genASwitchNorthSouthRIB(spt, dpid)
         else:
             self.logger.warning("DCN Gateways totally down.")
+
+        if DCN_GATEWAY_PEER_ARP == "STATIC" and self._defaultDCNGateway != None:
+            self._defaultDCNGatewayPeerSwitchMac = DEFAULT_DCN_GATEWAY_PEER_SWITCH_MAC
+            self._genDCNGatewaySouthRIB()
 
     def _updateDefaultDCNGateway(self):
         self.logger.debug("_updateDefaultDCNGateway")
@@ -217,10 +221,10 @@ class NorthSouthRouting(BaseApp):
             return  # ignore lldp packet
 
         dpid = datapath.id
-        self.logger.debug("northSouthRouting._packet_in_handler, dpid:%d, in_port:%d" %(dpid, in_port) )
+        # self.logger.debug("northSouthRouting._packet_in_handler, dpid:%d, in_port:%d" %(dpid, in_port) )
 
         if dpid == self._defaultDCNGateway and msg.table_id == MAIN_TABLE and eth.ethertype == ether_types.ETH_TYPE_ARP:
-            self.logger.debug("Get an arp packet in from default DCN gateway dpid: %d's MAIN table, packet type: %d" %(dpid, eth.ethertype))
+            # self.logger.debug("Get an arp packet in from default DCN gateway dpid: %d's MAIN table, packet type: %d" %(dpid, eth.ethertype))
             arpHeader = pkt.get_protocol(arp.arp)
 
             if (in_port == DEFAULT_DCN_GATEWAY_OUTBOUND_PORT_NUMBER
@@ -228,9 +232,17 @@ class NorthSouthRouting(BaseApp):
                     and self._defaultDCNGateway != None
                     and arpHeader.src_ip == self._switchConfs[self._defaultDCNGateway].dcnGatewayPeerIP):
                 self.logger.debug("dcn gateway peer switch's arp reply")
-                self._defaultDCNGatewayPeerSwitchMac = arpHeader.src_mac
-                self._genDCNGatewaySouthRIB()
+                # self.logger.warning("from dpid: {0} get a arp: {1}".format(datapath.id, pkt))
+
+                if DCN_GATEWAY_PEER_ARP == "DYNAMIC":
+                    self._defaultDCNGatewayPeerSwitchMac = arpHeader.src_mac
+                    self._genDCNGatewaySouthRIB()
+
                 # self._updateAllSwitchNorthSouthRIB()
+
+            # if (in_port == DEFAULT_DCN_GATEWAY_OUTBOUND_PORT_NUMBER and arpHeader.opcode == arp.ARP_REPLY):
+            #     self.logger.debug("DEBUG: dcn gateway peer switch's arp reply")
+            #     self.logger.warning("DEBUG: from dpid: {0} get a arp: {1}".format(datapath.id, pkt))
 
         if dpid == self._defaultDCNGateway and eth.ethertype == ether_types.ETH_TYPE_ARP:
             arpHeader = pkt.get_protocol(arp.arp)

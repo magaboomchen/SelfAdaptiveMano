@@ -500,9 +500,10 @@ class FRR(BaseApp):
         self.ibm.delSFCFlowTableEntry(sfcUUID)
 
     def syncDatapath(self, datapath):
-        self.dss.sendBarrierRequest(datapath)
-        while True:
-            if self.dss.getBarrierState(datapath) == True:
-                break
-            else:
-                time.sleep(1/100000.0)
+        pass
+        # self.dss.sendBarrierRequest(datapath)
+        # while True:
+        #     if self.dss.getBarrierState(datapath) == True:
+        #         break
+        #     else:
+        #         time.sleep(1/100000.0)

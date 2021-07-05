@@ -36,11 +36,11 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
                 self.groupIDSets[dpid].append(groupID)
                 return groupID
         elif CURRENT_ENV == PICA8_UFRR_LOGICAL_TWO_TIER_ENV:
-            if dpid in [0, 1, 2]:
+            if dpid in [1, 5, 6]:
                 self.maxGroupIDDict["picaSwitch1"] \
                     = self.maxGroupIDDict["picaSwitch1"] + 1
                 return self.maxGroupIDDict["picaSwitch1"]
-            elif dpid in [3, 4, 5]:
+            elif dpid in [2, 3, 4]:
                 self.maxGroupIDDict["picaSwitch2"] \
                     = self.maxGroupIDDict["picaSwitch2"] + 1
                 return self.maxGroupIDDict["picaSwitch2"]

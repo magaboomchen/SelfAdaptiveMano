@@ -18,7 +18,7 @@ from sam.test.fixtures.vnfControllerStub import *
 
 
 SFF3_DATAPATH_IP = "2.2.0.100"
-SFF3_SERVERID = 10003
+SFF3_SERVERID = 10004
 SFF3_CONTROLNIC_IP = "192.168.0.173"
 SFF3_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
 SFF3_DATAPATH_MAC = "00:1b:21:c0:8f:98"
@@ -190,8 +190,8 @@ class TestbedFRR(TestBase):
         self.topologyDict = self.instance['topologyDict']
         self.addSFCIRequests = self.instance['addSFCIRequests']
 
-        # for _ in self.addSFCIRequests[:1]:
-        #     self.logger.warning("addSFCIRequests: {0}".format(_))
+        for _ in self.addSFCIRequests[:1]:
+            self.logger.warning("addSFCIRequests: {0}".format(_))
 
     def loadSolution(self):
         self.notViaPSFCSolutionFilePath \
@@ -203,8 +203,6 @@ class TestbedFRR(TestBase):
             = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance.E2EP.solution"
         self.e2eProtectionSolution = self.pIO.readPickleFile(
             self.e2ePSolutionFilePath)
-        
-        # self.logger.warning("self.e2eProtectionSolution: {0}".format(self.e2eProtectionSolution))
 
         self.ufrrSolutionFilePath = solutionFileDir \
             = "./LogicalTwoTier/0/LogicalTwoTier_n=3_k=3_V=6.sfcr_set_M=100.sfcLength=1.instance.UFRR.solution"
@@ -303,3 +301,68 @@ class TestbedFRR(TestBase):
         else:
             cmdRply = self.expectedCmdRplyDict[cmd.cmdID]
             assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+
+    # With mediator with batch
+    def addSFCIs(self):
+        for index in range(len(self.addSFCCmdList)):
+            self.addSFCCmd = self.addSFCCmdList[index]
+            self.addSFCICmd = self.addSFCICmdList[index]
+            self.addExpectedCmdRply(self.addSFCCmd)
+            self.addExpectedCmdRply(self.addSFCICmd)
+            self.addSFC2Mediator()
+            self.addSFCI2Mediator()
+
+        # collect all cmdReply
+        self.recvAllCmdReplysFromMediator(len(self.addSFCCmdList) * 2)
+
+        # verify all cmdReply
+        for index in range(len(self.addSFCCmdList)):
+            self.addSFCCmd = self.addSFCCmdList[index]
+            self.verifyCmdViaMediator(self.addSFCCmd)
+            self.addSFCICmd = self.addSFCICmdList[index]
+            self.verifyCmdViaMediator(self.addSFCICmd)
+
+    # With mediator with batch
+    def delSFCIs(self):
+        for index in range(len(self.addSFCCmdList)):
+            self.delSFCICmd = self.delSFCICmdList[index]
+            self.addExpectedCmdRply(self.delSFCICmd)
+            self.delSFCIViaMediator()
+
+        # collect all cmdReply
+        self.recvAllCmdReplysFromMediator(len(self.addSFCCmdList))
+
+        # verify all cmdReply
+        for index in range(len(self.addSFCCmdList)):
+            self.delSFCICmd = self.delSFCICmdList[index]
+            self.verifyCmdViaMediator(self.delSFCICmd)
+
+    def makeServerSoftwareFailure(self):
+        self.logger.info("makeServerSoftwareFailure")
+        server = self._getTargetServer()
+
+        msg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD,
+            Command(
+                cmdType=CMD_TYPE_PAUSE_BESS,
+                cmdID=uuid.uuid1(),
+                attributes={"serverDown":[server]}
+            )
+        )
+        queueName = self._messageAgent.genQueueName(
+            SFF_CONTROLLER_QUEUE, self.zoneName)
+        self._messageAgent.sendMsg(queueName, msg)
+
+    def recoveryServerSoftwareFailure(self):
+        self.logger.info("recoveryServerSoftwareFailure")
+        server = self._getTargetServer()
+
+        msg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD,
+            Command(
+                cmdType=CMD_TYPE_RESUME_BESS,
+                cmdID=uuid.uuid1(),
+                attributes={"serverUp":[server]}
+            )
+        )
+        queueName = self._messageAgent.genQueueName(
+            SFF_CONTROLLER_QUEUE, self.zoneName)
+        self._messageAgent.sendMsg(queueName, msg)
