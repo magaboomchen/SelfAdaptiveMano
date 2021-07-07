@@ -31,47 +31,31 @@
 *.exe
 *.out
 *.app
-*.pyc
 
 # Data
 *.pcap
-*.lp
-*.ilp
-*.bk
-*.csv
 
 # Log
-log/**
 *.log
 *.txt
-*.INFO
-*.ERROR
 
 # Directories
-tmp/**
-backup/**
-build/**
 log/
-log*/
-topologyDataSet/
-SFC_info/
-topology/
+tmp/
+pid/
+bash_backup/
 backup/
-solution/*
-solution*/
-instance/*
-.pytest_cache/
-__pycache__/
-samSimulation/
-sam/base/rabbitMQConf.conf
-results/
-results*/
+build/
+pcap/
+slice/
+Debug/
 
 # Backup Files
 *~
-*.temp
-~$*
 
-# Doc
-*.mp4
-*.docx
+# Executable Files
+main
+pcapRewrite
+
+# Exclusion
+!CMakeLists.txt
