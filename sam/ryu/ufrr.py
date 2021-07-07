@@ -25,6 +25,7 @@ from sam.base.command import *
 from sam.base.path import *
 from sam.base.socketConverter import *
 from sam.base.vnf import *
+from sam.base.sshAgent import SSHAgent
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.serverManager.serverManager import *
@@ -39,6 +40,16 @@ class UFRR(FRR):
         self.ibm = UFRRIBMaintainer()
         self.logger.info("UFRR App is running !")
         self.L2 = lookup_service_brick('L2')
+        self._initSSHAgentDict()
+
+    def _initSSHAgentDict(self):
+        self.sshAgentsDict = {}
+        for dpid in self._switchConfs:
+            remoteIP = self._getPhysicalSwitchManagementIP(dpid)
+            sshUsrname = self._getPhysicalSwitchUserName(dpid)
+            sshPassword = self._getPhysicalSwitchPassword(dpid)
+            self.sshAgentsDict[sshUsrname, sshPassword, remoteIP] = SSHAgent()
+            self.sshAgentsDict[sshUsrname, sshPassword, remoteIP].connectSSH(sshUsrname, sshPassword, remoteIP)
 
     def _addSFCHandler(self, cmd):
         self.logger.debug(
@@ -56,9 +67,9 @@ class UFRR(FRR):
             pass
 
     def _serverStatusChangeHandler(self, cmd):
-        self.logger.debug(
-            "*** FRR App Received server status change"
-            " command={0}".format(cmd))
+        # self.logger.debug(
+        #     "*** FRR App Received server status change"
+        #     " command={0}".format(cmd))
         try:
             serverDownList = cmd.attributes['serverDown']
             self._shutdownServersPort(serverDownList)
@@ -72,12 +83,44 @@ class UFRR(FRR):
     def _shutdownServersPort(self, serverDownList):
         for server in serverDownList:
             datapathNICMAC = server.getDatapathNICMac().lower()
-            self.logger.debug("server:{0}".format(server))
+            # self.logger.debug("server:{0}".format(server))
             dpid = self.L2.getConnectedSwitchDpidByServerMac(datapathNICMAC)
             portID = self.L2.getLocalPortIDByMac(datapathNICMAC)
             self._shutdownSwitchPort(dpid, portID)
 
     def _shutdownSwitchPort(self, dpid, portID):
+        # shutdown port by ssh and ovs-ofctl command!
+        # self.logger.debug("shutdown switch:{0}'s port:{1}".format(dpid, portID))
+        remoteIP = self._getPhysicalSwitchManagementIP(dpid)
+        sshUsrname = self._getPhysicalSwitchUserName(dpid)
+        sshPassword = self._getPhysicalSwitchPassword(dpid)
+        # self.logger.debug("remoteIP: {0}, usrName: {1}, password: {2}".format(remoteIP, sshUsrname, sshPassword))
+        # self.sshAgent.connectSSH(sshUsrname, sshPassword, remoteIP)
+        portName = self._getPortName(dpid, portID)
+        command = "/ovs/bin/ovs-ofctl mod-port br{0} {1} down".format(dpid, portName)
+        # self.logger.debug("command is {0}".format(command))
+        # rv = self.sshAgent.runShellCommand(command)
+        if (sshUsrname, sshPassword, remoteIP) not in self.sshAgentsDict:
+            self.sshAgentsDict[sshUsrname, sshPassword, remoteIP] = SSHAgent()
+            self.sshAgentsDict[sshUsrname, sshPassword, remoteIP].connectSSH(sshUsrname, sshPassword, remoteIP)
+        rv = self.sshAgentsDict[sshUsrname, sshPassword, remoteIP].runShellCommand(command)
+        stdin = rv['stdout'].read().decode('utf-8')
+        stdout = rv['stderr'].read().decode('utf-8')
+        # self.logger.debug("stdout: {0} stderr: {1}".format(stdin, stdout))
+        # self.sshAgent.disconnectSSH()
+        self.sshAgentsDict[sshUsrname, sshPassword, remoteIP].disconnectSSH()
+        del self.sshAgentsDict[sshUsrname, sshPassword, remoteIP]
+        self.sshAgentsDict.pop((sshUsrname, sshPassword, remoteIP), None)
+        self.logger.debug("shutdown message sent!")
+
+    def _getPortName(self, dpid, portID):
+        if portID >= 49:
+            portType = 't'
+        else:
+            portType = 'g'
+        return "{0}e-1/1/{1}".format(portType, portID)
+
+    def _shutdownSwitchPortByOpenFlowProtocol(self, dpid, portID):
         # reference
         # https://github.com/faucetsdn/ryu/blob/master/ryu/lib/stplib.py
         self.logger.debug("shutdown switch:{0}'s port:{1}".format(
@@ -117,6 +160,7 @@ class UFRR(FRR):
         else:
             raise ValueError("Unknown ofp version:{0}".format(ofp))
         datapath.send_msg(req)
+        self.logger.debug("shutdown message sent!")
 
     def _addSFCIHandler(self, cmd):
         self.logger.debug(

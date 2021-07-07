@@ -9,7 +9,9 @@ from sam.base.socketConverter import SocketConverter
 
 
 class SwitchConf(object):
-    def __init__(self, dpid, switchType, switchID, dcnGatewaySelfIP=None, dcnGatewayPeerIP=None):
+    def __init__(self, dpid, switchType, switchID, dcnGatewaySelfIP=None,
+                dcnGatewayPeerIP=None, physicalSwitchManagementIP=None,
+                physicalSwitchUserName=None, physicalSwitchPassword=None):
         self.dpid = dpid
         self.switchType = switchType
         self.switchID = switchID
@@ -17,6 +19,9 @@ class SwitchConf(object):
         self.gatewayIP = self._genSwitchGatewayIP(self.dpid)
         self.dcnGatewayPeerIP = dcnGatewayPeerIP
         self.dcnGatewaySelfIP = dcnGatewaySelfIP
+        self.physicalSwitchManagementIP = physicalSwitchManagementIP
+        self.physicalSwitchUserName = physicalSwitchUserName
+        self.physicalSwitchPassword = physicalSwitchPassword
 
     def setLANNet(self,lanNet):
         self.lANNet = lanNet

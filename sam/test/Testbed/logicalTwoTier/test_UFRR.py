@@ -61,6 +61,8 @@ class TestUFRRClass(TestbedFRR):
 
         self.logger.info("self.mmlSFCSolution: {0}".format(self.mmlSFCSolution))
 
+        # self.analysePostFailureServerUtilization(self.mmlSFCSolution, 10004)
+
         self.oS = OrchestrationStub()
         self.oS.startRecv()
 
@@ -88,6 +90,8 @@ class TestUFRRClass(TestbedFRR):
             "Then press any key to continue!")
         raw_input()
 
+        # return 
+
         # self.addSFCCmdList = self.addSFCCmdList[:1]
 
         # self.logger.warning("addSFCCmdList {0}".format(self.addSFCCmdList))
@@ -105,8 +109,11 @@ class TestUFRRClass(TestbedFRR):
             "After the test, "
             "Press any key to quit!")
         raw_input()
+        t1 = time.time()
         self.makeServerSoftwareFailure()
         self.sendHandleServerSoftwareFailureCmd()
+        t2 = time.time()
+        self.logger.info("t2-t1: {0}".format(t2-t1))
 
         self.logger.info("Press any key to quit!")
         raw_input()

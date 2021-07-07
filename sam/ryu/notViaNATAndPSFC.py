@@ -277,7 +277,11 @@ class NotViaNATAndPSFC(FRR):
                         stageCount):
         primaryPathID = self._getPathID(direction["ID"])
         backupPaths = self._getBackupPaths(sfci, primaryPathID)
+        self.logger.warning("backupPaths.iterkeys(): {0}".format(backupPaths.iterkeys()))
         for key in backupPaths.iterkeys():
+            self.logger.warning("key: {0}".format(key))
+            if self._isPSFCBackupPath(key):
+                continue
             (repairSwitchID, failureNodeID, newPathID) \
                 = self._getRepairSwitchIDAndFailureNodeIDAndNewPathIDFromKey(key)
             if repairSwitchID == currentDpid and failureNodeID == nextDpid:
@@ -479,13 +483,20 @@ class NotViaNATAndPSFC(FRR):
             pathID = primaryPathID
             stageCount = self._getStageCount4Key(key)
             self.logger.debug("_installPSFCPaths:{0}".format(backupPath))
-            for segPath in backupPath:
+            for idx, segPath in enumerate(backupPath):
+                self.logger.debug("going to install PSFC's stage {0}".format(stageCount))
                 if self._isInnerNFVISegPath(segPath):
                     # SFF inner routing
                     continue
                 dstIP = self.getSFCIStageDstIP(sfci, stageCount, pathID)
                 self.logger.debug("dstIP:{0}; stageCount:{1}".format(
                     dstIP, stageCount))
+                #  (('failureNPoPID', (0, 3, (7,))), ('repairMethod', 'increaseBackupPathPrioriy')):
+                #       [[(0, 1), (0, 6), (0, 2), (0, 10002)], [(1, 10002), (1, 2), (1, 4), (1, 1)]]
+                if PICA8_VIRTUAL_BRIDGE and idx == len(backupPath)-1:
+                    mergeSwitchID = self._getMergedSwitchIDInPrimaryPath4PSFC(key, primaryFP, backupPath)
+                    self.logger.debug("mergeSwitchID {0}".format(mergeSwitchID))
+                    segPath.append((segPath[0][0], mergeSwitchID))
                 for i in range(len(segPath)-1):
                     currentSwitchID = segPath[i][1]
                     if currentSwitchID >= SERVERID_OFFSET:
@@ -504,6 +515,14 @@ class NotViaNATAndPSFC(FRR):
                     self._installRouteOnPSFCPath(sfci, direction, key,
                         currentSwitchID, nextNodeID, inPortIndex, dstIP)
                 stageCount = stageCount + 1
+
+    def _getMergedSwitchIDInPrimaryPath4PSFC(self, key, primaryFP, backupFP):
+        (stageCount, switchID, Xp) = key[0][1]
+        self.logger.warning(key[0][1])
+        self.logger.debug("primaryFP: {0}".format(primaryFP))
+        self.logger.debug("stageCount: {0}".format(stageCount))
+        self.logger.debug("len of backupFP: {0}".format(backupFP))
+        return primaryFP[stageCount+len(backupFP)-1][-1][1]
 
     def _getPSFCPathSrcNodeID(self, primaryFP, key):
         keyDict = self._parseBackupPathKey(key)

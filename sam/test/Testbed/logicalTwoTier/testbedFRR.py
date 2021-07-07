@@ -366,3 +366,52 @@ class TestbedFRR(TestBase):
         queueName = self._messageAgent.genQueueName(
             SFF_CONTROLLER_QUEUE, self.zoneName)
         self._messageAgent.sendMsg(queueName, msg)
+
+    def analysePostFailureServerUtilization(self, solutions, failureServerID):
+        serverFlowNumDict = {}
+        cnt = 0
+        for solution in solutions.values():
+            cnt += 1
+            self.logger.warning("cnt {0}".format(cnt))
+            self.logger.debug("solution: {0}".format(solution))
+            serverIDList = self._getUsedServerIDLists(solution, failureServerID)
+            self.logger.warning("serverIDList: {0}".format(serverIDList))
+            for serverID in serverIDList:
+                if serverID not in serverFlowNumDict:
+                    serverFlowNumDict[serverID] = 0
+                serverFlowNumDict[serverID] += 1
+
+        self.logger.warning("serverFlowNumDict:{0}".format(serverFlowNumDict))
+
+    def _getUsedServerIDLists(self, solution, failureServerID):
+        primaryFP = solution.primaryForwardingPath[1]
+        serverIDList = []
+        useBackupFP = False
+        for idx, path in enumerate(primaryFP):
+            if idx == 0:
+                continue
+            else:
+                serverID = path[0][1]
+                if serverID == failureServerID:
+                    useBackupFP = True
+                    break
+                serverIDList.append(serverID)
+
+        # self.logger.warning("primaryPath: {0}".format(primaryFP))
+        if useBackupFP == True:
+            backupFP = self._getBackupPath(solution.backupForwardingPath[1], failureServerID)
+            for idx, path in enumerate(backupFP):
+                if idx == 0:
+                    continue
+                else:
+                    serverID = path[0][1]
+                    serverIDList.append(serverID)
+        return serverIDList
+
+    def _getBackupPath(self, backupFPsDict, failureServerID):
+        for key, backupFP in backupFPsDict.items():
+            if key[0] == ('failureNodeID', failureServerID):
+                return backupFP
+        else:
+            self.logger.error("backupFPsDict: {0}".format(backupFPsDict))
+            raise ValueError("Can't find backup forwarding path!")

@@ -17,7 +17,7 @@ class SSHAgent(object):
             username = sshUsrname, password = sshPassword)
 
     def runShellCommand(self,command):
-        stdin, stdout, stderr = self.ssh.exec_command(command)
+        stdin, stdout, stderr = self.ssh.exec_command(command, get_pty=True)
         return {'stdin':stdin, 'stdout':stdout, 'stderr':stderr}
 
     def runShellCommandWithSudo(self,command, timeout=None):

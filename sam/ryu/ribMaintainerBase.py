@@ -35,7 +35,7 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
                 groupID = self.genAvailableMiniNum4List(self.groupIDSets[dpid])
                 self.groupIDSets[dpid].append(groupID)
                 return groupID
-        elif CURRENT_ENV == PICA8_UFRR_LOGICAL_TWO_TIER_ENV:
+        elif CURRENT_ENV == PICA8_AS4610_UFRR_LOGICAL_TWO_TIER_ENV:
             if dpid in [1, 5, 6]:
                 self.maxGroupIDDict["picaSwitch1"] \
                     = self.maxGroupIDDict["picaSwitch1"] + 1
@@ -46,6 +46,10 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
                 return self.maxGroupIDDict["picaSwitch2"]
             else:
                 raise ValueError("Unknown dpid {0}".format(dpid))
+        elif CURRENT_ENV == PICA8_P3922_UFRR_LOGICAL_TWO_TIER_ENV:
+            self.maxGroupIDDict["picaSwitch1"] \
+                = self.maxGroupIDDict["picaSwitch1"] + 1
+            return self.maxGroupIDDict["picaSwitch1"]
         else:
             raise ValueError("Unknown envirnoment {0}".format(CURRENT_ENV))
 
@@ -56,7 +60,11 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
             self.logger.error("todo")
         elif CURRENT_ENV == MININET_ENV:
             self.groupIDSets[dpid].remove(groupID)
-        elif CURRENT_ENV == PICA8_UFRR_LOGICAL_TWO_TIER_ENV:
+        elif CURRENT_ENV == PICA8_AS4610_UFRR_LOGICAL_TWO_TIER_ENV:
+            pass
+            # TODO
+            self.logger.error("todo")
+        elif CURRENT_ENV == PICA8_P3922_UFRR_LOGICAL_TWO_TIER_ENV:
             pass
             # TODO
             self.logger.error("todo")
@@ -119,13 +127,15 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
                 return len(self.groupIDSets[dpid])
             else:
                 return 0
-        elif CURRENT_ENV == PICA8_UFRR_LOGICAL_TWO_TIER_ENV:
+        elif CURRENT_ENV == PICA8_AS4610_UFRR_LOGICAL_TWO_TIER_ENV:
             if dpid in [1, 5, 6]:
                 return self.maxGroupIDDict["picaSwitch1"]
             elif dpid in [2, 3, 4]:
                 return self.maxGroupIDDict["picaSwitch2"]
             else:
                 raise ValueError("Unknown dpid {0}".format(dpid))
+        elif CURRENT_ENV == PICA8_P3922_UFRR_LOGICAL_TWO_TIER_ENV:
+            return self.maxGroupIDDict["picaSwitch1"]
         else:
             raise ValueError("Unknown envirnoment {0}".format(CURRENT_ENV))
 

@@ -99,6 +99,15 @@ class BaseApp(app_manager.RyuApp):
     def _isDCNGateway(self,dpid):
         return self._switchConfs[dpid].switchType == "SWITCH_TYPE_DCNGATEWAY"
 
+    def _getPhysicalSwitchManagementIP(self, dpid):
+        return self._switchConfs[dpid].physicalSwitchManagementIP
+
+    def _getPhysicalSwitchUserName(self, dpid):
+        return self._switchConfs[dpid].physicalSwitchUserName
+
+    def _getPhysicalSwitchPassword(self, dpid):
+        return self._switchConfs[dpid].physicalSwitchPassword
+
     def _build_arp(self, opcode, src_mac, src_ip, dst_mac, dst_ip):
         e = ethernet.ethernet(dst=dst_mac, src=src_mac,
                                 ethertype=ether_types.ETH_TYPE_ARP)
