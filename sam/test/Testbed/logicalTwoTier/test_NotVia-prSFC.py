@@ -83,12 +83,14 @@ class TestNotViaPrSFCClass(TestbedFRR):
         self.killMediator()
 
     def test_addUniSFCI(self, setup_addUniSFCI):
+        self.logger.warning("Please disable NotVia function in notViaNATAndPSFC.py when test prSFC!")
+
         time.sleep(2)
         self.logger.info("You need to start ryu-manager manually!"
             "Then press any key to continue!")
         raw_input()
 
-        # self.addSFCCmdList = self.addSFCCmdList[:1]
+        # self.addSFCCmdList = self.addSFCCmdList[75:100]
 
         # self.logger.warning("addSFCCmdList {0}".format(self.addSFCCmdList))
 

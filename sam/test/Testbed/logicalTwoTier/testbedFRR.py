@@ -134,7 +134,7 @@ class TestbedFRR(TestBase):
         server = self._getTargetServer()
 
         # emulate the failure detection delay
-        time.sleep(0.03)
+        time.sleep(0.1)
 
         msg = SAMMessage(MSG_TYPE_NETWORK_CONTROLLER_CMD,
             Command(

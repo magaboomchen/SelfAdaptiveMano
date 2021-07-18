@@ -22,6 +22,16 @@ then
         notViaNATAndPSFC.py\
         ryuCommandAgentNotViaNATAndPSFC.py
         )
+elif [ "$1" == "pSFC" ]
+then
+    echo "ryu-manager start pSFC"
+    ryuApps=(\
+        L2.py\
+        westEastRouting.py\
+        northSouthRouting.py\
+        pSFC.py\
+        ryuCommandAgentPSFC.py
+        )
 elif [ "$1" == "e2ep" ]
 then
     echo "ryu-manager start E2E Protection"
