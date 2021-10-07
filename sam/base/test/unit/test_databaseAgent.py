@@ -29,6 +29,7 @@ class TestDatabaseAgentClass(object):
         cls.dbA = DatabaseAgent(host = "localhost",
             user = "dbAgent", passwd = "123")
         cls.dbA.connectDB(db = "Orchestrator")
+
         cls.REQUEST_UUID = uuid.uuid1()
         cls.testObject = {'key':1}
 

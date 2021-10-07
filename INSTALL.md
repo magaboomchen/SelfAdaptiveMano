@@ -78,6 +78,7 @@ systemctl start rabbitmq-server.service
 ```
 sudo apt-get install libmysqlclient-dev
 sudo python -m pip install MySQL-python
+sudo service mysql start
 ```
 #### Ubuntu 18.04
 ```
