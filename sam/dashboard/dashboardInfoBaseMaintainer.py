@@ -12,7 +12,7 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
         self.dbA.connectDB(db = "Dashboard")
         self._initZoneTable()
         self._initUserTable()
-        self._initRoutingSchemeTable()
+        self._initRoutingMorphicTable()
 
     def _initZoneTable(self):
         if not self.dbA.hasTable("Dashboard", "Zone"):
@@ -57,14 +57,15 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
                 ID INT UNSIGNED AUTO_INCREMENT,
                 USER_NAME VARCHAR(100) NOT NULL,
                 USER_UUID VARCHAR(36),
+                USER_TYPE VARCHAR(36) NOT NULL,
                 submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY ( ID )
                 """
                 )
 
-    def addUser(self, userName, userUUID):
+    def addUser(self, userName, userUUID, userType):
         if not self.hasUser(userUUID):
-            self.dbA.insert("User", " USER_NAME, USER_UUID ", "'{0}', '{1}'".format(userName, userUUID))
+            self.dbA.insert("User", " USER_NAME, USER_UUID, USER_TYPE ", "'{0}', '{1}', '{2}'".format(userName, userUUID, userType))
 
     def hasUser(self, userUUID):
         results = self.dbA.query("User", " USER_UUID ", " USER_UUID = '{0}'".format(
@@ -85,17 +86,26 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
             userList.append(userName[0])
         return userList
 
-    def _initRoutingSchemeTable(self):
+    def _initRoutingMorphicTable(self):
+        if not self.dbA.hasTable("Dashboard", "RoutingMorphic"):
+            self.dbA.createTable("RoutingMorphic",
+                """
+                ID INT UNSIGNED AUTO_INCREMENT,
+                ROUTING_NAME VARCHAR(100) NOT NULL,
+                PICKLE BLOB,
+                submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY ( ID )
+                """
+                )
+
+    def addRoutingMorphic(self, xxx):
         raise ValueError("Unimplementation!")
 
-    def addRoutingScheme(self, xxx):
-        pass
+    def hasRoutingMorphic(self, xxx):
+        raise ValueError("Unimplementation!")
 
-    def hasRoutingScheme(self, xxx):
-        pass
+    def delRoutingMorphic(self, xxx):
+        raise ValueError("Unimplementation!")
 
-    def delRoutingScheme(self, xxx):
-        pass
-
-    def getAllRoutingScheme(self, xxx):
-        pass
+    def getAllRoutingMorphic(self, xxx):
+        raise ValueError("Unimplementation!")
