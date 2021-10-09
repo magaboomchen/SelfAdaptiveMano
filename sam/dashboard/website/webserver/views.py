@@ -26,8 +26,8 @@ import smtplib
 import logging
 from email.mime.text import MIMEText
 from email.header import Header
-sys.path.append('D:\Projects\SelfAdaptiveMano\sam\dashboard')
-import dashboardInfoBaseMaintainer 
+sys.path.append('/mnt/d/SelfAdaptiveMano/sam/dashboard')
+# import dashboardInfoBaseMaintainer 
 #自动初始化了……？
 
 
@@ -135,8 +135,8 @@ def userList(req,id = 0):
 def showUserList(req,id = 0):
     if id != 1:
         # base.user.User.objetc.filter(userID = id).delete() 
-        sam.dashboard.dashboardInfoBaseMaintainer.delUser(id)
-    users = sam.dashboard.dashboardInfoBaseMaintainer.getAllUser()  #导入User表
+        dashboardInfoBaseMaintainer.delUser(id)
+    users = dashboardInfoBaseMaintainer.getAllUser()  #导入User表
     after_range_num = 2     #当前页前显示2页
     befor_range_num = 2     #当前页后显示2页
     try:    #如果请求的页码少于1或者类型错误，则跳转到第1页
