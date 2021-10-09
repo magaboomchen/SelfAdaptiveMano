@@ -26,6 +26,9 @@ import smtplib
 import logging
 from email.mime.text import MIMEText
 from email.header import Header
+sys.path.append('D:\Projects\SelfAdaptiveMano\sam\dashboard')
+import dashboardInfoBaseMaintainer 
+#自动初始化了……？
 
 
 def page_not_found(request):
@@ -126,6 +129,33 @@ def userList(req,id = 0):
     else:
         page_range = paginator.page_range[0:int(page) + befor_range_num]
     return render(req,'userlist.html',{'user_list':users_list,'page_range': page_range})
+
+
+@login_required
+def showUserList(req,id = 0):
+    if id != 1:
+        # base.user.User.objetc.filter(userID = id).delete() 
+        sam.dashboard.dashboardInfoBaseMaintainer.delUser(id)
+    users = sam.dashboard.dashboardInfoBaseMaintainer.getAllUser()  #导入User表
+    after_range_num = 2     #当前页前显示2页
+    befor_range_num = 2     #当前页后显示2页
+    try:    #如果请求的页码少于1或者类型错误，则跳转到第1页
+        page = int(req.GET.get("page",1))
+        if page < 1:
+            page = 1
+    except ValueError:
+        page = 1
+    paginator = Paginator(users,11)   #每页显示11
+    try:  # 跳转到请求页面，如果该页不存在或者超过则跳转到尾页
+        users_list = paginator.page(page)
+    except(EmptyPage, InvalidPage, PageNotAnInteger):
+        users_list = paginator.page(paginator.num_pages)
+    if page >= after_range_num:
+        page_range = paginator.page_range[page - after_range_num:page + befor_range_num]
+    else:
+        page_range = paginator.page_range[0:int(page) + befor_range_num]
+    return render(req,'userlist.html',{'user_list':users_list,'page_range': page_range})
+
 
 @login_required
 def userAdd(req):
