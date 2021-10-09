@@ -26,6 +26,10 @@ sudo python -m pip install docker
 ```
 sudo python -m pip install enum34 psutil pika netifaces getmac pytest networkx numpy pandas gurobipy ryu tinyrpc==0.8 ruamel matplotlib scapy grpcio grpcio-tools docker
 ```
+or
+```
+pip3 install enum34 psutil pika netifaces getmac pytest networkx numpy pandas gurobipy tinyrpc==0.8 ruamel matplotlib scapy grpcio grpcio-tools docker
+```
 
 ```
 apt-get install python-tk

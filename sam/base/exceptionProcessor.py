@@ -20,7 +20,7 @@ class ExceptionProcessor(object):
             "traceback.print_exc():{4}\n" \
             "traceback.format_exc():{5}".format(
                 str(Exception), str(ex), repr(ex),
-                ex.message, traceback.print_exc(),
+                message, traceback.print_exc(),
                 traceback.format_exc()
             )
         )
