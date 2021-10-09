@@ -23,8 +23,10 @@ import sys,os
 import json
 import subprocess
 import smtplib
+import logging
 from email.mime.text import MIMEText
 from email.header import Header
+
 
 def page_not_found(request):
     '''
@@ -42,6 +44,7 @@ def login(req):
     '''
     登录验证
     '''
+    print("login page")
     nowtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     if req.method == 'GET':
         uf = UserForm()
@@ -129,6 +132,8 @@ def userAdd(req):
     '''
     添加用户
     '''
+    # print("req.method: {0}".format(req.method))
+    # sys.stdout.flush()
     if req.method == "POST":
         user_add = RegisterForm(req.POST)
         if user_add.is_valid():

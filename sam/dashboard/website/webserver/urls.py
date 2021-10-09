@@ -5,7 +5,7 @@ import DjangoWeb.settings
 from webserver.views import login
 from django.contrib.auth import views as user_views
 
-app_name = 'webserver'
+# app_name = 'webserver'
 urlpatterns = [
     url(r'^$', views.login),
     url(r'^login/$',views.login),

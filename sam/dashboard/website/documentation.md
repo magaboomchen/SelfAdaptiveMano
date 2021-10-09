@@ -30,7 +30,6 @@ django封装了用户管理功能，可以直接调用
 admin的作用就是可以通过website添加object
 https://docs.djangoproject.com/en/1.10/intro/overview/#a-dynamic-admin-interface-it-s-not-just-scaffolding-it-s-the-whole-house
 
-
 # 解析httprequest的过程
 urls.py中存储了url表，每个表项由匹配域和行为组成。匹配域就是一个url的正则表达式，行为是一个app的urls.py文件路径。
 过程：

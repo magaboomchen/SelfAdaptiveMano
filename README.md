@@ -81,10 +81,10 @@ Base
 
 Dashboard
 * give requirements
-* ask Weilin Zhou to give a design
 * user can add new routing scheme, stores it to database, sends it to control layer's module
 * select routing/addressing scheme
 * validate SFCIID selection
+* add _initRoutingSchemeTable() and other functions in sam\dashboard\dashboardInfoBaseMaintainer.py
 
 Orchestrator
 * UFRR mapping: check vnfi in vnfiSequence, delete duplicate vnfi in same server

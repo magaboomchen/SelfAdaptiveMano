@@ -12,7 +12,7 @@ from django.conf.urls import handler404, handler500
 handler404 = "webserver.views.page_not_found"
 handler500 = "webserver.views.page_error"
 
-app_name = 'DjangoWeb'
+# app_name = 'DjangoWeb'
 urlpatterns = [
     # Examples:
     # url(r'^$', 'DjangoWeb.views.home', name='home'),

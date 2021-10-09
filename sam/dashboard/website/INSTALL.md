@@ -4,6 +4,8 @@ django1.9.5
 python3.6
 OS：Ubuntu 16.04
 
+PS：不需要SaltStack和Zabbix！
+
 # 安装mysql数据库
 ```
 sudo apt-get install libmysqlclient-dev
@@ -40,6 +42,20 @@ python3 ./manage.py runserver 0.0.0.0:8080
 
 #浏览器输入如下url打开管理页面
 http://127.0.0.1:8080/admin/
+
+# 安装部分SAM依赖模块
+```
+sudo python -m pip install enum34 psutil pika netifaces getmac pytest networkx numpy pandas gurobipy ryu tinyrpc==0.8 ruamel matplotlib scapy grpcio grpcio-tools docker
+apt-get install python-tk
+
+# Install mysql on Ubuntu 18.04
+sudo apt-get install build-essential python-dev libmysqlclient-dev
+sudo apt update
+sudo apt install mysql-server
+sudo mysql_secure_installation
+sudo apt-get install gcc python3-dev
+sudo apt-get install python-mysqldb
+```
 
 # 更新到Django3.2.8（放弃。可以说明dashboard不算编排系统，所以不考虑其安全性。）
 

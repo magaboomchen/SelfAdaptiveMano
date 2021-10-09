@@ -13,8 +13,14 @@ from sam.base.loggerConfigurator import LoggerConfigurator
 
 
 class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
-    def __init__(self, *args, **kwargs):
-        super(DCNInfoBaseMaintainer, self).__init__(*args, **kwargs)
+    def __init__(self, host, user, passwd):
+        super(DCNInfoBaseMaintainer, self).__init__()
+        self.addDatabaseAgent(host, user, passwd)
+        self.dbA.connectDB(db = "Measurer")
+        self._initServerTable()
+        self._initSwitchTable()
+        self._initLinkTable()
+
         self._servers = {}  # [zoneName][serverID] = {'server':server, 'Active':True/False, 'timestamp':time, 'status':none}
         self._switches = {} # [zoneName][switchID] = {'switch':switch, 'active':True/False, 'status':none}
         self._links = {}    # [zoneName][(srcID,dstID)] = {'link':link, 'active':True/False, 'status':none}
@@ -31,6 +37,87 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
         # logConfigur = LoggerConfigurator(__name__, './log',
         #     'DCNInfoBaseMaintainer.log', level='debug')
         # self.logger = logConfigur.getLogger()
+
+    def _initServerTable(self):
+        if not self.dbA.hasTable("Measurer", "Server"):
+            self.dbA.createTable("Server",
+                # server id(index), reserved CPU core, reserved mem, reserved NIC bandwidth, pickle
+                """
+                SERVER_ID SMALLINT,
+                RESERVED_CPU_CORE SMALLINT,
+                RESERVED_MEMORY FLOAT,
+                RESERVED_NIC_BANDWIDTH FLOAT,
+                PICKLE BLOB,
+                submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY ( REQUEST_UUID )
+                """
+                )
+
+    def hasServer(self, serverID, zoneName):
+        pass
+        # 把server，switch和link的get，del，has方法实现了，参考sam\dashboard\dashboardInfoBaseMaintainer.py
+
+    def addServer(self, server, zoneName):
+        pass
+
+    def delServer(self, server, zoneName):
+        pass
+
+    def getAllServer(self, server, zoneName):
+        pass
+
+    def _initSwitchTable(self):
+        if not self.dbA.hasTable("Measurer", "Switch"):
+            self.dbA.createTable("Switch",
+                # switch id(index), reserved FIB, pickle
+                """
+                SWITCH_ID SMALLINT,
+                RESERVED_TCAM SMALLINT,
+                SWITCH_TYPE VARCHAR(36),
+                PICKLE BLOB,
+                submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY ( REQUEST_UUID )
+                """
+                )
+
+    def hasSwitch(self, switchID, zoneName):
+        pass
+
+    def addSwitch(self, switch, zoneName):
+        pass
+
+    def delSwitch(self, switch, zoneName):
+        pass
+
+    def getAllSwitch(self, switch, zoneName):
+        pass
+
+    def _initLinkTable(self):
+        if not self.dbA.hasTable("Measurer", "Link"):
+            self.dbA.createTable("Link",
+                # link index(index), srcID, dstID, reserved bandwidth, pickle
+                """
+                LINK_ID SMALLINT,
+                SRC_ID SMALLINT,
+                DST_ID SMALLINT,
+                RESERVED_BANDWIDTH FLOAT,
+                PICKLE BLOB,
+                submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY ( REQUEST_UUID )
+                """
+                )
+
+    def hasLink(self, srcID, dstID, zoneName):
+        pass
+
+    def addLink(self, link, zoneName):
+        pass
+
+    def delLink(self, link, zoneName):
+        pass
+
+    def getAllLink(self, link, zoneName):
+        pass
 
     def updateServersInAllZone(self, servers):
         self._servers = servers
