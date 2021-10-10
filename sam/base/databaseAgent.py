@@ -5,7 +5,9 @@ import logging
 import uuid
 from datetime import datetime
 
-import MySQLdb
+# import MySQLdb
+import pymysql
+pymysql.install_as_MySQLdb()
 
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
