@@ -25,6 +25,9 @@ class RoutingMorphic(object):
     def addMorphicName(self, morphicName):
         self.morphicName = morphicName
 
+    def getMorphicName(self):
+        return self.morphicName
+
     def addIdentifierName(self, identifierName):
         self.identifierName = identifierName
 

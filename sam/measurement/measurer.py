@@ -30,7 +30,8 @@ class Measurer(object):
             'measurer.log', level='debug')
         self.logger = logConfigur.getLogger()
 
-        self._dib = DCNInfoBaseMaintainer("localhost", "dbAgent",
+        self._dib = DCNInfoBaseMaintainer()
+        self._dib.enableDataBase("localhost", "dbAgent",
             "123")
         self._dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent",
             "123")

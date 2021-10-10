@@ -4,27 +4,23 @@
 '''
 Usage:
 python3 -m pytest ./test_user.py -s --disable-warnings
+
+Inspect Mysql:
+mysql -u dbAgent -p
+use Dashboard;
+select * from User;
 '''
 
-import sys
-import time
 import uuid
-import random
-import logging
 
 import pytest
 
-from sam.base.command import *
-from sam.base.switch import *
-from sam.base.server import *
-from sam.base.link import *
-from sam.base.user import *
-from sam.dashboard.dashboardInfoBaseMaintainer import *
-
-logging.basicConfig(level=logging.INFO)
+from sam.base.user import CloudUser
+from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
+from sam.dashboard.test.dashboardTestBase import DashboardTestBase
 
 
-class TestUserClass(object):
+class TestUserClass(DashboardTestBase):
     @pytest.fixture(scope="function")
     def setup_userInfo(self):
         # setup
@@ -60,10 +56,10 @@ class TestUserClass(object):
         self.retrieveUserList()
 
     def startDjango(self):
-        print("You need start django manually!"
-            "Then press any key to continue!")
+        self.logger.info("You need start django manually!"
+            "Then press any key to continue insert data into Mysql Database!")
         input()
 
     def retrieveUserList(self):
-        print("Please check whether user list are displayed in explorer right.")
+        self.logger.info("Please check whether user list are displayed in explorer right.")
         input()
