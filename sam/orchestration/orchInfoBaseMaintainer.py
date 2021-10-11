@@ -1,12 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import pickle
-import base64
-
 from sam.base.sfc import *
 from sam.base.command import *
 from sam.base.request import *
+from sam.base.pickleIO import PickleIO
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 
 
@@ -20,14 +18,17 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         self._initSFCITable()
 
     def _initRequestTable(self):
+        # self.dbA.dropTable("Request")
         if not self.dbA.hasTable("Orchestrator", "Request"):
             self.dbA.createTable("Request",
-                # Request id(index), sfc id(index), sfci id(index), cmd id(index), pickle
                 """
-                REQUEST_UUID VARCHAR(36),
+                ID INT UNSIGNED AUTO_INCREMENT,
+                REQUEST_UUID VARCHAR(36) NOT NULL,
+                REQUEST_TYPE VARCHAR(36) NOT NULL,
                 SFC_UUID VARCHAR(36),
                 SFCIID SMALLINT,
                 CMD_UUID VARCHAR(36),
+                STATE TEXT NOT NULL,
                 PICKLE BLOB,
                 submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY ( REQUEST_UUID ),
@@ -37,32 +38,132 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                 """
                 )
 
+    def addRequest(self, request, sfcUUID=-1, sfciID=-1, cmdUUID=-1):
+        if not self.hasRequest(request.requestID):
+            fields = " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, PICKLE "
+            condition = "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}' ".format(request.requestID,
+                                                    request.requestType,
+                                                    sfcUUID, sfciID, cmdUUID,
+                                                    request.requestState,
+                                                    self.pIO.obj2Pickle(request))
+            self.dbA.insert("Request", fields, condition)
+
+    def hasRequest(self, requestUUID):
+        results = self.dbA.query("Request", " REQUEST_UUID ",
+                                    " REQUEST_UUID = '{0}'".format(requestUUID))
+        if results != ():
+            return True
+        else:
+            return False
+
+    def delRequest(self, requestUUID):
+        if self.hasRequest(requestUUID):
+            self.dbA.delete("Request", " REQUEST_UUID = '{0}'".format(requestUUID))
+
+    def getAllRequest(self):
+        fields = " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, PICKLE "
+        results = self.dbA.query("Request", fields)
+        requestTupleList = []
+        for requestTuple in results:
+            requestTupleList.append(requestTuple)
+        return requestTupleList
+
     def _initSFCTable(self):
+        self.dbA.dropTable("SFC")
         if not self.dbA.hasTable("Orchestrator", "SFC"):
             self.dbA.createTable("SFC",
-                # sfcUUID(index), SFCIID_LIST(text), State, pickle
                 """
-                SFC_UUID VARCHAR(36),
-                SFCIID_LIST TEXT,
-                STATE TEXT,
+                ID INT UNSIGNED AUTO_INCREMENT,
+                ZONE_NAME VARCHAR(100) NOT NULL,
+                SFC_UUID VARCHAR(36) NOT NULL,
+                SFCIID_LIST BLOB,
+                STATE TEXT NOT NULL,
                 PICKLE BLOB,
                 submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY ( SFC_UUID )
+                PRIMARY KEY ( ID )
                 """
                 )
+
+    def addSFC(self, sfc, sfciIDList=[], state=STATE_IN_PROCESSING):
+        if not self.hasSFC(sfc.sfcUUID):
+            fields = " ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE, PICKLE "
+            condition = "'{0}', '{1}', '{2}', '{3}', '{4}' ".format(sfc.attributes["zone"],
+                                                    sfc.sfcUUID,
+                                                    self.pIO.obj2Pickle(sfciIDList), state,
+                                                    self.pIO.obj2Pickle(sfc))
+            self.dbA.insert("SFC", fields, condition)
+
+    def hasSFC(self, sfcUUID):
+        results = self.dbA.query("SFC", " SFC_UUID ",
+                                    " SFC_UUID = '{0}'".format(sfcUUID))
+        if results != ():
+            return True
+        else:
+            return False
+
+    def delSFC(self, sfcUUID):
+        if self.hasSFC(sfcUUID):
+            self.dbA.delete("SFC", " SFC_UUID = '{0}'".format(sfcUUID))
+
+    def getAllSFC(self):
+        fields = " ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE, PICKLE "
+        results = self.dbA.query("SFC", fields)
+        sfcTupleList = []
+        for sfcTuple in results:
+            sfcTupleList.append(sfcTuple)
+        return sfcTupleList
 
     def _initSFCITable(self):
         if not self.dbA.hasTable("Orchestrator", "SFCI"):
             self.dbA.createTable("SFCI",
-                # SFCIID(index), State, pickle
                 """
+                ID INT UNSIGNED AUTO_INCREMENT,
                 SFCIID SMALLINT,
-                STATE TEXT,
+                VNFI_LIST BLOB,
+                STATE TEXT NOT NULL,
                 PICKLE BLOB,
+                ORCHESTRATION_TIME FLOAT,
                 submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY ( SFCIID )
+                PRIMARY KEY ( ID )
                 """
                 )
+
+    def addSFCI(self, sfci, state=STATE_IN_PROCESSING):
+        if not self.hasSFCI(sfci.sfciID):
+            fields = " SFCIID, VNFI_LIST, STATE, PICKLE "
+            condition = "'{0}', '{1}', '{2}' ".format(sfci.sfciID,
+                                                    sfci.vnfiSequence, state,
+                                                    self.pIO.obj2Pickle(sfci))
+            self.dbA.insert("SFCI", fields, condition)
+
+    def hasSFCI(self, sfciID):
+        results = self.dbA.query("SFCI", " SFCIID ",
+                                    " SFCIID = '{0}'".format(sfciID))
+        if results != ():
+            return True
+        else:
+            return False
+
+    def delSFCI(self, sfciID):
+        if self.hasSFCI(sfciID):
+            self.dbA.delete("SFCI", " SFCIID = '{0}'".format(sfciID))
+
+    def getAllSFCI(self):
+        fields = " SFCIID, STATE, PICKLE "
+        results = self.dbA.query("SFCI", fields)
+        sfciTupleList = []
+        for sfciTuple in results:
+            sfciTupleList.append(sfciTuple)
+        return sfciTupleList
+
+    def getAllVNFI(self):
+        sfciTupleList = self.getAllSFCI()
+        totalVNFIList = []
+        for sfciTuple in sfciTupleList:
+            sfci = sfciTuple[-1]
+            vnfiList = sfci.vnfiSequence
+            totalVNFIList.extend(vnfiList)
+        return totalVNFIList
 
     def addSFCRequestHandler(self, request, cmd):
         request.requestState = REQUEST_STATE_IN_PROCESSING
@@ -153,15 +254,15 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         return request
 
     def _encodeObject2Pickle(self, pObject):
-        return base64.b64encode(pickle.dumps(pObject,-1))
+        return PickleIO().obj2Pickle(pObject)
 
     def _decodePickle2Object(self, pickledStr):
-        return pickle.loads(base64.b64decode(pickledStr))
+        return PickleIO().pickle2Obj(pickledStr)
 
     def _addRequest2DB(self, request, cmd):
-        fields = " REQUEST_UUID, CMD_UUID, PICKLE, "
-        values = " '{0}', '{1}', '{2}', ".format(request.requestID,
-            cmd.cmdID, self._encodeObject2Pickle(request))
+        fields = " REQUEST_UUID, REQUEST_TYPE, CMD_UUID, PICKLE, "
+        values = " '{0}', '{1}', '{2}', '{3}', ".format(request.requestID,
+            cmd.cmdID, request.requestType, self._encodeObject2Pickle(request))
 
         if request.requestType == REQUEST_TYPE_ADD_SFC or \
             request.requestType == REQUEST_TYPE_DEL_SFC:
@@ -186,8 +287,11 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             )
 
     def _addSFC2DB(self, sfc):
-        self.dbA.insert("SFC", " SFC_UUID, SFCIID_LIST, STATE, PICKLE ",
-            " '{0}', '{1}', '{2}', '{3}' ".format(sfc.sfcUUID, "",
+        fields = " ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE, PICKLE "
+        self.dbA.insert("SFC", fields,
+            " '{0}', '{1}', '{2}', '{3}' ".format(
+                sfc.attributes["zone"],
+                sfc.sfcUUID, "",
             STATE_IN_PROCESSING, self._encodeObject2Pickle(sfc)))
 
     def _pruneSFC4DB(self, sfcUUID):

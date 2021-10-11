@@ -50,8 +50,8 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def delLink(self, link, zoneName):
         if self.hasLink(link.srcID, link.dstID, zoneName):
-            self.dbA.delete("Link",
-                " SRC_SWITCH_ID = '{0}' AND SRC_SWITCH_ID = '{1}' AND ZONE_NAME = '{2}'".format(link.srcID, link.dstID, zoneName))
+            condition = " SRC_SWITCH_ID = {0} AND DST_SWITCH_ID = {1} AND ZONE_NAME = '{2}'".format(link.srcID, link.dstID, zoneName)
+            self.dbA.delete("Link", condition)
 
     def getAllLink(self):
         results = self.dbA.query("Link", " ID, ZONE_NAME, SRC_SWITCH_ID, " \

@@ -18,18 +18,15 @@
 * Link List
     * ID, SRC_ID, DST_ID, BANDWIDTH, UTILIZATION
 * Request List
-    * ID, ZONE_NAME, 每个Request所属的CloudUser，部署状态
+    * ID, REQUEST_UUID, REQUEST_TYPE, SFC_UUID, STATE
 * SFC List
-    * ID, ZONE_NAME, SFC_UUID，USER_UUID
+    * ID, ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE
 * SFCI List
-    * ID, VNF Sequence，编排部署时间
-    * 逻辑转发路径：A->B->C
-    * 路径长度：3
-    * 编排部署时间：10
-    * SFCI服务质量状态：正常，超载，故障
-    * 正常运行的SFCI比例
-* VNFI List
-    * ID, ZONE_NAME, VNFI_UUID，VNFI种类
+    * ID, SFCIID, VNFI_LIST, STATE, ORCHESTRATION_TIME(编排部署时间)
+    * FORWARDING_PATH: 1->2->3
+* VNFI List (用test_sfci.py测试)
+    * ID, VNFI_UUID, VNFI_TYPE
+    * VNF_STATE: NORMAL/ABNORMAL/OVERLOAD
 
 ### 提供需要展示的数据
 * 在ppt中列出需要展示的数据实例

@@ -101,6 +101,7 @@ class DatabaseAgent(object):
 
     def delete(self, tableName, condition):
         sql = "DELETE FROM {0} WHERE {1}".format(tableName, condition)
+        self.logger.debug("delete, sql={0}".format(sql))
         try:
             self.cursor.execute(sql)
             self.db.commit()
