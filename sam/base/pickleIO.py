@@ -22,11 +22,7 @@ class PickleIO(object):
         df.close()
 
     def obj2Pickle(self, obj):
-<<<<<<< HEAD
         return base64.b64encode(pickle.dumps(obj,-1)).decode("utf-8")
-=======
-        return base64.b64encode(pickle.dumps(obj,-1))
->>>>>>> f1f1ad542f5ed9156586ff5e397a1f6b05b9b96b
 
     def pickle2Obj(self, pickleInstance):
         return pickle.loads(base64.b64decode(pickleInstance))

@@ -40,11 +40,7 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
             self.dbA.insert("Link",
                 " ZONE_NAME, SRC_SWITCH_ID, DST_SWITCH_ID, TOTAL_BANDWIDTH," \
                 " BANDWIDTH_UTILIZATION, PICKLE ",
-<<<<<<< HEAD
                 "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}' ".format(zoneName,
-=======
-                "'{0}'".format(zoneName,
->>>>>>> f1f1ad542f5ed9156586ff5e397a1f6b05b9b96b
                                 link.srcID,
                                 link.dstID,
                                 link.bandwidth,
@@ -54,19 +50,11 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def delLink(self, link, zoneName):
         if self.hasLink(link.srcID, link.dstID, zoneName):
-<<<<<<< HEAD
             condition = " SRC_SWITCH_ID = {0} AND DST_SWITCH_ID = {1} AND ZONE_NAME = '{2}'".format(link.srcID, link.dstID, zoneName)
             self.dbA.delete("Link", condition)
 
     def getAllLink(self):
         results = self.dbA.query("Link", " ID, ZONE_NAME, SRC_SWITCH_ID, " \
-=======
-            self.dbA.delete("Measurer",
-                " SRC_SWITCH_ID = '{0}' AND SRC_SWITCH_ID = '{1}' AND ZONE_NAME = '{2}'".format(link.srcID, link.dstID, zoneName))
-
-    def getAllLink(self):
-        results = self.dbA.query("Measurer", " ID, ZONE_NAME, SRC_SWITCH_ID, " \
->>>>>>> f1f1ad542f5ed9156586ff5e397a1f6b05b9b96b
                                 " DST_SWITCH_ID, TOTAL_BANDWIDTH, BANDWIDTH_UTILIZATION, PICKLE ")
         linkList = []
         for link in results:
