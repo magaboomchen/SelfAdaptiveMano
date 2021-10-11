@@ -30,7 +30,11 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
                 )
 
     def hasServer(self, serverUUID, zoneName):
+<<<<<<< HEAD
         results = self.dbA.query("Server", " SERVER_UUID ",
+=======
+        results = self.dbA.query("Measurer", " SERVER_UUID ",
+>>>>>>> f1f1ad542f5ed9156586ff5e397a1f6b05b9b96b
                     " SERVER_UUID = '{0}' AND ZONE_NAME = '{1}'".format(
                                                     serverUUID, zoneName))
         if results != ():
@@ -43,7 +47,11 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
             self.dbA.insert("Server",
                 " ZONE_NAME, SERVER_UUID, SERVER_TYPE, IP_ADDRESS, TOTAL_CPU_CORE, " \
                 " TOTAL_MEMORY, TOTAL_NIC_BANDWIDTH, PICKLE ",
+<<<<<<< HEAD
                 "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}' ".format(zoneName,
+=======
+                "'{0}'".format(zoneName,
+>>>>>>> f1f1ad542f5ed9156586ff5e397a1f6b05b9b96b
                                 server.getServerID(),
                                 server.getServerType(),
                                 server.getControlNICIP(),
@@ -59,7 +67,11 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
                 " ZONE_NAME = '{0}' AND SERVER_UUID = '{1}'".format(zoneName, serverUUID))
 
     def getAllServer(self):
+<<<<<<< HEAD
         results = self.dbA.query("Server",
+=======
+        results = self.dbA.query("Measurer",
+>>>>>>> f1f1ad542f5ed9156586ff5e397a1f6b05b9b96b
                         " ID, ZONE_NAME, SERVER_UUID, SERVER_TYPE, IP_ADDRESS, TOTAL_CPU_CORE, " \
                         " TOTAL_MEMORY, TOTAL_NIC_BANDWIDTH, PICKLE ")
         serverList = []

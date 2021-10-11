@@ -29,7 +29,11 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
                 )
 
     def hasSwitch(self, switchID, zoneName):
+<<<<<<< HEAD
         results = self.dbA.query("Switch", " SWITCH_ID ",
+=======
+        results = self.dbA.query("Measurer", " SWITCH_ID ",
+>>>>>>> f1f1ad542f5ed9156586ff5e397a1f6b05b9b96b
                     " SWITCH_ID = '{0}' AND ZONE_NAME = '{1}'".format(
                                                     switchID, zoneName))
         if results != ():
@@ -42,7 +46,11 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
             self.dbA.insert("Switch",
                 " ZONE_NAME, SWITCH_ID, SWITCH_TYPE, PROGRAMMABLE_FLAG," \
                 " TOTAL_TCAM, TCAM_USAGE, PICKLE ",
+<<<<<<< HEAD
                 " '{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}' ".format(zoneName,
+=======
+                "'{0}'".format(zoneName,
+>>>>>>> f1f1ad542f5ed9156586ff5e397a1f6b05b9b96b
                                 switch.switchID,
                                 switch.switchType,
                                 int(bool(switch.programmable)),
@@ -53,12 +61,20 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def delSwitch(self, switchID, zoneName):
         if self.hasSwitch(switchID, zoneName):
+<<<<<<< HEAD
             self.dbA.delete("Switch",
+=======
+            self.dbA.delete("Measurer",
+>>>>>>> f1f1ad542f5ed9156586ff5e397a1f6b05b9b96b
                 " SWITCH_ID = '{0}' AND ZONE_NAME = '{1}'".format(
                                                 switchID, zoneName))
 
     def getAllSwitch(self):
+<<<<<<< HEAD
         results = self.dbA.query("Switch",
+=======
+        results = self.dbA.query("Measurer",
+>>>>>>> f1f1ad542f5ed9156586ff5e397a1f6b05b9b96b
                     " ID, ZONE_NAME, SWITCH_ID, SWITCH_TYPE, PROGRAMMABLE_FLAG," \
                     " TOTAL_TCAM, TCAM_USAGE, PICKLE ")
         switchList = []
