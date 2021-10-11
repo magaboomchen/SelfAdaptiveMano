@@ -1,12 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-
-from sam.base.server import *
-from sam.base.link import *
 from sam.base.xibMaintainer import XInfoBaseMaintainer
-from sam.base.socketConverter import SocketConverter
 
 
 class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
@@ -14,10 +9,9 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
         super(LinkInfoBaseMaintainer, self).__init__()
         self._links = {}    # [zoneName][(srcID,dstID)] = {'link':link, 'active':True/False, 'status':none}
         self._linksReservedResources = {}
-        self._sc = SocketConverter()
-
 
     def _initLinkTable(self):
+        # self.dbA.dropTable("Link")
         if not self.dbA.hasTable("Measurer", "Link"):
             self.dbA.createTable("Link",
                 """
@@ -34,7 +28,7 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
                 )
 
     def hasLink(self, srcID, dstID, zoneName):
-        results = self.dbA.query("Measurer", " SRC_SWITCH_ID, DST_SWITCH_ID ",
+        results = self.dbA.query("Link", " SRC_SWITCH_ID, DST_SWITCH_ID ",
                     " SRC_SWITCH_ID = '{0}' AND DST_SWITCH_ID = '{1}' AND ZONE_NAME = '{2}'".format(srcID, dstID, zoneName))
         if results != ():
             return True
@@ -43,23 +37,25 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def addLink(self, link, zoneName):
         if not self.hasLink(link.srcID, link.dstID, zoneName):
-            self.dbA.insert("Measurer",
+            self.dbA.insert("Link",
                 " ZONE_NAME, SRC_SWITCH_ID, DST_SWITCH_ID, TOTAL_BANDWIDTH," \
-                " BANDWIDTH_UTILIZATION, ",
-                "'{0}'".format(zoneName,
+                " BANDWIDTH_UTILIZATION, PICKLE ",
+                "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}' ".format(zoneName,
                                 link.srcID,
                                 link.dstID,
                                 link.bandwidth,
-                                link.utilization
+                                link.utilization,
+                                self.pIO.obj2Pickle(link)
                 ))
 
     def delLink(self, link, zoneName):
-        if self.hasSwitch(link.srcID, link.dstID, zoneName):
-            self.dbA.delete("Measurer",
+        if self.hasLink(link.srcID, link.dstID, zoneName):
+            self.dbA.delete("Link",
                 " SRC_SWITCH_ID = '{0}' AND SRC_SWITCH_ID = '{1}' AND ZONE_NAME = '{2}'".format(link.srcID, link.dstID, zoneName))
 
     def getAllLink(self):
-        results = self.dbA.query("Measurer", " LINK_ID ")
+        results = self.dbA.query("Link", " ID, ZONE_NAME, SRC_SWITCH_ID, " \
+                                " DST_SWITCH_ID, TOTAL_BANDWIDTH, BANDWIDTH_UTILIZATION, PICKLE ")
         linkList = []
         for link in results:
             linkList.append(link)

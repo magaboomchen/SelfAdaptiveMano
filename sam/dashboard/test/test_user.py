@@ -11,6 +11,12 @@ use Dashboard;
 select * from User;
 '''
 
+import sys
+if sys.version < '3':
+    try:
+        input = raw_input
+    except NameError:
+        pass
 import uuid
 
 import pytest
@@ -26,12 +32,11 @@ class TestUserClass(DashboardTestBase):
         # setup
         self.dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent", "123")
         self.userNum = 2
-        userList = self.genUserList(self.userNum)
-        self.addUsers(userList)
+        self.userList = self.genUserList(self.userNum)
 
         yield
         # teardown
-        self.delUsers(userList)
+        self.delUsers(self.userList)
 
     def genUserList(self, userNum):
         userList = []
@@ -42,7 +47,7 @@ class TestUserClass(DashboardTestBase):
 
     def addUsers(self, userList):
         for user in userList:
-            self.dashib.addUser(user.userName, user.userID, user.userType)
+            self.dashib.addUser(user)
 
     def delUsers(self, userList):
         for user in userList:
@@ -51,6 +56,7 @@ class TestUserClass(DashboardTestBase):
     def test_addUsers(self, setup_userInfo):
         # exercise
         self.startDjango()
+        self.addUsers(self.userList)
 
         # verify
         self.retrieveUserList()

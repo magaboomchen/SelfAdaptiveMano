@@ -1,11 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-
 from sam.base.server import *
 from sam.base.link import *
-from sam.base.xibMaintainer import XInfoBaseMaintainer
 from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.measurement.serverInfoBaseMaintainer import ServerInfoBaseMaintainer
@@ -14,7 +11,6 @@ from sam.measurement.linkInfoBaseMaintainer import LinkInfoBaseMaintainer
 from sam.measurement.vnfiInfoBaseMaintainer import VNFIInfoBaseMaintainer
 
 # TODO : test
-# TODO 实现server，switch和link的get，del，has方法。参考sam\dashboard\dashboardInfoBaseMaintainer.py
 
 
 class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
@@ -27,10 +23,12 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
         # logConfigur = LoggerConfigurator(__name__, './log',
         #     'DCNInfoBaseMaintainer.log', level='debug')
         # self.logger = logConfigur.getLogger()
+        self._sc = SocketConverter()
 
     def enableDataBase(self, host, user, passwd):
         self.addDatabaseAgent(host, user, passwd)
-        self.dbA.connectDB(db = "Measurer")
+        if not self.dbA.isConnectingDB():
+            self.dbA.connectDB(db = "Measurer")
         self._initServerTable()
         self._initSwitchTable()
         self._initLinkTable()

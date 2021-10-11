@@ -11,6 +11,12 @@ use Dashboard;
 select * from Zone;
 '''
 
+import sys
+if sys.version < '3':
+    try:
+        input = raw_input
+    except NameError:
+        pass
 import pytest
 
 from sam.dashboard.dashboardInfoBaseMaintainer import *
@@ -23,12 +29,11 @@ class TestZoneClass(DashboardTestBase):
         # setup
         self.dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent", "123")
         self.zoneNum = 2
-        zoneNameList = self.genZoneNameList(self.zoneNum)
-        self.addZones(zoneNameList)
+        self.zoneNameList = self.genZoneNameList(self.zoneNum)
 
         yield
         # teardown
-        self.delZones(zoneNameList)
+        self.delZones(self.zoneNameList)
 
     def genZoneNameList(self, zoneNum):
         zoneNameList = []
@@ -48,6 +53,7 @@ class TestZoneClass(DashboardTestBase):
     def test_addZones(self, setup_zoneInfo):
         # exercise
         self.startDjango()
+        self.addZones(self.zoneNameList)
 
         # verify
         self.retrievezoneNameList()

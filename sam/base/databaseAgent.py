@@ -5,9 +5,9 @@ import logging
 import uuid
 from datetime import datetime
 
-# import MySQLdb
-import pymysql
-pymysql.install_as_MySQLdb()
+import MySQLdb
+# import pymysql
+# pymysql.install_as_MySQLdb()
 
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
@@ -23,6 +23,10 @@ class DatabaseAgent(object):
         self.user = user
         self.passwd = passwd
         self.cursor = None
+        self.db = None
+
+    def isConnectingDB(self):
+        return self.db != None
 
     def connectDB(self, db):
         self.db = MySQLdb.connect(host = self.host, user = self.user,
