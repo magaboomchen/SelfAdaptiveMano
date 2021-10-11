@@ -1,23 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-
-from sam.base.server import *
-from sam.base.link import *
 from sam.base.xibMaintainer import XInfoBaseMaintainer
-from sam.base.socketConverter import SocketConverter
 
 
 class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self):
         super(ServerInfoBaseMaintainer, self).__init__()
         self._servers = {}  # [zoneName][serverID] = {'server':server, 'Active':True/False, 'timestamp':time, 'status':none}
-
         self._serversReservedResources = {} # [zoneName][serverID] = {'bandwidth':bw, 'cores':cpu, 'memory':mem}
-
-        self._sc = SocketConverter()
-
 
     def _initServerTable(self):
         if not self.dbA.hasTable("Measurer", "Server"):
@@ -39,7 +30,8 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def hasServer(self, serverUUID, zoneName):
         results = self.dbA.query("Measurer", " SERVER_UUID ",
-                    " SERVER_UUID = '{0}' AND ZONE_NAME = '{1}'".format(serverUUID, zoneName))
+                    " SERVER_UUID = '{0}' AND ZONE_NAME = '{1}'".format(
+                                                    serverUUID, zoneName))
         if results != ():
             return True
         else:
@@ -49,14 +41,15 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
         if not self.hasServer(server.getServerID(), zoneName):
             self.dbA.insert("Measurer",
                 " ZONE_NAME, SERVER_UUID, SERVER_TYPE, IP_ADDRESS, TOTAL_CPU_CORE, " \
-                " TOTAL_MEMORY, TOTAL_NIC_BANDWIDTH ",
+                " TOTAL_MEMORY, TOTAL_NIC_BANDWIDTH, PICKLE ",
                 "'{0}'".format(zoneName,
                                 server.getServerID(),
                                 server.getServerType(),
                                 server.getControlNICIP(),
                                 server.getMaxCores(),
                                 server.getMaxMemory(),
-                                server.getNICBandwidth()
+                                server.getNICBandwidth(),
+                                self.pIO.obj2Pickle(server)
                 ))
 
     def delServer(self, serverUUID, zoneName):
@@ -65,7 +58,9 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
                 " ZONE_NAME = '{0}' AND SERVER_UUID = '{1}'".format(zoneName, serverUUID))
 
     def getAllServer(self):
-        results = self.dbA.query("Measurer", " SERVER_UUID ")
+        results = self.dbA.query("Measurer",
+                        " ID, ZONE_NAME, SERVER_UUID, SERVER_TYPE, IP_ADDRESS, TOTAL_CPU_CORE, " \
+                        " TOTAL_MEMORY, TOTAL_NIC_BANDWIDTH, PICKLE ")
         serverList = []
         for server in results:
             serverList.append(server)
@@ -93,7 +88,6 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
                 return True
         else:
             return False
-
 
     def reserveServerResources(self, serverID, reservedCores, reservedMemory,
             reservedBandwidth, zoneName):
@@ -174,5 +168,3 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
             # os.system("pause")
 
             return False
-
-

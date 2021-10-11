@@ -1,12 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-
-from sam.base.server import *
-from sam.base.link import *
 from sam.base.xibMaintainer import XInfoBaseMaintainer
-from sam.base.socketConverter import SocketConverter
 
 
 class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
@@ -14,8 +9,6 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
         super(LinkInfoBaseMaintainer, self).__init__()
         self._links = {}    # [zoneName][(srcID,dstID)] = {'link':link, 'active':True/False, 'status':none}
         self._linksReservedResources = {}
-        self._sc = SocketConverter()
-
 
     def _initLinkTable(self):
         if not self.dbA.hasTable("Measurer", "Link"):
@@ -45,21 +38,23 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
         if not self.hasLink(link.srcID, link.dstID, zoneName):
             self.dbA.insert("Measurer",
                 " ZONE_NAME, SRC_SWITCH_ID, DST_SWITCH_ID, TOTAL_BANDWIDTH," \
-                " BANDWIDTH_UTILIZATION, ",
+                " BANDWIDTH_UTILIZATION, PICKLE ",
                 "'{0}'".format(zoneName,
                                 link.srcID,
                                 link.dstID,
                                 link.bandwidth,
-                                link.utilization
+                                link.utilization,
+                                self.pIO.obj2Pickle(link)
                 ))
 
     def delLink(self, link, zoneName):
-        if self.hasSwitch(link.srcID, link.dstID, zoneName):
+        if self.hasLink(link.srcID, link.dstID, zoneName):
             self.dbA.delete("Measurer",
                 " SRC_SWITCH_ID = '{0}' AND SRC_SWITCH_ID = '{1}' AND ZONE_NAME = '{2}'".format(link.srcID, link.dstID, zoneName))
 
     def getAllLink(self):
-        results = self.dbA.query("Measurer", " LINK_ID ")
+        results = self.dbA.query("Measurer", " ID, ZONE_NAME, SRC_SWITCH_ID, " \
+                                " DST_SWITCH_ID, TOTAL_BANDWIDTH, BANDWIDTH_UTILIZATION, PICKLE ")
         linkList = []
         for link in results:
             linkList.append(link)

@@ -1,12 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-
-from sam.base.server import *
-from sam.base.link import *
 from sam.base.xibMaintainer import XInfoBaseMaintainer
-from sam.base.socketConverter import SocketConverter
 
 
 class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
@@ -14,8 +9,6 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
         super(SwitchInfoBaseMaintainer, self).__init__()
         self._switches = {} # [zoneName][switchID] = {'switch':switch, 'active':True/False, 'status':none}
         self._switchesReservedResources = {}
-        self._sc = SocketConverter()
-
 
     def _initSwitchTable(self):
         if not self.dbA.hasTable("Measurer", "Switch"):
@@ -36,7 +29,8 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def hasSwitch(self, switchID, zoneName):
         results = self.dbA.query("Measurer", " SWITCH_ID ",
-                    " SWITCH_ID = '{0}' AND ZONE_NAME = '{1}'".format(switchID, zoneName))
+                    " SWITCH_ID = '{0}' AND ZONE_NAME = '{1}'".format(
+                                                    switchID, zoneName))
         if results != ():
             return True
         else:
@@ -46,27 +40,31 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
         if not self.hasSwitch(switch.switchID, zoneName):
             self.dbA.insert("Measurer",
                 " ZONE_NAME, SWITCH_ID, SWITCH_TYPE, PROGRAMMABLE_FLAG," \
-                " TOTAL_TCAM, TCAM_USAGE, ",
+                " TOTAL_TCAM, TCAM_USAGE, PICKLE ",
                 "'{0}'".format(zoneName,
                                 switch.switchID,
                                 switch.switchType,
                                 switch.programmable,
                                 switch.tcamSize,
-                                switch.tcamUsage
+                                switch.tcamUsage,
+                                self.pIO.obj2Pickle(switch)
                 ))
 
     def delSwitch(self, switchID, zoneName):
         if self.hasSwitch(switchID, zoneName):
             self.dbA.delete("Measurer",
-                " SWITCH_ID = '{0}' AND ZONE_NAME = '{1}'".format(switchID, zoneName))
+                " SWITCH_ID = '{0}' AND ZONE_NAME = '{1}'".format(
+                                                switchID, zoneName))
 
     def getAllSwitch(self):
-        results = self.dbA.query("Measurer", " SWITCH_ID ")
+        results = self.dbA.query("Measurer",
+                    " ID, ZONE_NAME, SWITCH_ID, SWITCH_TYPE, PROGRAMMABLE_FLAG," \
+                    " TOTAL_TCAM, TCAM_USAGE, PICKLE ")
         switchList = []
         for switch in results:
             switchList.append(switch)
         return switchList
-
+                
     def updateSwitchesInAllZone(self, switches):
         self._switches = switches
 
@@ -140,5 +138,3 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
             return True
         else:
             return False
-
-

@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-
 from sam.base.server import *
 from sam.base.link import *
 from sam.base.xibMaintainer import XInfoBaseMaintainer
@@ -27,10 +25,12 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
         # logConfigur = LoggerConfigurator(__name__, './log',
         #     'DCNInfoBaseMaintainer.log', level='debug')
         # self.logger = logConfigur.getLogger()
+        self._sc = SocketConverter()
 
     def enableDataBase(self, host, user, passwd):
         self.addDatabaseAgent(host, user, passwd)
-        self.dbA.connectDB(db = "Measurer")
+        if not self.dbA.isConnectingDB():
+            self.dbA.connectDB(db = "Measurer")
         self._initServerTable()
         self._initSwitchTable()
         self._initLinkTable()

@@ -14,7 +14,6 @@ class VNFIInfoBaseMaintainer(XInfoBaseMaintainer):
         super(VNFIInfoBaseMaintainer, self).__init__()
         self._vnfis = {}
         self._vnfisReservedResources = {}
-        self._sc = SocketConverter()
 
     def updateVnfisInAllZone(self, vnfis):
         self._vnfis = vnfis

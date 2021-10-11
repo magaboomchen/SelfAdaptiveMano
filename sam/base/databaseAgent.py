@@ -23,6 +23,10 @@ class DatabaseAgent(object):
         self.user = user
         self.passwd = passwd
         self.cursor = None
+        self.db = None
+
+    def isConnectingDB(self):
+        return self.db != None
 
     def connectDB(self, db):
         self.db = MySQLdb.connect(host = self.host, user = self.user,
