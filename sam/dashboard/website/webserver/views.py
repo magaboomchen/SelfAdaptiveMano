@@ -29,19 +29,34 @@ from webserver.forms import UserForm,RegisterForm,AlterForm,hostadimnForm,monito
 from email.mime.text import MIMEText
 from email.header import Header
 
-from webserver.viewsModule.userViews import *
 
-def page_not_found(request):
-    '''
-    404报错页面
-    '''
-    return render(request,'404.html')
+from django.core.paginator import PageNotAnInteger,  InvalidPage, EmptyPage
+from django.shortcuts import render
 
-def page_error(request):
-    '''
-    500报错页面
-    '''
-    return render(request,'500.html')
+from django.contrib.auth.decorators import login_required
+
+from sam.dashboard.dashboardInfoBaseMaintainer import *
+from sam.dashboard.base.pageSlicer import *
+
+
+# class displayedUsersList(list):
+#     def __init__(self):
+#         pass
+
+#     def getPageNums(self,  totalPageNum, pageNum):
+#         self.totalPageNum = totalPageNum
+#         self.pageNum = pageNum
+#         if pageNum < totalPageNum:
+#             self.hasNextPage = True
+#             self.nextPageNum = pageNum + 1
+#         else:
+#             self.hasNextPage = False
+#         if pageNum == 1:
+#             self.hasPreviousPage = False
+#         else:
+#             self.hasPreviousPage = True
+#             self.previousPageNum = pageNum - 1
+#         return self
 
 def login(req):
     '''
@@ -89,68 +104,6 @@ def logout(req):
     auth.logout(req)
     return HttpResponseRedirect('/webserver/login/')
 
-def getServerIp(request):
-    '''
-    获取本机IP
-    '''
-    myname = socket.getfqdn(socket.gethostname())
-    myaddr = socket.gethostbyname(myname)
-    return render(request, 'menu.html', {'myaddr':myaddr, })
-
-def geThostIp(request):
-    '''
-    获取访问的IP
-    '''
-    if request.META.has_key('HTTP_X_FORWARDED_FOR'):
-        ip = request.META['HTTP_X_FORWARDED_FOR']
-    else:
-        ip = request.META['REMOTE_ADDR']
-    return render(request, 'menu.html', {'hostip':'192.168.1.1' })
-
-@login_required
-def userList(req,id = 0):
-    '''
-    用户列表
-    '''
-    print("id: {0}".format(id))
-    # if id != 1:
-    #     # User.objects.filter(id = id).delete()
-    #     userObj = User.objects
-    #     tmp = userObj.filter(id = id)
-    #     print(tmp)
-    #     print(type(tmp))
-    #     tmp2 = tmp.delete()
-    #     print(tmp2)
-    users = User.objects.all()  #导入User表
-    print("users:{0}".format(users))
-    afterRangeNum = 2     #当前页前显示2页
-    befor_range_num = 2     #当前页后显示2页
-    try:    #如果请求的页码少于1或者类型错误，则跳转到第1页
-        page = int(req.GET.get("page",1))
-        if page < 1:
-            page = 1
-    except ValueError:
-        page = 1
-    paginator = Paginator(users,11)   #每页显示11
-    try:  # 跳转到请求页面，如果该页不存在或者超过则跳转到尾页
-        users_list = paginator.page(page)
-        print('a')
-        print(page)
-    except(EmptyPage, InvalidPage, PageNotAnInteger):
-        users_list = paginator.page(paginator.num_pages)
-        print('b')
-        print(page)
-    if page >= afterRangeNum:
-        pageRange = paginator.pageRange[page - afterRangeNum:page + befor_range_num]
-        print('c')
-        print(pageRange,type(pageRange))
-    else:
-        print('d')
-        pageRange = paginator.pageRange[0:int(page) + befor_range_num]
-    print(render(req,'userlist.html',{'user_list':users_list,'pageRange': pageRange}))
-    print(type(render(req,'userlist.html',{'user_list':users_list,'pageRange': pageRange})))
-    return render(req,'userlist.html',{'user_list':users_list,'pageRange': pageRange})
-
 @login_required
 def userAdd(req):
     '''
@@ -180,7 +133,6 @@ def userAdd(req):
     else:
         user_add = RegisterForm()
     return render(req, 'useradd.html', {'add_FormInput': user_add})
-
 @login_required
 def userAlter(req, id):
     '''
@@ -308,109 +260,9 @@ def serverList(request,id = 0):
         return HttpResponse(json.dumps(response_data))
     return render(request, 'serverlist.html')
 
-def getHostInfo():
-    ### salt调用 ###
-    # local = salt.client.LocalClient() # api
-    ### 目标主机指定 ###
-    tgt = "*"
-    ### 获取grains，disk信息 ###
-    # grains = local.cmd(tgt,"grains.items") # api
-    (status, grains_return) = subprocess.getstatusoutput(" ssh 127.0.0.1 'salt \"*\" --out raw grains.items' ")
-    grains = eval(grains_return.replace('}}\n{','},'))
-    # diskusage = local.cmd(tgt,"disk.usage") # api
-    (status, diskusage) = subprocess.getstatusoutput(" ssh 127.0.0.1 'salt \"*\" --out raw disk.usage' ")
-    diskusage = eval(diskusage.replace('}}\n{', '},'))
-    for i in grains.keys():
-        try:
-            ###去掉127.0.0.1这个地址
-            hostname = grains[i]["nodename"]
-            ip = str(grains[i]["ipv4"]).strip('[]')
-            ip = ip.replace("\'", "")
-            ip = ip.replace("127.0.0.1,", "")
-            ip = ip.replace(", 127.0.0.1", "")
-            ip = ''.join(ip.split())
-            ip = ip.replace(",", " | ")
-            mem = grains[i]["mem_total"] / 1024 + 1
-            num_cpu = grains[i]["num_cpus"]
-            OS = grains[i]["os"] + ' ' + grains[i]["osrelease"]
-            cpu = grains[i]["cpu_model"]
-            virtual1 = grains[i]["virtual"]
-            status = '连接'
-            #磁盘容量
-            if "/" not in diskusage[i]:
-                disk_used = " "
-                disk_capacity = " "
-            else:
-                disk_used = float(diskusage[i]["/"]["1K-blocks"]) / 1048576
-                disk_capacity = diskusage[i]["/"]["capacity"]
-            if "/data" not in diskusage[i]:
-                disk_data_used = " "
-                disk_data_capacity = " "
-            else:
-                disk_data_used = float(diskusage[i]["/data"]["1K-blocks"]) / 1048576
-                disk_data_capacity = diskusage[i]["/data"]["capacity"]
 
-            if "/data1" not in diskusage[i]:
-                disk_data1_used = " "
-                disk_data1_capacity = " "
-            else:
-                disk_data1_used = float(diskusage[i]["/data"]["1K-blocks"]) / 1048576
-                disk_data1_capacity = diskusage[i]["/data"]["capacity"]
-
-                ####获取网卡mac信息####
-            # if "eth0" not in grains[i]["hwaddr_interfaces"]:
-            #     eth0=" "
-            # else:
-            #     eth0=grains[i]["hwaddr_interfaces"]["eth0"]
-            #
-            # if "eth1" not in grains[i]["hwaddr_interfaces"]:
-            #     eth1=" "
-            # else:
-            #     eth1=grains[i]["hwaddr_interfaces"]["eth1"]
-
-            grains[i]["hwaddr_interfaces"].pop("lo")
-            hostnames = hostinfo.objects.values_list('hostname', flat=True) # 获取资产列表中的主机名
-            if hostnames:
-                if hostname in hostnames:  ##判断主机是否已经入库，如果存在输出提示，不存在则入库
-                    hostinfoupdate = hostinfo.objects.get(hostname=hostname)
-                    hostinfoupdate.hostname = hostname
-                    hostinfoupdate.IP = ip
-                    hostinfoupdate.Mem = mem
-                    hostinfoupdate.CPU = cpu
-                    hostinfoupdate.CPUS = num_cpu
-                    hostinfoupdate.OS = OS
-                    hostinfoupdate.virtual1 = virtual1
-                    hostinfoupdate.status = status
-                    hostinfoupdate.save()
-                else:
-                    hostinfoadd = hostinfo()
-                    hostinfoadd.hostname = hostname
-                    hostinfoadd.IP = ip
-                    hostinfoadd.Mem = mem
-                    hostinfoadd.CPU = cpu
-                    hostinfoadd.CPUS = num_cpu
-                    hostinfoadd.OS = OS
-                    hostinfoadd.virtual1 = virtual1
-                    hostinfoadd.status = status
-                    hostinfoadd.save()
-            else:
-                hostinfoadd = hostinfo()
-                hostinfoadd.hostname = hostname
-                hostinfoadd.IP = ip
-                hostinfoadd.Mem = mem
-                hostinfoadd.CPU = cpu
-                hostinfoadd.CPUS = num_cpu
-                hostinfoadd.OS = OS
-                hostinfoadd.virtual1 = virtual1
-                hostinfoadd.status = status
-                hostinfoadd.save()
-        except:
-            hostnames = hostinfo.objects.values_list('hostname', flat=True) # 获取资产列表中的主机名
-            if i in hostnames:
-                hostinfoupstatus = hostinfo.objects.get(hostname=i)
-                hostinfoupstatus.status = '未连接'
-                hostinfoupstatus.save()
-            continue
+           
+            
 
 @login_required
 def hostAdmin(request):
@@ -448,38 +300,6 @@ def hostAdmin(request):
         }
         return render(request, 'hostadmin.html', result_dict)
 
-def loginZabbix():
-    '''
-    登录zabbix获取session
-    '''
-    # url and url header
-    # zabbix的api 地址，用户名，密码，这里修改为自己实际的参数
-    zabbix_url = "http://www.mykurol.com:8088/api_jsonrpc.php"
-    # zabbix_header = {"Content-Type": "application/json"}
-    zabbix_user = "Admin"
-    zabbix_pass = "******"
-
-    # 用户认证信息的部分，最终得到一个sessionID
-    # 这里是生成一个json格式的数据，用户名和密码
-    auth_data = json.dumps({
-        "jsonrpc": "2.0",
-        "method": "user.login",
-        "params":
-            {
-                "user": zabbix_user,
-                "password": zabbix_pass
-            },
-        "id": 0
-    })
-
-    # 认证，获取session
-    auth_value = auth_data.encode('utf-8')
-    auth_request = urllib.request.Request(zabbix_url, auth_value)
-    auth_request.add_header('Content-Type', 'application/json')
-    auth_response = urllib.request.urlopen(auth_request)
-    auth_result = json.loads(auth_response.read())
-    session = auth_result['result']  # 获取到的有效用户身份验证令牌
-    return [zabbix_url,session]
 
 @login_required
 def getMonitor(request):
@@ -551,167 +371,7 @@ def getMonitor(request):
     }
     return render(request, 'Monitor.html', monitor_dict)
 
-def dataHandle(*args,**kw):
-    '''
-    数据处理返回结果
-    '''
-    login_zabbix_relist = loginZabbix()
-    zabbix_url = login_zabbix_relist[0]
-    session = login_zabbix_relist[1]
-    if len(kw.keys()) == 1:
-        data = kw["func"](session=session)
-    else:
-            data = kw["func"](session=session,parameter=kw["hostid"])
-    value = data.encode('utf-8')
-    host_request = urllib.request.Request(zabbix_url, value)
-    host_request.add_header('Content-Type', 'application/json')
-    response = urllib.request.urlopen(host_request)
-    result = json.loads(response.read())
-    return result['result']
 
-def getZabbixHost(*args,**b):
-    '''
-    检索zabbix监控主机的提交data
-    '''
-    zabbix_host_data = json.dumps({
-        "jsonrpc": "2.0",
-        "method": "host.get",
-        "params": {
-            "output": [
-                "hostid",
-                "host"
-            ],
-            "selectInterfaces": [
-                "interfaceid",
-                "ip"
-            ]
-        },
-        "id": 2,
-        "auth": b["session"]
-    })
-    return zabbix_host_data
-
-def getZabbixitem(*args,**b):
-    '''
-    获取itemids的提交data
-    '''
-    itemids_data = json.dumps({
-        "jsonrpc" : "2.0",
-        "method": "item.get",
-        "params": {
-            "output": "itemids",
-            "hostids": b["parameter"],
-            "search": {
-                "key_": "system.cpu.util"
-           }
-        },
-        "auth": b["session"],
-        "id": 0
-    })
-    return itemids_data
-
-def getZabbixCPUutil(*args, **b):
-    '''
-    获取CPU使用率
-    '''
-    cpu_data = json.dumps({
-        "jsonrpc": "2.0",
-        "method": "item.get",
-        "params": {
-            "output": "extend",
-            "hostids": b["parameter"],
-            "search": {
-                "key_": "system.cpu.util" # 只查询key_包含“system.cpu.util”字段的item
-            }
-        },
-        "auth": b["session"],
-        "id": 2
-    })
-    return cpu_data
-
-def getZabbixCPUload(*args, **b):
-    '''
-    获取CPU负载
-    '''
-    cpu_data = json.dumps({
-        "jsonrpc": "2.0",
-        "method": "item.get",
-        "params": {
-            "output": "extend",
-            "hostids": b["parameter"],
-            "search": {
-                "key_": "system.cpu.load"  # 只查询key_包含“system.cpu.load”字段的item
-            }
-        },
-        "auth": b["session"],
-        "id": 2
-    })
-    return cpu_data
-
-def getfsused(*args, **b):
-    '''
-    获取磁盘使用量
-    '''
-    cpu_data = json.dumps({
-        "jsonrpc": "2.0",
-        "method": "item.get",
-        "params": {
-            "output": "extend",
-            "hostids": b["parameter"],
-            "search": {
-                "key_": "vfs.fs.size[/,used]"  # 只查询key_包含“vfs.fs.size[/,used]”字段的item
-            }
-        },
-        "auth": b["session"],
-        "id": 2
-    })
-    return cpu_data
-
-def getfsfree(*args, **b):
-    '''
-    获取磁盘空闲
-    '''
-    cpu_data = json.dumps({
-        "jsonrpc": "2.0",
-        "method": "item.get",
-        "params": {
-            "output": "extend",
-            "hostids": b["parameter"],
-            "search": {
-                "key_": "vfs.fs.size[/, free]"
-            }
-        },
-        "auth": b["session"],
-        "id": 2
-    })
-    return cpu_data
-
-def sendemail():
-    '''
-    邮件发送
-    '''
-    mail_host = "smtp.163.com"  # 设置smtp服务器，例如：smtp.163.com
-    mail_user = "kurolz@163.com"  # 用户名
-    mail_pass = "******"  # 密码
-
-    sender = 'kurolz@163.com'  # 发送邮件
-    receivers = 'kurolz@163.com'  # 接收邮件
-
-    message = MIMEText('This is a Python Test Text')
-    message['From'] = sender
-    message['To'] = receivers
-
-    subject = 'One Test Mail'
-    message['Subject'] = Header(subject)
-
-    try:
-        smtpObj = smtplib.SMTP()
-        smtpObj.connect(mail_host, 25)  # 25 为 SMTP 端口号
-        smtpObj.login(mail_user, mail_pass)
-        smtpObj.sendmail(sender, receivers, message.as_string())
-        print("邮件发送成功")
-    except smtplib.SMTPException as e:
-        print("Error: 无法发送邮件" + str(e))
 
 @login_required
 def serverAdd(request):
@@ -756,5 +416,95 @@ def serverAdd(request):
         "result": result
     }
     return  render(request, "serveradd.html", re)
+
+def getPageNumFromHttpRequest(req):
+    try:    #如果请求的页码少于1或者类型错误，则跳转到第1页
+        page = int(req.GET.get("page",1))
+        if page < 1:
+            page = 1
+    except ValueError:
+        page = 1
+    return page
+
+def getAllUsersFromDataBase():
+    dibm = DashboardInfoBaseMaintainer('localhost', 'dbAgent', '123')
+    users = dibm.getAllUser()
+    # users = dibm.getUserQuerySet()  #导入User表
+    return users
+
+def getAllUsersDictList(allUsersList):
+    allUsersDictList = []
+    userID=1
+    for userTuple in allUsersList:
+        userDict = {}
+        userDict['name'] = userTuple[0]
+        userDict['UUID'] = userTuple[1]
+        userDict['type'] = userTuple[2]
+        userDict['ID'] = userID
+        allUsersDictList.append(userDict)
+        userID = userID + 1
+    return allUsersDictList
+
+
+def getDisplayedUsersListOnPage(users, pageNum):
+    ps = PageSlicer()
+    try:
+        displayedUsers = ps.getObjsListOnPage(users, pageNum)
+    except(EmptyPage, InvalidPage, PageNotAnInteger):
+        displayedUsers = ps.getObjsListOnPage(users, 1)
+    return displayedUsers
+
+def getPageRange(page, totalPageNum):
+    afterRangeNum = 2     #当前页前显示2页
+    beforeRangeNum = 2     #当前页后显示2页
+    if page >= afterRangeNum and page <= totalPageNum - beforeRangeNum:
+        pageRange = range(page - afterRangeNum,page + beforeRangeNum +1)
+    elif page < afterRangeNum and page <= totalPageNum - beforeRangeNum:
+        pageRange = range(1, page + beforeRangeNum + 1)
+    elif page >= afterRangeNum and page > totalPageNum - beforeRangeNum:
+        pageRange = range(page - afterRangeNum, totalPageNum + 1)
+    else:
+        pageRange = range(1, totalPageNum+1)
+    return pageRange
+
+def getTotalPageNum(usersNum, usersNumPerPage):
+    if usersNum%usersNumPerPage == 0:
+        totalPageNum = int((usersNum - usersNum%usersNumPerPage)/usersNumPerPage)
+    else:
+        totalPageNum = int((usersNum - usersNum%usersNumPerPage)/usersNumPerPage+1)
+    return totalPageNum
+
+def getNumDict(pageNum, totalPagenum):
+    numDict={}
+    if pageNum == 1:
+        numDict['hasPreviousPage'] = False
+    else:
+        numDict['hasPreviousPage'] = True
+    if pageNum == totalPagenum:
+        numDict['hasNextPage'] = False
+    else:
+        numDict['hasNextPage'] = True
+    numDict['nextPageNum'] = pageNum + 1
+    numDict['previousPageNum'] = pageNum -1
+    return numDict
+        
+
+@login_required
+def showUserList(req):
+    usersTupleList = getAllUsersFromDataBase()
+    users = getAllUsersDictList(usersTupleList)
+    pageNum = getPageNumFromHttpRequest(req)
+    displayedUsersList = getDisplayedUsersListOnPage(users, pageNum)
+    usersNumPerPage = 11
+    totalPageNum = getTotalPageNum(len(users), usersNumPerPage)
+    pageRange = getPageRange(pageNum, totalPageNum)
+    numDict=getNumDict(pageNum, totalPageNum)
+    return render(req, 'userlist.html',
+            {'displayedUsersList' : displayedUsersList,
+                'pageRange': pageRange,
+                'totalPageNum': totalPageNum,
+                'pageNum': pageNum,
+                'numDict': numDict
+            })
 
 

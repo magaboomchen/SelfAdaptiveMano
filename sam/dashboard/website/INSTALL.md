@@ -19,7 +19,7 @@ mysql> create database Dashboard;
 mysql> create database Measurer;
 mysql> create database Orchestrator;
 
-#sudo apt-get install python3-pymysql
+sudo apt-get install python3-pymysql
 sudo apt install python-setuptools
 ```
 
