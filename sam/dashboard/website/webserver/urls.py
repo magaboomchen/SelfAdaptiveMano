@@ -2,7 +2,8 @@ from django.conf.urls import *
 from webserver import views
 import DjangoWeb.settings
 # from .views import  UserInfoUpdate
-from webserver.views import login
+# from webserver.views import login
+from webserver.viewsModule import userViews
 from django.contrib.auth import views as user_views
 
 # app_name = 'webserver'
@@ -11,9 +12,12 @@ urlpatterns = [
     url(r'^login/$',views.login),
     url(r'^index/$',views.index),
     url(r'^logout/$',views.logout),
-    url(r'^user/list/$',views.userList, name='user_list'),
-    url(r'^user/list/(.+)/$',views.userList,name='user_listcc'),
-    url(r'^user/$',views.userList),
+    # url(r'^user/list/$',views.showUserList, name='user_list'),
+    # url(r'^user/list/(.+)/$',views.showUserList,name='user_listcc'),
+    # url(r'^user/$',views.showUserList),
+    url(r'^user/list/$',userViews.showUserList, name='user_list'),
+    url(r'^user/list/(.+)/$',userViews.showUserList,name='user_listcc'),
+    url(r'^user/$',userViews.showUserList),
     url(r'^user/add/$',views.userAdd),
     url(r'^user/alter/(.+)/$',views.userAlter,name='user_alter'),
     # url(r'^user/alter/(?P<id>\d+)/$', UserInfoUpdate.userAlter,name='user_alter'),

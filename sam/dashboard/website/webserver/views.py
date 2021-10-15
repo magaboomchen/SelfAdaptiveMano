@@ -1,12 +1,21 @@
 # Create your views here.
 # -*- coding: utf-8 -*-
+
+import time
+import socket
+import platform
+import sys,os
+import json
+import subprocess
+import smtplib
+import logging
+
 from django.http import HttpResponse
 from django.core.paginator import PageNotAnInteger, Paginator, InvalidPage, EmptyPage
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth
-from webserver.forms import UserForm,RegisterForm,AlterForm,hostadimnForm,monitorForm,autoArrMinionForm
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.db.models import Count,Sum
@@ -16,20 +25,11 @@ from django.core import serializers
 from .models import monitorMemory
 import urllib.request, urllib.parse, urllib.request
 import salt.client
-import time
-import socket
-import platform
-import sys,os
-import json
-import subprocess
-import smtplib
-import logging
+from webserver.forms import UserForm,RegisterForm,AlterForm,hostadimnForm,monitorForm,autoArrMinionForm
 from email.mime.text import MIMEText
 from email.header import Header
-sys.path.append('/mnt/d/SelfAdaptiveMano/sam/dashboard')
-# import dashboardInfoBaseMaintainer 
-#自动初始化了……？
 
+from webserver.viewsModule.userViews import *
 
 def page_not_found(request):
     '''
@@ -53,15 +53,19 @@ def login(req):
         uf = UserForm()
         return render(req,'login.html', {'uf': uf,'nowtime': nowtime })
     else:
+        print("not GET")
         uf = UserForm(req.POST)
         if uf.is_valid():
             username = req.POST.get('username', '')
             password = req.POST.get('password', '')
-            user = auth.authenticate(username = username,password = password)
+            user = auth.authenticate(username = username, password = password)
             if user is not None and user.is_active:
+                print("A")
                 auth.login(req,user)
                 return render(req, 'index.html')
             else:
+                print("B")
+                print(user, user.is_active)
                 return render(req, 'login.html', {'uf': uf,'nowtime': nowtime, 'password_is_wrong': True})
         else:
             return render(req, 'login.html', {'uf': uf,'nowtime': nowtime })
@@ -108,10 +112,18 @@ def userList(req,id = 0):
     '''
     用户列表
     '''
-    if id != 1:
-        User.objects.filter(id = id).delete()
+    print("id: {0}".format(id))
+    # if id != 1:
+    #     # User.objects.filter(id = id).delete()
+    #     userObj = User.objects
+    #     tmp = userObj.filter(id = id)
+    #     print(tmp)
+    #     print(type(tmp))
+    #     tmp2 = tmp.delete()
+    #     print(tmp2)
     users = User.objects.all()  #导入User表
-    after_range_num = 2     #当前页前显示2页
+    print("users:{0}".format(users))
+    afterRangeNum = 2     #当前页前显示2页
     befor_range_num = 2     #当前页后显示2页
     try:    #如果请求的页码少于1或者类型错误，则跳转到第1页
         page = int(req.GET.get("page",1))
@@ -122,40 +134,22 @@ def userList(req,id = 0):
     paginator = Paginator(users,11)   #每页显示11
     try:  # 跳转到请求页面，如果该页不存在或者超过则跳转到尾页
         users_list = paginator.page(page)
+        print('a')
+        print(page)
     except(EmptyPage, InvalidPage, PageNotAnInteger):
         users_list = paginator.page(paginator.num_pages)
-    if page >= after_range_num:
-        page_range = paginator.page_range[page - after_range_num:page + befor_range_num]
+        print('b')
+        print(page)
+    if page >= afterRangeNum:
+        pageRange = paginator.pageRange[page - afterRangeNum:page + befor_range_num]
+        print('c')
+        print(pageRange,type(pageRange))
     else:
-        page_range = paginator.page_range[0:int(page) + befor_range_num]
-    return render(req,'userlist.html',{'user_list':users_list,'page_range': page_range})
-
-
-@login_required
-def showUserList(req,id = 0):
-    if id != 1:
-        # base.user.User.objetc.filter(userID = id).delete() 
-        dashboardInfoBaseMaintainer.delUser(id)
-    users = dashboardInfoBaseMaintainer.getAllUser()  #导入User表
-    after_range_num = 2     #当前页前显示2页
-    befor_range_num = 2     #当前页后显示2页
-    try:    #如果请求的页码少于1或者类型错误，则跳转到第1页
-        page = int(req.GET.get("page",1))
-        if page < 1:
-            page = 1
-    except ValueError:
-        page = 1
-    paginator = Paginator(users,11)   #每页显示11
-    try:  # 跳转到请求页面，如果该页不存在或者超过则跳转到尾页
-        users_list = paginator.page(page)
-    except(EmptyPage, InvalidPage, PageNotAnInteger):
-        users_list = paginator.page(paginator.num_pages)
-    if page >= after_range_num:
-        page_range = paginator.page_range[page - after_range_num:page + befor_range_num]
-    else:
-        page_range = paginator.page_range[0:int(page) + befor_range_num]
-    return render(req,'userlist.html',{'user_list':users_list,'page_range': page_range})
-
+        print('d')
+        pageRange = paginator.pageRange[0:int(page) + befor_range_num]
+    print(render(req,'userlist.html',{'user_list':users_list,'pageRange': pageRange}))
+    print(type(render(req,'userlist.html',{'user_list':users_list,'pageRange': pageRange})))
+    return render(req,'userlist.html',{'user_list':users_list,'pageRange': pageRange})
 
 @login_required
 def userAdd(req):

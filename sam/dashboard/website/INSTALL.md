@@ -16,7 +16,7 @@ mysql> GRANT ALL PRIVILEGES ON * . * TO 'dbAgent'@'localhost';
 mysql> create database mysitedb;
 mysql> create database OBServer;
 
-sudo apt-get install python3-pymysql
+#sudo apt-get install python3-pymysql
 sudo apt install python-setuptools
 ```
 
