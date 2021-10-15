@@ -1,17 +1,19 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from sam.base.pickleIO import PickleIO
 from sam.base.databaseAgent import DatabaseAgent
 
 
 class XInfoBaseMaintainer(object):
     def __init__(self):
-        pass
+        self.dbA = None
+        self.pIO = PickleIO()
 
     def addDatabaseAgent(self, host, user, passwd):
         self.dbA = DatabaseAgent(host, user, passwd)
 
-    def genAvailableMiniNum4List(self,numList):
+    def genAvailableMiniNum4List(self, numList):
         if numList == []:
             return 0
         numList.sort()
@@ -25,4 +27,4 @@ class XInfoBaseMaintainer(object):
             if nextNum-currentNum > 1:
                 return currentNum + 1
         else:
-            return maxNum+1
+            return maxNum + 1

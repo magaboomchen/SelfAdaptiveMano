@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.databaseAgent import DatabaseAgent
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 
 
@@ -17,7 +16,6 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
     def _initZoneTable(self):
         if not self.dbA.hasTable("Dashboard", "Zone"):
             self.dbA.createTable("Zone",
-                # id(pKey), Zone_Name
                 """
                 ID INT UNSIGNED AUTO_INCREMENT,
                 ZONE_NAME VARCHAR(100) NOT NULL,
@@ -31,8 +29,8 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
             self.dbA.insert("Zone", " ZONE_NAME ", "'{0}'".format(zoneName))
 
     def hasZone(self, zoneName):
-        results = self.dbA.query("Zone", " ZONE_NAME ", " ZONE_NAME = '{0}'".format(
-            zoneName))
+        results = self.dbA.query("Zone", " ZONE_NAME ",
+                                    " ZONE_NAME = '{0}'".format(zoneName))
         if results != ():
             return True
         else:
@@ -46,30 +44,35 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
         results = self.dbA.query("Zone", " ZONE_NAME ")
         zoneList = []
         for zone in results:
-            zoneList.append(zone[0])
+            zoneList.append(zone)
         return zoneList
 
     def _initUserTable(self):
+        # self.dbA.dropTable("User")
         if not self.dbA.hasTable("Dashboard", "User"):
             self.dbA.createTable("User",
-                # id(pKey), Zone_Name
                 """
                 ID INT UNSIGNED AUTO_INCREMENT,
                 USER_NAME VARCHAR(100) NOT NULL,
                 USER_UUID VARCHAR(36),
                 USER_TYPE VARCHAR(36) NOT NULL,
+                PICKLE BLOB,
                 submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY ( ID )
                 """
                 )
 
-    def addUser(self, userName, userUUID, userType):
-        if not self.hasUser(userUUID):
-            self.dbA.insert("User", " USER_NAME, USER_UUID, USER_TYPE ", "'{0}', '{1}', '{2}'".format(userName, userUUID, userType))
+    def addUser(self, user):
+        if not self.hasUser(user.userID):
+            self.dbA.insert("User", " USER_NAME, USER_UUID, USER_TYPE, PICKLE ",
+                                "'{0}', '{1}', '{2}', '{3}'".format(user.userName,
+                                                    user.userID,
+                                                    user.userType,
+                                                    self.pIO.obj2Pickle(user)))
 
     def hasUser(self, userUUID):
-        results = self.dbA.query("User", " USER_UUID ", " USER_UUID = '{0}'".format(
-            userUUID))
+        results = self.dbA.query("User", " USER_UUID ",
+                                    " USER_UUID = '{0}'".format(userUUID))
         if results != ():
             return True
         else:
@@ -80,32 +83,50 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
             self.dbA.delete("User", " USER_UUID = '{0}'".format(userUUID))
 
     def getAllUser(self):
-        results = self.dbA.query("User", " USER_NAME ")
+        results = self.dbA.query("User", " USER_NAME, USER_UUID, USER_TYPE, PICKLE ")
         userList = []
         for userName in results:
-            userList.append(userName[0])
+            userList.append(userName)
         return userList
 
     def _initRoutingMorphicTable(self):
+        self.dbA.dropTable("RoutingMorphic")
         if not self.dbA.hasTable("Dashboard", "RoutingMorphic"):
             self.dbA.createTable("RoutingMorphic",
                 """
                 ID INT UNSIGNED AUTO_INCREMENT,
-                ROUTING_NAME VARCHAR(100) NOT NULL,
+                ROUTING_MORPHIC_NAME VARCHAR(100),
                 PICKLE BLOB,
                 submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY ( ID )
                 """
                 )
 
-    def addRoutingMorphic(self, xxx):
-        raise ValueError("Unimplementation!")
+    def addRoutingMorphic(self, routingMorphic):
+        routingMorphicName = routingMorphic.getMorphicName()
+        if not self.hasRoutingMorphic(routingMorphicName):
+            self.dbA.insert("RoutingMorphic", " ROUTING_MORPHIC_NAME, PICKLE ",
+                            "'{0}', '{1}'".format(routingMorphicName,
+                                    self.pIO.obj2Pickle(routingMorphic)))
 
-    def hasRoutingMorphic(self, xxx):
-        raise ValueError("Unimplementation!")
+    def hasRoutingMorphic(self, routingMorphicName):
+        results = self.dbA.query("RoutingMorphic", " ROUTING_MORPHIC_NAME ",
+            " ROUTING_MORPHIC_NAME = '{0}'".format(routingMorphicName))
+        if results != ():
+            return True
+        else:
+            return False
 
-    def delRoutingMorphic(self, xxx):
-        raise ValueError("Unimplementation!")
+    def delRoutingMorphic(self, routingMorphic):
+        routingMorphicName = routingMorphic.getMorphicName()
+        if self.hasRoutingMorphic(routingMorphicName):
+            self.dbA.delete("RoutingMorphic",
+                                " ROUTING_MORPHIC_NAME = '{0}'".format(
+                                    routingMorphicName))
 
-    def getAllRoutingMorphic(self, xxx):
-        raise ValueError("Unimplementation!")
+    def getAllRoutingMorphic(self):
+        results = self.dbA.query("RoutingMorphic", " ROUTING_MORPHIC_NAME ")
+        rmList = []
+        for rm in results:
+            rmList.append(rm)
+        return rmList

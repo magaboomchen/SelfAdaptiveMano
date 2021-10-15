@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
 import pickle
 import base64
 
@@ -21,3 +20,9 @@ class PickleIO(object):
         df = open(filePath, 'wb')
         pickle.dump(obj, df)
         df.close()
+
+    def obj2Pickle(self, obj):
+        return base64.b64encode(pickle.dumps(obj,-1)).decode("utf-8")
+
+    def pickle2Obj(self, pickleInstance):
+        return pickle.loads(base64.b64decode(pickleInstance))

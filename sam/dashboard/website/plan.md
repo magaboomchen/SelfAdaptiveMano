@@ -5,25 +5,28 @@
 根据sam/INSTALL.md来安装
 
 ## 数据展示（静态数据->动态数据）
-* 用户列表
-    * 用户名，uuid
-* zone列表
-    * zone_name, zone_id
-* 服务器列表
-    * zone_name, 服务器id，ip地址（其他路由模态识别符），CPU利用率
-* 交换机列表
-    * zone_name, 交换机id，邻居交换机id list，链路状态信息（流量大小）
-* SFC列表
-    * zone_name, SFC uuid，用户id
-* SFCI列表
-    * VNF Sequence，逻辑转发路径，路径长度，编排部署时间
-        * 路径：A->B->C； 路径长度：3； 编排部署时间：10s
-    * SFCI服务质量状态：正常，超载，故障
-    * 正常运行的SFCI比例
-* VNFI列表
-    * zone_name, VNFI uuid，VNFI种类
-* Request列表
-    * 每个Request所属的user，部署状态, zone_name
+* CloudUser List
+    * ID, USER_NAME, USER_UUID, USER_TYPE
+* Zone List
+    * ID, ZONE_NAME
+* RoutingMorphic List
+    * ID, ROUTING_MORPHIC_NAME
+* Server List
+    * ID, ZONE_NAME, SERVER_ID, IPV4, CPU_UTILIZATION
+* Switch List
+    * ID, ZONE_NAME, SWITCH_ID
+* Link List
+    * ID, SRC_ID, DST_ID, BANDWIDTH, UTILIZATION
+* Request List
+    * ID, REQUEST_UUID, REQUEST_TYPE, SFC_UUID, STATE
+* SFC List
+    * ID, ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE
+* SFCI List
+    * ID, SFCIID, VNFI_LIST, STATE, ORCHESTRATION_TIME(编排部署时间)
+    * FORWARDING_PATH: 1->2->3
+* VNFI List (用test_sfci.py测试)
+    * ID, VNFI_UUID, VNFI_TYPE
+    * VNF_STATE: NORMAL/ABNORMAL/OVERLOAD
 
 ### 提供需要展示的数据
 * 在ppt中列出需要展示的数据实例
