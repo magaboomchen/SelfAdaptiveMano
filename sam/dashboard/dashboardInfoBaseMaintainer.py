@@ -45,6 +45,7 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
         zoneList = []
         for zone in results:
             zoneList.append(zone)
+        print('aabb')
         return zoneList
 
     def _initUserTable(self):
@@ -90,7 +91,7 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
         return userList
 
     def _initRoutingMorphicTable(self):
-        self.dbA.dropTable("RoutingMorphic")
+        # self.dbA.dropTable("RoutingMorphic")
         if not self.dbA.hasTable("Dashboard", "RoutingMorphic"):
             self.dbA.createTable("RoutingMorphic",
                 """
@@ -125,8 +126,12 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
                                     routingMorphicName))
 
     def getAllRoutingMorphic(self):
+        print('6')
         results = self.dbA.query("RoutingMorphic", " ROUTING_MORPHIC_NAME ")
+        print(results,'22')
         rmList = []
         for rm in results:
+            print(rm,'1')
             rmList.append(rm)
+        print(rmList,'over2')
         return rmList

@@ -491,6 +491,7 @@ def getNumDict(pageNum, totalPagenum):
 
 @login_required
 def showUserList(req):
+
     usersTupleList = getAllUsersFromDataBase()
     users = getAllUsersDictList(usersTupleList)
     pageNum = getPageNumFromHttpRequest(req)
@@ -499,6 +500,7 @@ def showUserList(req):
     totalPageNum = getTotalPageNum(len(users), usersNumPerPage)
     pageRange = getPageRange(pageNum, totalPageNum)
     numDict=getNumDict(pageNum, totalPageNum)
+    # return render(req,'404.html')
     return render(req, 'userlist.html',
             {'displayedUsersList' : displayedUsersList,
                 'pageRange': pageRange,
@@ -507,4 +509,164 @@ def showUserList(req):
                 'numDict': numDict
             })
 
+def getAllZonesFromDataBase():
+    dibm = DashboardInfoBaseMaintainer('localhost', 'dbAgent', '123')
+    zones = dibm.getAllZone()
+    # print(zones)
+    # print(type(zones))
+    return zones
+
+
+def getAllZonesDictList(allZonesList):
+    allZonesDictList = []
+    for zoneTuple in allZonesList:
+        zoneDict = {}
+        zoneDict['name'] = zoneTuple[0]
+        allZonesDictList.append(zoneDict)
+    return allZonesDictList
+
+
+def getDisplayedZonesListOnPage(zones, pageNum):
+    ps = PageSlicer()
+    try:
+        displayedzones = ps.getObjsListOnPage(zones, pageNum)
+    except(EmptyPage, InvalidPage, PageNotAnInteger):
+        displayedzones = ps.getObjsListOnPage(zones, 1)
+    return displayedzones
+
+def getPageRange(page, totalPageNum):
+    afterRangeNum = 2     #当前页前显示2页
+    beforeRangeNum = 2     #当前页后显示2页
+    if page >= afterRangeNum and page <= totalPageNum - beforeRangeNum:
+        pageRange = range(page - afterRangeNum,page + beforeRangeNum +1)
+    elif page < afterRangeNum and page <= totalPageNum - beforeRangeNum:
+        pageRange = range(1, page + beforeRangeNum + 1)
+    elif page >= afterRangeNum and page > totalPageNum - beforeRangeNum:
+        pageRange = range(page - afterRangeNum, totalPageNum + 1)
+    else:
+        pageRange = range(1, totalPageNum+1)
+    return pageRange
+
+def getTotalPageNum(zonesNum, zonesNumPerPage):
+    if zonesNum%zonesNumPerPage == 0:
+        totalPageNum = int((zonesNum - zonesNum%zonesNumPerPage)/zonesNumPerPage)
+    else:
+        totalPageNum = int((zonesNum - zonesNum%zonesNumPerPage)/zonesNumPerPage+1)
+    return totalPageNum
+
+def getNumDict(pageNum, totalPagenum):
+    numDict={}
+    if pageNum == 1:
+        numDict['hasPreviousPage'] = False
+    else:
+        numDict['hasPreviousPage'] = True
+    if pageNum == totalPagenum:
+        numDict['hasNextPage'] = False
+    else:
+        numDict['hasNextPage'] = True
+    numDict['nextPageNum'] = pageNum + 1
+    numDict['previousPageNum'] = pageNum -1
+    return numDict
+        
+
+@login_required
+def showZoneList(req):
+
+    zonesTupleList = getAllZonesFromDataBase()
+    zones = getAllZonesDictList(zonesTupleList)
+    pageNum = getPageNumFromHttpRequest(req)
+    displayedZonesList = getDisplayedZonesListOnPage(zones, pageNum)
+    zonesNumPerPage = 11
+    totalPageNum = getTotalPageNum(len(zones), zonesNumPerPage)
+    pageRange = getPageRange(pageNum, totalPageNum)
+    numDict=getNumDict(pageNum, totalPageNum)
+    # return render(req,'404.html')
+    return render(req, 'zonelist.html',
+            {'displayedZonesList' : displayedZonesList,
+                'pageRange': pageRange,
+                'totalPageNum': totalPageNum,
+                'pageNum': pageNum,
+                'numDict': numDict
+            })
+
+def getAllRoutingMorphicsFromDataBase():
+    dibm = DashboardInfoBaseMaintainer('localhost', 'dbAgent', '123')
+    RoutingMorphics = dibm.getAllRoutingMorphic()
+    print(RoutingMorphics,'a')
+    return RoutingMorphics
+
+
+def getAllRoutingMorphicsDictList(allRoutingMorphicsList):
+    allRoutingMorphicsDictList = []
+    for RoutingMorphicTuple in allRoutingMorphicsList:
+        RoutingMorphicDict = {}
+        RoutingMorphicDict['name'] = RoutingMorphicTuple[0]
+        allRoutingMorphicsDictList.append(RoutingMorphicDict)
+        print(allRoutingMorphicsDictList,'b')
+    return allRoutingMorphicsDictList
+
+
+def getDisplayedRoutingMorphicsListOnPage(RoutingMorphics, pageNum):
+    ps = PageSlicer()
+    try:
+        displayedRoutingMorphics = ps.getObjsListOnPage(RoutingMorphics, pageNum)
+    except(EmptyPage, InvalidPage, PageNotAnInteger):
+        displayedRoutingMorphics = ps.getObjsListOnPage(RoutingMorphics, 1)
+    return displayedRoutingMorphics
+
+def getPageRange(page, totalPageNum):
+    afterRangeNum = 2     #当前页前显示2页
+    beforeRangeNum = 2     #当前页后显示2页
+    if page >= afterRangeNum and page <= totalPageNum - beforeRangeNum:
+        pageRange = range(page - afterRangeNum,page + beforeRangeNum +1)
+    elif page < afterRangeNum and page <= totalPageNum - beforeRangeNum:
+        pageRange = range(1, page + beforeRangeNum + 1)
+    elif page >= afterRangeNum and page > totalPageNum - beforeRangeNum:
+        pageRange = range(page - afterRangeNum, totalPageNum + 1)
+    else:
+        pageRange = range(1, totalPageNum+1)
+    return pageRange
+
+def getTotalPageNum(RoutingMorphicsNum, RoutingMorphicsNumPerPage):
+    if RoutingMorphicsNum%RoutingMorphicsNumPerPage == 0:
+        totalPageNum = int((RoutingMorphicsNum - RoutingMorphicsNum%RoutingMorphicsNumPerPage)/RoutingMorphicsNumPerPage)
+    else:
+        totalPageNum = int((RoutingMorphicsNum - RoutingMorphicsNum%RoutingMorphicsNumPerPage)/RoutingMorphicsNumPerPage+1)
+    return totalPageNum
+
+def getNumDict(pageNum, totalPagenum):
+    numDict={}
+    if pageNum == 1:
+        numDict['hasPreviousPage'] = False
+    else:
+        numDict['hasPreviousPage'] = True
+    if pageNum == totalPagenum:
+        numDict['hasNextPage'] = False
+    else:
+        numDict['hasNextPage'] = True
+    numDict['nextPageNum'] = pageNum + 1
+    numDict['previousPageNum'] = pageNum -1
+    return numDict
+        
+
+@login_required
+def showRoutingMorphicList(req):
+    
+    RoutingMorphicsTupleList = getAllRoutingMorphicsFromDataBase()
+    RoutingMorphics = getAllRoutingMorphicsDictList(RoutingMorphicsTupleList)
+    pageNum = getPageNumFromHttpRequest(req)
+    displayedRoutingMorphicsList = getDisplayedRoutingMorphicsListOnPage(RoutingMorphics, pageNum)
+    RoutingMorphicsNumPerPage = 11
+    totalPageNum = getTotalPageNum(len(RoutingMorphics), RoutingMorphicsNumPerPage)
+    pageRange = getPageRange(pageNum, totalPageNum)
+    numDict=getNumDict(pageNum, totalPageNum)
+    # return render(req,'404.html')
+    print(RoutingMorphics,pageNum,pageRange)
+    return render(req, 'routingmorphiclist.html',
+            {'displayedRoutingMorphicsList' : displayedRoutingMorphicsList,
+                'pageRange': pageRange,
+                'totalPageNum': totalPageNum,
+                'pageNum': pageNum,
+                'numDict': numDict
+            })
 
