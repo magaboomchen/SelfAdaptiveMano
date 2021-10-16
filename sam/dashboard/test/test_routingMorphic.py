@@ -70,5 +70,7 @@ class TestRoutingMorphicClass(DashboardTestBase):
         input()
 
     def retrieveRoutingMorphicList(self):
+        rmList = self.dashib.getAllRoutingMorphic()
+        print(rmList)
         self.logger.info("Please check whether routingMorphic list are displayed in explorer right.")
         input()

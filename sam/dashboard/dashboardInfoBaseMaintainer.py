@@ -90,7 +90,7 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
         return userList
 
     def _initRoutingMorphicTable(self):
-        self.dbA.dropTable("RoutingMorphic")
+        # self.dbA.dropTable("RoutingMorphic")
         if not self.dbA.hasTable("Dashboard", "RoutingMorphic"):
             self.dbA.createTable("RoutingMorphic",
                 """
