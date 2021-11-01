@@ -10,6 +10,7 @@ ipv6MorphicDictTemplate = {
             "headerOffsets": 14,
             "headerBits": 320,
             "etherType": 0x86DD,
+            "nshProtocolNumber": 0x02,
             "ipProto": 0x29,
             "metadataDict": {
                 "srcIP": {

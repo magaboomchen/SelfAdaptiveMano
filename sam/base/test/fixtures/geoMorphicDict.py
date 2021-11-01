@@ -10,6 +10,7 @@ geoMorphicDictTemplate = {
             "headerOffsets": 14,
             "headerBits": 128,
             "etherType": 0xA000,
+            "nshProtocolNumber": 0x07,
             "ipProto": 0x90,
             "metadataDict": {
                 "longitude": {

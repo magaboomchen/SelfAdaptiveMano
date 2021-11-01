@@ -10,6 +10,7 @@ idMorphicDictTemplate = {
             "headerOffsets": 14,
             "headerBits": 128,
             "etherType": 0xA002,
+            "nshProtocolNumber": 0x06,
             "ipProto": 0x92,
             "metadataDict": {
                 "id": {

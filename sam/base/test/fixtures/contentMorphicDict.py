@@ -10,6 +10,7 @@ contentMorphicDictTemplate = {
             "headerOffsets": 14,
             "headerBits": 128,
             "etherType": 0xA001,
+            "nshProtocolNumber": 0x08,
             "ipProto": 0x91,
             "metadataDict": {
                 "url": {
