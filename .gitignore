@@ -66,6 +66,7 @@ samSimulation/
 sam/base/rabbitMQConf.conf
 results/
 results*/
+.idea
 
 # Backup Files
 *~
@@ -78,3 +79,6 @@ results*/
 
 # Test-related
 *_init_TEST
+
+# Others
+.DS_Store
