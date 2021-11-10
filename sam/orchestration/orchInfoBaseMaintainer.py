@@ -9,16 +9,18 @@ from sam.base.xibMaintainer import XInfoBaseMaintainer
 
 
 class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
-    def __init__(self, host, user, passwd):
+    def __init__(self, host, user, passwd, reInitialTable=False):
         super(OrchInfoBaseMaintainer, self).__init__()
         self.addDatabaseAgent(host, user, passwd)
         self.dbA.connectDB(db = "Orchestrator")
+        self.reInitialTable = reInitialTable
         self._initRequestTable()
         self._initSFCTable()
         self._initSFCITable()
 
     def _initRequestTable(self):
-        # self.dbA.dropTable("Request")
+        if self.reInitialTable:
+            self.dbA.dropTable("Request")
         if not self.dbA.hasTable("Orchestrator", "Request"):
             self.dbA.createTable("Request",
                 """
@@ -31,7 +33,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                 STATE TEXT NOT NULL,
                 PICKLE BLOB,
                 submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY ( REQUEST_UUID ),
+                PRIMARY KEY ( ID ),
                 INDEX SFC_UUID_INDEX (SFC_UUID(36)),
                 INDEX SFCIID_INDEX (SFCIID),
                 INDEX CMD_UUID_INDEX (CMD_UUID(36))
@@ -40,8 +42,8 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def addRequest(self, request, sfcUUID=-1, sfciID=-1, cmdUUID=-1):
         if not self.hasRequest(request.requestID):
-            fields = " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, PICKLE "
-            condition = "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}' ".format(request.requestID,
+            fields = " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, STATE, PICKLE "
+            condition = "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}' ".format(request.requestID,
                                                     request.requestType,
                                                     sfcUUID, sfciID, cmdUUID,
                                                     request.requestState,
@@ -69,7 +71,8 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         return requestTupleList
 
     def _initSFCTable(self):
-        self.dbA.dropTable("SFC")
+        if self.reInitialTable:
+            self.dbA.dropTable("SFC")
         if not self.dbA.hasTable("Orchestrator", "SFC"):
             self.dbA.createTable("SFC",
                 """
@@ -84,7 +87,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                 """
                 )
 
-    def addSFC(self, sfc, sfciIDList=[], state=STATE_IN_PROCESSING):
+    def addSFC(self, sfc, sfciIDList=None, state=STATE_IN_PROCESSING):
         if not self.hasSFC(sfc.sfcUUID):
             fields = " ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE, PICKLE "
             condition = "'{0}', '{1}', '{2}', '{3}', '{4}' ".format(sfc.attributes["zone"],
@@ -114,6 +117,8 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         return sfcTupleList
 
     def _initSFCITable(self):
+        if self.reInitialTable:
+            self.dbA.dropTable("SFCI")
         if not self.dbA.hasTable("Orchestrator", "SFCI"):
             self.dbA.createTable("SFCI",
                 """
@@ -128,12 +133,14 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                 """
                 )
 
-    def addSFCI(self, sfci, state=STATE_IN_PROCESSING):
+    def addSFCI(self, sfci, state=STATE_IN_PROCESSING, orchTime=-1):
         if not self.hasSFCI(sfci.sfciID):
-            fields = " SFCIID, VNFI_LIST, STATE, PICKLE "
-            condition = "'{0}', '{1}', '{2}' ".format(sfci.sfciID,
-                                                    sfci.vnfiSequence, state,
-                                                    self.pIO.obj2Pickle(sfci))
+            fields = " SFCIID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME "
+            condition = "'{0}', '{1}', '{2}', '{3}', '{4}' ".format(sfci.sfciID,
+                                                    self.pIO.obj2Pickle(sfci.vnfiSequence),
+                                                    state,
+                                                    self.pIO.obj2Pickle(sfci),
+                                                    orchTime)
             self.dbA.insert("SFCI", fields, condition)
 
     def hasSFCI(self, sfciID):

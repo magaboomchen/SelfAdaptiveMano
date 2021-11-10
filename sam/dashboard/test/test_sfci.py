@@ -31,7 +31,7 @@ class TestSFCIClass(DashboardTestBase):
     @pytest.fixture(scope="function")
     def setup_sfciInfo(self):
         # setup
-        self.oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
+        self.oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123", reInitialTable=True)
         self.sfciNum = 2
         self.SFCIList = self.genSFCIList(self.sfciNum)
 

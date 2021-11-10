@@ -25,10 +25,14 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
         # self.logger = logConfigur.getLogger()
         self._sc = SocketConverter()
 
-    def enableDataBase(self, host, user, passwd):
+    def enableDataBase(self, host, user, passwd, reInitialTable=False):
         self.addDatabaseAgent(host, user, passwd)
         if not self.dbA.isConnectingDB():
             self.dbA.connectDB(db = "Measurer")
+        if reInitialTable:
+            self.dbA.dropTable("Server")
+            self.dbA.dropTable("Switch")
+            self.dbA.dropTable("Link")
         self._initServerTable()
         self._initSwitchTable()
         self._initLinkTable()
