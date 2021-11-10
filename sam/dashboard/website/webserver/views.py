@@ -39,6 +39,7 @@ from sam.dashboard.dashboardInfoBaseMaintainer import *
 from sam.measurement.dcnInfoBaseMaintainer import *
 from sam.orchestration.orchInfoBaseMaintainer import *
 from sam.dashboard.base.pageSlicer import *
+from sam.base.pickleIO import *
 
 
 # class displayedUsersList(list):
@@ -779,6 +780,154 @@ def showRequestList(req):
     print(pageNum)
     return render(req, 'requestlist.html',
             {'displayedRequestsList' : displayedRequestsList,
+                'pageRange': pageRange,
+                'totalPageNum': totalPageNum,
+                'pageNum': pageNum,
+                'numDict': numDict
+            })
+
+def getAllSFCsFromDataBase():
+    dibm = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
+    SFCs = dibm.getAllSFC()
+    return SFCs
+    
+def getAllSFCsDictList(allSFCsList):
+    allSFCsDictList = []
+    sfcID = 1
+    for SFCTuple in allSFCsList:
+        SFCDict = {}
+        SFCDict['ID'] = sfcID
+        SFCDict['zoneName'] = SFCTuple[0]
+        SFCDict['SFC_UUID'] = SFCTuple[1]
+        pickleSFC = PickleIO()
+        rawSFCIIDList = SFCTuple[2]
+        # print(rawSFCIIDList)
+        SFCDict['SFCIIDList'] = pickleSFC.pickle2Obj(rawSFCIIDList)
+        # print(SFCDict['SFCIIDList'])
+        SFCDict['state'] = SFCTuple[3]
+        allSFCsDictList.append(SFCDict)
+        sfcID = sfcID + 1
+    return allSFCsDictList
+
+def getDisplayedSFCsListOnPage(SFCs, pageNum):
+    ps = PageSlicer()
+    try:
+        displayedSFCs = ps.getObjsListOnPage(SFCs, pageNum)
+    except(EmptyPage, InvalidPage, PageNotAnInteger):
+        displayedSFCs = ps.getObjsListOnPage(SFCs, 1)
+    return displayedSFCs 
+
+@login_required
+def showSFCList(req):
+    SFCsTupleList = getAllSFCsFromDataBase()
+    SFCs = getAllSFCsDictList(SFCsTupleList)
+    pageNum = getPageNumFromHttpRequest(req)
+    displayedSFCsList = getDisplayedSFCsListOnPage(SFCs, pageNum)
+    SFCsNumPerPage = 11
+    totalPageNum = getTotalPageNum(len(SFCs), SFCsNumPerPage)
+    pageRange = getPageRange(pageNum, totalPageNum)
+    numDict=getNumDict(pageNum, totalPageNum)
+    print(pageNum)
+    return render(req, 'SFClist.html',
+            {'displayedSFCsList' : displayedSFCsList,
+                'pageRange': pageRange,
+                'totalPageNum': totalPageNum,
+                'pageNum': pageNum,
+                'numDict': numDict
+            })
+
+def getAllSFCIsFromDataBase():
+    dibm = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
+    SFCIs = dibm.getAllSFCI()
+    return SFCIs
+    
+def getAllSFCIsDictList(allSFCIsList):
+    allSFCIsDictList = []
+    sfciID = 1
+    for SFCITuple in allSFCIsList:
+        SFCIDict = {}
+        SFCIDict['ID'] = sfciID
+        SFCIDict['SFCIID'] = SFCITuple[0]
+        SFCIDict['VNFIList'] = "temp"
+        pickleSFCI = PickleIO()
+        rawSFCIIIDList = SFCITuple[2]
+        SFCIDict['state'] = SFCITuple[1]
+        SFCIDict['orchestrationTime'] = "tmp"
+        allSFCIsDictList.append(SFCIDict)
+        sfciID = sfciID + 1
+    return allSFCIsDictList
+
+def getDisplayedSFCIsListOnPage(SFCIs, pageNum):
+    ps = PageSlicer()
+    try:
+        displayedSFCIs = ps.getObjsListOnPage(SFCIs, pageNum)
+    except(EmptyPage, InvalidPage, PageNotAnInteger):
+        displayedSFCIs = ps.getObjsListOnPage(SFCIs, 1)
+    return displayedSFCIs 
+
+@login_required
+def showSFCIList(req):
+    SFCIsTupleList = getAllSFCIsFromDataBase()
+    SFCIs = getAllSFCIsDictList(SFCIsTupleList)
+    pageNum = getPageNumFromHttpRequest(req)
+    displayedSFCIsList = getDisplayedSFCIsListOnPage(SFCIs, pageNum)
+    SFCIsNumPerPage = 11
+    totalPageNum = getTotalPageNum(len(SFCIs), SFCIsNumPerPage)
+    pageRange = getPageRange(pageNum, totalPageNum)
+    numDict=getNumDict(pageNum, totalPageNum)
+    print(pageNum)
+    return render(req, 'SFCIlist.html',
+            {'displayedSFCIsList' : displayedSFCIsList,
+                'pageRange': pageRange,
+                'totalPageNum': totalPageNum,
+                'pageNum': pageNum,
+                'numDict': numDict
+            })
+
+def getAllVNFIsFromDataBase():
+    dibm = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
+    VNFIs = dibm.getAllVNFI()
+    return VNFIs
+    
+def getAllVNFIsDictList(allVNFIsList):
+    allVNFIsDictList = []
+    vnfiID = 1
+    for VNFITuple in allVNFIsList:
+        VNFIDict = {}
+        print("VNFI is",VNFITuple)
+        VNFIDict['ID'] = vnfiID
+        VNFIDict['VNFI_UUID'] = "uuidtemp"
+        # pickleVNFI = PickleIO()
+        # rawVNFIIIDList = VNFITuple[2]
+        # print(rawVNFIIIDList)
+        VNFIDict['VNFIType'] = "typetmp"
+        # print(VNFIDict['VNFIIIDList'])
+        VNFIDict['VNFIState'] = "state temp"
+        allVNFIsDictList.append(VNFIDict)
+        vnfiID = vnfiID + 1
+    return allVNFIsDictList
+
+def getDisplayedVNFIsListOnPage(VNFIs, pageNum):
+    ps = PageSlicer()
+    try:
+        displayedVNFIs = ps.getObjsListOnPage(VNFIs, pageNum)
+    except(EmptyPage, InvalidPage, PageNotAnInteger):
+        displayedVNFIs = ps.getObjsListOnPage(VNFIs, 1)
+    return displayedVNFIs 
+
+@login_required
+def showVNFIList(req):
+    VNFIsTupleList = getAllVNFIsFromDataBase()
+    VNFIs = getAllVNFIsDictList(VNFIsTupleList)
+    pageNum = getPageNumFromHttpRequest(req)
+    displayedVNFIsList = getDisplayedVNFIsListOnPage(VNFIs, pageNum)
+    VNFIsNumPerPage = 11
+    totalPageNum = getTotalPageNum(len(VNFIs), VNFIsNumPerPage)
+    pageRange = getPageRange(pageNum, totalPageNum)
+    numDict=getNumDict(pageNum, totalPageNum)
+    print(pageNum)
+    return render(req, 'VNFIlist.html',
+            {'displayedVNFIsList' : displayedVNFIsList,
                 'pageRange': pageRange,
                 'totalPageNum': totalPageNum,
                 'pageNum': pageNum,

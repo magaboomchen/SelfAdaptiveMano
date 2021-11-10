@@ -22,8 +22,8 @@
     <div class="home_right">
         <div class="homepage">
             <div class="ptbt"><a>运维平台</a></div>
-            <div class="pagename"><a>用户信息列表</a></div>
-            <div class="dangqianweizhi"><a>首页 > 权限系统 > Request</a></div>
+            <div class="pagename"><a>SFCI列表</a></div>
+            <div class="dangqianweizhi"><a>首页 > 权限系统 > SFCI</a></div>
         </div>
         
         <div class="user_hr">
@@ -35,30 +35,30 @@
                     <tr>
                         
                         <th>ID</th>
-                        <th>Request UUID</th>
-                        <th>Request Type</th>
-                        <th>SFC UUID</th>  
-                        <th>State</th>                          
+                        <th>SFCI ID</th>
+                        <th>VNFI List</th>
+                        <th>state</th>  
+                        <th>Orchestration Time</th>                          
                         
                     </tr>
                     </thead>
                     <tbody>
-                    {% for line in displayedSwitchsList %}
+                    {% for line in displayedSFCIsList %}
                         <tr>
                             <td>
                                 {{ line.ID }}
                             </td>
                             <td>
-                                {{ line.requestUUID }}
+                                {{ line.SFCIID }}
                             </td>
                             <td>
-                                {{ line.requestType }}
-                            </td>
-                            <td>
-                                {{ line.SFC_UUID }}
+                                {{ line.VNFIList }}
                             </td>
                             <td>
                                 {{ line.state }}
+                            </td>
+                            <td>
+                                {{ line.orchestrationTime }}
                             </td>
                             
                         </tr>

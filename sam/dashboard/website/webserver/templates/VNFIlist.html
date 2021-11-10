@@ -22,8 +22,8 @@
     <div class="home_right">
         <div class="homepage">
             <div class="ptbt"><a>运维平台</a></div>
-            <div class="pagename"><a>用户信息列表</a></div>
-            <div class="dangqianweizhi"><a>首页 > 权限系统 > Request</a></div>
+            <div class="pagename"><a>VNFI列表</a></div>
+            <div class="dangqianweizhi"><a>首页 > 权限系统 > VNFI</a></div>
         </div>
         
         <div class="user_hr">
@@ -35,31 +35,28 @@
                     <tr>
                         
                         <th>ID</th>
-                        <th>Request UUID</th>
-                        <th>Request Type</th>
-                        <th>SFC UUID</th>  
-                        <th>State</th>                          
+                        <th>VNFI UUID</th>
+                        <th>VNFI Type</th>
+                        <th>VNFI State</th>                  
                         
                     </tr>
                     </thead>
                     <tbody>
-                    {% for line in displayedSwitchsList %}
+                    {% for line in displayedSFCsList %}
                         <tr>
                             <td>
                                 {{ line.ID }}
                             </td>
                             <td>
-                                {{ line.requestUUID }}
+                                {{ line.VNFI_UUID }}
                             </td>
                             <td>
-                                {{ line.requestType }}
+                                {{ line.VNFIType }}
                             </td>
                             <td>
-                                {{ line.SFC_UUID }}
+                                {{ line.VNFIState }}
                             </td>
-                            <td>
-                                {{ line.state }}
-                            </td>
+                            
                             
                         </tr>
                     {% endfor %}
