@@ -30,7 +30,7 @@ class TestRequestClass(DashboardTestBase):
     @pytest.fixture(scope="function")
     def setup_requestInfo(self):
         # setup
-        self.oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
+        self.oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123", reInitialTable=True)
         self.requestNum = 2
         self.addSFCRequestList = self.genAddSFCRequestNameList(self.requestNum)
 

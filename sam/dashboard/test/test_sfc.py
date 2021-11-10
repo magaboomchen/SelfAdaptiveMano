@@ -30,7 +30,7 @@ class TestSFCClass(DashboardTestBase):
     @pytest.fixture(scope="function")
     def setup_sfcInfo(self):
         # setup
-        self.oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
+        self.oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123", reInitialTable=True)
         self.sfcNum = 2
         self.SFCList = self.genSFCList(self.sfcNum)
 
