@@ -5,18 +5,21 @@
 根据sam/INSTALL.md来安装
 
 ## 数据展示（静态数据->动态数据）
+### DB: Dashboard
 * CloudUser List
     * ID, USER_NAME, USER_UUID, USER_TYPE
 * Zone List
     * ID, ZONE_NAME
 * RoutingMorphic List
     * ID, ROUTING_MORPHIC_NAME
+### DB: Measurer
 * Server List
     * ID, ZONE_NAME, SERVER_ID, IPV4, CPU_UTILIZATION
 * Switch List
     * ID, ZONE_NAME, SWITCH_ID
 * Link List
     * ID, SRC_ID, DST_ID, BANDWIDTH, UTILIZATION
+### DB: Orchestrator
 * Request List
     * ID, REQUEST_UUID, REQUEST_TYPE, SFC_UUID, STATE
 * SFC List

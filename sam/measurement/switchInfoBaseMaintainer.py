@@ -11,7 +11,7 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
         self._switchesReservedResources = {}
 
     def _initSwitchTable(self):
-        self.dbA.dropTable("Switch")
+        # self.dbA.dropTable("Switch")
         if not self.dbA.hasTable("Measurer", "Switch"):
             self.dbA.createTable("Switch",
                 """

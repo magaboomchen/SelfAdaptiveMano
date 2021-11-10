@@ -10,6 +10,7 @@ ipv4MorphicDictTemplate = {
             "headerOffsets": 14,
             "headerBits": 160,
             "etherType": 0x0800,
+            "nshProtocolNumber": 0x01,
             "ipProto": 0x04,
             "metadataDict": {
                 "srcIP": {
