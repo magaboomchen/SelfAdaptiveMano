@@ -44,6 +44,7 @@
                         <th>角色</th>
                         <th>最后登录时间</th>
                         <th>操作</th> -->
+                        <th>ID</th>
                         <th>用户</th>
                         <th>UserUUID</th>
                         <th>类型</th>                        
@@ -53,6 +54,9 @@
                     <tbody>
                     {% for line in displayedUsersList %}
                         <tr>
+                            <td>
+                                {{ line.ID }}
+                            </td>
                             <td>
                                 {{ line.name }}
                             </td>
@@ -64,7 +68,7 @@
                             </td>
                             
                             
-                            <!-- <td width="120">
+                            <td width="120">
                                 <!-- <a href="{% url 'user_alter' line.ID %}" class="bianji">编辑</a>
                                 <a href="{% url 'user_listcc' line.ID %}" onclick="return delete_sql();" class="shanchu">删除</a> -->
                                 <a href="{% url 'user_alter' line.ID %}" class="bianji">编辑</a>
@@ -100,7 +104,7 @@
                         <a href="?page={{ totalPageNum }}" class='fy'>尾页</a>
                     {% endif %}
                         <!-- <a>[第{{ user_list.number }}/{{ user_list.paginator.num_pages }}页]</a> -->
-                        <a>[第{{ PageNum }}/{{ totalPageNum }}页]</a>
+                        <a>[第{{ pageNum }}/{{ numDict.displayedTotalPageNum }}页]</a>
                 </div>
             </div>
         </div>

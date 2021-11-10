@@ -36,6 +36,8 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 
 from sam.dashboard.dashboardInfoBaseMaintainer import *
+from sam.measurement.dcnInfoBaseMaintainer import *
+from sam.orchestration.orchInfoBaseMaintainer import *
 from sam.dashboard.base.pageSlicer import *
 
 
@@ -424,12 +426,14 @@ def getPageNumFromHttpRequest(req):
             page = 1
     except ValueError:
         page = 1
+    except TypeError:
+        page = 1
+    
     return page
 
 def getAllUsersFromDataBase():
     dibm = DashboardInfoBaseMaintainer('localhost', 'dbAgent', '123')
     users = dibm.getAllUser()
-    # users = dibm.getUserQuerySet()  #导入User表
     return users
 
 def getAllUsersDictList(allUsersList):
@@ -444,7 +448,6 @@ def getAllUsersDictList(allUsersList):
         allUsersDictList.append(userDict)
         userID = userID + 1
     return allUsersDictList
-
 
 def getDisplayedUsersListOnPage(users, pageNum):
     ps = PageSlicer()
@@ -474,24 +477,27 @@ def getTotalPageNum(usersNum, usersNumPerPage):
         totalPageNum = int((usersNum - usersNum%usersNumPerPage)/usersNumPerPage+1)
     return totalPageNum
 
-def getNumDict(pageNum, totalPagenum):
+def getNumDict(pageNum, totalPageNum):
     numDict={}
     if pageNum == 1:
         numDict['hasPreviousPage'] = False
     else:
         numDict['hasPreviousPage'] = True
-    if pageNum == totalPagenum:
+    if pageNum == totalPageNum:
         numDict['hasNextPage'] = False
     else:
         numDict['hasNextPage'] = True
     numDict['nextPageNum'] = pageNum + 1
-    numDict['previousPageNum'] = pageNum -1
+    numDict['previousPageNum'] = pageNum - 1
+    
+    if totalPageNum == 0:
+        numDict['displayedTotalPageNum'] = 1
+    else:
+        numDict['displayedTotalPageNum'] = totalPageNum
     return numDict
         
-
 @login_required
 def showUserList(req):
-
     usersTupleList = getAllUsersFromDataBase()
     users = getAllUsersDictList(usersTupleList)
     pageNum = getPageNumFromHttpRequest(req)
@@ -500,7 +506,7 @@ def showUserList(req):
     totalPageNum = getTotalPageNum(len(users), usersNumPerPage)
     pageRange = getPageRange(pageNum, totalPageNum)
     numDict=getNumDict(pageNum, totalPageNum)
-    # return render(req,'404.html')
+    print(numDict)
     return render(req, 'userlist.html',
             {'displayedUsersList' : displayedUsersList,
                 'pageRange': pageRange,
@@ -512,19 +518,18 @@ def showUserList(req):
 def getAllZonesFromDataBase():
     dibm = DashboardInfoBaseMaintainer('localhost', 'dbAgent', '123')
     zones = dibm.getAllZone()
-    # print(zones)
-    # print(type(zones))
     return zones
-
 
 def getAllZonesDictList(allZonesList):
     allZonesDictList = []
+    zoneID = 1
     for zoneTuple in allZonesList:
         zoneDict = {}
         zoneDict['name'] = zoneTuple[0]
+        zoneDict['ID'] = zoneID
         allZonesDictList.append(zoneDict)
+        zoneID = zoneID + 1
     return allZonesDictList
-
 
 def getDisplayedZonesListOnPage(zones, pageNum):
     ps = PageSlicer()
@@ -532,46 +537,10 @@ def getDisplayedZonesListOnPage(zones, pageNum):
         displayedzones = ps.getObjsListOnPage(zones, pageNum)
     except(EmptyPage, InvalidPage, PageNotAnInteger):
         displayedzones = ps.getObjsListOnPage(zones, 1)
-    return displayedzones
-
-def getPageRange(page, totalPageNum):
-    afterRangeNum = 2     #当前页前显示2页
-    beforeRangeNum = 2     #当前页后显示2页
-    if page >= afterRangeNum and page <= totalPageNum - beforeRangeNum:
-        pageRange = range(page - afterRangeNum,page + beforeRangeNum +1)
-    elif page < afterRangeNum and page <= totalPageNum - beforeRangeNum:
-        pageRange = range(1, page + beforeRangeNum + 1)
-    elif page >= afterRangeNum and page > totalPageNum - beforeRangeNum:
-        pageRange = range(page - afterRangeNum, totalPageNum + 1)
-    else:
-        pageRange = range(1, totalPageNum+1)
-    return pageRange
-
-def getTotalPageNum(zonesNum, zonesNumPerPage):
-    if zonesNum%zonesNumPerPage == 0:
-        totalPageNum = int((zonesNum - zonesNum%zonesNumPerPage)/zonesNumPerPage)
-    else:
-        totalPageNum = int((zonesNum - zonesNum%zonesNumPerPage)/zonesNumPerPage+1)
-    return totalPageNum
-
-def getNumDict(pageNum, totalPagenum):
-    numDict={}
-    if pageNum == 1:
-        numDict['hasPreviousPage'] = False
-    else:
-        numDict['hasPreviousPage'] = True
-    if pageNum == totalPagenum:
-        numDict['hasNextPage'] = False
-    else:
-        numDict['hasNextPage'] = True
-    numDict['nextPageNum'] = pageNum + 1
-    numDict['previousPageNum'] = pageNum -1
-    return numDict
-        
+    return displayedzones        
 
 @login_required
 def showZoneList(req):
-
     zonesTupleList = getAllZonesFromDataBase()
     zones = getAllZonesDictList(zonesTupleList)
     pageNum = getPageNumFromHttpRequest(req)
@@ -580,7 +549,6 @@ def showZoneList(req):
     totalPageNum = getTotalPageNum(len(zones), zonesNumPerPage)
     pageRange = getPageRange(pageNum, totalPageNum)
     numDict=getNumDict(pageNum, totalPageNum)
-    # return render(req,'404.html')
     return render(req, 'zonelist.html',
             {'displayedZonesList' : displayedZonesList,
                 'pageRange': pageRange,
@@ -592,19 +560,18 @@ def showZoneList(req):
 def getAllRoutingMorphicsFromDataBase():
     dibm = DashboardInfoBaseMaintainer('localhost', 'dbAgent', '123')
     RoutingMorphics = dibm.getAllRoutingMorphic()
-    print(RoutingMorphics,'a')
     return RoutingMorphics
-
 
 def getAllRoutingMorphicsDictList(allRoutingMorphicsList):
     allRoutingMorphicsDictList = []
+    rmID = 1
     for RoutingMorphicTuple in allRoutingMorphicsList:
         RoutingMorphicDict = {}
         RoutingMorphicDict['name'] = RoutingMorphicTuple[0]
+        RoutingMorphicDict['ID'] = rmID
         allRoutingMorphicsDictList.append(RoutingMorphicDict)
-        print(allRoutingMorphicsDictList,'b')
+        rmID = rmID + 1
     return allRoutingMorphicsDictList
-
 
 def getDisplayedRoutingMorphicsListOnPage(RoutingMorphics, pageNum):
     ps = PageSlicer()
@@ -614,44 +581,8 @@ def getDisplayedRoutingMorphicsListOnPage(RoutingMorphics, pageNum):
         displayedRoutingMorphics = ps.getObjsListOnPage(RoutingMorphics, 1)
     return displayedRoutingMorphics
 
-def getPageRange(page, totalPageNum):
-    afterRangeNum = 2     #当前页前显示2页
-    beforeRangeNum = 2     #当前页后显示2页
-    if page >= afterRangeNum and page <= totalPageNum - beforeRangeNum:
-        pageRange = range(page - afterRangeNum,page + beforeRangeNum +1)
-    elif page < afterRangeNum and page <= totalPageNum - beforeRangeNum:
-        pageRange = range(1, page + beforeRangeNum + 1)
-    elif page >= afterRangeNum and page > totalPageNum - beforeRangeNum:
-        pageRange = range(page - afterRangeNum, totalPageNum + 1)
-    else:
-        pageRange = range(1, totalPageNum+1)
-    return pageRange
-
-def getTotalPageNum(RoutingMorphicsNum, RoutingMorphicsNumPerPage):
-    if RoutingMorphicsNum%RoutingMorphicsNumPerPage == 0:
-        totalPageNum = int((RoutingMorphicsNum - RoutingMorphicsNum%RoutingMorphicsNumPerPage)/RoutingMorphicsNumPerPage)
-    else:
-        totalPageNum = int((RoutingMorphicsNum - RoutingMorphicsNum%RoutingMorphicsNumPerPage)/RoutingMorphicsNumPerPage+1)
-    return totalPageNum
-
-def getNumDict(pageNum, totalPagenum):
-    numDict={}
-    if pageNum == 1:
-        numDict['hasPreviousPage'] = False
-    else:
-        numDict['hasPreviousPage'] = True
-    if pageNum == totalPagenum:
-        numDict['hasNextPage'] = False
-    else:
-        numDict['hasNextPage'] = True
-    numDict['nextPageNum'] = pageNum + 1
-    numDict['previousPageNum'] = pageNum -1
-    return numDict
-        
-
 @login_required
 def showRoutingMorphicList(req):
-    
     RoutingMorphicsTupleList = getAllRoutingMorphicsFromDataBase()
     RoutingMorphics = getAllRoutingMorphicsDictList(RoutingMorphicsTupleList)
     pageNum = getPageNumFromHttpRequest(req)
@@ -660,7 +591,6 @@ def showRoutingMorphicList(req):
     totalPageNum = getTotalPageNum(len(RoutingMorphics), RoutingMorphicsNumPerPage)
     pageRange = getPageRange(pageNum, totalPageNum)
     numDict=getNumDict(pageNum, totalPageNum)
-    # return render(req,'404.html')
     print(RoutingMorphics,pageNum,pageRange)
     return render(req, 'routingmorphiclist.html',
             {'displayedRoutingMorphicsList' : displayedRoutingMorphicsList,
@@ -670,3 +600,187 @@ def showRoutingMorphicList(req):
                 'numDict': numDict
             })
 
+def getAllServersFromDataBase():
+    dibm = DCNInfoBaseMaintainer()
+    dibm.enableDataBase("localhost", "dbAgent", "123")
+    servers = dibm.getAllServer()
+    return servers
+
+def getAllServersDictList(allServersList):
+    allServersDictList = []
+    serverID = 1
+    for serverTuple in allServersList:
+        serverDict = {}
+        serverDict['zoneName'] = serverTuple[1]
+        serverDict['serverID'] = serverTuple[0]
+        serverDict['IPV4'] = serverTuple[4]
+        serverDict['cpuUtilization'] = serverTuple[5]
+        serverDict['ID'] = serverID
+        allServersDictList.append(serverDict)
+        serverID = serverID + 1
+    return allServersDictList
+
+def getDisplayedServersListOnPage(servers, pageNum):
+    ps = PageSlicer()
+    try:
+        displayedServers = ps.getObjsListOnPage(servers, pageNum)
+    except(EmptyPage, InvalidPage, PageNotAnInteger):
+        displayedServers = ps.getObjsListOnPage(servers, 1)
+    return displayedServers 
+
+@login_required
+def showServerList(req):
+    serversTupleList = getAllServersFromDataBase()
+    servers = getAllServersDictList(serversTupleList)
+    pageNum = getPageNumFromHttpRequest(req)
+    displayedServersList = getDisplayedServersListOnPage(servers, pageNum)
+    serversNumPerPage = 11
+    totalPageNum = getTotalPageNum(len(servers), serversNumPerPage)
+    pageRange = getPageRange(pageNum, totalPageNum)
+    numDict=getNumDict(pageNum, totalPageNum)
+    print(pageNum)
+    return render(req, 'serverlist.html',
+            {'displayedServersList' : displayedServersList,
+                'pageRange': pageRange,
+                'totalPageNum': totalPageNum,
+                'pageNum': pageNum,
+                'numDict': numDict
+            })
+
+def getAllSwitchsFromDataBase():
+    dibm = DCNInfoBaseMaintainer()
+    dibm.enableDataBase("localhost", "dbAgent", "123")
+    switchs = dibm.getAllSwitch()
+    return switchs
+    
+def getAllSwitchsDictList(allSwitchsList):
+    allSwitchsDictList = []
+    switchID = 1
+    for switchTuple in allSwitchsList:
+        switchDict = {}
+        switchDict['zoneName'] = switchTuple[1]
+        switchDict['switchID'] = switchTuple[2]
+        switchDict['ID'] = switchID
+        allSwitchsDictList.append(switchDict)
+        switchID =switchID + 1
+    return allSwitchsDictList
+
+def getDisplayedSwitchsListOnPage(Switchs, pageNum):
+    ps = PageSlicer()
+    try:
+        displayedSwitchs = ps.getObjsListOnPage(Switchs, pageNum)
+    except(EmptyPage, InvalidPage, PageNotAnInteger):
+        displayedSwitchs = ps.getObjsListOnPage(Switchs, 1)
+    return displayedSwitchs 
+
+@login_required
+def showSwitchList(req):
+    switchsTupleList = getAllSwitchsFromDataBase()
+    switchs = getAllSwitchsDictList(switchsTupleList)
+    pageNum = getPageNumFromHttpRequest(req)
+    displayedSwitchsList = getDisplayedSwitchsListOnPage(switchs, pageNum)
+    switchsNumPerPage = 11
+    totalPageNum = getTotalPageNum(len(switchs), switchsNumPerPage)
+    pageRange = getPageRange(pageNum, totalPageNum)
+    numDict=getNumDict(pageNum, totalPageNum)
+    print(pageNum)
+    return render(req, 'switchlist.html',
+            {'displayedSwitchsList' : displayedSwitchsList,
+                'pageRange': pageRange,
+                'totalPageNum': totalPageNum,
+                'pageNum': pageNum,
+                'numDict': numDict
+            })
+    
+def getAllLinksFromDataBase():
+    dibm = DCNInfoBaseMaintainer()
+    dibm.enableDataBase("localhost", "dbAgent", "123")
+    links = dibm.getAllLink()
+    return links
+    
+def getAllLinksDictList(allLinksList):
+    allLinksDictList = []
+    linkID = 1
+    for linkTuple in allLinksList:
+        linkDict = {}
+        linkDict['ID'] = linkID
+        linkDict['SRC_ID'] = linkTuple[2]
+        linkDict['DST_ID'] = linkTuple[3]
+        linkDict['bandwidth'] = linkTuple[4]
+        linkDict['utilization'] = linkTuple[5]
+        allLinksDictList.append(linkDict)
+        linkID = linkID + 1
+    return allLinksDictList
+
+def getDisplayedLinksListOnPage(links, pageNum):
+    ps = PageSlicer()
+    try:
+        displayedLinks = ps.getObjsListOnPage(links, pageNum)
+    except(EmptyPage, InvalidPage, PageNotAnInteger):
+        displayedLinks = ps.getObjsListOnPage(links, 1)
+    return displayedLinks 
+
+@login_required
+def showLinkList(req):
+    linksTupleList = getAllLinksFromDataBase()
+    links = getAllLinksDictList(linksTupleList)
+    pageNum = getPageNumFromHttpRequest(req)
+    displayedLinksList = getDisplayedLinksListOnPage(links, pageNum)
+    linksNumPerPage = 11
+    totalPageNum = getTotalPageNum(len(links), linksNumPerPage)
+    pageRange = getPageRange(pageNum, totalPageNum)
+    numDict=getNumDict(pageNum, totalPageNum)
+    print(pageNum)
+    return render(req, 'Linklist.html',
+            {'displayedLinksList' : displayedLinksList,
+                'pageRange': pageRange,
+                'totalPageNum': totalPageNum,
+                'pageNum': pageNum,
+                'numDict': numDict
+            })
+
+def getAllRequestsFromDataBase():
+    dibm = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
+    requests = dibm.getAllRequest()
+    return requests
+    
+def getAllRequestsDictList(allRequestsList):
+    allRequestsDictList = []
+    requestID = 1
+    for requestTuple in allRequestsList:
+        requestDict = {}
+        requestDict['ID'] = requestID
+        requestDict['requestUUID'] = requestTuple[0]
+        requestDict['requestType'] = requestTuple[1]
+        requestDict['SFC_UUID'] = requestTuple[2]
+        requestDict['state'] = requestTuple[5]
+        allRequestsDictList.append(requestDict)
+        requestID = requestID + 1
+    return allRequestsDictList
+
+def getDisplayedRequestsListOnPage(requests, pageNum):
+    ps = PageSlicer()
+    try:
+        displayedRequests = ps.getObjsListOnPage(requests, pageNum)
+    except(EmptyPage, InvalidPage, PageNotAnInteger):
+        displayedRequests = ps.getObjsListOnPage(requests, 1)
+    return displayedRequests 
+
+@login_required
+def showRequestList(req):
+    requestsTupleList = getAllRequestsFromDataBase()
+    requests = getAllRequestsDictList(requestsTupleList)
+    pageNum = getPageNumFromHttpRequest(req)
+    displayedRequestsList = getDisplayedRequestsListOnPage(requests, pageNum)
+    requestsNumPerPage = 11
+    totalPageNum = getTotalPageNum(len(requests), requestsNumPerPage)
+    pageRange = getPageRange(pageNum, totalPageNum)
+    numDict=getNumDict(pageNum, totalPageNum)
+    print(pageNum)
+    return render(req, 'requestlist.html',
+            {'displayedRequestsList' : displayedRequestsList,
+                'pageRange': pageRange,
+                'totalPageNum': totalPageNum,
+                'pageNum': pageNum,
+                'numDict': numDict
+            })

@@ -12,6 +12,7 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
         self._initZoneTable()
         self._initUserTable()
         self._initRoutingMorphicTable()
+        # self._initServerTable()
 
     def _initZoneTable(self):
         if not self.dbA.hasTable("Dashboard", "Zone"):
@@ -126,12 +127,71 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
                                     routingMorphicName))
 
     def getAllRoutingMorphic(self):
-        print('6')
         results = self.dbA.query("RoutingMorphic", " ROUTING_MORPHIC_NAME ")
-        print(results,'22')
         rmList = []
         for rm in results:
-            print(rm,'1')
             rmList.append(rm)
-        print(rmList,'over2')
         return rmList
+        
+    # def _initServerTable(self):
+    #     if not self.dbA.hasTable("Measurer", "Server"):
+    #         self.dbA.createTable("Server",
+    #             """
+    #             # ID INT UNSIGNED AUTO_INCREMENT,
+    #             # USER_NAME VARCHAR(100) NOT NULL,
+    #             # USER_UUID VARCHAR(36),
+    #             # USER_TYPE VARCHAR(36) NOT NULL,
+    #             # PICKLE BLOB,
+    #             # submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    #             # PRIMARY KEY ( ID )
+    #             """
+    #             )
+
+    # def getAllServer(self):
+    #     results = self.dbA.query("Server", " ZONE_NAME, SERVER_UUID, IP_ADDRESS, TOTAL_CPU_CORE ")
+    #     rmList = []
+    #     for rm in results:
+    #         rmList.append(rm)
+    #     return rmList
+
+    # def _initSwitchTable(self):
+    #     if not self.dbA.hasTable("Measurer", "Switch"):
+    #         self.dbA.createTable("Switch",
+    #             """
+    #             # ID INT UNSIGNED AUTO_INCREMENT,
+    #             # USER_NAME VARCHAR(100) NOT NULL,
+    #             # USER_UUID VARCHAR(36),
+    #             # USER_TYPE VARCHAR(36) NOT NULL,
+    #             # PICKLE BLOB,
+    #             # submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    #             # PRIMARY KEY ( ID )
+    #             """
+    #             )
+
+    # def getAllSwitch(self):
+    #     results = self.dbA.query("Switch", " ZONE_NAME, SWITCH_ID ")
+    #     rmList = []
+    #     for rm in results:
+    #         rmList.append(rm)
+    #     return rmList
+
+    # def _initLinkTable(self):
+    #     if not self.dbA.hasTable("Measurer", "Link"):
+    #         self.dbA.createTable("Link",
+    #             """
+    #             # ID INT UNSIGNED AUTO_INCREMENT,
+    #             # USER_NAME VARCHAR(100) NOT NULL,
+    #             # USER_UUID VARCHAR(36),
+    #             # USER_TYPE VARCHAR(36) NOT NULL,
+    #             # PICKLE BLOB,
+    #             # submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    #             # PRIMARY KEY ( ID )
+    #             """
+    #             )
+
+    # def getAllLink(self):
+    #     results = self.dbA.query("Link", " ZONE_NAME, Link_ID ")
+    #     rmList = []
+    #     for rm in results:
+    #         rmList.append(rm)
+    #     return rmList

@@ -23,7 +23,7 @@
         <div class="homepage">
             <div class="ptbt"><a>运维平台</a></div>
             <div class="pagename"><a>用户信息列表</a></div>
-            <div class="dangqianweizhi"><a>首页 > 权限系统 > Zone管理</a></div>
+            <div class="dangqianweizhi"><a>首页 > 权限系统 > Link管理</a></div>
         </div>
         
         <div class="user_hr">
@@ -33,22 +33,33 @@
                 <table class="table table-striped table-bordered table-hover" table-layout=fixed; width=100%; align="center">
                     <thead>
                     <tr>
-
+                        
                         <th>ID</th>
-                        <th>Zone</th>
+                        <th>SRC ID</th>
+                        <th>DST ID</th> 
+                        <th>Bandwidth</th>   
+                        <th>Utilization</th>                        
                         
                     </tr>
                     </thead>
                     <tbody>
-                    {% for line in displayedZonesList %}
+                    {% for line in displayedLinksList %}
                         <tr>
                             <td>
                                 {{ line.ID }}
                             </td>
                             <td>
-                                {{ line.name }}
+                                {{ line.SRC_ID }}
                             </td>
-                           
+                            <td>
+                                {{ line.DST_ID }}
+                            </td>
+                            <td>
+                                {{ line.bandwidth }}
+                            </td>
+                            <td>
+                                {{ line.utilization }}
+                            </td>
                             
                         </tr>
                     {% endfor %}
@@ -71,7 +82,7 @@
                         <a href="?page={{ totalPageNum }}" class='fy'>尾页</a>
                     {% endif %}
                        
-                        <a>[第{{ PageNum }}/{{ totalPageNum }}页]</a>
+                        <a>[第{{ pageNum }}/{{ totalPageNum }}页]</a>
                 </div>
             </div>
         </div>
