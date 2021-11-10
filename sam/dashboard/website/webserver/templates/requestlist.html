@@ -22,7 +22,7 @@
     <div class="home_right">
         <div class="homepage">
             <div class="ptbt"><a>运维平台</a></div>
-            <div class="pagename"><a>用户信息列表</a></div>
+            <div class="pagename"><a>Request列表</a></div>
             <div class="dangqianweizhi"><a>首页 > 权限系统 > Request</a></div>
         </div>
         
@@ -43,7 +43,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    {% for line in displayedSwitchsList %}
+                    {% for line in displayedRequestsList %}
                         <tr>
                             <td>
                                 {{ line.ID }}

@@ -42,7 +42,7 @@ class TestSFCIClass(DashboardTestBase):
     def genSFCIList(self, sfciNum):
         addSFCISFCIList = []
         for idx in range(sfciNum):
-            sfci = SFCI(idx, [VNF_TYPE_FW, VNF_TYPE_FW, VNFI(uuid.uuid1())])
+            sfci = SFCI(idx, [VNFI(VNF_TYPE_FW, VNF_TYPE_FW, uuid.uuid1(), vnfiStatus="NORMAL")])
             addSFCISFCIList.append(sfci)
         return addSFCISFCIList
 

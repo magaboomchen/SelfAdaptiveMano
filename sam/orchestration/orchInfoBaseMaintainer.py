@@ -63,7 +63,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             self.dbA.delete("Request", " REQUEST_UUID = '{0}'".format(requestUUID))
 
     def getAllRequest(self):
-        fields = " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, PICKLE "
+        fields = " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, STATE, PICKLE "
         results = self.dbA.query("Request", fields)
         requestTupleList = []
         for requestTuple in results:
@@ -156,7 +156,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             self.dbA.delete("SFCI", " SFCIID = '{0}'".format(sfciID))
 
     def getAllSFCI(self):
-        fields = " SFCIID, STATE, PICKLE "
+        fields = " SFCIID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME "
         results = self.dbA.query("SFCI", fields)
         sfciTupleList = []
         for sfciTuple in results:
@@ -167,9 +167,10 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         sfciTupleList = self.getAllSFCI()
         totalVNFIList = []
         for sfciTuple in sfciTupleList:
-            sfci = sfciTuple[-1]
+            sfci = self.pIO.pickle2Obj(sfciTuple[-2])
             vnfiList = sfci.vnfiSequence
             totalVNFIList.extend(vnfiList)
+            # print("vnfiList:", vnfiList)
         return totalVNFIList
 
     def addSFCRequestHandler(self, request, cmd):

@@ -848,11 +848,14 @@ def getAllSFCIsDictList(allSFCIsList):
         SFCIDict = {}
         SFCIDict['ID'] = sfciID
         SFCIDict['SFCIID'] = SFCITuple[0]
-        SFCIDict['VNFIList'] = "temp"
         pickleSFCI = PickleIO()
-        rawSFCIIIDList = SFCITuple[2]
-        SFCIDict['state'] = SFCITuple[1]
-        SFCIDict['orchestrationTime'] = "tmp"
+        rawSFCIIIDList = SFCITuple[1]
+        VNFIList = pickleSFCI.pickle2Obj(rawSFCIIIDList)
+        SFCIDict['VNFIList'] = []
+        for VNFIs in VNFIList:
+            SFCIDict['VNFIList'].append(VNFIs.vnfiID)
+        SFCIDict['state'] = SFCITuple[2]
+        SFCIDict['orchestrationTime'] = SFCITuple[4]
         allSFCIsDictList.append(SFCIDict)
         sfciID = sfciID + 1
     return allSFCIsDictList
@@ -892,17 +895,29 @@ def getAllVNFIsFromDataBase():
 def getAllVNFIsDictList(allVNFIsList):
     allVNFIsDictList = []
     vnfiID = 1
-    for VNFITuple in allVNFIsList:
+    for VNFIs in allVNFIsList:
         VNFIDict = {}
-        print("VNFI is",VNFITuple)
         VNFIDict['ID'] = vnfiID
-        VNFIDict['VNFI_UUID'] = "uuidtemp"
-        # pickleVNFI = PickleIO()
-        # rawVNFIIIDList = VNFITuple[2]
-        # print(rawVNFIIIDList)
-        VNFIDict['VNFIType'] = "typetmp"
-        # print(VNFIDict['VNFIIIDList'])
-        VNFIDict['VNFIState'] = "state temp"
+        VNFIDict['VNFI_UUID'] = VNFIs.vnfiID
+        VNFIDict['VNFIType'] = VNFIs.vnfType
+        '''VNF_TYPE_CLASSIFIER = 0
+VNF_TYPE_FORWARD = 1
+VNF_TYPE_FW = 2
+VNF_TYPE_IDS = 3
+VNF_TYPE_MONITOR = 4
+VNF_TYPE_LB = 5
+VNF_TYPE_RATELIMITER = 6
+VNF_TYPE_NAT = 7
+VNF_TYPE_VPN = 8
+VNF_TYPE_WOC = 9    # WAN Optimization Controller
+VNF_TYPE_APPFW = 10 # http firewall
+VNF_TYPE_VOC = 11
+VNF_TYPE_DDOS_SCRUBBER = 12
+VNF_TYPE_FW_RECEIVER = 13   # duplicate firewall in sfc
+VNF_TYPE_NAT_RECEIVER = 14  # duplicate nat in sfc
+# vnf type can't exceed 16, i.e. vnf type < 16
+VNF_TYPE_MAX = 15'''
+        VNFIDict['VNFIState'] = VNFIs.vnfiStatus
         allVNFIsDictList.append(VNFIDict)
         vnfiID = vnfiID + 1
     return allVNFIsDictList
