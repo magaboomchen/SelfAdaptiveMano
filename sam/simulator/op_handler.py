@@ -111,8 +111,9 @@ def add_handler(cmd_list, sib):
     traffic_id = cmd_list[1]
     sfci_id = int(cmd_list[2])
     dir_id = int(cmd_list[3])
-    opt, arg = getopt(cmd_list[4:], '', ())
-    if not arg and 'trafficRate' in opt:  # add traffic <trafficID> <sfciID> <dirID> --trafficRate <value in Mbps>
+    opt, arg = getopt(cmd_list[4:], '', ('trafficRate=',))
+    opt = dict(opt)
+    if not arg and '--trafficRate' in opt:  # add traffic <trafficID> <sfciID> <dirID> --trafficRate <value in Mbps>
         if traffic_id in sib.flows:
             raise KeyError(traffic_id)
         sib.flows[traffic_id] = {'bw': (lambda: float(opt['--trafficRate'])), 'pkt_size': 500,
