@@ -35,6 +35,7 @@ from django.shortcuts import render
 
 from django.contrib.auth.decorators import login_required
 
+sys.path.append(r'//mnt/d/Projects/SelfAdaptiveMano')
 from sam.dashboard.dashboardInfoBaseMaintainer import *
 from sam.measurement.dcnInfoBaseMaintainer import *
 from sam.orchestration.orchInfoBaseMaintainer import *
@@ -899,24 +900,39 @@ def getAllVNFIsDictList(allVNFIsList):
         VNFIDict = {}
         VNFIDict['ID'] = vnfiID
         VNFIDict['VNFI_UUID'] = VNFIs.vnfiID
-        VNFIDict['VNFIType'] = VNFIs.vnfType
-        '''VNF_TYPE_CLASSIFIER = 0
-VNF_TYPE_FORWARD = 1
-VNF_TYPE_FW = 2
-VNF_TYPE_IDS = 3
-VNF_TYPE_MONITOR = 4
-VNF_TYPE_LB = 5
-VNF_TYPE_RATELIMITER = 6
-VNF_TYPE_NAT = 7
-VNF_TYPE_VPN = 8
-VNF_TYPE_WOC = 9    # WAN Optimization Controller
-VNF_TYPE_APPFW = 10 # http firewall
-VNF_TYPE_VOC = 11
-VNF_TYPE_DDOS_SCRUBBER = 12
-VNF_TYPE_FW_RECEIVER = 13   # duplicate firewall in sfc
-VNF_TYPE_NAT_RECEIVER = 14  # duplicate nat in sfc
-# vnf type can't exceed 16, i.e. vnf type < 16
-VNF_TYPE_MAX = 15'''
+        VNFITypeNum = VNFIs.vnfType
+        if VNFITypeNum == 0:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_CLASSIFIER'
+        elif VNFITypeNum == 1:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_FORWARD'
+        elif VNFITypeNum == 2:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_FW'
+        elif VNFITypeNum == 3:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_IDS'
+        elif VNFITypeNum == 4:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_MONITOR'
+        elif VNFITypeNum == 5:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_LB'
+        elif VNFITypeNum == 6:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_RATELIMITER'
+        elif VNFITypeNum == 7:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_NAT'
+        elif VNFITypeNum == 8:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_VPN'
+        elif VNFITypeNum == 9:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_WOC'
+        elif VNFITypeNum == 10:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_APPFW'
+        elif VNFITypeNum == 11:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_VOC'
+        elif VNFITypeNum == 12:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_DDOS_SCRUBBER'
+        elif VNFITypeNum == 13:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_FW_RECEIVER'
+        elif VNFITypeNum == 14:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_NAT_RECEIVER'
+        elif VNFITypeNum == 15:
+            VNFIDict['VNFIType'] = 'VNF_TYPE_MAX'
         VNFIDict['VNFIState'] = VNFIs.vnfiStatus
         allVNFIsDictList.append(VNFIDict)
         vnfiID = vnfiID + 1
