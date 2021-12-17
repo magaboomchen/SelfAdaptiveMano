@@ -21,7 +21,7 @@ from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 
 class Orchestrator(object):
-    def __init__(self):
+    def __init__(self, batchMode=True, orchestrationIdx=None):
         # time.sleep(15)   # wait for other basic module boot
 
         logConfigur = LoggerConfigurator(__name__, './log',
@@ -37,15 +37,19 @@ class Orchestrator(object):
         self._osd = OSFCDeleter(self._dib, self._oib, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
-        self._messageAgent.startRecvMsg(ORCHESTRATOR_QUEUE)
+        if orchestrationIdx != None:
+            self.orchInstanceQueueName = ORCHESTRATOR_QUEUE
+        else:
+            self.orchInstanceQueueName = ORCHESTRATOR_QUEUE + "_{0}".format(orchestrationIdx)
+        self._messageAgent.startRecvMsg(self.orchInstanceQueueName)
 
         self._requestBatchQueue = Queue.Queue()
-        self._batchMode = True
+        self._batchMode = batchMode
         self._batchSize = BATCH_SIZE
 
     def startOrchestrator(self):
         while True:
-            msg = self._messageAgent.getMsg(ORCHESTRATOR_QUEUE)
+            msg = self._messageAgent.getMsg(self.orchInstanceQueueName)
             msgType = msg.getMessageType()
             if msgType == None:
                 pass
