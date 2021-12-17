@@ -8,4 +8,4 @@ BATCH_SIZE = 1
 VNFI_ASSIGN_MODE = True
 
 # if user doesn't assign mapping algorithm, use default mapping algorithm
-DEFAULT_MAPPING_TYPE = "MAPPING_TYPE_INTERFERENCE"
+DEFAULT_MAPPING_TYPE = "MAPPING_TYPE_NETPACK"

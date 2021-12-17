@@ -214,7 +214,7 @@ class Server(object):
         self._coreUtilization = [0,0,0,0,0,0,0,0,0,0,0,0]
         self._hugepagesTotal = [256,256]
         self._hugepagesFree = [256,256]
-        self._hugepageSize = [1024,1024]
+        self._hugepageSize = 1048576
 
     def updateResource(self):
         self._updateMemAccessMode()

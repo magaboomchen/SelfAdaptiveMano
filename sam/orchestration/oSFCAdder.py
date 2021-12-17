@@ -30,6 +30,7 @@ from sam.orchestration.algorithms.notVia.notVia import *
 from sam.orchestration.algorithms.dpSFCCG.dpSFCCG import *
 from sam.orchestration.algorithms.mMLPSFC.mMLPSFC import *
 from sam.orchestration.algorithms.mMLBSFC.mMLBSFC import *
+from sam.orchestration.algorithms.netPack.netPack import *
 from sam.orchestration.algorithms.base.resourceAllocator import *
 from sam.orchestration.algorithms.base.performanceModel import *
 
@@ -41,6 +42,9 @@ class OSFCAdder(object):
         self._via = VNFIIDAssigner()
         self._sc = SocketConverter()
         self.zoneName = None
+        self.podNum = None
+        self.minPodIdx = None
+        self.maxPodIdx = None
 
     def genAddSFCCmd(self, request):
         self.request = request
@@ -216,6 +220,9 @@ class OSFCAdder(object):
             elif mappingType == MAPPING_TYPE_INTERFERENCE:
                 self.logger.info("InterferenceAware")
                 forwardingPathSetsDict = self.interferenceAware(requestBatchList)
+            elif mappingType == MAPPING_TYPE_NETPACK:
+                self.logger.info("NetPack")
+                forwardingPathSetsDict = self.netPack(requestBatchList)
             elif mappingType == MAPPING_TYPE_NONE:
                 pass
             else:
@@ -316,6 +323,14 @@ class OSFCAdder(object):
         #   The mapping info is stored in request.sfci.vnfiSequence (please refer to sam/base/vnf.py and sam/base/sfc.py)
         # sfc path is stored in forwardingPathSetsDict
         #   If you don't need to calculate path, just leave each path in forwardingPathSetsDict to default.
+        forwardingPathSetsDict = None
+        return forwardingPathSetsDict
+
+    def netPack(self, requestBatchList):
+        nP = NetPack(self._dib, requestBatchList, 
+                        self.podNum, self.minPodIdx,
+                        self.maxPodIdx)
+        forwardingPathSetsDict = nP.mapSFCI()
         return forwardingPathSetsDict
 
     def _forwardingPathSetsDict2Cmd(self, forwardingPathSetsDict,
