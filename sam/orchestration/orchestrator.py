@@ -10,6 +10,7 @@ else:
 
 from sam.base.messageAgent import *
 from sam.base.request import Request, Reply
+from sam.orchestration.argParser import ArgParser
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.measurement.dcnInfoBaseMaintainer import *
@@ -21,7 +22,7 @@ from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 
 class Orchestrator(object):
-    def __init__(self, batchMode=True, orchestrationIdx=None):
+    def __init__(self, orchestrationIdx=None):
         # time.sleep(15)   # wait for other basic module boot
 
         logConfigur = LoggerConfigurator(__name__, './log',
@@ -44,7 +45,7 @@ class Orchestrator(object):
         self._messageAgent.startRecvMsg(self.orchInstanceQueueName)
 
         self._requestBatchQueue = Queue.Queue()
-        self._batchMode = batchMode
+        self._batchMode = True
         self._batchSize = BATCH_SIZE
 
     def startOrchestrator(self):
@@ -155,5 +156,8 @@ class Orchestrator(object):
 
 
 if __name__=="__main__":
-    ot = Orchestrator()
+    argParser = ArgParser()
+    idx = argParser.getArgs()['-idx']   # example: 0-36
+
+    ot = Orchestrator(idx)
     ot.startOrchestrator()
