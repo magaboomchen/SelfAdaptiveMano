@@ -56,3 +56,9 @@ class TestShellProcessorClass(object):
         out_bytes = subprocess.check_output(
             ["ps -ef | grep tmpScript.py"], shell=True)
         assert out_bytes.count("tmpScript.py") == 2
+
+    def test_getPythonScriptProcessPid(self):
+        cmdline = "python /home/smith/Projects/SelfAdaptiveMano/sam/orchestration/orchestrator.py -name 0-19 -p 20 -minPIdx 0 -maxPIdx 19"
+        pId = self.sP.getPythonScriptProcessPid(cmdline)
+        print("pId is {0}".format(pId))
+        assert 2 == 2

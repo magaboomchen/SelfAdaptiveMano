@@ -206,7 +206,7 @@ class OSFCAdder(object):
         # self._logRequestDict(requestDict)
         cmdList = []
         for mappingType in requestDict.keys():
-            requestBatchList =requestDict[mappingType]
+            requestBatchList = requestDict[mappingType]
             # You can add more algorithms here
             # mappingType is defined in sam/base/path.py
             if mappingType == MAPPING_TYPE_UFRR:
@@ -267,7 +267,7 @@ class OSFCAdder(object):
                 self.sfc = self.request.attributes['sfc']
                 self.zoneName = self.sfc.attributes["zone"]
 
-                self._mapIngressEgress()
+                # self._mapIngressEgress()
                 # self.logger.debug("sfc:{0}".format(self.sfc))
 
     def _logRequestDict(self, requestDict):

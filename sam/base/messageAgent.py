@@ -37,6 +37,7 @@ PICA8_ZONE = "PICA8_ZONE"
 REQUEST_PROCESSOR_QUEUE = "REQUEST_PROCESSOR_QUEUE"
 DCN_INFO_RECIEVER_QUEUE = "DCN_INFO_RECIEVER_QUEUE"
 MEASURER_QUEUE = "MEASURER_QUEUE"
+DISPATCHER_QUEUE = "DISPATCHER_QUEUE"
 ORCHESTRATOR_QUEUE = "ORCHESTRATOR_QUEUE"
 MEDIATOR_QUEUE = "MEDIATOR_QUEUE"
 SFF_CONTROLLER_QUEUE = "SFF_CONTROLLER_QUEUE"
@@ -52,6 +53,7 @@ MSG_TYPE_STRING = "MSG_TYPE_STRING"
 MSG_TYPE_REQUEST = "MSG_TYPE_REQUEST"
 MSG_TYPE_REPLY = "MSG_TYPE_REPLY"
 # orchestration & measurement use case
+MSG_TYPE_ORCHESTRATOR_CMD = "MSG_TYPE_ORCHESTRATOR_CMD"
 MSG_TYPE_MEDIATOR_CMD = "MSG_TYPE_MEDIATOR_CMD"
 MSG_TYPE_MEDIATOR_CMD_REPLY = "MSG_TYPE_MEDIATOR_CMD_REPLY"
 # mediator use case
@@ -196,6 +198,13 @@ class MessageAgent(object):
             finally:
                 threadLock.release()
                 return result
+
+    def getMsgCnt(self, srcQueueName):
+        if srcQueueName in self.msgQueues:
+            return self.msgQueues[srcQueueName].qsize()
+        else:
+            self.logger.error("No such msg queue. QueueName:{0}".format(srcQueueName))
+            return -1
 
     def getMsg(self, srcQueueName, throughput=1000):
         # poll-mode: we need to trade-off between 

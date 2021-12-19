@@ -26,7 +26,7 @@ class Orchestrator(object):
         # time.sleep(15)   # wait for other basic module boot
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'orchestrator.log', level='debug')
+            'orchestrator_{0}.log'.format(orchestrationName), level='debug')
         self.logger = logConfigur.getLogger()
 
         self._dib = DCNInfoBaseMaintainer()
@@ -38,7 +38,7 @@ class Orchestrator(object):
         self._osd = OSFCDeleter(self._dib, self._oib, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
-        if orchestrationName != None:
+        if orchestrationName == None:
             self.orchInstanceQueueName = ORCHESTRATOR_QUEUE
         else:
             self.orchInstanceQueueName = ORCHESTRATOR_QUEUE + "_{0}".format(orchestrationName)
@@ -119,7 +119,7 @@ class Orchestrator(object):
             pass
 
     def sendCmd(self, cmd):
-        msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, cmd)
+        msg = SAMMessage(MSG_TYPE_ORCHESTRATOR_CMD, cmd)
         self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
 
     def _commandReplyHandler(self, cmdRply):
@@ -161,12 +161,15 @@ class Orchestrator(object):
     def _commandHandler(self, cmd):
         try:
             self.logger.info("Get a command reply")
-            # update cmd state
             cmdID = cmd.cmdID
-            # TODO
-            # putState()
-            # getState()
-
+            if cmd.cmdType == CMD_TYPE_PUT_ORCHESTRATION_STATE:
+                self.logger.info("Get dib from dispatcher!")
+                self._dib = cmd.attributes["dib"]
+            elif cmd.cmdType == CMD_TYPE_GET_ORCHESTRATION_STATE:
+                pass
+                # TODO
+            else:
+                pass
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex, 
                 "Orchestrator command handler")

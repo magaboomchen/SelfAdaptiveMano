@@ -59,6 +59,17 @@ class ShellProcessor(object):
         subprocess.Popen(
             [ user + " python " + filePath], shell=True)
 
+    def getPythonScriptProcessPid(self, scriptName):
+        for p in psutil.process_iter(attrs=['pid', 'name', 'cmdline']):
+            if p.info['name'] == "python":
+                cmdline = " ".join(p.info['cmdline'])
+                self.logger.debug("cmdline:{0}".format(cmdline))
+                self.logger.debug("scriptName:{0}".format(scriptName))
+                if cmdline.find(scriptName) != -1:
+                    self.logger.debug(p.info['pid'])
+                    return p.info['pid']
+        return None
+
     def killPythonScript(self,moduleName):
         for p in psutil.process_iter(attrs=['pid', 'name', 'cmdline']):
             if p.info['name'] == "python":

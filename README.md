@@ -86,6 +86,9 @@ Dashboard
 * select routing/addressing scheme
 * validate SFCIID selection
 
+Dispatcher
+* Sync dib into mysql periodically
+
 Orchestrator
 * UFRR mapping: check vnfi in vnfiSequence, delete duplicate vnfi in same server
 * UFRR mapping and E2E-P: measure vnf max latency and update function getLatencyOfVNF in performanceModel.py
