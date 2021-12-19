@@ -22,7 +22,7 @@ from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 
 class Orchestrator(object):
-    def __init__(self, orchestrationIdx=None):
+    def __init__(self, orchestrationName=None, podNum=None, minPodIdx=None, maxPodIdx=None):
         # time.sleep(15)   # wait for other basic module boot
 
         logConfigur = LoggerConfigurator(__name__, './log',
@@ -33,15 +33,15 @@ class Orchestrator(object):
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
         self._cm = CommandMaintainer()
 
-        self._odir = ODCNInfoRetriever(self._dib, self.logger)
-        self._osa = OSFCAdder(self._dib, self.logger)
+        # self._odir = ODCNInfoRetriever(self._dib, self.logger)
+        self._osa = OSFCAdder(self._dib, self.logger, podNum, minPodIdx, maxPodIdx)
         self._osd = OSFCDeleter(self._dib, self._oib, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
-        if orchestrationIdx != None:
+        if orchestrationName != None:
             self.orchInstanceQueueName = ORCHESTRATOR_QUEUE
         else:
-            self.orchInstanceQueueName = ORCHESTRATOR_QUEUE + "_{0}".format(orchestrationIdx)
+            self.orchInstanceQueueName = ORCHESTRATOR_QUEUE + "_{0}".format(orchestrationName)
         self._messageAgent.startRecvMsg(self.orchInstanceQueueName)
 
         self._requestBatchQueue = Queue.Queue()
@@ -49,6 +49,8 @@ class Orchestrator(object):
         self._batchSize = BATCH_SIZE
 
     def startOrchestrator(self):
+        # TODO:
+        self.logger.info("startOrchestrator")
         while True:
             msg = self._messageAgent.getMsg(self.orchInstanceQueueName)
             msgType = msg.getMessageType()
@@ -60,13 +62,15 @@ class Orchestrator(object):
                     self._requestHandler(body)
                 elif self._messageAgent.isCommandReply(body):
                     self._commandReplyHandler(body)
+                elif self._messageAgent.isCommand(body):
+                    self._commandHandler(body)
                 else:
                     self.logger.error("Unknown massage body:{0}".format(body))
 
     def _requestHandler(self, request):
         try:
             if request.requestType == REQUEST_TYPE_ADD_SFC:
-                self._odir.getDCNInfo()
+                # self._odir.getDCNInfo()
                 cmd = self._osa.genAddSFCCmd(request)
                 self._cm.addCmd(cmd)
                 self._oib.addSFCRequestHandler(request, cmd)
@@ -83,7 +87,7 @@ class Orchestrator(object):
                 else:
                     self._requestBatchQueue.put(request)
                     if self._requestBatchQueue.qsize() >= self._batchSize:
-                        self._odir.getDCNInfo()
+                        # self._odir.getDCNInfo()
                         requestCmdBatch = self._osa.genABatchOfRequestAndAddSFCICmds(
                             self._requestBatchQueue)
                         for (request, cmd) in requestCmdBatch:
@@ -154,10 +158,28 @@ class Orchestrator(object):
         finally:
             pass
 
+    def _commandHandler(self, cmd):
+        try:
+            self.logger.info("Get a command reply")
+            # update cmd state
+            cmdID = cmd.cmdID
+            # TODO
+            # putState()
+            # getState()
+
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex, 
+                "Orchestrator command handler")
+        finally:
+            pass
+
 
 if __name__=="__main__":
     argParser = ArgParser()
-    idx = argParser.getArgs()['-idx']   # example: 0-36
+    name = argParser.getArgs()['name']   # example: 0-35
+    podNum = argParser.getArgs()['p']   # example: 36
+    minPodIdx = argParser.getArgs()['minPIdx']   # example: 0
+    maxPodIdx = argParser.getArgs()['maxPIdx']   # example: 35
 
-    ot = Orchestrator(idx)
+    ot = Orchestrator(name, podNum, minPodIdx, maxPodIdx)
     ot.startOrchestrator()

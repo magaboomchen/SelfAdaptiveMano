@@ -20,11 +20,27 @@ from sam.orchestration.algorithms.base.pathServerFiller import *
 
 
 class NetPack(MappingAlgorithmBase, PathServerFiller):
-    def __init__(self, dib, requestList, podNum, minPodIdx, maxPodIdx):
+    def __init__(self, dib):
         # self._dib = copy.deepcopy(dib)
         self._dib = dib
-        self.requestList = requestList
         self.topotype = "fat-tree"
+        self.pM = PerformanceModel()
+
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'NetPack.log', level='info')
+        self.logger = logConfigur.getLogger()
+
+    def mapSFCI(self, requestList, podNum, minPodIdx, maxPodIdx):
+        self.logger.info("NetPack mapSFCI")
+        self._init(requestList, podNum, minPodIdx, maxPodIdx)
+        self._mapAllPrimaryPaths()
+        return {"forwardingPathSetsDict": self.forwardingPathSetsDict,
+                "requestOrchestrationInfo": self.requestOrchestrationInfo,
+                "totalComputationTime":self.totalComputationTime}
+
+    def _init(self, requestList, podNum, minPodIdx, maxPodIdx):
+        self.zoneName = self.requestList[0].attributes['zone']
+        self.requestList = requestList
         self.podNum = podNum
         self.minPodIdx = minPodIdx
         self.maxPodIdx = maxPodIdx
@@ -33,22 +49,6 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
             raise ValueError("NetPack needs pod number! It can only be used in DCN.")
         if  minPodIdx == None or maxPodIdx == None:
             raise ValueError("NetPack needs minPodIdx or maxPodIdx.")
-        self.pM = PerformanceModel()
-
-        logConfigur = LoggerConfigurator(__name__,
-            './log', 'NetPack.log', level='info')
-        self.logger = logConfigur.getLogger()
-
-    def mapSFCI(self):
-        self.logger.info("NetPack mapSFCI")
-        self._init()
-        self._mapAllPrimaryPaths()
-        return {"forwardingPathSetsDict": self.forwardingPathSetsDict,
-                "requestOrchestrationInfo": self.requestOrchestrationInfo,
-                "totalComputationTime":self.totalComputationTime}
-
-    def _init(self):
-        self.zoneName = self.requestList[0].attributes['zone']
         self._genRequestIngAndEg()
 
         # switches = self._dib.getSwitchesByZone(self.zoneName)

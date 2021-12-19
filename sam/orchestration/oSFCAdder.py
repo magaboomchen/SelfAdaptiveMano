@@ -36,15 +36,17 @@ from sam.orchestration.algorithms.base.performanceModel import *
 
 
 class OSFCAdder(object):
-    def __init__(self, dib, logger):
+    def __init__(self, dib, logger, podNum=None, minPodIdx=None, maxPodIdx=None):
         self._dib = dib
         self.logger = logger
         self._via = VNFIIDAssigner()
         self._sc = SocketConverter()
         self.zoneName = None
-        self.podNum = None
-        self.minPodIdx = None
-        self.maxPodIdx = None
+        self.podNum = podNum
+        self.minPodIdx = minPodIdx
+        self.maxPodIdx = maxPodIdx
+
+        self.nPInstance = NetPack(self._dib)
 
     def genAddSFCCmd(self, request):
         self.request = request
@@ -327,10 +329,9 @@ class OSFCAdder(object):
         return forwardingPathSetsDict
 
     def netPack(self, requestBatchList):
-        nP = NetPack(self._dib, requestBatchList, 
-                        self.podNum, self.minPodIdx,
-                        self.maxPodIdx)
-        forwardingPathSetsDict = nP.mapSFCI()
+        forwardingPathSetsDict = self.nPInstance.mapSFCI(requestBatchList,
+                                                self.podNum, self.minPodIdx,
+                                                            self.maxPodIdx)
         return forwardingPathSetsDict
 
     def _forwardingPathSetsDict2Cmd(self, forwardingPathSetsDict,
