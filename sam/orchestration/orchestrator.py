@@ -27,7 +27,7 @@ class Orchestrator(object):
         # time.sleep(15)   # wait for other basic module boot
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'orchestrator_{0}.log'.format(orchestrationName), level='debug')
+            'orchestrator_{0}.log'.format(orchestrationName), level='warning')
         self.logger = logConfigur.getLogger()
 
         self._dib = DCNInfoBaseMaintainer()
@@ -51,19 +51,20 @@ class Orchestrator(object):
         self.batchTimeout = BATCH_TIMEOUT
 
         self.runningState = True
+        self.recvKillCommand = False
 
     def setRunningState(self, runningState):
         self.runningState = runningState
 
     def startOrchestrator(self):
         self.logger.info("startOrchestrator")
-        lastTime = time.time()
+        self.batchLastTime = time.time()
         while True:
-            currentTime = time.time()
             msg = self._messageAgent.getMsg(self.orchInstanceQueueName)
             msgType = msg.getMessageType()
             if msgType == None:
-                pass
+                if self.recvKillCommand:
+                    break
             else:
                 body = msg.getbody()
                 if self._messageAgent.isRequest(body):
@@ -74,10 +75,11 @@ class Orchestrator(object):
                     self._commandHandler(body)
                 else:
                     self.logger.error("Unknown massage body:{0}".format(body))
-            if currentTime - lastTime > self.batchTimeout:
-                # self.logger.debug("lastTime: {0}, currentTime: {1}".format(lastTime, currentTime))
+            currentTime = time.time()
+            if currentTime - self.batchLastTime > self.batchTimeout:
+                # self.logger.debug("self.batchLastTime: {0}, currentTime: {1}".format(self.batchLastTime, currentTime))
                 self.processAllAddSFCIRequests()
-                lastTime = copy.deepcopy(currentTime)
+                self.batchLastTime = time.time()
 
     def _requestHandler(self, request):
         try:
@@ -111,6 +113,7 @@ class Orchestrator(object):
                                 self._oib.addSFCIRequestHandler(request, cmd)
                             self.sendCmd(cmd)
                         self.logger.debug("Batch process finish")
+                        self.batchLastTime = time.time()
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 cmd = self._osd.genDelSFCICmd(request)
                 self.logger.debug("orchestrator classifier's serverID: {0}".format(
@@ -202,6 +205,9 @@ class Orchestrator(object):
             elif cmd.cmdType == CMD_TYPE_TURN_ORCHESTRATION_OFF:
                 self.logger.info("turn off")
                 self.runningState = False
+            elif cmd.cmdType == CMD_TYPE_KILL_ORCHESTRATION:
+                self.logger.info("kill orchestrator")
+                self.recvKillCommand = True
             else:
                 pass
         except Exception as ex:

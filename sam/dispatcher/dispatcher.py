@@ -16,6 +16,7 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.orchestration import orchestrator
 from sam.dispatcher.argParser import ArgParser
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
+from sam.base.exceptionProcessor import ExceptionProcessor
 
 
 class Dispatcher(object):
@@ -31,7 +32,7 @@ class Dispatcher(object):
         self.orchestratorDict = {}  # {"name": {"oPid":pPid, "oInfoDict":oInfoDict, "dib":dib, "liveness":True, "cpuUtilList":[], "memoryUtilList":[]}}
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'dispatcher.log', level='debug')
+            'dispatcher.log', level='warning')
         self.logger = logConfigur.getLogger()
 
         self.dispatcherQueueName = DISPATCHER_QUEUE
@@ -51,6 +52,7 @@ class Dispatcher(object):
         self._init4LocalRequests(instanceFilePath)
         self._testStartTime = time.time()
         self.startLocalRequestsRoutine()
+        self.killAllOrchestratorInstances()
 
     def _init4LocalRequests(self, instanceFilePath):
         self._loadInstance(instanceFilePath)
@@ -94,6 +96,30 @@ class Dispatcher(object):
                 if self._messageAgent.isRequest(body):
                     self._requestHandler(body)
                     cnt += 1
+
+        # absorb all initial addSFCCmd
+        cnt = 0
+        while True:
+            msg = self._mediatorStubMsgAgent.getMsg(self.mediatorQueueName)
+            msgType = msg.getMessageType()
+            if msgType == None:
+                pass
+            else:
+                body = msg.getbody()
+                if self._messageAgent.isRequest(body):
+                    pass
+                elif self._messageAgent.isCommandReply(body):
+                    pass
+                elif self._messageAgent.isCommand(body):
+                    cmd = body
+                    if cmd.cmdType == CMD_TYPE_ADD_SFCI:
+                        cnt += 1
+                        self.logger.info("cnt:{0}".format(cnt))
+                        if cnt >= len(self.addSFCIRequests):
+                            break
+                else:
+                    self.logger.error("Unknown massage body:{0}".format(body))
+        self.logger.info("Absorb all addSFCI commands from mediatorStub.")
 
     def putState2Orchestrator(self, orchestratorName):
         cmd = Command(CMD_TYPE_PUT_ORCHESTRATION_STATE, uuid.uuid1(), attributes={"dib":self._dib})
@@ -216,6 +242,7 @@ class Dispatcher(object):
     def startLocalRequestsRoutine(self):
         self.logger.info("Dispatch all addSFCIRequests")
         cnt = 0
+        self._recordOrchUtilization()
         lastTime = time.time()
         while True:
             msgCnt = self._messageAgent.getMsgCnt(self.dispatcherQueueName)
@@ -238,9 +265,9 @@ class Dispatcher(object):
                 else:
                     self.logger.error("Unknown massage body:{0}".format(body))
             currentTime = time.time()
-            if lastTime - currentTime > self.resourceRecordTimeout:
+            if currentTime - lastTime  > self.resourceRecordTimeout:
                 self._recordOrchUtilization()
-                lastTime = copy.deepcopy(currentTime)
+                lastTime = time.time()
 
         # start mediatorStub and recieve all commands, count the commands number, then record the time as orchestration time.
         self.logger.info("Start mediator stub")
@@ -262,6 +289,8 @@ class Dispatcher(object):
                     if cmd.cmdType == CMD_TYPE_ADD_SFCI:
                         cnt += 1
                         self.logger.info("cnt:{0}".format(cnt))
+                        self.logger.debug("len(self.enlargedAddSFCIRequests):{0}".format(len(self.enlargedAddSFCIRequests)))
+                        self.logger.debug("len(self.addSFCIRequests):{0}".format(len(self.addSFCIRequests)))
                         if cnt >= len(self.enlargedAddSFCIRequests) - len(self.addSFCIRequests):
                             self._testEndTime = time.time()
                             totalOrchTime = self._testEndTime - self._testStartTime
@@ -275,19 +304,26 @@ class Dispatcher(object):
                 else:
                     self.logger.error("Unknown massage body:{0}".format(body))
             currentTime = time.time()
-            if lastTime - currentTime > self.resourceRecordTimeout:
+            if currentTime - lastTime > self.resourceRecordTimeout:
                 self._recordOrchUtilization()
-                lastTime = copy.deepcopy(currentTime)
+                lastTime = time.time()
+            # else:
+            #     self.logger.info("time gap: {0}".format(lastTime - currentTime))
 
     def _recordOrchUtilization(self):
         for orchName in self.orchestratorDict.keys():
             cpuUtil, memoryUtil = self._getOrchUtilization(orchName)
+            self.logger.info("cpuUtil:{0}, memoryUtil:{1}".format(cpuUtil, memoryUtil))
             self.orchestratorDict[orchName]["cpuUtilList"].append(cpuUtil)
             self.orchestratorDict[orchName]["memoryUtilList"].append(memoryUtil)
 
     def _getOrchUtilization(self, orchName):
-        oPid = self.orchestratorDict[orchName]["oPid"]
-        cpuUtil, memoryUtil = self.sP.getProcessCPUAndMemoryUtilization(oPid)
+        try:
+            oPid = self.orchestratorDict[orchName]["oPid"]
+            cpuUtil, memoryUtil = self.sP.getProcessCPUAndMemoryUtilization(oPid)
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex,
+                "dispatcher _getOrchUtilization")
         return cpuUtil, memoryUtil
 
     def scalingOrchestratorInstances(self, msgCnt):
@@ -442,6 +478,10 @@ class Dispatcher(object):
         time.sleep(0.0000001)
         return self.sP.getPythonScriptProcessPid(commandLine)
 
+    def killAllOrchestratorInstances(self):
+        for orchName in self.orchestratorDict.keys():
+            self.turnOffOrchestrationInstance(orchName)
+
     def __getOrchestratorFilePath(self):
         filePath = orchestrator.__file__
         directoryPath = self.getFileDirectory(filePath)
@@ -453,12 +493,15 @@ class Dispatcher(object):
         directoryPath = filePath[0:index]
         return directoryPath
 
-    def turnOffOrchestrationInstance(self, oInfoDict):
+    def turnOffOrchestrationInstance(self, orchestratorName):
         pass
         # TODO: future works: auto orchestrator scaling
         # kill orchestrator process itself by sending a kill command; orchestrator reply kill command to comfirm the kill.
         # Cautions: we need to wait orchestrator to process its requests
         # dispatcher update instance state in this class
+        cmd = Command(CMD_TYPE_KILL_ORCHESTRATION, uuid.uuid1(), attributes={})
+        queueName = "ORCHESTRATOR_QUEUE_{0}".format(orchestratorName)
+        self.sendCmd(cmd, queueName)
 
     def migrateState(self, srcInstanceIdx, dstInstanceIdx):
         pass

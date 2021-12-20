@@ -2,8 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 # bottom control system
-BATCH_SIZE = 250
-BATCH_TIMEOUT = 60
+BATCH_SIZE = 500
+BATCH_TIMEOUT = 5
 
 ENABLE_OIB = False  # Please Enable this in final results.
 

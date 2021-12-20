@@ -1,0 +1,22 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+
+from sam.base.shellProcessor import *
+
+if __name__ == "__main__":
+    sP = ShellProcessor()
+    res = sP.runShellCommand("sudo rabbitmqctl list_queues")
+    res = res.strip().split('\n')
+    for idx,line in enumerate(res):
+        if idx>=3:
+            line = line.split()
+            queueName = line[0]
+            print("queueName is {0}".format(queueName))
+            messageNum = int(line[1])
+            if messageNum > 0:
+                try:
+                    sP.runShellCommand(
+                        "sudo rabbitmqctl delete_queue {0}".format(queueName))
+                except:
+                    pass
