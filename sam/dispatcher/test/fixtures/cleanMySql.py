@@ -27,7 +27,7 @@ class MySqlCleaner(object):
         self.logger = logConfigur.getLogger()
 
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
-
+        self._oib.cleanTable()
 
 if __name__ == "__main__":
     msc = MySqlCleaner()

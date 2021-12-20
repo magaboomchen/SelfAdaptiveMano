@@ -50,7 +50,6 @@ class Dispatcher(object):
         self.enlargeTimes = enlargeTimes
         self._init4LocalRequests(instanceFilePath)
         self._testStartTime = time.time()
-        # self.startRoutine()
         self.startLocalRequestsRoutine()
 
     def _init4LocalRequests(self, instanceFilePath):
@@ -81,7 +80,7 @@ class Dispatcher(object):
     def __dispatchInitialAddSFCIRequestToOrch(self):
         cnt = 0
         while True:
-            if cnt > len(self.addSFCIRequests):
+            if cnt >= len(self.addSFCIRequests):
                 break
             msgCnt = self._messageAgent.getMsgCnt(self.dispatcherQueueName)
             if self.autoScale:
@@ -215,7 +214,8 @@ class Dispatcher(object):
             # store self._dib into mysql
 
     def startLocalRequestsRoutine(self):
-        # dispatch all addSFCIRequests
+        self.logger.info("Dispatch all addSFCIRequests")
+        cnt = 0
         lastTime = time.time()
         while True:
             msgCnt = self._messageAgent.getMsgCnt(self.dispatcherQueueName)
@@ -228,7 +228,9 @@ class Dispatcher(object):
             else:
                 body = msg.getbody()
                 if self._messageAgent.isRequest(body):
+                    cnt += 1
                     self._requestHandler(body)
+                    self.logger.info("dispatch cnt: {0}".format(cnt))
                 elif self._messageAgent.isCommandReply(body):
                     pass
                 elif self._messageAgent.isCommand(body):
@@ -241,6 +243,7 @@ class Dispatcher(object):
                 lastTime = copy.deepcopy(currentTime)
 
         # start mediatorStub and recieve all commands, count the commands number, then record the time as orchestration time.
+        self.logger.info("Start mediator stub")
         cnt = 0
         lastTime = time.time()
         while True:
@@ -258,6 +261,7 @@ class Dispatcher(object):
                     cmd = body
                     if cmd.cmdType == CMD_TYPE_ADD_SFCI:
                         cnt += 1
+                        self.logger.info("cnt:{0}".format(cnt))
                         if cnt >= len(self.enlargedAddSFCIRequests) - len(self.addSFCIRequests):
                             self._testEndTime = time.time()
                             totalOrchTime = self._testEndTime - self._testStartTime
@@ -374,7 +378,7 @@ class Dispatcher(object):
 
     def _computeOrchestratorInstanceMaxPodNum(self, msgCnt):
         if not self.parallelMode:
-            return 1
+            return self.podNum
         # load regressor
         regr = self.loadRegressor(self.podNum)
         # predict orchestration instances number

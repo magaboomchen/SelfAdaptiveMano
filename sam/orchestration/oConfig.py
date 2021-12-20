@@ -3,9 +3,9 @@
 
 # bottom control system
 BATCH_SIZE = 250
-BATCH_TIMEOUT = 30
+BATCH_TIMEOUT = 60
 
-ENABLE_OIB = True  # Please Enable this in final results.
+ENABLE_OIB = False  # Please Enable this in final results.
 
 # whether use existed vnfi
 VNFI_ASSIGN_MODE = True
