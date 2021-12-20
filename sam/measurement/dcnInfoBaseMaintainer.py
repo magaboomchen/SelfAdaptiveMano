@@ -32,6 +32,12 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
         #     'DCNInfoBaseMaintainer.log', level='debug')
         # self.logger = logConfigur.getLogger()
 
+    def updateByNewDib(self, newDib):
+        self.updateServersInAllZone(newDib.getServersInAllZone())
+        self.updateSwitchesInAllZone(newDib.getSwitchesInAllZone())
+        self.updateLinksInAllZone(newDib.getLinksInAllZone())
+        self.updateVnfisInAllZone(newDib.getVnfisInAllZone())
+
     def updateServersInAllZone(self, servers):
         self._servers = servers
 

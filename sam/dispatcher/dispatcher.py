@@ -28,7 +28,7 @@ class Dispatcher(object):
         self.timeBudget = timeBudget
         self.parallelMode = parallelMode
         self.autoScale = autoScale
-        self.orchestratorDict = {}  # {"name": {"oPid":pPid, "oInfoDict":oInfoDict, "dib":dib, "liveness":True}}
+        self.orchestratorDict = {}  # {"name": {"oPid":pPid, "oInfoDict":oInfoDict, "dib":dib, "liveness":True, "cpuUtilList":[], "memoryUtilList":[]}}
 
         logConfigur = LoggerConfigurator(__name__, './log',
             'dispatcher.log', level='debug')
@@ -38,10 +38,20 @@ class Dispatcher(object):
         self._messageAgent = MessageAgent(self.logger)
         self._messageAgent.startRecvMsg(self.dispatcherQueueName)
 
+        self.mediatorQueueName = MEDIATOR_QUEUE
+        self._mediatorStubMsgAgent = MessageAgent(self.logger)
+        self._mediatorStubMsgAgent.startRecvMsg(self.mediatorQueueName)
+
+        self._testStartTime = None
+        self._testEndTime = None
+        self.resourceRecordTimeout = 2
+
     def processLocalRequests(self, instanceFilePath, enlargeTimes):
         self.enlargeTimes = enlargeTimes
         self._init4LocalRequests(instanceFilePath)
-        self.startRoutine()
+        self._testStartTime = time.time()
+        # self.startRoutine()
+        self.startLocalRequestsRoutine()
 
     def _init4LocalRequests(self, instanceFilePath):
         self._loadInstance(instanceFilePath)
@@ -50,28 +60,54 @@ class Dispatcher(object):
         self._updateDib()
         # decide the orchestrator number and corresponding idx;
         maxPodNumPerOrchstratorInstance = self._computeOrchestratorInstanceMaxPodNum(
-                        len(self.addSFCIRequests) * self.enlargeTimes)
+                        len(self.addSFCIRequests) * (self.enlargeTimes-1))
         # init X orchestrator instances
         oInfoList = self._computeOrchInstanceInfoList(maxPodNumPerOrchstratorInstance)
         self.logger.debug("oInfoList:{0}".format(oInfoList))
-        for oInfoDict in oInfoList:
-            oPid = self.turnOnNewOrchestratorInstance(oInfoDict)
+        for idx,oInfoDict in enumerate(oInfoList):
+            oPid = self.initNewOrchestratorInstance(idx, oInfoDict)
             self.orchestratorDict[oInfoDict["name"]] = {"oPid": oPid,
                                     "oInfoDict": oInfoDict,
                                     "dib":None, "liveness":True,
-                                    "sfcDict":{}, "sfciDict":{}}
+                                    "sfcDict":{}, "sfciDict":{},
+                                    "cpuUtilList":[], "memoryUtilList":[]}
             # TODO: put dib into new orchestrator instance
             self.putState2Orchestrator(oInfoDict["name"])
+            self.turnOnOrchestrator(oInfoDict["name"])
         self.logger.debug("self.orchestratorDict: {0}".format(self.orchestratorDict))
         self.__assignSFCs2DifferentOrchestratorInstance()
+        self.__dispatchInitialAddSFCIRequestToOrch()
+
+    def __dispatchInitialAddSFCIRequestToOrch(self):
+        cnt = 0
+        while True:
+            if cnt > len(self.addSFCIRequests):
+                break
+            msgCnt = self._messageAgent.getMsgCnt(self.dispatcherQueueName)
+            if self.autoScale:
+                self.scalingOrchestratorInstances(msgCnt)
+            msg = self._messageAgent.getMsg(self.dispatcherQueueName)
+            msgType = msg.getMessageType()
+            if msgType == None:
+                pass
+            else:
+                body = msg.getbody()
+                if self._messageAgent.isRequest(body):
+                    self._requestHandler(body)
+                    cnt += 1
 
     def putState2Orchestrator(self, orchestratorName):
         cmd = Command(CMD_TYPE_PUT_ORCHESTRATION_STATE, uuid.uuid1(), attributes={"dib":self._dib})
         queueName = "ORCHESTRATOR_QUEUE_{0}".format(orchestratorName)
         self.sendCmd(cmd, queueName)
 
+    def turnOnOrchestrator(self, orchestratorName):
+        cmd = Command(CMD_TYPE_TURN_ORCHESTRATION_ON, uuid.uuid1(), attributes={})
+        queueName = "ORCHESTRATOR_QUEUE_{0}".format(orchestratorName)
+        self.sendCmd(cmd, queueName)
+
     def sendCmd(self, cmd, queueName):
-        msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, cmd)
+        msg = SAMMessage(MSG_TYPE_DISPATCHER_CMD, cmd)
         self._messageAgent.sendMsg(queueName, msg)
 
     def __assignSFCs2DifferentOrchestratorInstance(self):
@@ -178,6 +214,78 @@ class Dispatcher(object):
             # sync state from orchestrator instance periodically (i.e. 5 minutes): getState(), update subZoneState into self._dib
             # store self._dib into mysql
 
+    def startLocalRequestsRoutine(self):
+        # dispatch all addSFCIRequests
+        lastTime = time.time()
+        while True:
+            msgCnt = self._messageAgent.getMsgCnt(self.dispatcherQueueName)
+            if msgCnt == 0:
+                break
+            msg = self._messageAgent.getMsg(self.dispatcherQueueName)
+            msgType = msg.getMessageType()
+            if msgType == None:
+                pass
+            else:
+                body = msg.getbody()
+                if self._messageAgent.isRequest(body):
+                    self._requestHandler(body)
+                elif self._messageAgent.isCommandReply(body):
+                    pass
+                elif self._messageAgent.isCommand(body):
+                    pass
+                else:
+                    self.logger.error("Unknown massage body:{0}".format(body))
+            currentTime = time.time()
+            if lastTime - currentTime > self.resourceRecordTimeout:
+                self._recordOrchUtilization()
+                lastTime = copy.deepcopy(currentTime)
+
+        # start mediatorStub and recieve all commands, count the commands number, then record the time as orchestration time.
+        cnt = 0
+        lastTime = time.time()
+        while True:
+            msg = self._mediatorStubMsgAgent.getMsg(self.mediatorQueueName)
+            msgType = msg.getMessageType()
+            if msgType == None:
+                pass
+            else:
+                body = msg.getbody()
+                if self._messageAgent.isRequest(body):
+                    pass
+                elif self._messageAgent.isCommandReply(body):
+                    pass
+                elif self._messageAgent.isCommand(body):
+                    cmd = body
+                    if cmd.cmdType == CMD_TYPE_ADD_SFCI:
+                        cnt += 1
+                        if cnt >= len(self.enlargedAddSFCIRequests) - len(self.addSFCIRequests):
+                            self._testEndTime = time.time()
+                            totalOrchTime = self._testEndTime - self._testStartTime
+                            res = {
+                                "totalOrchTime":totalOrchTime,
+                                "orchestratorDict":self.orchestratorDict
+                            }
+                            self.pIO.writePickleFile("./res/{0}/{1}_parallelMode={2}_enlargeTime={3}.pickle".format(
+                                    self.topoType, self.podNum, self.parallelMode, self.enlargeTimes), res)
+                            break
+                else:
+                    self.logger.error("Unknown massage body:{0}".format(body))
+            currentTime = time.time()
+            if lastTime - currentTime > self.resourceRecordTimeout:
+                self._recordOrchUtilization()
+                lastTime = copy.deepcopy(currentTime)
+
+    def _recordOrchUtilization(self):
+        for orchName in self.orchestratorDict.keys():
+            cpuUtil, memoryUtil = self._getOrchUtilization(orchName)
+            self.orchestratorDict[orchName]["cpuUtilList"].append(cpuUtil)
+            self.orchestratorDict[orchName]["memoryUtilList"].append(memoryUtil)
+
+    def _getOrchUtilization(self, orchName):
+        oPid = self.orchestratorDict[orchName]["oPid"]
+        cpuUtil, memoryUtil = self.sP.getProcessCPUAndMemoryUtilization(oPid)
+        return cpuUtil, memoryUtil
+
     def scalingOrchestratorInstances(self, msgCnt):
         raise ValueError("Only has design, not implementation")
         if self.parallelMode:
@@ -265,6 +373,8 @@ class Dispatcher(object):
         raise ValueError("Unimplementation _commandHandler")
 
     def _computeOrchestratorInstanceMaxPodNum(self, msgCnt):
+        if not self.parallelMode:
+            return 1
         # load regressor
         regr = self.loadRegressor(self.podNum)
         # predict orchestration instances number
@@ -274,8 +384,8 @@ class Dispatcher(object):
         self.maxSFCLength = 7
         X_real = [[switchNum * (serverNum + torSwitchNum + self.podNum) * self.maxBW * self.maxSFCLength * msgCnt]]
         X_real = np.array(X_real)
-        Y_real = regr.predict(X_real)
-        minOrchestratorNum = math.pow( Y_real[0]/self.timeBudget, 1/3.0 )
+        Y_real = max(regr.predict(X_real)[0], 1)
+        minOrchestratorNum = max(math.pow( Y_real/self.timeBudget, 1/3.0 ), 1)
         self.logger.warning("minOrchestratorNum:{0}".format(minOrchestratorNum))
         maxPodNumPerOrchstratorInstance = math.floor(self.podNum / minOrchestratorNum)
         return max(int(maxPodNumPerOrchstratorInstance),1)
@@ -316,14 +426,15 @@ class Dispatcher(object):
         }
         return scaleDecisionDict
 
-    def turnOnNewOrchestratorInstance(self, oInfoDict):
-        self.logger.info("turnOnNewOrchestrationInstance instance name:{0}".format(oInfoDict["name"]))
+    def initNewOrchestratorInstance(self, idx, oInfoDict):
+        self.logger.info("initNewOrchestratorInstance instance name:{0}".format(oInfoDict["name"]))
+        tasksetCmd = "taskset -c {0}".format(idx)
         orchestratorFilePath = self.__getOrchestratorFilePath()
         self.logger.info(orchestratorFilePath)
-        args = "-name {0} -p {1} -minPIdx {2} -maxPIdx {3}".format(oInfoDict["name"], self.podNum,
+        args = "-name {0} -p {1} -minPIdx {2} -maxPIdx {3} -turnOff".format(oInfoDict["name"], self.podNum,
                                             oInfoDict["minPodIdx"] , oInfoDict["maxPodIdx"])
         commandLine = "{0} {1}".format(orchestratorFilePath, args)
-        self.sP.runPythonScript(commandLine)
+        self.sP.runPythonScript(commandLine, cmdPrefix=tasksetCmd)
         time.sleep(0.0000001)
         return self.sP.getPythonScriptProcessPid(commandLine)
 

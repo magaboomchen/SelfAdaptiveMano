@@ -31,6 +31,8 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         self.logger = logConfigur.getLogger()
 
     def mapSFCI(self, requestList, podNum, minPodIdx, maxPodIdx):
+        # self.logger.debug("self._dib server: {0}".format(self._dib))
+
         self.logger.info("NetPack mapSFCI")
         self._init(requestList, podNum, minPodIdx, maxPodIdx)
         self._mapAllPrimaryPaths()
@@ -39,6 +41,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
                 "totalComputationTime":self.totalComputationTime}
 
     def _init(self, requestList, podNum, minPodIdx, maxPodIdx):
+        self.requestList = requestList
         self.zoneName = self.requestList[0].attributes['zone']
         self.requestList = requestList
         self.podNum = podNum

@@ -3,12 +3,15 @@
 
 from sam.base.argParser import *
 
+
 class ArgParser(ArgParserBase):
     def __init__(self, *args, **kwargs):
         super(ArgParser, self).__init__(*args, **kwargs)
         self.parser = argparse.ArgumentParser(description='Set Orchestrator.', add_help=False)
         self.parser.add_argument('-name', metavar='Orchestration Name', type=str, 
             default=None, help='orchestration Name, e.g. 1')
+        self.parser.add_argument("-turnOff", action="store_true",
+            help='Turn Orchestration Off')
         self.parser.add_argument('-p', metavar='podNumber',
             type=int, nargs='?', const=1, default=None,
             help="pod number")

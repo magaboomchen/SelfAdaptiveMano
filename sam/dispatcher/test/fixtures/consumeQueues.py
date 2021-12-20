@@ -35,6 +35,7 @@ class Consumer(object):
 
 
 if __name__ == "__main__":
-    queueName = "ORCHESTRATOR_QUEUE_0_19"
+    # queueName = "ORCHESTRATOR_QUEUE_0_19"
+    queueName = MEDIATOR_QUEUE
     c = Consumer(queueName)
     c.startConsumer()

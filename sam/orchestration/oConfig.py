@@ -2,7 +2,10 @@
 # -*- coding: UTF-8 -*-
 
 # bottom control system
-BATCH_SIZE = 1
+BATCH_SIZE = 250
+BATCH_TIMEOUT = 30
+
+ENABLE_OIB = True  # Please Enable this in final results.
 
 # whether use existed vnfi
 VNFI_ASSIGN_MODE = True

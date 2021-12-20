@@ -35,6 +35,12 @@ class ShellProcessor(object):
         out_bytes = subprocess.check_output(
             [ user + filePath], shell=True)
 
+    def getProcessCPUAndMemoryUtilization(self, pid):
+        p = psutil.Process(pid)
+        cpuUtilList = p.cpu_percent(interval=1)
+        memoryUtilList = p.memory_info().rss
+        return cpuUtilList, memoryUtilList
+
     def killProcess(self,processName):
         for p in psutil.process_iter(attrs=['pid', 'name']):
             if processName in p.info['name']:
@@ -51,13 +57,13 @@ class ShellProcessor(object):
                         return True
         return False
 
-    def runPythonScript(self, filePath, root=False):
+    def runPythonScript(self, filePath, root=False, cmdPrefix=""):
         if root == True:
             user = "sudo "
         else:
             user = ""
         subprocess.Popen(
-            [ user + " python " + filePath], shell=True)
+            [ user + "{0} python ".format(cmdPrefix) + filePath], shell=True)
 
     def getPythonScriptProcessPid(self, scriptName):
         for p in psutil.process_iter(attrs=['pid', 'name', 'cmdline']):

@@ -1,12 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import time
 import sys
 if sys.version > '3':
     import queue as Queue
 else:
     import Queue
+import time
+import copy
 
 from sam.base.messageAgent import *
 from sam.base.request import Request, Reply
@@ -47,11 +48,18 @@ class Orchestrator(object):
         self._requestBatchQueue = Queue.Queue()
         self._batchMode = True
         self._batchSize = BATCH_SIZE
+        self.batchTimeout = BATCH_TIMEOUT
+
+        self.runningState = True
+
+    def setRunningState(self, runningState):
+        self.runningState = runningState
 
     def startOrchestrator(self):
-        # TODO:
         self.logger.info("startOrchestrator")
+        lastTime = time.time()
         while True:
+            currentTime = time.time()
             msg = self._messageAgent.getMsg(self.orchInstanceQueueName)
             msgType = msg.getMessageType()
             if msgType == None:
@@ -66,6 +74,10 @@ class Orchestrator(object):
                     self._commandHandler(body)
                 else:
                     self.logger.error("Unknown massage body:{0}".format(body))
+            if currentTime - lastTime > self.batchTimeout:
+                # self.logger.debug("lastTime: {0}, currentTime: {1}".format(lastTime, currentTime))
+                self.processAllAddSFCIRequests()
+                lastTime = copy.deepcopy(currentTime)
 
     def _requestHandler(self, request):
         try:
@@ -86,14 +98,19 @@ class Orchestrator(object):
                     # self.sendCmd(cmd)
                 else:
                     self._requestBatchQueue.put(request)
-                    if self._requestBatchQueue.qsize() >= self._batchSize:
+                    self.logger.debug("put req into requestBatchQueue")
+                    if self._requestBatchQueue.qsize() >= self._batchSize and self.runningState == True:
+                        self.logger.info("Trigger batch process.")
                         # self._odir.getDCNInfo()
-                        requestCmdBatch = self._osa.genABatchOfRequestAndAddSFCICmds(
+                        reqCmdTupleList = self._osa.genABatchOfRequestAndAddSFCICmds(
                             self._requestBatchQueue)
-                        for (request, cmd) in requestCmdBatch:
+                        # self.logger.info("After mapping, there are {0} request in queue".format(self._requestBatchQueue.qsize()))
+                        for (request, cmd) in reqCmdTupleList:
                             self._cm.addCmd(cmd)
-                            self._oib.addSFCIRequestHandler(request, cmd)
+                            if ENABLE_OIB:
+                                self._oib.addSFCIRequestHandler(request, cmd)
                             self.sendCmd(cmd)
+                        self.logger.debug("Batch process finish")
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 cmd = self._osd.genDelSFCICmd(request)
                 self.logger.debug("orchestrator classifier's serverID: {0}".format(
@@ -117,6 +134,17 @@ class Orchestrator(object):
             self._oib.updateRequestState2DB(request, REQUEST_STATE_FAILED)
         finally:
             pass
+
+    def processAllAddSFCIRequests(self):
+        self.logger.info("Batch time out.")
+        if self._requestBatchQueue.qsize() > 0 and self.runningState == True:
+            self.logger.info("Timeout process - self._requestBatchQueue.qsize():{0}".format(self._requestBatchQueue.qsize()))
+            reqCmdTupleList = self._osa.genABatchOfRequestAndAddSFCICmds(
+                self._requestBatchQueue)
+            for (request, cmd) in reqCmdTupleList:
+                self._cm.addCmd(cmd)
+                self._oib.addSFCIRequestHandler(request, cmd)
+                self.sendCmd(cmd)
 
     def sendCmd(self, cmd):
         msg = SAMMessage(MSG_TYPE_ORCHESTRATOR_CMD, cmd)
@@ -164,10 +192,16 @@ class Orchestrator(object):
             cmdID = cmd.cmdID
             if cmd.cmdType == CMD_TYPE_PUT_ORCHESTRATION_STATE:
                 self.logger.info("Get dib from dispatcher!")
-                self._dib = cmd.attributes["dib"]
+                self._dib.updateByNewDib(cmd.attributes["dib"])
             elif cmd.cmdType == CMD_TYPE_GET_ORCHESTRATION_STATE:
                 pass
                 # TODO
+            elif cmd.cmdType == CMD_TYPE_TURN_ORCHESTRATION_ON:
+                self.logger.info("turn on")
+                self.runningState = True
+            elif cmd.cmdType == CMD_TYPE_TURN_ORCHESTRATION_OFF:
+                self.logger.info("turn off")
+                self.runningState = False
             else:
                 pass
         except Exception as ex:
@@ -183,6 +217,9 @@ if __name__=="__main__":
     podNum = argParser.getArgs()['p']   # example: 36
     minPodIdx = argParser.getArgs()['minPIdx']   # example: 0
     maxPodIdx = argParser.getArgs()['maxPIdx']   # example: 35
+    turnOff = argParser.getArgs()['turnOff']
 
     ot = Orchestrator(name, podNum, minPodIdx, maxPodIdx)
+    if turnOff:
+        ot.setRunningState(False)
     ot.startOrchestrator()
