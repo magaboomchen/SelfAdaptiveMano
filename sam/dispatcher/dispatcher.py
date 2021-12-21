@@ -47,12 +47,28 @@ class Dispatcher(object):
         self._testEndTime = None
         self.resourceRecordTimeout = 2
 
-    def processLocalRequests(self, instanceFilePath, enlargeTimes):
+    def processLocalRequests(self, instanceFilePath, enlargeTimes, expNum):
+        self.localRequestMode = True
+        self.expNum = expNum
+        self.sfcLength = self.__parseSFCLength(instanceFilePath)
         self.enlargeTimes = enlargeTimes
         self._init4LocalRequests(instanceFilePath)
         self._testStartTime = time.time()
         self.startLocalRequestsRoutine()
         self.killAllOrchestratorInstances()
+
+    def __parseSFCLength(self, instanceFilePath):
+        idx1 = instanceFilePath.find("sfcLength=")
+        idx2 = instanceFilePath.find(".instance")
+        if idx1 != -1 and idx2 != -1:
+            sfcLength = int(instanceFilePath[idx1+len("sfcLength="):idx2])
+        else:
+            sfcLength = 7
+        return sfcLength
+
+    def test_parseSFCLength(self):
+        filePath = "../instance/instance/fat-tree/0/fat-tree-k=22_V=11.sfcr_set_M=1000.sfcLength=5.instance"
+        print(self._parseSFCLength(filePath))
 
     def _init4LocalRequests(self, instanceFilePath):
         self._loadInstance(instanceFilePath)
@@ -291,15 +307,15 @@ class Dispatcher(object):
                         self.logger.info("cnt:{0}".format(cnt))
                         self.logger.debug("len(self.enlargedAddSFCIRequests):{0}".format(len(self.enlargedAddSFCIRequests)))
                         self.logger.debug("len(self.addSFCIRequests):{0}".format(len(self.addSFCIRequests)))
-                        if cnt >= len(self.enlargedAddSFCIRequests) - len(self.addSFCIRequests):
+                        if cnt >= len(self.enlargedAddSFCIRequests) - len(self.addSFCIRequests) and self.localRequestMode:
                             self._testEndTime = time.time()
                             totalOrchTime = self._testEndTime - self._testStartTime
                             res = {
                                 "totalOrchTime":totalOrchTime,
                                 "orchestratorDict":self.orchestratorDict
                             }
-                            self.pIO.writePickleFile("./res/{0}/{1}_parallelMode={2}_enlargeTime={3}.pickle".format(
-                                    self.topoType, self.podNum, self.parallelMode, self.enlargeTimes), res)
+                            self.pIO.writePickleFile("./res/{0}/{1}/{2}_parallelMode={3}_sfcLength={4}_enlargeTime={5}.pickle".format(
+                                    self.topoType, self.expNum, self.podNum, int(self.parallelMode), self.sfcLength, self.enlargeTimes), res)
                             break
                 else:
                     self.logger.error("Unknown massage body:{0}".format(body))
@@ -515,9 +531,10 @@ if __name__ == "__main__":
     enlargeTimes = argParser.getArgs()['et']
     localTest = argParser.getArgs()['localTest']
     parallelMode = argParser.getArgs()['parallelMode']
+    expNum = argParser.getArgs()['expNum']
 
     dP = Dispatcher(podNum, parallelMode)
     if localTest:
-        dP.processLocalRequests(problemInstanceFilePath, enlargeTimes)
+        dP.processLocalRequests(problemInstanceFilePath, enlargeTimes, expNum)
     else:
         dP.startDispatcher()

@@ -4,9 +4,12 @@
 import logging
 from scapy.all import *
 import time
+import random
 
 import pytest
 
+from sam.base.vnf import *
+from sam.base.acl import *
 from sam.base import server
 from sam.base.sfc import *
 from sam.base.vnf import *
@@ -43,10 +46,11 @@ class TestVNFSFCIAdderClass(TestBase):
         self.clearQueue()
         self.killAllModule()
 
-        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
+        # classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
+        classifier = None
         self.mediator = MediatorStub()
-        self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
-            TESTER_SERVER_DATAPATH_MAC)
+        # self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
+        #     TESTER_SERVER_DATAPATH_MAC)
 
         self.runSFFController()
         self.runVNFController()
@@ -89,11 +93,25 @@ class TestVNFSFCIAdderClass(TestBase):
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
-                vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
-                    vnfiID=uuid.uuid1(), node=server)
+                vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
+                    vnfiID=uuid.uuid1(), node=server, config={"ACL":self.genTestFWRules()})
+                # vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
+                #     vnfiID=uuid.uuid1(), node=server)
                 vnfi.maxCPUNum = 1
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
+
+    def genTestFWRules(self):
+        rules = []
+        for idx in range(100):
+            sport1 = random.randint(100, 60000)
+            sport2 = random.randint(100, 60000)
+            dport1 = random.randint(100, 60000)
+            dport2 = random.randint(100, 60000)
+            rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
+                srcPort=(min(sport1,sport2), max(sport1,sport2)), dstPort=(min(dport1,dport2), max(dport1,dport2))))
+        rules.append(ACLTuple(ACL_ACTION_ALLOW))
+        return rules
 
     def test_addSFCI(self, setup_addSFCI):
         # exercise
@@ -130,7 +148,7 @@ class TestVNFSFCIAdderClass(TestBase):
             assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
+        logging.warning("Deleting VNFI")
         for sfciIndex in range(MAX_SFCI):
             sfci = self.sfciList[sfciIndex]
             delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, sfci)

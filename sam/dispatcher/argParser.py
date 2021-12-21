@@ -15,8 +15,11 @@ class ArgParser(ArgParserBase):
         self.parser.add_argument("-parallelMode", action="store_true",
             help='Parallel Mode')
         self.parser.add_argument('-p', metavar='podNumber',
-            type=int, nargs='?', const=1, default=None,
+            type=int, nargs='?', const=1, default=-1,
             help="pod number")
+        self.parser.add_argument('-expNum', metavar='expNumber',
+            type=int, nargs='?', const=1, default=None,
+            help="experiment number")
         self.parser.add_argument('-et', metavar='enlargeTimes',
             type=int, nargs='?', const=1, default=None,
             help="enlarge times")
