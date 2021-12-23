@@ -50,6 +50,11 @@ class TestVNFSFCIAdderClass(TestBase):
         self.clearQueue()
         self.killAllModule()
 
+        self.mediatorRcvAgent = MessageAgent()
+        self.mediatorRcvAgent.startRecvMsg(MEDIATOR_QUEUE)
+
+        self.msgSendAgent = MessageAgent()
+
         classifier = None
         self.mediator = MediatorStub()
         self.sfc = self.genBiDirectionSFC(classifier)
@@ -93,6 +98,10 @@ class TestVNFSFCIAdderClass(TestBase):
         self.killVNFController()
         return deployTime, sendCmdTime
 
+    def sendCmd(self, queue, msgType, cmd):
+        msg = SAMMessage(msgType, cmd)
+        self.msgSendAgent.sendMsg(queue, msg)
+
     def addSFCI2SFF(self, sfciNum=MAX_SFCI):
         logging.info("setup add SFCI to sff")
         for sfciIndex in range(sfciNum):
@@ -112,7 +121,7 @@ class TestVNFSFCIAdderClass(TestBase):
 
     def recvAllCmdReplys(self):
         while len(self.waitingCmdDict) > 0:
-            cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+            cmdRply = self.mediatorRecvCmdRply()
             if self.waitingCmdDict.has_key(cmdRply.cmdID) \
                 and cmdRply.cmdState == CMD_STATE_SUCCESSFUL:
                 del self.waitingCmdDict[cmdRply.cmdID]
@@ -125,9 +134,23 @@ class TestVNFSFCIAdderClass(TestBase):
             sfci = self.sfciList[sfciIndex]
             delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, sfci)
             self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, delSFCICmd)
-            cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+            cmdRply = self.mediatorRecvCmdRply()
             assert cmdRply.cmdID == delSFCICmd.cmdID
             assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+
+    def mediatorRecvCmdRply(self):
+        while True:
+            msg = self.mediatorRcvAgent.getMsg(MEDIATOR_QUEUE)
+            msgType = msg.getMessageType()
+            if msgType == None:
+                pass
+            else:
+                body = msg.getbody()
+                if self.mediatorRcvAgent.isCommandReply(body):
+                    logging.info("testBase:recvCmdRply")
+                    return body
+                else:
+                    logging.error("Unknown massage body")
 
     def genSFCIList(self):
         self.sfciList = []

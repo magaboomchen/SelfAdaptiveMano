@@ -20,7 +20,7 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 
 
 class Dispatcher(object):
-    def __init__(self, podNum, parallelMode=True, timeBudget=10, autoScale=False):
+    def __init__(self, podNum, parallelMode=True, timeBudget=15, autoScale=False, baseSFCNum=100):
         self.pIO = PickleIO()
         self._dib = DCNInfoBaseMaintainer()
         self.sP = ShellProcessor()
@@ -46,6 +46,9 @@ class Dispatcher(object):
         self._testStartTime = None
         self._testEndTime = None
         self.resourceRecordTimeout = 2
+
+        # TODO: this and corresponding codes could be delete
+        self.baseSFCNum = baseSFCNum
 
     def processLocalRequests(self, instanceFilePath, enlargeTimes, expNum):
         self.localRequestMode = True
@@ -78,10 +81,13 @@ class Dispatcher(object):
         # decide the orchestrator number and corresponding idx;
         maxPodNumPerOrchstratorInstance = self._computeOrchestratorInstanceMaxPodNum(
                         len(self.addSFCIRequests) * (self.enlargeTimes-1))
+        maxOrchNum = self._computeOrchestratorInstanceMaxOrchNum(
+                        len(self.addSFCIRequests) * (self.enlargeTimes-1))
         # init X orchestrator instances
-        oInfoList = self._computeOrchInstanceInfoList(maxPodNumPerOrchstratorInstance)
+        oInfoList = self._computeOrchInstanceInfoList(maxPodNumPerOrchstratorInstance, maxOrchNum)
         self.logger.debug("oInfoList:{0}".format(oInfoList))
         for idx,oInfoDict in enumerate(oInfoList):
+            # we need turn off orchestrator at initial to put state into it
             oPid = self.initNewOrchestratorInstance(idx, oInfoDict)
             self.orchestratorDict[oInfoDict["name"]] = {"oPid": oPid,
                                     "oInfoDict": oInfoDict,
@@ -162,18 +168,30 @@ class Dispatcher(object):
             self.orchestratorDict[orchName]["sfcDict"][sfc.sfcUUID] = sfc
         # self.logger.info("self.orchestratorDict:{0}".format(self.orchestratorDict))
 
-    def _computeOrchInstanceInfoList(self, maxPodNumPerOrchstratorInstance):
+    def _computeOrchInstanceInfoList(self, maxPodNumPerOrchstratorInstance, maxOrchNum):
         self.logger.warning("maxPodNumPerOrchstratorInstance:{0}".format(maxPodNumPerOrchstratorInstance))
-        oPodNumList = []
-        totalPodNum = self.podNum
-        self.logger.debug("totalPodNum:{0}".format(totalPodNum))
-        while totalPodNum > 0:
-            if totalPodNum-maxPodNumPerOrchstratorInstance >= 0:
-                oPodNumList.append(maxPodNumPerOrchstratorInstance)
-                totalPodNum-=maxPodNumPerOrchstratorInstance
-            else:
-                oPodNumList.append(totalPodNum)
-                break
+        # self.logger.warning("maxOrchNum:{0}".format(maxOrchNum))
+        # oPodNumList = []
+        # totalPodNum = self.podNum
+        # self.logger.debug("totalPodNum:{0}".format(totalPodNum))
+
+        # evenPodNum = math.ceil(float(self.podNum) / float(maxOrchNum) )
+        # self.logger.warning("evenPodNum:{0}".format(evenPodNum))
+        # perPodNum = min(maxPodNumPerOrchstratorInstance, evenPodNum)
+
+        # while totalPodNum > 0:
+        #     if totalPodNum-maxPodNumPerOrchstratorInstance >= 0:
+        #         oPodNumList.append(maxPodNumPerOrchstratorInstance)
+        #         totalPodNum-=maxPodNumPerOrchstratorInstance
+        #     else:
+        #         oPodNumList.append(totalPodNum)
+        #         break
+
+        self.logger.warning("maxOrchNum:{0}".format(maxOrchNum))
+        oPodNumList = self.splitInteger(self.podNum, maxOrchNum)
+
+        self.logger.warning("orch pod number distribution: {0}".format(oPodNumList))
+
         oInfoList = []
         for idx,podNum in enumerate(oPodNumList):
             minPodIdx = sum(oPodNumList[:idx])
@@ -186,10 +204,38 @@ class Dispatcher(object):
             oInfoList.append(oInfoDict)
         return oInfoList
 
+    def splitInteger(self, x, n):
+        res = []
+        # If we cannot split the
+        # number into exactly 'N' parts
+        if(x < n):
+            raise ValueError("X < N")
+    
+        # If x % n == 0 then the minimum
+        # difference is 0 and all
+        # numbers are x / n
+        elif (x % n == 0):
+            for i in range(n):
+                res.append(x//n)
+        else:
+            # upto n-(x % n) the values
+            # will be x / n
+            # after that the values
+            # will be x / n + 1
+            zp = n - (x % n)
+            pp = x//n
+            for i in range(n):
+                if(i>= zp):
+                    res.append(pp + 1)
+                else:
+                    res.append(pp)
+        return res
+
     def _loadInstance(self, instanceFilePath):
         self.instance = self.pIO.readPickleFile(instanceFilePath)
         self.topologyDict = self.instance['topologyDict']
         self.addSFCIRequests = self.instance['addSFCIRequests']
+        self.addSFCIRequests = self.addSFCIRequests[:self.baseSFCNum]
 
     def _enlargeRequests(self):
         tmpAddSFCIRequests = []
@@ -387,6 +433,7 @@ class Dispatcher(object):
                 sfc = request.attributes["sfc"]
                 sfci = request.attributes["sfci"]
                 orchName = self._getOrchestratorNameBySFC(sfc)      # Read from self.orchestratorDict
+                self.logger.info("assign SFC to orchName:{0}".format(orchName))
                 self._assignSFCI2Orchestrator(sfci, orchName)       # update self.orchestratorDict
                 self._sendRequest2Orchestrator(request, orchName)   # we dispatch add request previously
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
@@ -445,6 +492,22 @@ class Dispatcher(object):
         self.logger.warning("minOrchestratorNum:{0}".format(minOrchestratorNum))
         maxPodNumPerOrchstratorInstance = math.floor(self.podNum / minOrchestratorNum)
         return max(int(maxPodNumPerOrchstratorInstance),1)
+
+    def _computeOrchestratorInstanceMaxOrchNum(self, msgCnt):
+        if not self.parallelMode:
+            return 1
+        # load regressor
+        regr = self.loadRegressor(self.podNum)
+        # predict orchestration instances number
+        if self.topoType == "fat-tree":
+            switchNum, torSwitchNum, serverNum = self._getFatTreeNodesNumber(self.podNum)
+        self.maxBW = 100
+        self.maxSFCLength = 7
+        X_real = [[switchNum * (serverNum + torSwitchNum + self.podNum) * self.maxBW * self.maxSFCLength * msgCnt]]
+        X_real = np.array(X_real)
+        Y_real = max(regr.predict(X_real)[0], 1)
+        minOrchestratorNum = math.ceil( max(math.pow( Y_real/self.timeBudget, 1/3.0 ), 1) )
+        return int(minOrchestratorNum)
 
     def loadRegressor(self, podNum):
         regressorFilePath = self.getRegressorFilePath()

@@ -4,7 +4,9 @@
 import copy
 import time
 import math
+
 import networkx as nx
+from networkx.algorithms.link_prediction import jaccard_coefficient
 from networkx.exception import NetworkXNoPath, NodeNotFound, NetworkXError
 
 from sam.base.path import *
@@ -26,9 +28,19 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         self.topotype = "fat-tree"
         self.pM = PerformanceModel()
 
+        self.podNum = None
+        self.minPodIdx = None
+        self.maxPodIdx = None
+
         logConfigur = LoggerConfigurator(__name__,
             './log', 'NetPack.log', level='info')
         self.logger = logConfigur.getLogger()
+
+    # def updateServerSets(self, podNum, minPodIdx, maxPodIdx):
+    #     self.podNum = podNum
+    #     self.minPodIdx = minPodIdx
+    #     self.maxPodIdx = maxPodIdx
+    #     self.serverSets = self.getAllServerSets()
 
     def mapSFCI(self, requestList, podNum, minPodIdx, maxPodIdx):
         # self.logger.debug("self._dib server: {0}".format(self._dib))
@@ -44,9 +56,15 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         self.requestList = requestList
         self.zoneName = self.requestList[0].attributes['zone']
         self.requestList = requestList
-        self.podNum = podNum
-        self.minPodIdx = minPodIdx
-        self.maxPodIdx = maxPodIdx
+        if podNum != self.podNum \
+            or minPodIdx != self.minPodIdx \
+                or maxPodIdx != self.maxPodIdx:
+            self.podNum = podNum
+            self.minPodIdx = minPodIdx
+            self.maxPodIdx = maxPodIdx
+            self.logger.warning("update serverSets!")
+            self.serverSets = self.getAllServerSets()
+
         self.max_attempts = 1
         if podNum == None:
             raise ValueError("NetPack needs pod number! It can only be used in DCN.")
@@ -65,8 +83,10 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         self.requestEgSwitchID = {}
         for rIndex in range(len(self.requestList)):
             # assign ing/eg switch in random style
-            ingSwitchID = random.randint(self.minPodIdx, self.maxPodIdx-1)
-            egSwitchID = random.randint(self.minPodIdx, self.maxPodIdx-1)
+            # ingSwitchID = random.randint(self.minPodIdx, self.maxPodIdx-1)
+            # egSwitchID = random.randint(self.minPodIdx, self.maxPodIdx-1)
+            ingSwitchID = self._randomSelectACoreSwitchInSubZone()
+            egSwitchID = self._randomSelectACoreSwitchInSubZone()
             self.requestIngSwitchID[rIndex] = ingSwitchID
             self.requestEgSwitchID[rIndex] = egSwitchID
         # self.logger.debug("self.requestIngSwitchID:{0}, self.requestEgSwitchID:{1}".format(
@@ -76,7 +96,10 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         self.forwardingPathSetsDict = {}
         self.primaryPathDict = {}
         # construct serversets
-        serverSets = self.getAllServerSets()
+        preTime = time.time()
+        serverSets = self.serverSets
+        preEndTime = time.time()
+        self.logger.warning("total pre time:{0}".format(preEndTime-preTime))
         # for serverSet in serverSets:
         #     for servers in serverSet:
         #         for server in servers:
@@ -285,22 +308,50 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
             # construct single serverSet
             singleServerSet = []
             for switchID in range(torSwitchStartIdx, torSwitchEndIdx+1):
-                rackServersList = self._dib.getConnectedServers(switchID, self.zoneName)
-                for server in rackServersList:
-                    singleServerSet.append([server])
+                if self.isTorSwitchInSubZone(switchID):
+                    rackServersList = self._dib.getConnectedServers(switchID, self.zoneName)
+                    for server in rackServersList:
+                        singleServerSet.append([server])
             # construct racks serverSet
             rackServerSet = []
             for switchID in range(torSwitchStartIdx, torSwitchEndIdx+1):
-                rackServersList = self._dib.getConnectedServers(switchID, self.zoneName)
-                rackServerSet.append(rackServersList)
+                if self.isTorSwitchInSubZone(switchID):
+                    rackServersList = self._dib.getConnectedServers(switchID, self.zoneName)
+                    rackServerSet.append(rackServersList)
             # construct pod serverSet
             podServerSet = []
             for podIdx in range(0, self.podNum):
                 podServerList = []
                 for switchID in range(torSwitchStartIdx+torPerPod*podIdx, torSwitchStartIdx+torPerPod*podIdx+torPerPod):
-                    rackServersList = self._dib.getConnectedServers(switchID, self.zoneName)
-                    podServerList.extend(rackServersList)
+                    if self.isTorSwitchInSubZone(switchID):
+                        rackServersList = self._dib.getConnectedServers(switchID, self.zoneName)
+                        podServerList.extend(rackServersList)
                 podServerSet.append(podServerList)
             return [singleServerSet, rackServerSet, podServerSet]
         else:
             raise ValueError("Unimplementation of unknown topotype: {0}".format(self.topotype))
+
+    def isTorSwitchInSubZone(self, switchID):
+        coreSwitchNum = pow(self.podNum/2,2)
+        aggrSwitchNum = self.podNum/2*self.podNum
+        torSwitchNum = self.podNum/2*self.podNum
+        torSwitchStartIdx = coreSwitchNum + aggrSwitchNum
+        torSwitchEndIdx = torSwitchStartIdx + torSwitchNum - 1
+        torPerPod = self.podNum/2
+
+        subZoneTorSwitchStartIdx = torSwitchStartIdx + self.minPodIdx * torPerPod
+        subZoneTorSwitchEndIdx = subZoneTorSwitchStartIdx + (self.maxPodIdx - self.minPodIdx + 1) * torPerPod - 1
+
+        if switchID >= subZoneTorSwitchStartIdx and switchID <= subZoneTorSwitchEndIdx:
+            return True
+        else:
+            return False
+
+    def _randomSelectACoreSwitchInSubZone(self):
+        coreSwitchNum = math.pow(self.podNum/2, 2)
+        coreSwitchPerPod = math.floor(coreSwitchNum/self.podNum)
+        # get core switch range
+        minCoreSwitchIdx = self.minPodIdx * coreSwitchPerPod
+        maxCoreSwitchIdx = minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1
+        coreSwitchID = random.randint(minCoreSwitchIdx, maxCoreSwitchIdx)
+        return coreSwitchID

@@ -108,6 +108,31 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
     def getServer(self, serverID, zoneName):
         return self._servers[zoneName][serverID]['server']
 
+    def getAllZone(self):
+        zoneList = []
+        for zone in self._servers.keys():
+            if zone not in zoneList:
+                zoneList.append(zone)
+
+        for zone in self._switches.keys():
+            if zone not in zoneList:
+                zoneList.append(zone)
+
+        for zone in self._links.keys():
+            if zone not in zoneList:
+                zoneList.append(zone)
+
+        return zoneList
+
+    def delServer(self, serverID, zoneName):
+        del self._servers[zoneName][serverID]
+
+    def delSwitch(self, switchID, zoneName):
+        del self._switches[zoneName][switchID]
+
+    def delLink(self, srcID, dstID, zoneName):
+        del self._links[zoneName][(srcID, dstID)]
+
     def isSwitchID(self, nodeID):
         switches = self.getSwitchesInAllZone()
         for switchesInAZoneDict in switches.values():

@@ -30,6 +30,10 @@ class Orchestrator(object):
             'orchestrator_{0}.log'.format(orchestrationName), level='warning')
         self.logger = logConfigur.getLogger()
 
+        self.podNum = podNum
+        self.minPodIdx = minPodIdx
+        self.maxPodIdx = maxPodIdx
+
         self._dib = DCNInfoBaseMaintainer()
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
         self._cm = CommandMaintainer()
@@ -52,6 +56,8 @@ class Orchestrator(object):
 
         self.runningState = True
         self.recvKillCommand = False
+
+        self.requestCnt = 0
 
     def setRunningState(self, runningState):
         self.runningState = runningState
@@ -102,6 +108,9 @@ class Orchestrator(object):
                     self._requestBatchQueue.put(request)
                     self.logger.debug("put req into requestBatchQueue")
                     if self._requestBatchQueue.qsize() >= self._batchSize and self.runningState == True:
+                        self.requestCnt += self._requestBatchQueue.qsize()
+                        self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
+
                         self.logger.info("Trigger batch process.")
                         # self._odir.getDCNInfo()
                         reqCmdTupleList = self._osa.genABatchOfRequestAndAddSFCICmds(
@@ -142,12 +151,14 @@ class Orchestrator(object):
         self.logger.info("Batch time out.")
         if self._requestBatchQueue.qsize() > 0 and self.runningState == True:
             self.logger.info("Timeout process - self._requestBatchQueue.qsize():{0}".format(self._requestBatchQueue.qsize()))
+            self.requestCnt += self._requestBatchQueue.qsize()
             reqCmdTupleList = self._osa.genABatchOfRequestAndAddSFCICmds(
                 self._requestBatchQueue)
             for (request, cmd) in reqCmdTupleList:
                 self._cm.addCmd(cmd)
                 self._oib.addSFCIRequestHandler(request, cmd)
                 self.sendCmd(cmd)
+            self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
 
     def sendCmd(self, cmd):
         msg = SAMMessage(MSG_TYPE_ORCHESTRATOR_CMD, cmd)
@@ -195,7 +206,9 @@ class Orchestrator(object):
             cmdID = cmd.cmdID
             if cmd.cmdType == CMD_TYPE_PUT_ORCHESTRATION_STATE:
                 self.logger.info("Get dib from dispatcher!")
-                self._dib.updateByNewDib(cmd.attributes["dib"])
+                newDib = self._pruneDib(cmd.attributes["dib"])
+                self._dib.updateByNewDib(newDib)
+                # self._osa.nPInstance.updateServerSets(self.podNum, self.minPodIdx, self.maxPodIdx)
             elif cmd.cmdType == CMD_TYPE_GET_ORCHESTRATION_STATE:
                 pass
                 # TODO
@@ -215,6 +228,76 @@ class Orchestrator(object):
                 "Orchestrator command handler")
         finally:
             pass
+
+    def _pruneDib(self, dib):
+        # For fast orchestration, we need lower down topology scale
+        zoneNameList = dib.getAllZone()
+        self.logger.warning("zoneNameList: {0}".format(zoneNameList))
+        for zoneName in zoneNameList:
+            # prune links
+            links = dib.getLinksByZone(zoneName)
+            for linkID in links.keys():
+                srcID = linkID[0]
+                dstID = linkID[1]
+                for nodeID in linkID:
+                    if dib.isServerID(nodeID):
+                        switch = dib.getConnectedSwitch(nodeID, zoneName)
+                        switchID = switch.switchID
+                        if not self.isSwitchInSubTopologyZone(switchID):
+                            # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
+                            dib.delLink(srcID, dstID, zoneName)
+                            break
+                    elif dib.isSwitchID(nodeID):
+                        if not self.isSwitchInSubTopologyZone(nodeID):
+                            # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
+                            dib.delLink(srcID, dstID, zoneName)
+                            break
+
+            # prune servers
+            servers = dib.getServersByZone(zoneName)
+            for serverID in servers.keys():
+                switch = dib.getConnectedSwitch(serverID, zoneName)
+                switchID = switch.switchID
+                if not self.isSwitchInSubTopologyZone(switchID):
+                    # self.logger.warning("deServer: {0}".format(serverID))
+                    dib.delServer(serverID, zoneName)
+
+            # prune switches
+            switches = dib.getSwitchesByZone(zoneName)
+            for switchID in switches.keys():
+                if not self.isSwitchInSubTopologyZone(switchID):
+                    # self.logger.warning("deSwitch: {0}".format(switchID))
+                    dib.delSwitch(switchID, zoneName)
+
+        return dib
+
+    def isSwitchInSubTopologyZone(self, switchID):
+        coreSwitchNum = math.pow(self.podNum/2, 2)
+        aggSwitchNum = self.podNum * self.podNum / 2
+        coreSwitchPerPod = math.floor(coreSwitchNum/self.podNum)
+        # get core switch range
+        minCoreSwitchIdx = self.minPodIdx * coreSwitchPerPod
+        maxCoreSwitchIdx = minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1
+        # get agg switch range
+        minAggSwitchIdx = coreSwitchNum + self.minPodIdx * self.podNum / 2
+        maxAggSwitchIdx = minAggSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1
+        # get tor switch range
+        minTorSwitchIdx = coreSwitchNum + aggSwitchNum + self.minPodIdx * self.podNum / 2
+        maxTorSwitchIdx = minTorSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1
+        # self.logger.info("{0},{1},{2},{3},{4},{5}".format(
+        #         minCoreSwitchIdx, maxCoreSwitchIdx,
+        #         minAggSwitchIdx, maxAggSwitchIdx,
+        #         minTorSwitchIdx, maxTorSwitchIdx
+        #     )
+        # )
+
+        if (switchID >= minCoreSwitchIdx and switchID <= maxCoreSwitchIdx) \
+                or (switchID >= minAggSwitchIdx and switchID <= maxAggSwitchIdx) \
+                or (switchID >= minTorSwitchIdx and switchID <= maxTorSwitchIdx):
+            return True
+        else:
+            return False
+
 
 
 if __name__=="__main__":

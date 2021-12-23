@@ -40,3 +40,5 @@ if __name__ == "__main__":
                         "sudo rabbitmqctl purge_queue {0}".format(queueName))
                 except:
                     pass
+        else:
+            print(line)
