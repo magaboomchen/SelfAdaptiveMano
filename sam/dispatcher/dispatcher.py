@@ -20,7 +20,7 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 
 
 class Dispatcher(object):
-    def __init__(self, podNum, parallelMode=True, timeBudget=15, autoScale=False, baseSFCNum=100):
+    def __init__(self, podNum, parallelMode=True, timeBudget=25, autoScale=False, baseSFCNum=100):
         self.pIO = PickleIO()
         self._dib = DCNInfoBaseMaintainer()
         self.sP = ShellProcessor()
@@ -488,7 +488,7 @@ class Dispatcher(object):
         X_real = [[switchNum * (serverNum + torSwitchNum + self.podNum) * self.maxBW * self.maxSFCLength * msgCnt]]
         X_real = np.array(X_real)
         Y_real = max(regr.predict(X_real)[0], 1)
-        minOrchestratorNum = max(math.pow( Y_real/self.timeBudget, 1/3.0 ), 1)
+        minOrchestratorNum = max(math.pow( Y_real/self.timeBudget, 1/2.0 ), 1)
         self.logger.warning("minOrchestratorNum:{0}".format(minOrchestratorNum))
         maxPodNumPerOrchstratorInstance = math.floor(self.podNum / minOrchestratorNum)
         return max(int(maxPodNumPerOrchstratorInstance),1)
@@ -506,7 +506,8 @@ class Dispatcher(object):
         X_real = [[switchNum * (serverNum + torSwitchNum + self.podNum) * self.maxBW * self.maxSFCLength * msgCnt]]
         X_real = np.array(X_real)
         Y_real = max(regr.predict(X_real)[0], 1)
-        minOrchestratorNum = math.ceil( max(math.pow( Y_real/self.timeBudget, 1/3.0 ), 1) )
+        minOrchestratorNum = math.ceil( max(math.pow( Y_real/self.timeBudget, 1/2.0 ), 1) )
+
         return int(minOrchestratorNum)
 
     def loadRegressor(self, podNum):

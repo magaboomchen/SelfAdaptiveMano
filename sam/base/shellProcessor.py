@@ -35,9 +35,9 @@ class ShellProcessor(object):
         out_bytes = subprocess.check_output(
             [ user + filePath], shell=True)
 
-    def getProcessCPUAndMemoryUtilization(self, pid):
+    def getProcessCPUAndMemoryUtilization(self, pid, interval=1):
         p = psutil.Process(pid)
-        cpuUtilList = p.cpu_percent(interval=1)
+        cpuUtilList = p.cpu_percent(interval=interval)
         memoryUtilList = p.memory_info().rss
         return cpuUtilList, memoryUtilList
 

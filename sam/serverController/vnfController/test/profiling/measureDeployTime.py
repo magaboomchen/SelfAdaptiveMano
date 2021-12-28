@@ -64,10 +64,12 @@ class TestVNFSFCIAdderClass(TestBase):
 
         self.deployTimeDict = {}
         self.sendCmdTimeDict = {}
-        for sfciNum in range(1,6):
+        # for sfciNum in range(1,6):
+        for sfciNum in range(1,2):
             self.deployTimeDict[sfciNum] = []
             self.sendCmdTimeDict[sfciNum] = []
-            for expNum in range(10):
+            # for expNum in range(10):
+            for expNum in range(0):
                 deployTime, sendCmdTime = self.startAnExp(sfciNum)
                 self.deployTimeDict[sfciNum].append(deployTime)
                 self.sendCmdTimeDict[sfciNum].append(sendCmdTime)
@@ -147,7 +149,7 @@ class TestVNFSFCIAdderClass(TestBase):
             else:
                 body = msg.getbody()
                 if self.mediatorRcvAgent.isCommandReply(body):
-                    logging.info("testBase:recvCmdRply")
+                    logging.info("mediator:recvCmdRply")
                     return body
                 else:
                     logging.error("Unknown massage body")

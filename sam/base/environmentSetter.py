@@ -17,9 +17,12 @@ class EnvironmentSetter(object):
         # ['/usr/local/lib/python2.7/dist-packages',
         #  '/usr/lib/python2.7/dist-packages']
         for direct in directorys:
-            shellCmd = "sudo sh -c 'echo  " + path + " > " \
-                + direct + "/" + pthfileName + "'"
-            subprocess.check_output([shellCmd], shell=True)
+            try:
+                shellCmd = "sudo sh -c 'echo  " + path + " > " \
+                    + direct + "/" + pthfileName + "'"
+                subprocess.check_output([shellCmd], shell=True)
+            except:
+                pass
         # echo XXX > /usr/local/lib/python2.7/dist-packages/selfAdaptiveMano.pth
         # echo XXX > /usr/lib/python2.7/dist-packagesselfAdaptiveMano.pth
 
