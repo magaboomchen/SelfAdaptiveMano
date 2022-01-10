@@ -12,6 +12,7 @@ select * from Server;
 '''
 
 import sys
+import time
 if sys.version < '3':
     try:
         input = raw_input
@@ -33,7 +34,7 @@ class TestServerClass(DashboardTestBase):
         # setup
         self.dcnIB = DCNInfoBaseMaintainer()
         self.dcnIB.enableDataBase("localhost", "dbAgent", "123")
-        self.serverNum = 2
+        self.serverNum = 10
         self.serverList = self.genServerList(self.serverNum)
 
         yield
@@ -63,7 +64,14 @@ class TestServerClass(DashboardTestBase):
     def test_addServers(self, setup_serverInfo):
         # exercise
         self.startDjango()
+
+        t = time.time()
+        print('1time,t')
         self.addServers(self.serverList)
+
+        t2 = time.time()
+        print('2time',t2)
+        print('total is',t2-t)
 
         # verify
         self.retrieveServerList()
