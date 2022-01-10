@@ -6,6 +6,8 @@ from django.conf.urls import *
 from django.contrib import admin
 import DjangoWeb.settings
 
+from django.views.generic.base import TemplateView
+
 admin.autodiscover()
 from django.conf.urls import handler404, handler500
 
@@ -25,6 +27,8 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^webserver/', include('webserver.urls')),
     url(r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': DjangoWeb.settings.STATIC_ROOT }),
+    url('admin/', admin.site.urls),
+    url('', TemplateView.as_view(template_name='index.html')),
     #url(r'^medias/(?P<path>.*)$', 'django.views.static.serve', {'document_root': 'F:/DjangoWeb/webserver/templates/images'}),
     #url(r'^css/(?P<path>.*)$', 'django.views.static.serve', {'document_root': 'F:/DjangoWeb/webserver/templates/css'}),
 ]

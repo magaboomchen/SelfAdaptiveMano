@@ -7,28 +7,28 @@
 ## 数据展示（静态数据->动态数据）
 ### DB: Dashboard
 * CloudUser List
-    * ID, USER_NAME, USER_UUID, USER_TYPE
+    * [done]ID, USER_NAME, USER_UUID, USER_TYPE
 * Zone List
-    * ID, ZONE_NAME
+    * [done]ID, ZONE_NAME
 * RoutingMorphic List
-    * ID, ROUTING_MORPHIC_NAME
+    * [done]ID, ROUTING_MORPHIC_NAME
 ### DB: Measurer
 * Server List
-    * ID, ZONE_NAME, SERVER_ID, IPV4, CPU_UTILIZATION
+    * [done]ID, ZONE_NAME, SERVER_ID, IPV4, CPU_UTILIZATION
 * Switch List
-    * ID, ZONE_NAME, SWITCH_ID
+    * [done]ID, ZONE_NAME, SWITCH_ID
 * Link List
-    * ID, SRC_ID, DST_ID, BANDWIDTH, UTILIZATION
+    * [done]ID, SRC_ID, DST_ID, BANDWIDTH, UTILIZATION
 ### DB: Orchestrator
 * Request List
-    * ID, REQUEST_UUID, REQUEST_TYPE, SFC_UUID, STATE
+    * [done]ID, REQUEST_UUID, REQUEST_TYPE, SFC_UUID, STATE
 * SFC List
-    * ID, ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE
+    * [done]ID, ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE
 * SFCI List
-    * ID, SFCIID, VNFI_UUID_LIST, STATE, ORCHESTRATION_TIME(编排部署时间)
+    * [done]ID, SFCIID, VNFI_UUID_LIST, STATE, ORCHESTRATION_TIME(编排部署时间)
     * FORWARDING_PATH: 1->2->3
 * VNFI List (用test_sfci.py测试)
-    * ID, VNFI_UUID, VNFI_TYPE
+    * [done]ID, VNFI_UUID, VNFI_TYPE
     * VNFI_STATE: NORMAL/ABNORMAL/OVERLOAD
 
 ### 提供需要展示的数据

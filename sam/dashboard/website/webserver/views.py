@@ -462,8 +462,10 @@ def getDisplayedUsersListOnPage(users, pageNum):
 def getPageRange(page, totalPageNum):
     afterRangeNum = 2     #当前页前显示2页
     beforeRangeNum = 2     #当前页后显示2页
-    if page >= afterRangeNum and page <= totalPageNum - beforeRangeNum:
-        pageRange = range(page - afterRangeNum,page + beforeRangeNum +1)
+    if page > afterRangeNum and page <= totalPageNum - beforeRangeNum:
+        pageRange = range(page - afterRangeNum ,page + beforeRangeNum + 1)
+    elif page == afterRangeNum and page <= totalPageNum - beforeRangeNum:
+        pageRange = range(page - afterRangeNum + 1,page + beforeRangeNum + 1)
     elif page < afterRangeNum and page <= totalPageNum - beforeRangeNum:
         pageRange = range(1, page + beforeRangeNum + 1)
     elif page >= afterRangeNum and page > totalPageNum - beforeRangeNum:
@@ -477,6 +479,8 @@ def getTotalPageNum(usersNum, usersNumPerPage):
         totalPageNum = int((usersNum - usersNum%usersNumPerPage)/usersNumPerPage)
     else:
         totalPageNum = int((usersNum - usersNum%usersNumPerPage)/usersNumPerPage+1)
+    if totalPageNum == 0:
+        totalPageNum = 1
     return totalPageNum
 
 def getNumDict(pageNum, totalPageNum):

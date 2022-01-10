@@ -2,7 +2,7 @@
 import os
 from django.db import models
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # xxx/sam/dashboard/website
 
 DEBUG = True
 # TEMPLATE_DEBUG = DEBUG
@@ -66,10 +66,16 @@ MEDIA_URL = ''
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
+# STATIC_URL = '/static/'
+# STATIC_ROOT = os.path.join(BASE_DIR,'/static/')
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'static')
+# ]
+
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR,'/static/')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static')
+    os.path.join(BASE_DIR, 'firstvue/dist/static')
 ]
 
 # List of finder classes that know how to find static files in
@@ -100,7 +106,7 @@ WSGI_APPLICATION = 'DjangoWeb.wsgi.application'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['firstvue/dist'],
         'APP_DIRS': True,
         'OPTIONS': {
             'debug': DEBUG,
