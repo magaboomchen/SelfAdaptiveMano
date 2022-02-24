@@ -27,7 +27,7 @@ class Orchestrator(object):
         # time.sleep(15)   # wait for other basic module boot
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'orchestrator_{0}.log'.format(orchestrationName), level='warning')
+            'orchestrator_{0}.log'.format(orchestrationName), level='info')
         self.logger = logConfigur.getLogger()
 
         self.podNum = podNum
@@ -121,7 +121,7 @@ class Orchestrator(object):
                             if ENABLE_OIB:
                                 self._oib.addSFCIRequestHandler(request, cmd)
                             self.sendCmd(cmd)
-                        self.logger.debug("Batch process finish")
+                        self.logger.info("Batch process finish")
                         self.batchLastTime = time.time()
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 cmd = self._osd.genDelSFCICmd(request)
@@ -148,7 +148,7 @@ class Orchestrator(object):
             pass
 
     def processAllAddSFCIRequests(self):
-        self.logger.info("Batch time out.")
+        self.logger.debug("Batch time out.")
         if self._requestBatchQueue.qsize() > 0 and self.runningState == True:
             self.logger.info("Timeout process - self._requestBatchQueue.qsize():{0}".format(self._requestBatchQueue.qsize()))
             self.requestCnt += self._requestBatchQueue.qsize()

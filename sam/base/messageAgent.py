@@ -7,11 +7,12 @@ if sys.version > '3':
     import queue as Queue
 else:
     import Queue
-import threading
 import time
+import uuid
 import ctypes
 import inspect
-import uuid
+import threading
+
 import base64
 
 import pickle
@@ -114,7 +115,7 @@ class MessageAgent(object):
         self.msgQueues = {}
         self._threadSet = {}
         self._publisherConnection = None
-        self._consumerConnection = self._connectRabbitMQServer()
+        # self._consumerConnection = None # self._connectRabbitMQServer()
 
     def readRabbitMQConf(self):
         filePath = __file__.split("/messageAgent.py")[0] + '/rabbitMQConf.conf'
@@ -186,9 +187,9 @@ class MessageAgent(object):
             threadLock.acquire()
             self.msgQueues[srcQueueName] = Queue.Queue()
             try:
-                channel = self._consumerConnection.channel()
                 # start a new thread to recieve
-                thread = QueueReciever(len(self._threadSet), channel,
+                thread = QueueReciever(len(self._threadSet), 
+                    self.rabbitMqServerIP, self.rabbitMqServerUser, self.rabbitMqServerPasswd,
                     srcQueueName, self.msgQueues[srcQueueName], self.logger)
                 self._threadSet[srcQueueName] = thread
                 thread.setDaemon(True)
@@ -271,36 +272,50 @@ class MessageAgent(object):
         if self._publisherConnection != None:
             if self._publisherConnection.is_open:
                 self._publisherConnection.close()
-        if self._consumerConnection.is_open:
-            self._consumerConnection.close()
+        # if self._consumerConnection.is_open:
+        #     self._consumerConnection.close()
 
 
 class QueueReciever(threading.Thread):
-    def __init__(self, threadID, channel, srcQueueName, msgQueue, logger):
+    def __init__(self, threadID, 
+                    rabbitMqServerIP, rabbitMqServerUser, rabbitMqServerPasswd,
+                    srcQueueName, msgQueue, logger):
         threading.Thread.__init__(self)
         self.threadID = threadID
-        self.channel = channel
+        self.rabbitMqServerIP = rabbitMqServerIP
+        self.rabbitMqServerUser = rabbitMqServerUser
+        self.rabbitMqServerPasswd = rabbitMqServerPasswd
+        self.connection = self._connectRabbitMQServer()
+        self.channel = None
         self.srcQueueName = srcQueueName
         self.msgQueue = msgQueue
         self.logger = logger
+
+    def _openConnection(self):
+        if not self.connection or self.connection.is_closed:
+            self.connection = self._connectRabbitMQServer()
+
+    def _connectRabbitMQServer(self):
+        credentials = pika.PlainCredentials(self.rabbitMqServerUser,
+            self.rabbitMqServerPasswd)
+        parameters = pika.ConnectionParameters(self.rabbitMqServerIP,
+            5672, '/', credentials)
+        connection = pika.BlockingConnection(parameters)
+        return connection
 
     def run(self):
         self.logger.debug("thread QueueReciever.run().")
         self._recvMsg()
 
     def _recvMsg(self):
-        self.channel.queue_declare(queue=self.srcQueueName, durable=True)
-        self.channel.basic_consume(queue=self.srcQueueName,
-                            on_message_callback=self.callback)
-        self.logger.info(' [*] Waiting for messages. To exit press CTRL+C')
+        self._openConnection()
+        self._openChannel()
         while True:
             try:
                 self.channel.start_consuming()
             except KeyboardInterrupt:
-                self.logger.info("messageAgent get keyboardInterrupt.")
-                requeued_messages = self.channel.cancel()
-                self.logger.info('Channel stop consuming')
-                self.channel.stop_consuming()
+                self._closeChannel()
+                self._closeConnection()
                 return None
             # except ChannelClosed:
             #     self.logger.warning(
@@ -314,6 +329,35 @@ class QueueReciever(threading.Thread):
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex,
                     "MessageAgent recvMsg failed")
+                self._openConnection()
+                self._openChannel()
+
+    def _openChannel(self):
+        try:
+            if not self.channel or self.channel.is_closed:
+                self.channel = self.connection.channel()
+            self.channel.queue_declare(queue=self.srcQueueName, durable=True)
+            self.channel.basic_consume(queue=self.srcQueueName,
+                                on_message_callback=self.callback)
+            self.logger.info(' [*] _openChannel(): Waiting for messages. To exit press CTRL+C')
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex,
+                "Open channel failed!")
+
+    def _closeChannel(self):
+        if self.channel.is_open:
+            self.logger.info("messageAgent get keyboardInterrupt.")
+            requeued_messages = self.channel.cancel()
+            self.logger.info('Channel stop consuming')
+            self.channel.stop_consuming()
+        elif self.channel.is_closed:
+            self.logger.info("Channel has already been closed!")
+        else:
+            self.logger.info("Channel is closing!")
+
+    def _closeConnection(self):
+        if self.connection.is_open:
+            self.connection.close()
 
     def callback(self, ch, method, properties, body):
         # self.logger.debug(" [x] Received %r" % body)
@@ -326,4 +370,3 @@ class QueueReciever(threading.Thread):
         threadLock.release()
         self.logger.debug(" [x] Done")
         ch.basic_ack(delivery_tag = method.delivery_tag)
-

@@ -3,7 +3,7 @@
 
 # bottom control system
 BATCH_SIZE = 100
-BATCH_TIMEOUT = 0.5
+BATCH_TIMEOUT = 99999999
 
 ENABLE_OIB = False  # Please Enable this in final results.
 
@@ -11,4 +11,4 @@ ENABLE_OIB = False  # Please Enable this in final results.
 VNFI_ASSIGN_MODE = True
 
 # if user doesn't assign mapping algorithm, use default mapping algorithm
-DEFAULT_MAPPING_TYPE = "MAPPING_TYPE_NETPACK"
+DEFAULT_MAPPING_TYPE = "MAPPING_TYPE_NETSOLVER_ILP"

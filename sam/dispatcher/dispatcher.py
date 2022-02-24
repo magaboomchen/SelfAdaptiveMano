@@ -32,7 +32,7 @@ class Dispatcher(object):
         self.orchestratorDict = {}  # {"name": {"oPid":pPid, "oInfoDict":oInfoDict, "dib":dib, "liveness":True, "cpuUtilList":[], "memoryUtilList":[]}}
 
         logConfigur = LoggerConfigurator(__name__, './log',
-            'dispatcher.log', level='warning')
+            'dispatcher_{0}_{1}.log'.format(podNum, parallelMode), level='debug')
         self.logger = logConfigur.getLogger()
 
         self.dispatcherQueueName = DISPATCHER_QUEUE
@@ -50,9 +50,10 @@ class Dispatcher(object):
         # TODO: this and corresponding codes could be delete
         self.baseSFCNum = baseSFCNum
 
-    def processLocalRequests(self, instanceFilePath, enlargeTimes, expNum):
+    def processLocalRequests(self, instanceFilePath, enlargeTimes, expNum, mappingType):
         self.localRequestMode = True
         self.expNum = expNum
+        self.mappingType = mappingType
         self.sfcLength = self.__parseSFCLength(instanceFilePath)
         self.enlargeTimes = enlargeTimes
         self._init4LocalRequests(instanceFilePath)
@@ -85,7 +86,7 @@ class Dispatcher(object):
                         len(self.addSFCIRequests) * (self.enlargeTimes-1))
         # init X orchestrator instances
         oInfoList = self._computeOrchInstanceInfoList(maxPodNumPerOrchstratorInstance, maxOrchNum)
-        self.logger.debug("oInfoList:{0}".format(oInfoList))
+        # self.logger.debug("oInfoList:{0}".format(oInfoList))
         for idx,oInfoDict in enumerate(oInfoList):
             # we need turn off orchestrator at initial to put state into it
             oPid = self.initNewOrchestratorInstance(idx, oInfoDict)
@@ -97,7 +98,7 @@ class Dispatcher(object):
             # TODO: put dib into new orchestrator instance
             self.putState2Orchestrator(oInfoDict["name"])
             self.turnOnOrchestrator(oInfoDict["name"])
-        self.logger.debug("self.orchestratorDict: {0}".format(self.orchestratorDict))
+        # self.logger.debug("self.orchestratorDict: {0}".format(self.orchestratorDict))
         self.__assignSFCs2DifferentOrchestratorInstance()
         self.__dispatchInitialAddSFCIRequestToOrch()
 
@@ -350,19 +351,20 @@ class Dispatcher(object):
                     cmd = body
                     if cmd.cmdType == CMD_TYPE_ADD_SFCI:
                         cnt += 1
-                        self.logger.info("cnt:{0}".format(cnt))
+                        self.logger.info("recv cmd to mediatorStub, cnt:{0}".format(cnt))
                         self.logger.debug("len(self.enlargedAddSFCIRequests):{0}".format(len(self.enlargedAddSFCIRequests)))
                         self.logger.debug("len(self.addSFCIRequests):{0}".format(len(self.addSFCIRequests)))
-                        if cnt >= len(self.enlargedAddSFCIRequests) - len(self.addSFCIRequests) and self.localRequestMode:
+                        if ((cnt % 100) == 0) and self.localRequestMode:
                             self._testEndTime = time.time()
                             totalOrchTime = self._testEndTime - self._testStartTime
                             res = {
                                 "totalOrchTime":totalOrchTime,
                                 "orchestratorDict":self.orchestratorDict
                             }
-                            self.pIO.writePickleFile("./res/{0}/{1}/{2}_parallelMode={3}_sfcLength={4}_enlargeTime={5}.pickle".format(
-                                    self.topoType, self.expNum, self.podNum, int(self.parallelMode), self.sfcLength, self.enlargeTimes), res)
-                            break
+                            self.pIO.writePickleFile("./res/{0}/{1}/{2}_parallelMode={3}_sfcLength={4}_enlargeTime={5}_cnt={6}_mapType={7}.pickle".format(
+                                    self.topoType, self.expNum, self.podNum, int(self.parallelMode), self.sfcLength, self.enlargeTimes, cnt, self.mappingType), res)
+                            if cnt >= len(self.enlargedAddSFCIRequests) - len(self.addSFCIRequests):
+                                break
                 else:
                     self.logger.error("Unknown massage body:{0}".format(body))
             currentTime = time.time()
@@ -433,7 +435,7 @@ class Dispatcher(object):
                 sfc = request.attributes["sfc"]
                 sfci = request.attributes["sfci"]
                 orchName = self._getOrchestratorNameBySFC(sfc)      # Read from self.orchestratorDict
-                self.logger.info("assign SFC to orchName:{0}".format(orchName))
+                self.logger.warning("assign SFC to orchName:{0}".format(orchName))
                 self._assignSFCI2Orchestrator(sfci, orchName)       # update self.orchestratorDict
                 self._sendRequest2Orchestrator(request, orchName)   # we dispatch add request previously
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
@@ -596,9 +598,10 @@ if __name__ == "__main__":
     localTest = argParser.getArgs()['localTest']
     parallelMode = argParser.getArgs()['parallelMode']
     expNum = argParser.getArgs()['expNum']
+    mappingType = argParser.getArgs()['mappingType']
 
     dP = Dispatcher(podNum, parallelMode)
     if localTest:
-        dP.processLocalRequests(problemInstanceFilePath, enlargeTimes, expNum)
+        dP.processLocalRequests(problemInstanceFilePath, enlargeTimes, expNum, mappingType)
     else:
         dP.startDispatcher()

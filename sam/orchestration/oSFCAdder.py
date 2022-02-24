@@ -31,6 +31,7 @@ from sam.orchestration.algorithms.dpSFCCG.dpSFCCG import *
 from sam.orchestration.algorithms.mMLPSFC.mMLPSFC import *
 from sam.orchestration.algorithms.mMLBSFC.mMLBSFC import *
 from sam.orchestration.algorithms.netPack.netPack import *
+from sam.orchestration.algorithms.netSolverILP.netSolverILP import *
 from sam.orchestration.algorithms.base.resourceAllocator import *
 from sam.orchestration.algorithms.base.performanceModel import *
 
@@ -226,6 +227,10 @@ class OSFCAdder(object):
             elif mappingType == MAPPING_TYPE_NETPACK:
                 self.logger.info("NetPack")
                 forwardingPathSetsDict = self.netPack(requestBatchList)
+            elif mappingType == MAPPING_TYPE_NETSOLVER_ILP:
+                self.logger.info("NetSolver")
+                forwardingPathSetsDict = self.netSolverILP(requestBatchList)
+                self.logger.info("get result!")
             elif mappingType == MAPPING_TYPE_NONE:
                 pass
             else:
@@ -238,11 +243,13 @@ class OSFCAdder(object):
                     self._forwardingPathSetsDict2Cmd(forwardingPathSetsDict,
                         requestBatchList)
                 )
-            elif mappingType in [MAPPING_TYPE_NETPACK]:
+            elif mappingType in [MAPPING_TYPE_NETPACK, MAPPING_TYPE_NETSOLVER_ILP]:
                 reqCmdTupleList.extend(
                     self._netPackForwardingPathSetsDict2Cmd(forwardingPathSetsDict,
                         requestBatchList)
                 )
+            else:
+                raise ValueError("Unimplement mapping type: {0}".format(mappingType))
 
         return reqCmdTupleList
 
@@ -333,6 +340,13 @@ class OSFCAdder(object):
         # sfc path is stored in forwardingPathSetsDict
         #   If you don't need to calculate path, just leave each path in forwardingPathSetsDict to default.
         forwardingPathSetsDict = None
+        return forwardingPathSetsDict
+
+    def netSolverILP(self, requestBatchList):
+        netSolverILP = NetSolverILP(self._dib, requestBatchList)
+        forwardingPathSetsDict = netSolverILP.mapSFCI(self.podNum, 
+                                        self.minPodIdx, self.maxPodIdx)
+
         return forwardingPathSetsDict
 
     def netPack(self, requestBatchList):

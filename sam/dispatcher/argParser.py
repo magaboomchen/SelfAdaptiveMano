@@ -23,6 +23,8 @@ class ArgParser(ArgParserBase):
         self.parser.add_argument('-et', metavar='enlargeTimes',
             type=int, nargs='?', const=1, default=None,
             help="enlarge times")
+        self.parser.add_argument('-mappingType', metavar='mappingType',
+            type=str, default=None, help="mapping type")
         self.parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
                             help='Show this help message and exit. Example usage: python dispatcher.py -pFilePath ./test.instance -p 36 ')
         self.args = self.parser.parse_args()

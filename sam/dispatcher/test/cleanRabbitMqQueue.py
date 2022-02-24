@@ -25,8 +25,8 @@ class QueueCleaner(object):
 
         self.sA = SSHAgent()
         self.sshUsrname = "smith"
-        self.privateKeyFilePath = "/home/smith/.ssh/818private"
-        self.remoteIP = "192.168.8.18"
+        self.privateKeyFilePath = "/home/smith/.ssh/id_rsa819"
+        self.remoteIP = "192.168.8.19"
         self.sA.connectSSHWithRSA(self.sshUsrname, self.privateKeyFilePath, self.remoteIP, remoteSSHPort=22)
         self.sA.loadUserPassword(password)
         resDict = self.sA.runShellCommandWithSudo("python /home/smith/Projects/SelfAdaptiveMano/sam/toolkit/clearAllSAMQueue.py")
