@@ -285,23 +285,11 @@ class QueueReciever(threading.Thread):
         self.rabbitMqServerIP = rabbitMqServerIP
         self.rabbitMqServerUser = rabbitMqServerUser
         self.rabbitMqServerPasswd = rabbitMqServerPasswd
-        self.connection = self._connectRabbitMQServer()
+        self.connection = None
         self.channel = None
         self.srcQueueName = srcQueueName
         self.msgQueue = msgQueue
         self.logger = logger
-
-    def _openConnection(self):
-        if not self.connection or self.connection.is_closed:
-            self.connection = self._connectRabbitMQServer()
-
-    def _connectRabbitMQServer(self):
-        credentials = pika.PlainCredentials(self.rabbitMqServerUser,
-            self.rabbitMqServerPasswd)
-        parameters = pika.ConnectionParameters(self.rabbitMqServerIP,
-            5672, '/', credentials)
-        connection = pika.BlockingConnection(parameters)
-        return connection
 
     def run(self):
         self.logger.debug("thread QueueReciever.run().")
@@ -316,6 +304,7 @@ class QueueReciever(threading.Thread):
             except KeyboardInterrupt:
                 self._closeChannel()
                 self._closeConnection()
+                self.logger.info("msgAgent recv thread get keyboardInterrupt, quit recv().")
                 return None
             # except ChannelClosed:
             #     self.logger.warning(
@@ -328,9 +317,31 @@ class QueueReciever(threading.Thread):
             #     return None
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex,
-                    "MessageAgent recvMsg failed")
+                                    "MessageAgent recvMsg failed")
+                self._logChannelStatus()
+                self._logConnectionStatus()
+                self._closeConnection()
                 self._openConnection()
                 self._openChannel()
+
+    def _openConnection(self):
+        self.logger.info("Opening connection!")
+        if not self.connection or self.connection.is_closed:
+            self.connection = self._connectRabbitMQServer()
+
+    def _connectRabbitMQServer(self):
+        credentials = pika.PlainCredentials(self.rabbitMqServerUser,
+            self.rabbitMqServerPasswd)
+        parameters = pika.ConnectionParameters(self.rabbitMqServerIP,
+            5672, '/', credentials)
+        connection = pika.BlockingConnection(parameters)
+        return connection
+
+    def _closeConnection(self):
+        self.logger.info("Closing connection!")
+        if self.connection.is_open:
+            self.connection.close()
+            self.connection = None
 
     def _openChannel(self):
         try:
@@ -346,18 +357,29 @@ class QueueReciever(threading.Thread):
 
     def _closeChannel(self):
         if self.channel.is_open:
-            self.logger.info("messageAgent get keyboardInterrupt.")
+            self.logger.info('Channel is running! Close it.')
             requeued_messages = self.channel.cancel()
-            self.logger.info('Channel stop consuming')
             self.channel.stop_consuming()
         elif self.channel.is_closed:
             self.logger.info("Channel has already been closed!")
         else:
             self.logger.info("Channel is closing!")
 
-    def _closeConnection(self):
+    def _logChannelStatus(self):
+        if self.channel.is_open:
+            self.logger.info('Channel is running! Close it.')
+        elif self.channel.is_closed:
+            self.logger.info("Channel has already been closed!")
+        else:
+            self.logger.info("Channel is closing!")
+
+    def _logConnectionStatus(self):
         if self.connection.is_open:
-            self.connection.close()
+            self.logger.info("Connection is opened!")
+        elif self.connection.is_closed:
+            self.logger.info("Connection is closed!")
+        else:
+            self.logger.info("Unknown connection status.")
 
     def callback(self, ch, method, properties, body):
         # self.logger.debug(" [x] Received %r" % body)

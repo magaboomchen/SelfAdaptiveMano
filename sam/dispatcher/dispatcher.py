@@ -1,11 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from multiprocessing.sharedctypes import Value
 import time
 import math
 import copy
 import numpy as np
 
+import psutil
 from sklearn import datasets, linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 
@@ -20,12 +22,12 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 
 
 class Dispatcher(object):
-    def __init__(self, podNum, parallelMode=True, timeBudget=25, autoScale=False, baseSFCNum=100):
+    def __init__(self, podNum, parallelMode=True, timeBudget=25, autoScale=False, baseSFCNum=100, topoType="fat-tree"):
         self.pIO = PickleIO()
         self._dib = DCNInfoBaseMaintainer()
         self.sP = ShellProcessor()
         self.podNum = podNum
-        self.topoType = "fat-tree"
+        self.topoType = topoType
         self.timeBudget = timeBudget
         self.parallelMode = parallelMode
         self.autoScale = autoScale
@@ -49,11 +51,13 @@ class Dispatcher(object):
 
         # TODO: this and corresponding codes could be delete
         self.baseSFCNum = baseSFCNum
+        self.logger.info("baseSFCNum is {0}".format(self.baseSFCNum))
 
-    def processLocalRequests(self, instanceFilePath, enlargeTimes, expNum, mappingType):
+    def processLocalRequests(self, instanceFilePath, enlargeTimes, expNum, mappingType, intrinsicTimeModel):
         self.localRequestMode = True
         self.expNum = expNum
         self.mappingType = mappingType
+        self.intrinsicTimeModel = intrinsicTimeModel
         self.sfcLength = self.__parseSFCLength(instanceFilePath)
         self.enlargeTimes = enlargeTimes
         self._init4LocalRequests(instanceFilePath)
@@ -80,13 +84,25 @@ class Dispatcher(object):
         self._updateRequestToMsgQueue()
         self._updateDib()
         # decide the orchestrator number and corresponding idx;
-        maxPodNumPerOrchstratorInstance = self._computeOrchestratorInstanceMaxPodNum(
-                        len(self.addSFCIRequests) * (self.enlargeTimes-1))
-        maxOrchNum = self._computeOrchestratorInstanceMaxOrchNum(
-                        len(self.addSFCIRequests) * (self.enlargeTimes-1))
-        # init X orchestrator instances
-        oInfoList = self._computeOrchInstanceInfoList(maxPodNumPerOrchstratorInstance, maxOrchNum)
-        # self.logger.debug("oInfoList:{0}".format(oInfoList))
+        if self.topoType == "fat-tree":
+            maxPodNumPerOrchstratorInstance = self._computeOrchestratorInstanceMaxPodNum(
+                            len(self.addSFCIRequests) * (self.enlargeTimes-1))
+            maxOrchNum = self._computeOrchestratorInstanceMaxOrchNum(
+                            len(self.addSFCIRequests) * (self.enlargeTimes-1))
+            # init X orchestrator instances
+            oInfoList = self._computeOrchInstanceInfoList(maxPodNumPerOrchstratorInstance, maxOrchNum)
+            # self.logger.debug("oInfoList:{0}".format(oInfoList))
+        elif self.topoType == "testbed_sw1":
+            oInfoList = [
+                {
+                    "name": "{0}_{1}".format(0, 0),
+                    "minPodIdx": 0,
+                    "maxPodIdx": 0
+                }
+            ]
+        else:
+            raise ValueError("Unimplementation of topo type {0}".format(self.topoType))
+
         for idx,oInfoDict in enumerate(oInfoList):
             # we need turn off orchestrator at initial to put state into it
             oPid = self.initNewOrchestratorInstance(idx, oInfoDict)
@@ -94,7 +110,7 @@ class Dispatcher(object):
                                     "oInfoDict": oInfoDict,
                                     "dib":None, "liveness":True,
                                     "sfcDict":{}, "sfciDict":{},
-                                    "cpuUtilList":[], "memoryUtilList":[]}
+                                    "cpuUtilList":[], "memoryUtilList":[], "totalCPUUtilList":[]}
             # TODO: put dib into new orchestrator instance
             self.putState2Orchestrator(oInfoDict["name"])
             self.turnOnOrchestrator(oInfoDict["name"])
@@ -145,6 +161,7 @@ class Dispatcher(object):
         self.logger.info("Absorb all addSFCI commands from mediatorStub.")
 
     def putState2Orchestrator(self, orchestratorName):
+        self.logger.info("dib: {0}".format(self._dib))
         cmd = Command(CMD_TYPE_PUT_ORCHESTRATION_STATE, uuid.uuid1(), attributes={"dib":self._dib})
         queueName = "ORCHESTRATOR_QUEUE_{0}".format(orchestratorName)
         self.sendCmd(cmd, queueName)
@@ -354,15 +371,21 @@ class Dispatcher(object):
                         self.logger.info("recv cmd to mediatorStub, cnt:{0}".format(cnt))
                         self.logger.debug("len(self.enlargedAddSFCIRequests):{0}".format(len(self.enlargedAddSFCIRequests)))
                         self.logger.debug("len(self.addSFCIRequests):{0}".format(len(self.addSFCIRequests)))
-                        if ((cnt % 100) == 0) and self.localRequestMode:
+                        if ((cnt % self.baseSFCNum) == 0) and self.localRequestMode:
                             self._testEndTime = time.time()
                             totalOrchTime = self._testEndTime - self._testStartTime
                             res = {
                                 "totalOrchTime":totalOrchTime,
                                 "orchestratorDict":self.orchestratorDict
                             }
-                            self.pIO.writePickleFile("./res/{0}/{1}/{2}_parallelMode={3}_sfcLength={4}_enlargeTime={5}_cnt={6}_mapType={7}.pickle".format(
-                                    self.topoType, self.expNum, self.podNum, int(self.parallelMode), self.sfcLength, self.enlargeTimes, cnt, self.mappingType), res)
+                            self.logger.info("totalOrchTime is {0}".format(totalOrchTime))
+                            self.logger.info("orchDict is {0}".format(self.orchestratorDict))
+                            if self.intrinsicTimeModel:
+                                self.pIO.writePickleFile("./res/{0}/{1}/podNum={2}_enlargeTimes={3}_intrinsic.pickle".format(
+                                        self.topoType, self.expNum, self.podNum, self.enlargeTimes), res)
+                            else:
+                                self.pIO.writePickleFile("./res/{0}/{1}/{2}_parallelMode={3}_sfcLength={4}_enlargeTime={5}_cnt={6}_mapType={7}.pickle".format(
+                                        self.topoType, self.expNum, self.podNum, int(self.parallelMode), self.sfcLength, self.enlargeTimes, cnt, self.mappingType), res)
                             if cnt >= len(self.enlargedAddSFCIRequests) - len(self.addSFCIRequests):
                                 break
                 else:
@@ -376,19 +399,21 @@ class Dispatcher(object):
 
     def _recordOrchUtilization(self):
         for orchName in self.orchestratorDict.keys():
-            cpuUtil, memoryUtil = self._getOrchUtilization(orchName)
-            self.logger.info("cpuUtil:{0}, memoryUtil:{1}".format(cpuUtil, memoryUtil))
+            cpuUtil, totalCPUUtil, memoryUtil = self._getOrchUtilization(orchName)
+            self.logger.info("cpuUtil:{0}, totalCPUUtil:{1}, memoryUtil:{2}".format(cpuUtil, totalCPUUtil, memoryUtil))
             self.orchestratorDict[orchName]["cpuUtilList"].append(cpuUtil)
+            self.orchestratorDict[orchName]["totalCPUUtilList"].append(totalCPUUtil)
             self.orchestratorDict[orchName]["memoryUtilList"].append(memoryUtil)
 
     def _getOrchUtilization(self, orchName):
         try:
             oPid = self.orchestratorDict[orchName]["oPid"]
             cpuUtil, memoryUtil = self.sP.getProcessCPUAndMemoryUtilization(oPid)
+            totalCPUUtil = psutil.cpu_percent(1)
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex,
                 "dispatcher _getOrchUtilization")
-        return cpuUtil, memoryUtil
+        return cpuUtil, totalCPUUtil, memoryUtil
 
     def scalingOrchestratorInstances(self, msgCnt):
         raise ValueError("Only has design, not implementation")
@@ -485,6 +510,8 @@ class Dispatcher(object):
         # predict orchestration instances number
         if self.topoType == "fat-tree":
             switchNum, torSwitchNum, serverNum = self._getFatTreeNodesNumber(self.podNum)
+        else:
+            raise ValueError("Error topo type {0}".format(self.topoType))
         self.maxBW = 100
         self.maxSFCLength = 7
         X_real = [[switchNum * (serverNum + torSwitchNum + self.podNum) * self.maxBW * self.maxSFCLength * msgCnt]]
@@ -550,11 +577,12 @@ class Dispatcher(object):
 
     def initNewOrchestratorInstance(self, idx, oInfoDict):
         self.logger.info("initNewOrchestratorInstance instance name:{0}".format(oInfoDict["name"]))
-        tasksetCmd = "taskset -c {0}".format(idx)
+        # tasksetCmd = "taskset -c {0}".format(idx)
+        tasksetCmd = " "
         orchestratorFilePath = self.__getOrchestratorFilePath()
         self.logger.info(orchestratorFilePath)
-        args = "-name {0} -p {1} -minPIdx {2} -maxPIdx {3} -turnOff".format(oInfoDict["name"], self.podNum,
-                                            oInfoDict["minPodIdx"] , oInfoDict["maxPodIdx"])
+        args = "-name {0} -p {1} -minPIdx {2} -maxPIdx {3} -topoType {4} -turnOff".format(oInfoDict["name"], self.podNum,
+                                            oInfoDict["minPodIdx"] , oInfoDict["maxPodIdx"], self.topoType)
         commandLine = "{0} {1}".format(orchestratorFilePath, args)
         self.sP.runPythonScript(commandLine, cmdPrefix=tasksetCmd)
         time.sleep(0.0000001)
@@ -599,9 +627,12 @@ if __name__ == "__main__":
     parallelMode = argParser.getArgs()['parallelMode']
     expNum = argParser.getArgs()['expNum']
     mappingType = argParser.getArgs()['mappingType']
+    baseSFCNum = argParser.getArgs()['baseSFCNum']
+    topoType = argParser.getArgs()['topoType']
+    intrinsicTimeModel = argParser.getArgs()['intrinsicTimeModel']
 
-    dP = Dispatcher(podNum, parallelMode)
+    dP = Dispatcher(podNum, parallelMode, baseSFCNum=baseSFCNum, topoType=topoType)
     if localTest:
-        dP.processLocalRequests(problemInstanceFilePath, enlargeTimes, expNum, mappingType)
+        dP.processLocalRequests(problemInstanceFilePath, enlargeTimes, expNum, mappingType, intrinsicTimeModel)
     else:
         dP.startDispatcher()

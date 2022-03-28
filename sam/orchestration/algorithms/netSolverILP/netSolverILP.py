@@ -28,10 +28,11 @@ from sam.orchestration.algorithms.netSolverILP.ilpModel import *
 TIME_LIMIT = 180
 
 class NetSolverILP(object):
-    def __init__(self, dib, requestList):
+    def __init__(self, dib, requestList, topoType="fat-tree"):
         self._dib = dib
         self.requestList = requestList
-        self.ilpModel = ILPModel(self._dib, self.requestList)
+        self.topoType = topoType
+        self.ilpModel = ILPModel(self._dib, self.requestList, self.topoType)
 
         logConfigur = LoggerConfigurator(__name__,
             './log', 'NetSolverILP.log', level='debug')

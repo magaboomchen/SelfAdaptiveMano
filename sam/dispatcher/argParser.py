@@ -12,6 +12,8 @@ class ArgParser(ArgParserBase):
             default=None, help='Problem Instance File Path')
         self.parser.add_argument("-localTest", action="store_true",
             help='run local test')
+        self.parser.add_argument("-intrinsicTimeModel", action="store_true",
+            help='run intrinsic Time Model')
         self.parser.add_argument("-parallelMode", action="store_true",
             help='Parallel Mode')
         self.parser.add_argument('-p', metavar='podNumber',
@@ -25,6 +27,11 @@ class ArgParser(ArgParserBase):
             help="enlarge times")
         self.parser.add_argument('-mappingType', metavar='mappingType',
             type=str, default=None, help="mapping type")
+        self.parser.add_argument('-baseSFCNum', metavar='baseSFCNum',
+            type=int, nargs='?', const=1, default=None,
+            help="baseSFCNum")
+        self.parser.add_argument('-topoType', metavar='topoType',
+            type=str, default="fat-tree", help="topo type")
         self.parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
                             help='Show this help message and exit. Example usage: python dispatcher.py -pFilePath ./test.instance -p 36 ')
         self.args = self.parser.parse_args()

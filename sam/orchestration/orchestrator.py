@@ -23,12 +23,14 @@ from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 
 class Orchestrator(object):
-    def __init__(self, orchestrationName=None, podNum=None, minPodIdx=None, maxPodIdx=None):
+    def __init__(self, orchestrationName=None, podNum=None, minPodIdx=None, maxPodIdx=None, topoType="fat-tree"):
         # time.sleep(15)   # wait for other basic module boot
 
         logConfigur = LoggerConfigurator(__name__, './log',
             'orchestrator_{0}.log'.format(orchestrationName), level='info')
         self.logger = logConfigur.getLogger()
+
+        self.topoType = topoType
 
         self.podNum = podNum
         self.minPodIdx = minPodIdx
@@ -39,7 +41,7 @@ class Orchestrator(object):
         self._cm = CommandMaintainer()
 
         # self._odir = ODCNInfoRetriever(self._dib, self.logger)
-        self._osa = OSFCAdder(self._dib, self.logger, podNum, minPodIdx, maxPodIdx)
+        self._osa = OSFCAdder(self._dib, self.logger, podNum, minPodIdx, maxPodIdx, self.topoType)
         self._osd = OSFCDeleter(self._dib, self._oib, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
@@ -272,31 +274,36 @@ class Orchestrator(object):
         return dib
 
     def isSwitchInSubTopologyZone(self, switchID):
-        coreSwitchNum = math.pow(self.podNum/2, 2)
-        aggSwitchNum = self.podNum * self.podNum / 2
-        coreSwitchPerPod = math.floor(coreSwitchNum/self.podNum)
-        # get core switch range
-        minCoreSwitchIdx = self.minPodIdx * coreSwitchPerPod
-        maxCoreSwitchIdx = minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1
-        # get agg switch range
-        minAggSwitchIdx = coreSwitchNum + self.minPodIdx * self.podNum / 2
-        maxAggSwitchIdx = minAggSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1
-        # get tor switch range
-        minTorSwitchIdx = coreSwitchNum + aggSwitchNum + self.minPodIdx * self.podNum / 2
-        maxTorSwitchIdx = minTorSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1
-        # self.logger.info("{0},{1},{2},{3},{4},{5}".format(
-        #         minCoreSwitchIdx, maxCoreSwitchIdx,
-        #         minAggSwitchIdx, maxAggSwitchIdx,
-        #         minTorSwitchIdx, maxTorSwitchIdx
-        #     )
-        # )
+        if self.topoType == "fat-tree":
+            coreSwitchNum = math.pow(self.podNum/2, 2)
+            aggSwitchNum = self.podNum * self.podNum / 2
+            coreSwitchPerPod = math.floor(coreSwitchNum/self.podNum)
+            # get core switch range
+            minCoreSwitchIdx = self.minPodIdx * coreSwitchPerPod
+            maxCoreSwitchIdx = minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1
+            # get agg switch range
+            minAggSwitchIdx = coreSwitchNum + self.minPodIdx * self.podNum / 2
+            maxAggSwitchIdx = minAggSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1
+            # get tor switch range
+            minTorSwitchIdx = coreSwitchNum + aggSwitchNum + self.minPodIdx * self.podNum / 2
+            maxTorSwitchIdx = minTorSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1
+            # self.logger.info("{0},{1},{2},{3},{4},{5}".format(
+            #         minCoreSwitchIdx, maxCoreSwitchIdx,
+            #         minAggSwitchIdx, maxAggSwitchIdx,
+            #         minTorSwitchIdx, maxTorSwitchIdx
+            #     )
+            # )
 
-        if (switchID >= minCoreSwitchIdx and switchID <= maxCoreSwitchIdx) \
-                or (switchID >= minAggSwitchIdx and switchID <= maxAggSwitchIdx) \
-                or (switchID >= minTorSwitchIdx and switchID <= maxTorSwitchIdx):
+            if (switchID >= minCoreSwitchIdx and switchID <= maxCoreSwitchIdx) \
+                    or (switchID >= minAggSwitchIdx and switchID <= maxAggSwitchIdx) \
+                    or (switchID >= minTorSwitchIdx and switchID <= maxTorSwitchIdx):
+                return True
+            else:
+                return False
+        elif self.topoType == "testbed_sw1":
             return True
         else:
-            return False
+            raise ValueError("Unimplementation topo type")
 
 
 
@@ -307,8 +314,9 @@ if __name__=="__main__":
     minPodIdx = argParser.getArgs()['minPIdx']   # example: 0
     maxPodIdx = argParser.getArgs()['maxPIdx']   # example: 35
     turnOff = argParser.getArgs()['turnOff']
+    topoType = argParser.getArgs()['topoType']
 
-    ot = Orchestrator(name, podNum, minPodIdx, maxPodIdx)
+    ot = Orchestrator(name, podNum, minPodIdx, maxPodIdx, topoType)
     if turnOff:
         ot.setRunningState(False)
     ot.startOrchestrator()

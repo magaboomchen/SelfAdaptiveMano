@@ -28,7 +28,7 @@ INITIAL_PATH_PER_REQUEST_NUM = 2
 
 
 class ILPModel(OPRandomizedRoundingAlgorithm):
-    def __init__(self, dib, requestList):
+    def __init__(self, dib, requestList, topoType="fat-tree"):
         self._dib = dib
         self.requestList = requestList
 
@@ -37,6 +37,7 @@ class ILPModel(OPRandomizedRoundingAlgorithm):
         self.logger = logConfigur.getLogger()
 
         self.zoneName = self.requestList[0].attributes['zone']
+        self.topoType = topoType
 
     def loadFatTreeArg(self, podNum, minPodIdx, maxPodIdx):
         self.logger.info(
@@ -84,7 +85,11 @@ class ILPModel(OPRandomizedRoundingAlgorithm):
                 = self._dib.getLinkResidualResource(
                     srcNodeID, dstNodeID, self.zoneName)
 
-        self.physicalLink, self.linkCapacity = gp.multidict(self.links)
+        if len(self.links) != 0:
+            self.physicalLink, self.linkCapacity = gp.multidict(self.links)
+        else:
+            self.physicalLink = {}
+            self.linkCapacity = {}
 
         # self.logger.info("self.physicalLink: {0}".format(self.physicalLink))
 
@@ -104,8 +109,10 @@ class ILPModel(OPRandomizedRoundingAlgorithm):
             switch = switchInfoDict['switch']
             self.switches[switchID] = [self._dib.getNPoPServersCapacity(switchID,
                 self.zoneName)]
+        self.logger.debug("dib is {0}".format(self._dib))
+        self.logger.debug("zoneName is {0}".format(self.zoneName))
+        self.logger.debug("switches:{0}".format(self.switches))
         self.switches, self.switchCapacity = gp.multidict(self.switches)
-        # self.logger.debug("switches:{0}".format(self.switches))
 
     def _genRequestIngAndEg(self):
         self.requestIngSwitchID = {}
@@ -132,12 +139,17 @@ class ILPModel(OPRandomizedRoundingAlgorithm):
             self.requestEgSwitchID[rIndex] = egSwitchID
 
     def _randomSelectACoreSwitch(self):
-        coreSwitchNum = math.pow(self.podNum/2, 2)
-        coreSwitchPerPod = math.floor(coreSwitchNum/self.podNum)
-        # get core switch range
-        minCoreSwitchIdx = self.minPodIdx * coreSwitchPerPod
-        maxCoreSwitchIdx = minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1
-        coreSwitchID = random.randint(minCoreSwitchIdx, maxCoreSwitchIdx)
+        if self.topoType == "fat-tree":
+            coreSwitchNum = math.pow(self.podNum/2, 2)
+            coreSwitchPerPod = math.floor(coreSwitchNum/self.podNum)
+            # get core switch range
+            minCoreSwitchIdx = self.minPodIdx * coreSwitchPerPod
+            maxCoreSwitchIdx = minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1
+            coreSwitchID = random.randint(minCoreSwitchIdx, maxCoreSwitchIdx)
+        elif self.topoType == "testbed_sw1":
+            coreSwitchID = 1
+        else:
+            raise ValueError("Unimplementation topo type {0}".format(self.topoType))
         return coreSwitchID
 
     def _genPathLinkVar(self, rIndex):
@@ -401,6 +413,9 @@ class ILPModel(OPRandomizedRoundingAlgorithm):
 
     def _updateResource(self):
         self.logger.info("_updateResource!")
+
+        if self.topoType == "testbed_sw1":
+            return 0
 
         # update link residual bandwidth
         pathSolutions = self.model.getAttr('x', self.phi)

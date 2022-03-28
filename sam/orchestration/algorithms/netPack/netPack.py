@@ -22,10 +22,10 @@ from sam.orchestration.algorithms.base.pathServerFiller import *
 
 
 class NetPack(MappingAlgorithmBase, PathServerFiller):
-    def __init__(self, dib):
+    def __init__(self, dib, topoType="fat-tree"):
         # self._dib = copy.deepcopy(dib)
         self._dib = dib
-        self.topotype = "fat-tree"
+        self.topoType = topoType
         self.pM = PerformanceModel()
 
         self.podNum = None
@@ -46,7 +46,10 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         # self.logger.debug("self._dib server: {0}".format(self._dib))
 
         self.logger.info("NetPack mapSFCI")
+        initStartTime = time.time()
         self._init(requestList, podNum, minPodIdx, maxPodIdx)
+        initEndTime = time.time()
+        self.logger.warning("init time is {0}".format(initEndTime - initStartTime))
         self._mapAllPrimaryPaths()
         return {"forwardingPathSetsDict": self.forwardingPathSetsDict,
                 "requestOrchestrationInfo": self.requestOrchestrationInfo,
@@ -106,7 +109,10 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         #             self.logger.debug(server.getServerID())
         self.requestOrchestrationInfo = {}   # "accept": true/false; "computation time": 1
         self.totalComputationTime = None
+        constructStartTime = time.time()
         self.G = self.constructGraph()
+        constructEndTime = time.time()
+        self.logger.warning("construct graph time {0}".format(constructEndTime - constructStartTime))
         self.logger.info("_mapAllPrimaryPaths")
         totalStartTime = time.time()
         for rIndex in range(len(self.requestList)):
@@ -298,7 +304,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         return validServerList
 
     def getAllServerSets(self):
-        if self.topotype == "fat-tree":
+        if self.topoType == "fat-tree":
             coreSwitchNum = pow(self.podNum/2,2)
             aggrSwitchNum = self.podNum/2*self.podNum
             torSwitchNum = self.podNum/2*self.podNum
@@ -328,6 +334,27 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
                         podServerList.extend(rackServersList)
                 podServerSet.append(podServerList)
             return [singleServerSet, rackServerSet, podServerSet]
+        elif self.topoType == "testbed_sw1":
+            # construct single serverSet
+            singleServerSet = []
+            switchID = 1
+            rackServersList = self._dib.getConnectedServers(switchID, self.zoneName)
+            for server in rackServersList:
+                singleServerSet.append([server])
+            # construct racks serverSet
+            rackServerSet = []
+            switchID = 1
+            rackServersList = self._dib.getConnectedServers(switchID, self.zoneName)
+            rackServerSet.append(rackServersList)
+            # construct pod serverSet
+            podServerSet = []
+            for podIdx in range(0, self.podNum):
+                podServerList = []
+                switchID = 1
+                rackServersList = self._dib.getConnectedServers(switchID, self.zoneName)
+                podServerList.extend(rackServersList)
+                podServerSet.append(podServerList)
+            return [singleServerSet, rackServerSet, podServerSet]
         else:
             raise ValueError("Unimplementation of unknown topotype: {0}".format(self.topotype))
 
@@ -348,10 +375,15 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
             return False
 
     def _randomSelectACoreSwitchInSubZone(self):
-        coreSwitchNum = math.pow(self.podNum/2, 2)
-        coreSwitchPerPod = math.floor(coreSwitchNum/self.podNum)
-        # get core switch range
-        minCoreSwitchIdx = self.minPodIdx * coreSwitchPerPod
-        maxCoreSwitchIdx = minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1
-        coreSwitchID = random.randint(minCoreSwitchIdx, maxCoreSwitchIdx)
+        if self.topoType == "fat-tree":
+            coreSwitchNum = math.pow(self.podNum/2, 2)
+            coreSwitchPerPod = math.floor(coreSwitchNum/self.podNum)
+            # get core switch range
+            minCoreSwitchIdx = self.minPodIdx * coreSwitchPerPod
+            maxCoreSwitchIdx = minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1
+            coreSwitchID = random.randint(minCoreSwitchIdx, maxCoreSwitchIdx)
+        elif self.topoType == "testbed_sw1":
+            coreSwitchID = 1
+        else:
+            raise ValueError("Unimplementation topo type {0}".format(self.topoType))
         return coreSwitchID

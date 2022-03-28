@@ -37,17 +37,18 @@ from sam.orchestration.algorithms.base.performanceModel import *
 
 
 class OSFCAdder(object):
-    def __init__(self, dib, logger, podNum=None, minPodIdx=None, maxPodIdx=None):
+    def __init__(self, dib, logger, podNum=None, minPodIdx=None, maxPodIdx=None, topoType="fat-tree"):
         self._dib = dib
         self.logger = logger
         self._via = VNFIIDAssigner()
         self._sc = SocketConverter()
         self.zoneName = None
+        self.topoType = topoType
         self.podNum = podNum
         self.minPodIdx = minPodIdx
         self.maxPodIdx = maxPodIdx
 
-        self.nPInstance = NetPack(self._dib)
+        self.nPInstance = NetPack(self._dib, self.topoType)
 
     def genAddSFCCmd(self, request):
         self.request = request
@@ -232,7 +233,10 @@ class OSFCAdder(object):
                 forwardingPathSetsDict = self.netSolverILP(requestBatchList)
                 self.logger.info("get result!")
             elif mappingType == MAPPING_TYPE_NONE:
-                pass
+                forwardingPathSetsDict = {}
+                for rIndex in range(len(requestBatchList)):
+                    forwardingPathSetsDict[rIndex] = ForwardingPathSet(
+                        {1:0}, mappingType, {1:{}})
             else:
                 self.logger.error(
                     "Unknown mappingType {0}".format(mappingType))
@@ -243,7 +247,7 @@ class OSFCAdder(object):
                     self._forwardingPathSetsDict2Cmd(forwardingPathSetsDict,
                         requestBatchList)
                 )
-            elif mappingType in [MAPPING_TYPE_NETPACK, MAPPING_TYPE_NETSOLVER_ILP]:
+            elif mappingType in [MAPPING_TYPE_NETPACK, MAPPING_TYPE_NETSOLVER_ILP, MAPPING_TYPE_NONE]:
                 reqCmdTupleList.extend(
                     self._netPackForwardingPathSetsDict2Cmd(forwardingPathSetsDict,
                         requestBatchList)
@@ -343,7 +347,7 @@ class OSFCAdder(object):
         return forwardingPathSetsDict
 
     def netSolverILP(self, requestBatchList):
-        netSolverILP = NetSolverILP(self._dib, requestBatchList)
+        netSolverILP = NetSolverILP(self._dib, requestBatchList, self.topoType)
         forwardingPathSetsDict = netSolverILP.mapSFCI(self.podNum, 
                                         self.minPodIdx, self.maxPodIdx)
 
