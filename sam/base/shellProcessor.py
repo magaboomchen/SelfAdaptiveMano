@@ -35,6 +35,12 @@ class ShellProcessor(object):
         out_bytes = subprocess.check_output(
             [ user + filePath], shell=True)
 
+    def getProcessCPUAndMemoryUtilization(self, pid, interval=1):
+        p = psutil.Process(pid)
+        cpuUtilList = p.cpu_percent(interval=interval)
+        memoryUtilList = p.memory_info().rss
+        return cpuUtilList, memoryUtilList
+
     def killProcess(self,processName):
         for p in psutil.process_iter(attrs=['pid', 'name']):
             if processName in p.info['name']:
@@ -51,13 +57,24 @@ class ShellProcessor(object):
                         return True
         return False
 
-    def runPythonScript(self, filePath, root=False):
+    def runPythonScript(self, filePath, root=False, cmdPrefix=""):
         if root == True:
             user = "sudo "
         else:
             user = ""
         subprocess.Popen(
-            [ user + " python " + filePath], shell=True)
+            [ user + "{0} python ".format(cmdPrefix) + filePath], shell=True)
+
+    def getPythonScriptProcessPid(self, scriptName):
+        for p in psutil.process_iter(attrs=['pid', 'name', 'cmdline']):
+            if p.info['name'] == "python":
+                cmdline = " ".join(p.info['cmdline'])
+                self.logger.debug("cmdline:{0}".format(cmdline))
+                self.logger.debug("scriptName:{0}".format(scriptName))
+                if cmdline.find(scriptName) != -1:
+                    self.logger.debug(p.info['pid'])
+                    return p.info['pid']
+        return None
 
     def killPythonScript(self,moduleName):
         for p in psutil.process_iter(attrs=['pid', 'name', 'cmdline']):

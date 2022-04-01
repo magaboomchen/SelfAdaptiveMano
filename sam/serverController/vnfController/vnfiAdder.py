@@ -38,6 +38,7 @@ class VNFIAdder(object):
             return self._addNAT(vnfi, client, vioAllo, cpuAllo)
         elif vnfiType == VNF_TYPE_VPN:
             return self._addVPN(vnfi, client, vioAllo, cpuAllo)
+        client.close()
 
     def _addFWD(self, vnfi, client, vioAllo, cpuAllo, useFastClick=vcConfig.DEFAULT_FASTCLICK, debug=vcConfig.DEBUG):
         cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)

@@ -14,7 +14,7 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 class DatabaseAgent(object):
     def __init__(self, host, user, passwd):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'databaseAgent.log', level='debug')
+            'databaseAgent.log', level='warning')
         self.logger = logConfigur.getLogger()
 
         self.host = host

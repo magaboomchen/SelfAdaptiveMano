@@ -30,17 +30,25 @@ from sam.orchestration.algorithms.notVia.notVia import *
 from sam.orchestration.algorithms.dpSFCCG.dpSFCCG import *
 from sam.orchestration.algorithms.mMLPSFC.mMLPSFC import *
 from sam.orchestration.algorithms.mMLBSFC.mMLBSFC import *
+from sam.orchestration.algorithms.netPack.netPack import *
+from sam.orchestration.algorithms.netSolverILP.netSolverILP import *
 from sam.orchestration.algorithms.base.resourceAllocator import *
 from sam.orchestration.algorithms.base.performanceModel import *
 
 
 class OSFCAdder(object):
-    def __init__(self, dib, logger):
+    def __init__(self, dib, logger, podNum=None, minPodIdx=None, maxPodIdx=None, topoType="fat-tree"):
         self._dib = dib
         self.logger = logger
         self._via = VNFIIDAssigner()
         self._sc = SocketConverter()
         self.zoneName = None
+        self.topoType = topoType
+        self.podNum = podNum
+        self.minPodIdx = minPodIdx
+        self.maxPodIdx = maxPodIdx
+
+        self.nPInstance = NetPack(self._dib, self.topoType)
 
     def genAddSFCCmd(self, request):
         self.request = request
@@ -190,6 +198,7 @@ class OSFCAdder(object):
     #         self._pC.mapBackupFP()
 
     def genABatchOfRequestAndAddSFCICmds(self, requestBatchQueue):
+        self.logger.info("oSFCAdder process batch size: {0}".format(requestBatchQueue.qsize()))
         # while not requestBatchQueue.empty():
         #     request = requestBatchQueue.get()
         #     self.logger.info("request:{0}".format(request))
@@ -198,9 +207,9 @@ class OSFCAdder(object):
         requestDict = self._divRequest(requestBatchQueue)
         self._updateRequestDictIngAndEg(requestDict)
         # self._logRequestDict(requestDict)
-        cmdList = []
+        reqCmdTupleList = []
         for mappingType in requestDict.keys():
-            requestBatchList =requestDict[mappingType]
+            requestBatchList = requestDict[mappingType]
             # You can add more algorithms here
             # mappingType is defined in sam/base/path.py
             if mappingType == MAPPING_TYPE_UFRR:
@@ -216,19 +225,37 @@ class OSFCAdder(object):
             elif mappingType == MAPPING_TYPE_INTERFERENCE:
                 self.logger.info("InterferenceAware")
                 forwardingPathSetsDict = self.interferenceAware(requestBatchList)
+            elif mappingType == MAPPING_TYPE_NETPACK:
+                self.logger.info("NetPack")
+                forwardingPathSetsDict = self.netPack(requestBatchList)
+            elif mappingType == MAPPING_TYPE_NETSOLVER_ILP:
+                self.logger.info("NetSolver")
+                forwardingPathSetsDict = self.netSolverILP(requestBatchList)
+                self.logger.info("get result!")
             elif mappingType == MAPPING_TYPE_NONE:
-                pass
+                forwardingPathSetsDict = {}
+                for rIndex in range(len(requestBatchList)):
+                    forwardingPathSetsDict[rIndex] = ForwardingPathSet(
+                        {1:0}, mappingType, {1:{}})
             else:
                 self.logger.error(
                     "Unknown mappingType {0}".format(mappingType))
                 raise ValueError("Unknown mappingType.")
 
-            cmdList.extend(
-                self._forwardingPathSetsDict2Cmd(forwardingPathSetsDict,
-                    requestBatchList)
-            )
+            if mappingType in [MAPPING_TYPE_UFRR, MAPPING_TYPE_E2EP, MAPPING_TYPE_NOTVIA_PSFC]:
+                reqCmdTupleList.extend(
+                    self._forwardingPathSetsDict2Cmd(forwardingPathSetsDict,
+                        requestBatchList)
+                )
+            elif mappingType in [MAPPING_TYPE_NETPACK, MAPPING_TYPE_NETSOLVER_ILP, MAPPING_TYPE_NONE]:
+                reqCmdTupleList.extend(
+                    self._netPackForwardingPathSetsDict2Cmd(forwardingPathSetsDict,
+                        requestBatchList)
+                )
+            else:
+                raise ValueError("Unimplement mapping type: {0}".format(mappingType))
 
-        return cmdList
+        return reqCmdTupleList
 
     def _divRequest(self, requestBatchQueue):
         requestDict = {}
@@ -258,7 +285,7 @@ class OSFCAdder(object):
                 self.sfc = self.request.attributes['sfc']
                 self.zoneName = self.sfc.attributes["zone"]
 
-                self._mapIngressEgress()
+                # self._mapIngressEgress()
                 # self.logger.debug("sfc:{0}".format(self.sfc))
 
     def _logRequestDict(self, requestDict):
@@ -316,12 +343,27 @@ class OSFCAdder(object):
         #   The mapping info is stored in request.sfci.vnfiSequence (please refer to sam/base/vnf.py and sam/base/sfc.py)
         # sfc path is stored in forwardingPathSetsDict
         #   If you don't need to calculate path, just leave each path in forwardingPathSetsDict to default.
+        forwardingPathSetsDict = None
         return forwardingPathSetsDict
+
+    def netSolverILP(self, requestBatchList):
+        netSolverILP = NetSolverILP(self._dib, requestBatchList, self.topoType)
+        forwardingPathSetsDict = netSolverILP.mapSFCI(self.podNum, 
+                                        self.minPodIdx, self.maxPodIdx)
+
+        return forwardingPathSetsDict
+
+    def netPack(self, requestBatchList):
+        # self.logger.debug(" OSFCAdder self._dib: {0}".format(self._dib))
+        netPackResultDict = self.nPInstance.mapSFCI(requestBatchList,
+                                                self.podNum, self.minPodIdx,
+                                                            self.maxPodIdx)
+        return netPackResultDict["forwardingPathSetsDict"]
 
     def _forwardingPathSetsDict2Cmd(self, forwardingPathSetsDict,
                                         requestBatchList):
         self.logger.debug("requestFPSet:{0}".format(forwardingPathSetsDict))
-        cmdList = []
+        reqCmdTupleList = []
         for rIndex in range(len(requestBatchList)):
             request = requestBatchList[rIndex]
             sfc = request.attributes['sfc']
@@ -337,8 +379,29 @@ class OSFCAdder(object):
             cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
                 'sfc':sfc, 'sfci':sfci, 'zone':zoneName
             })
-            cmdList.append((request, cmd))
-        return cmdList
+            reqCmdTupleList.append((request, cmd))
+        return reqCmdTupleList
+
+    def _netPackForwardingPathSetsDict2Cmd(self, forwardingPathSetsDict,
+                                        requestBatchList):
+        self.logger.warning("This function may be deprecated in the futures, we will transform netPack to compatible with our forwarding path format")
+        # self.logger.debug("requestFPSet:{0}".format(forwardingPathSetsDict))
+        reqCmdTupleList = []
+        for rIndex in range(len(requestBatchList)):
+            request = requestBatchList[rIndex]
+            sfc = request.attributes['sfc']
+            zoneName = sfc.attributes['zone']
+            sfci = request.attributes['sfci']
+            sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
+            # TODO: Can't use following codes, we need to transform netPack to compatible with our forwarding path format first!
+            # if sfci.vnfiSequence in [None,[]]:
+            #     sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
+            #                                             sfci.forwardingPathSet)
+            cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
+                'sfc':sfc, 'sfci':sfci, 'zone':zoneName
+            })
+            reqCmdTupleList.append((request, cmd))
+        return reqCmdTupleList
 
     def _getVNFISeqFromForwardingPathSet(self, sfc, forwardingPathSet):
         sfcLength = len(sfc.vNFTypeSequence)

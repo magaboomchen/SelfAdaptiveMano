@@ -204,6 +204,18 @@ class Server(object):
             hugepages = hugepages + pages
         return hugepages*self.getHugepagesSize()/1024/1024    # unit: GB
 
+    def fastConstructResourceInfo(self):
+        # For fast server instance construction
+        self._memoryAccessMode = "NUMA"
+        self._socketNum = 2
+        self._coreSocketDistribution = [12,12]
+        self._numaNum = 2
+        self._coreNUMADistribution = [12,12]
+        self._coreUtilization = [0,0,0,0,0,0,0,0,0,0,0,0]
+        self._hugepagesTotal = [256,256]
+        self._hugepagesFree = [256,256]
+        self._hugepageSize = 1048576
+
     def updateResource(self):
         self._updateMemAccessMode()
         self._updateSocketNum()

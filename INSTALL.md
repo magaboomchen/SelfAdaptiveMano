@@ -21,10 +21,12 @@ sudo python -m pip install scapy
 sudo python -m pip install grpcio
 sudo python -m pip install grpcio-tools
 sudo python -m pip install docker
+sudo python -m pip install paramiko
+sudo python -m pip install sklearn
 ```
 
 ```
-sudo python -m pip install enum34 psutil pika netifaces getmac pytest networkx numpy pandas gurobipy ryu tinyrpc==0.8 ruamel matplotlib scapy grpcio grpcio-tools docker
+sudo python -m pip install paramiko enum34 psutil pika netifaces getmac pytest networkx numpy pandas gurobipy tinyrpc==0.8 ruamel.yaml==0.15.52 matplotlib scapy grpcio grpcio-tools docker sklearn ryu 
 ```
 
 ```
@@ -87,6 +89,14 @@ sudo apt install mysql-server
 sudo mysql_secure_installation
 sudo apt-get install gcc python3-dev
 sudo apt-get install python-mysqldb
+```
+
+#### Ubuntu 20.04
+```
+sudo wget https://raw.githubusercontent.com/paulfitz/mysql-connector-c/master/include/my_config.h -O /usr/include/mysql/my_config.h
+sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu bionic main'
+sudo apt update
+sudo apt install -y python-mysqldb
 ```
 
 ### add user dbAgent with password 123

@@ -3,6 +3,8 @@
 
 import paramiko
 import logging
+import StringIO
+
 
 class SSHAgent(object):
     def __init__(self):
@@ -10,11 +12,24 @@ class SSHAgent(object):
 
         logging.getLogger("paramiko").setLevel(logging.ERROR)
 
-    def connectSSH(self,sshUsrname, sshPassword, remoteIP, remoteSSHPort=22):
+    def connectSSH(self, sshUsrname, sshPassword, remoteIP, remoteSSHPort=22):
         self.passwd = sshPassword
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh.connect(hostname = remoteIP, port = remoteSSHPort,
             username = sshUsrname, password = sshPassword)
+
+    def connectSSHWithRSA(self, sshUsrname, privateKeyFilePath, remoteIP, remoteSSHPort=22):
+        f = open(privateKeyFilePath,'r')
+        s = f.read()
+        keyfile = StringIO.StringIO(s)
+        mykey = paramiko.RSAKey.from_private_key(keyfile)
+        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.ssh.connect(hostname = remoteIP, port = remoteSSHPort,
+            username = sshUsrname, pkey=mykey)
+        f.close()
+
+    def loadUserPassword(self, sshPassword):
+        self.passwd = sshPassword
 
     def runShellCommand(self,command):
         stdin, stdout, stderr = self.ssh.exec_command(command, get_pty=True)
