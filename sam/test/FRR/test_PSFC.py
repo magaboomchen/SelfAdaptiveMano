@@ -117,3 +117,6 @@ class TestPSFCClass(TestFRR):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+
+        logging.info("Press any key to quit!")
+        raw_input()

@@ -141,3 +141,8 @@ class TestUFRRClass(TestFRR):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+
+        logging.info("Please input mode 0 into mininet\n"
+            "After the test, "
+            "Press any key to quit!")
+        raw_input()
