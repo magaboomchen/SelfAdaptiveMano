@@ -14,3 +14,4 @@ if __name__ == "__main__":
     sP.killPythonScript("classifierControllerCommandAgent.py")
     sP.killPythonScript("sffControllerCommandAgent.py")
     sP.killPythonScript("vnfController.py")
+    sP.killPythonScript("simulator.py")
