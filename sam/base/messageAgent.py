@@ -15,15 +15,19 @@ import threading
 
 import base64
 
-import pickle
 import pika
-# from pika.exceptions import ChannelClosed
-# from pika.exceptions import ReentrancyError
+import grpc
+import pickle
+from concurrent import futures
 
 from sam.base.command import *
 from sam.base.request import *
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
+# from sam.base.messageAgentAuxillary.msgAgentRPCConf import *
+from sam.base.msgAgentRPCConf import *
+import sam.base.messageAgentAuxillary.messageAgent_pb2 as messageAgent_pb2
+import sam.base.messageAgentAuxillary.messageAgent_pb2_grpc as messageAgent_pb2_grpc
 
 threadLock = threading.Lock()
 
@@ -179,7 +183,7 @@ class MessageAgent(object):
                     self._publisherConnection.close()
                 break
 
-    def startRecvMsg(self,srcQueueName):
+    def startRecvMsg(self, srcQueueName):
         self.logger.debug("MessageAgent.startRecvMsg() on queue {0}".format(srcQueueName))
         if srcQueueName in self.msgQueues:
             self.logger.warning("Already listening on recv queue.")
@@ -235,10 +239,54 @@ class MessageAgent(object):
         connection = pika.BlockingConnection(parameters)
         return connection
 
-    def _encodeMessage(self,message):
+    def sendMsgByRPC(self, dstIP, dstPort, message):
+        channel = grpc.insecure_channel(
+            '{0}:{1}'.format(dstIP, dstPort),
+            options=[
+                ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
+                ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH),
+            ],
+        )
+
+        stub = messageAgent_pb2_grpc.MessageStorageStub(channel=channel)
+
+        while True:
+            pickles = self._encodeMessage(message)
+            req = messageAgent_pb2.Pickle(picklebytes=pickles)
+            response = stub.Store(req)
+
+            self.logger.info("response is {0}".format(response))
+            if response.booly:
+                break
+
+    def startMsgReceiverRPCServer(self, listenIP, listenPort):
+        # self.logger.info("{0}".format(MAX_MESSAGE_LENGTH))
+        srcQueueName = "{0}:{1}".format(listenIP, listenPort)
+        if srcQueueName in self.msgQueues:
+            self.logger.warning("Already listening on recv queue.")
+        else:
+            self.msgQueues[srcQueueName] = Queue.Queue()
+            server = grpc.server(
+                futures.ThreadPoolExecutor(max_workers=12),
+                options=[
+                    ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
+                    ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH),
+                ],
+            )
+            messageAgent_pb2_grpc.add_MessageStorageServicer_to_server(MsgStorageServicer(self.msgQueues[srcQueueName]), server)
+
+            self.logger.info('Starting server. Listening on port {0}.'.format(listenPort))
+            server.add_insecure_port('{0}:{1}'.format(listenIP, listenPort))
+            server.start()
+
+    def getMsgByRPC(self, listenIP, listenPort):
+        msg = self.getMsg("{0}:{1}".format(listenIP, listenPort))
+        return msg
+
+    def _encodeMessage(self, message):
         return base64.b64encode(pickle.dumps(message,-1))
 
-    def _decodeMessage(self,message):
+    def _decodeMessage(self, message):
         return pickle.loads(base64.b64decode(message))
 
     def __del__(self):
@@ -253,7 +301,7 @@ class MessageAgent(object):
         self.logger.info("Disconnect from RabbiMQServer.")
         self._disConnectRabbiMQServer()
 
-    def _async_raise(self,tid, exctype):
+    def _async_raise(self, tid, exctype):
         """raises the exception, performs cleanup if needed"""
         tid = ctypes.c_long(tid)
         if not inspect.isclass(exctype):
@@ -274,6 +322,24 @@ class MessageAgent(object):
                 self._publisherConnection.close()
         # if self._consumerConnection.is_open:
         #     self._consumerConnection.close()
+
+
+class MsgStorageServicer(messageAgent_pb2_grpc.MessageStorageServicer):
+    def __init__(self, msgQueue):
+        self.msgQueue = msgQueue
+
+    def Store(self, request, context):
+        pickles = request.picklebytes
+        # data = self._decodeMessage(pickles)
+        data = pickles
+        if self.msgQueue.qsize() < MESSAGE_AGENT_MAX_QUEUE_SIZE:
+            self.msgQueue.put(data)
+        else:
+            raise ValueError("MessageAgent recv qeueu full! Drop new msg!")
+        return messageAgent_pb2.Status(booly=True)
+
+    # def _decodeMessage(self, message):
+    #     return pickle.loads(base64.b64decode(message))
 
 
 class QueueReciever(threading.Thread):
@@ -392,3 +458,25 @@ class QueueReciever(threading.Thread):
         threadLock.release()
         self.logger.debug(" [x] Done")
         ch.basic_ack(delivery_tag = method.delivery_tag)
+
+# class GRPCServer(threading.Thread):
+#     def __init__(self, threadID, msgQueue, logger):
+#         threading.Thread.__init__(self)
+#         self.threadID = threadID
+#         self.msgQueue = msgQueue
+#         self.logger = logger
+
+#     def run(self):
+#         self.logger.debug("thread GRPCServer.run().")
+#         self._recvMsg()
+
+#     def _recvMsg(self):
+#         while True:
+#             try:
+#                 self.channel.start_consuming()
+#             except KeyboardInterrupt:
+#                 self.logger.info("msgAgent recv thread get keyboardInterrupt, quit recv().")
+#                 return None
+#             except Exception as ex:
+#                 ExceptionProcessor(self.logger).logException(ex,
+#                                     "MessageAgent recvMsg failed")

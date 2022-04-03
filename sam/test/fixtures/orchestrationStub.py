@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.messageAgent import *
+import uuid
+
+from sam.base.messageAgent import MessageAgent, ORCHESTRATOR_QUEUE
 from sam.base.command import *
 from sam.base.sfc import *
 from sam.base.vnf import *
