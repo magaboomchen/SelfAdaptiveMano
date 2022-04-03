@@ -465,7 +465,7 @@ class TestBase(object):
         self.sP.runShellCommand("python " + cleanAllLogFile.__file__)
 
     def killAllModule(self):
-        self.sP.runShellCommand("sudo python " + killAllSAMPythonScripts.__file__)
+        self.sP.runShellCommand("python " + killAllSAMPythonScripts.__file__)
 
     def genSwitchList(self, num, switchType, 
             switchLANNetlist, switchIDList, supportVNFList=None):

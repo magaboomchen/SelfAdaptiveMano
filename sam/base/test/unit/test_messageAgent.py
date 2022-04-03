@@ -8,8 +8,8 @@ import pytest
 
 from sam.base.server import *
 from sam.base.command import *
-from sam.test.fixtures.orchestrationStub import *
-from sam.base.messageAgent import *
+from sam.test.fixtures.orchestrationStub import OrchestrationStub
+from sam.base.messageAgent import MessageAgent
 from sam.test.testBase import *
 from sam.mediator.mediator import *
 from sam.base.command import *
@@ -30,14 +30,21 @@ class TestMediatorClass(TestBase):
         call.
         """
 
-    def test_isCommand(self):
-        body = Command(1,2)
-        assert self.mA.isCommand(body) == True
-        body = 1
-        assert self.mA.isCommand(body) == False
+    # def test_isCommand(self):
+    #     body = Command(1,2)
+    #     assert self.mA.isCommand(body) == True
+    #     body = 1
+    #     assert self.mA.isCommand(body) == False
 
-    def test_isCommandReply(self):
-        body = CommandReply(1,2)
-        assert self.mA.isCommandReply(body) == True
-        body = 1
-        assert self.mA.isCommandReply(body) == False
+    # def test_isCommandReply(self):
+    #     body = CommandReply(1,2)
+    #     assert self.mA.isCommandReply(body) == True
+    #     body = 1
+    #     assert self.mA.isCommandReply(body) == False
+
+    def test_requestMsgByRPC(self):
+        self.mA.startMsgReceiverRPCServer("127.0.0.1", "49998")
+        msg = {"a":1}
+        self.mA.sendMsgByRPC("127.0.0.1", "49998", msg)
+        newMsg = self.mA.getMsgByRPC("127.0.0.1", "49998")
+        assert newMsg == msg

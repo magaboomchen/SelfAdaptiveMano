@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+message Pickle {
+    bytes picklebytes = 1;
+}
+
+message Status {
+    bool booly = 1;
+}
+
+service MessageStorage {
+    rpc Store(Pickle) returns (Status) {}
+}
