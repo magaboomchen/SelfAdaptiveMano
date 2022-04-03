@@ -25,7 +25,7 @@ from sam.base.request import *
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 # from sam.base.messageAgentAuxillary.msgAgentRPCConf import *
-from sam.base.msgAgentRPCConf import *
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import *
 import sam.base.messageAgentAuxillary.messageAgent_pb2 as messageAgent_pb2
 import sam.base.messageAgentAuxillary.messageAgent_pb2_grpc as messageAgent_pb2_grpc
 
@@ -89,6 +89,7 @@ class SAMMessage(object):
         self._msgType = msgType # can not be a type()
         self._msgID = uuid.uuid1()
         self._body = body
+        self._source = None
 
     def getMessageType(self):
         return self._msgType
@@ -98,6 +99,12 @@ class SAMMessage(object):
 
     def getbody(self):
         return self._body
+
+    def setSource(self, source):
+        self._source = source
+
+    def getSource(self):
+        return self._source
 
     def __str__(self):
         output = "Message type is {0} ".format(self._msgType)\
@@ -120,6 +127,10 @@ class MessageAgent(object):
         self._threadSet = {}
         self._publisherConnection = None
         # self._consumerConnection = None # self._connectRabbitMQServer()
+        self.listenIP = None
+        self.listenPort = None
+        self.gRPCChannel = None
+        self.gRPCServersList = []
 
     def readRabbitMQConf(self):
         filePath = __file__.split("/messageAgent.py")[0] + '/rabbitMQConf.conf'
@@ -221,8 +232,10 @@ class MessageAgent(object):
         msg = None
         if srcQueueName in self.msgQueues:
             if not self.msgQueues[srcQueueName].empty():
+                # encodedMsg, source = self.msgQueues[srcQueueName].get()
                 encodedMsg = self.msgQueues[srcQueueName].get()
                 msg =  self._decodeMessage(encodedMsg)
+                # msg.setSource(source)
             else:
                 msg =  SAMMessage(None,None)
         else:
@@ -240,7 +253,9 @@ class MessageAgent(object):
         return connection
 
     def sendMsgByRPC(self, dstIP, dstPort, message):
-        channel = grpc.insecure_channel(
+        if self.listenIP == None or self.listenPort == None:
+            raise ValueError("Unset listen IP and port.")
+        self.gRPCChannel = grpc.insecure_channel(
             '{0}:{1}'.format(dstIP, dstPort),
             options=[
                 ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
@@ -248,9 +263,14 @@ class MessageAgent(object):
             ],
         )
 
-        stub = messageAgent_pb2_grpc.MessageStorageStub(channel=channel)
+        stub = messageAgent_pb2_grpc.MessageStorageStub(channel=self.gRPCChannel)
 
         while True:
+            source = {"comType":"RPC",
+                "srcIP": self.listenIP,
+                "srcPort": self.listenPort
+            }
+            message.setSource(source)
             pickles = self._encodeMessage(message)
             req = messageAgent_pb2.Pickle(picklebytes=pickles)
             response = stub.Store(req)
@@ -259,8 +279,12 @@ class MessageAgent(object):
             if response.booly:
                 break
 
+        self.gRPCChannel.close()
+
     def startMsgReceiverRPCServer(self, listenIP, listenPort):
         # self.logger.info("{0}".format(MAX_MESSAGE_LENGTH))
+        self.listenIP = listenIP
+        self.listenPort = listenPort
         srcQueueName = "{0}:{1}".format(listenIP, listenPort)
         if srcQueueName in self.msgQueues:
             self.logger.warning("Already listening on recv queue.")
@@ -278,6 +302,7 @@ class MessageAgent(object):
             self.logger.info('Starting server. Listening on port {0}.'.format(listenPort))
             server.add_insecure_port('{0}:{1}'.format(listenIP, listenPort))
             server.start()
+            self.gRPCServersList.append(server)
 
     def getMsgByRPC(self, listenIP, listenPort):
         msg = self.getMsg("{0}:{1}".format(listenIP, listenPort))
@@ -300,6 +325,12 @@ class MessageAgent(object):
 
         self.logger.info("Disconnect from RabbiMQServer.")
         self._disConnectRabbiMQServer()
+
+        if self.gRPCChannel != None:
+            self.gRPCChannel.close()
+        
+        for server in self.gRPCServersList:
+            server.stop(0)
 
     def _async_raise(self, tid, exctype):
         """raises the exception, performs cleanup if needed"""
@@ -333,6 +364,10 @@ class MsgStorageServicer(messageAgent_pb2_grpc.MessageStorageServicer):
         # data = self._decodeMessage(pickles)
         data = pickles
         if self.msgQueue.qsize() < MESSAGE_AGENT_MAX_QUEUE_SIZE:
+            # self.msgQueue.put((data, {"comType":"RPC",
+            #                     "srcIP": str(context.peer()).split(":")[1],
+            #                     "srcPort": str(context.peer()).split(":")[2],
+            #                     }))
             self.msgQueue.put(data)
         else:
             raise ValueError("MessageAgent recv qeueu full! Drop new msg!")
@@ -452,31 +487,11 @@ class QueueReciever(threading.Thread):
         self.logger.debug(" [x] Received ")
         threadLock.acquire()
         if self.msgQueue.qsize() < MESSAGE_AGENT_MAX_QUEUE_SIZE:
+            # self.msgQueue.put((body, {"comType":"msgQueue",
+            #                     "srcQueueName": self.srcQueueName}))
             self.msgQueue.put(body)
         else:
             raise ValueError("MessageAgent recv qeueu full! Drop new msg!")
         threadLock.release()
         self.logger.debug(" [x] Done")
         ch.basic_ack(delivery_tag = method.delivery_tag)
-
-# class GRPCServer(threading.Thread):
-#     def __init__(self, threadID, msgQueue, logger):
-#         threading.Thread.__init__(self)
-#         self.threadID = threadID
-#         self.msgQueue = msgQueue
-#         self.logger = logger
-
-#     def run(self):
-#         self.logger.debug("thread GRPCServer.run().")
-#         self._recvMsg()
-
-#     def _recvMsg(self):
-#         while True:
-#             try:
-#                 self.channel.start_consuming()
-#             except KeyboardInterrupt:
-#                 self.logger.info("msgAgent recv thread get keyboardInterrupt, quit recv().")
-#                 return None
-#             except Exception as ex:
-#                 ExceptionProcessor(self.logger).logException(ex,
-#                                     "MessageAgent recvMsg failed")
