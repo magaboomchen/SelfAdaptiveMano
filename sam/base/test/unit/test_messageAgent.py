@@ -45,10 +45,13 @@ class TestMediatorClass(TestBase):
 
     def test_requestMsgByRPC(self):
         self.mARecv.startMsgReceiverRPCServer("127.0.0.1", "49998")
-        msg = {"a":1}
-        samMsg = SAMMessage("TMP", msg)
+        msg = {"a":1,"b":2,"c":3,"d":4}
+        samMsg = SAMMessage("Test", msg)
         self.mASend.startMsgReceiverRPCServer("127.0.0.1", "49999")
         time.sleep(10)
+        t1 = time.time()
         self.mASend.sendMsgByRPC("127.0.0.1", "49998", samMsg)
         newMsg = self.mARecv.getMsgByRPC("127.0.0.1", "49998")
+        t2 = time.time()
+        logging.info("time is {0}".format(t2-t1))
         assert newMsg.getbody() == samMsg.getbody()

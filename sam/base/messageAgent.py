@@ -18,6 +18,7 @@ import base64
 import pika
 import grpc
 import pickle
+import cPickle
 from concurrent import futures
 
 from sam.base.command import *
@@ -309,10 +310,10 @@ class MessageAgent(object):
         return msg
 
     def _encodeMessage(self, message):
-        return base64.b64encode(pickle.dumps(message,-1))
+        return base64.b64encode(cPickle.dumps(message,-1))
 
     def _decodeMessage(self, message):
-        return pickle.loads(base64.b64decode(message))
+        return cPickle.loads(base64.b64decode(message))
 
     def __del__(self):
         self.logger.info("Delete MessageAgent.")
