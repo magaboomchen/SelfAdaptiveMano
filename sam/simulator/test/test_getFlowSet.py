@@ -27,6 +27,8 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import *
 from sam.simulator.test.testSimulatorBase import *
+from sam.simulator import simulator
+from time import sleep
 
 MANUAL_TEST = True
 
@@ -40,9 +42,9 @@ class TestGetFlowSetClass(TestSimulatorBase):
         self.logger.setLevel(logging.DEBUG)
 
         # setup
-        self.resetRabbitMQConf(
-            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
-            "192.168.5.124", "mq", "123456")
+        # self.resetRabbitMQConf(
+        #     base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
+        #     "192.168.8.19", "mq", "123456")
         self.sP = ShellProcessor()
         self.cleanLog()
         self.clearQueue()
@@ -53,7 +55,10 @@ class TestGetFlowSetClass(TestSimulatorBase):
     def setup_getFlowSet(self):
         self.common_setup()
 
+        self.sP.runPythonScript(simulator.__file__)
+        sleep(1)
         yield
+        self.sP.killPythonScript(simulator.__file__)
         # teardown
         pass
 
@@ -69,6 +74,8 @@ class TestGetFlowSetClass(TestSimulatorBase):
 
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        # self.logger.info("{0}".format(cmdRply.attributes.keys()))
+        # self.logger.info("{0}".format(cmdRply.attributes["flows"]))
         assert cmdRply.cmdID == self.getFlowSetCmd.cmdID
         assert cmdRply.attributes.has_key("flows")
         assert type(cmdRply.attributes["flows"]) == dict

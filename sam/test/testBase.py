@@ -421,13 +421,35 @@ class TestBase(object):
                     return body
                 else:
                     logging.error("Unknown massage body")
-        del messageAgentTmp
+
+    def startMsgAgentRPCReciever(self, ip, port):
+        self.messageAgentTmp = MessageAgent()
+        self.messageAgentTmp.startMsgReceiverRPCServer(ip, port)
+
+    def recvCmdRplyByRPC(self, ip, port):
+        while True:
+            msg = self.messageAgentTmp.getMsg("{0}:{1}".format(ip, port))
+            msgType = msg.getMessageType()
+            if msgType == None:
+                pass
+            else:
+                body = msg.getbody()
+                if self.messageAgentTmp.isCommandReply(body):
+                    logging.info("testBase:recvCmdRply")
+                    return body
+                else:
+                    logging.error("Unknown massage body")
 
     def sendCmd(self, queue, msgType, cmd):
         messageAgentTmp = MessageAgent()
         msg = SAMMessage(msgType, cmd)
         messageAgentTmp.sendMsg(queue, msg)
         del messageAgentTmp
+
+    def sendCmdByRPC(self, dstIP, dstPort, msgType, cmd):
+        # messageAgentTmp = MessageAgent()
+        msg = SAMMessage(msgType, cmd)
+        self.messageAgentTmp.sendMsgByRPC(dstIP, dstPort, msg)
 
     def sendCmdRply(self, queue, msgType, cmdRply):
         messageAgentTmp = MessageAgent()

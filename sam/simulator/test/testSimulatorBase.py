@@ -95,8 +95,8 @@ class TestSimulatorBase(TestBase):
         # Each stage is a list of layeredNodeIDTuple which format is (stageIndex, nodeID)
         primaryForwardingPath = {
                                     1:[
-                                        [(0,10001),(0,0),(0,256),(0,768),(0,10771)], # (stageIndex, nodeID)
-                                        [(1,10771),(1,768),(1,256),(1,0),(1,10001)]
+                                        [(0,10001),(0,0),(0,256),(0,768),(0,11281)], # (stageIndex, nodeID)
+                                        [(1,11281),(1,768),(1,256),(1,0),(1,10001)]
                                     ]
                                 }
         mappingType = MAPPING_TYPE_INTERFERENCE # This is your mapping algorithm type, e.g. interference-aware mapping algorithm

@@ -1,0 +1,2 @@
+sam/simulator/contention_dictionary.p filter=lfs diff=lfs merge=lfs -text
+sam/simulator/sensitivity_dictionary.p filter=lfs diff=lfs merge=lfs -text

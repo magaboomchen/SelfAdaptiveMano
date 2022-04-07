@@ -27,6 +27,8 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import *
 from sam.simulator.test.testSimulatorBase import *
+from sam.simulator import simulator
+from time import sleep
 
 MANUAL_TEST = True
 
@@ -40,9 +42,9 @@ class TestAddSFCIClass(TestSimulatorBase):
         self.logger.setLevel(logging.DEBUG)
 
         # setup
-        self.resetRabbitMQConf(
-            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
-            "192.168.5.124", "mq", "123456")
+        # self.resetRabbitMQConf(
+        #     base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
+        #     "192.168.8.19", "mq", "123456")
         self.sP = ShellProcessor()
         self.cleanLog()
         self.clearQueue()
@@ -58,7 +60,10 @@ class TestAddSFCIClass(TestSimulatorBase):
         self.sfc = self.genUniDirectionSFC(classifier)
         self.sfci = self.genUniDirection10BackupSFCI()
 
+        self.sP.runPythonScript(simulator.__file__)
+        sleep(1)
         yield
+        self.sP.killPythonScript(simulator.__file__)
         # teardown
         self.clearQueue()
         self.killAllModule()
@@ -85,12 +90,15 @@ class TestAddSFCIClass(TestSimulatorBase):
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genUniDirectionSFC(classifier)
         self.sfci = self.genUniDirection10BackupSFCI()
+        self.sP.runPythonScript(simulator.__file__)
+        sleep(1)
 
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD , self.addSFCICmd)
         self.verifyAddSFCICmdRply()
 
         yield
+        self.sP.killPythonScript(simulator.__file__)
         # teardown
         self.clearQueue()
         self.killAllModule()
