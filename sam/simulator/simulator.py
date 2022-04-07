@@ -9,6 +9,7 @@ import time
 from Queue import Queue
 from getopt import getopt
 
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import SIMULATOR_PORT
 from sam.base.command import CommandMaintainer, CMD_STATE_FAIL, \
     CMD_STATE_SUCCESSFUL, CommandReply
 from sam.base.exceptionProcessor import ExceptionProcessor
@@ -68,8 +69,9 @@ class Simulator(object):
         # For example, your virtual machine's ip address is 192.168.5.124
         # your rabbitmqServerUserName is "mq"
         # your rabbitmqServerUserCode is "123456"
-        self._messageAgent.setRabbitMqServer("192.168.5.124", "mq", "123456")
+        # self._messageAgent.setRabbitMqServer("192.168.5.124", "mq", "123456")
         self._messageAgent.startRecvMsg(SIMULATOR_QUEUE)
+        self._messageAgent.startMsgReceiverRPCServer("localhost", SIMULATOR_PORT)
 
         self.op_input = op_input
 
@@ -103,7 +105,22 @@ class Simulator(object):
                 else:
                     body = msg.getbody()
                     if self._messageAgent.isCommand(body):
-                        self._command_handler(body)
+                        rplyMsg = self._command_handler(body)
+                        self._messageAgent.sendMsg(MEDIATOR_QUEUE, rplyMsg)
+                    else:
+                        raise ValueError("Unknown massage body")
+
+                msg = self._messageAgent.getMsgByRPC("localhost", SIMULATOR_PORT)
+                msgType = msg.getMessageType()
+                if msgType == None:
+                    pass
+                else:
+                    body = msg.getbody()
+                    source = msg.getSource()
+                    self.logger.debug("Command's source is {0}".format(source))
+                    if self._messageAgent.isCommand(body):
+                        rplyMsg = self._command_handler(body)
+                        self._messageAgent.sendMsgByRPC(source["srcIP"], source["srcPort"], rplyMsg)
                     else:
                         raise ValueError("Unknown massage body")
         except Exception as ex:
@@ -122,7 +139,7 @@ class Simulator(object):
         finally:
             cmdRply = CommandReply(cmd.cmdID, self._cm.getCmdState(cmd.cmdID), dict(attributes, source='simulator'))
             rplyMsg = SAMMessage(MSG_TYPE_SIMULATOR_CMD_REPLY, cmdRply)
-            self._messageAgent.sendMsg(MEDIATOR_QUEUE, rplyMsg)
+        return rplyMsg
 
     def _op_input_handler(self, cmd_str):
         self.logger.debug('Simulator received operator input: ' + cmd_str)

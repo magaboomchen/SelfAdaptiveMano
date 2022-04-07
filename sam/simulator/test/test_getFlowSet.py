@@ -42,9 +42,9 @@ class TestGetFlowSetClass(TestSimulatorBase):
         self.logger.setLevel(logging.DEBUG)
 
         # setup
-        self.resetRabbitMQConf(
-            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
-            "192.168.5.124", "mq", "123456")
+        # self.resetRabbitMQConf(
+        #     base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
+        #     "192.168.8.19", "mq", "123456")
         self.sP = ShellProcessor()
         self.cleanLog()
         self.clearQueue()
@@ -74,8 +74,10 @@ class TestGetFlowSetClass(TestSimulatorBase):
 
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        # self.logger.info("{0}".format(cmdRply.attributes.keys()))
+        # self.logger.info("{0}".format(cmdRply.attributes["flows"]))
         assert cmdRply.cmdID == self.getFlowSetCmd.cmdID
         assert cmdRply.attributes.has_key("flows")
-        assert type(cmdRply.attributes["flows"]) == list
+        assert type(cmdRply.attributes["flows"]) == dict
         assert len(cmdRply.attributes["flows"]) > 0
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL

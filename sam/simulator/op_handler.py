@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import time
 import random
 from getopt import getopt
+
 from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintainer
 
 handlers = {}
