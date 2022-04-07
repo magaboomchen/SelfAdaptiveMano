@@ -9,7 +9,7 @@ import pytest
 from sam.base.server import *
 from sam.base.command import *
 from sam.test.fixtures.orchestrationStub import OrchestrationStub
-from sam.base.messageAgent import MessageAgent
+from sam.base.messageAgent import MessageAgent, SAMMessage
 from sam.test.testBase import *
 from sam.mediator.mediator import *
 from sam.base.command import *
@@ -23,7 +23,8 @@ class TestMediatorClass(TestBase):
         """ setup any state tied to the execution of the given method in a
         class.  setup_method is invoked for every test method of a class.
         """
-        self.mA = MessageAgent()
+        self.mARecv = MessageAgent()
+        self.mASend = MessageAgent()
 
     def teardown_method(self, method):
         """ teardown any state that was previously setup with a setup_method
@@ -43,8 +44,14 @@ class TestMediatorClass(TestBase):
     #     assert self.mA.isCommandReply(body) == False
 
     def test_requestMsgByRPC(self):
-        self.mA.startMsgReceiverRPCServer("127.0.0.1", "49998")
-        msg = {"a":1}
-        self.mA.sendMsgByRPC("127.0.0.1", "49998", msg)
-        newMsg = self.mA.getMsgByRPC("127.0.0.1", "49998")
-        assert newMsg == msg
+        self.mARecv.startMsgReceiverRPCServer("127.0.0.1", "49998")
+        msg = {"a":1,"b":2,"c":3,"d":4}
+        samMsg = SAMMessage("Test", msg)
+        self.mASend.startMsgReceiverRPCServer("127.0.0.1", "49999")
+        time.sleep(10)
+        t1 = time.time()
+        self.mASend.sendMsgByRPC("127.0.0.1", "49998", samMsg)
+        newMsg = self.mARecv.getMsgByRPC("127.0.0.1", "49998")
+        t2 = time.time()
+        logging.info("time is {0}".format(t2-t1))
+        assert newMsg.getbody() == samMsg.getbody()
