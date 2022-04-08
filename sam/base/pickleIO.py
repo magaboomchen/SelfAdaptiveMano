@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import os
-import pickle
+import cPickle
 import base64
 
 
@@ -12,12 +12,12 @@ class PickleIO(object):
 
     def readPickleFile(self, filePath):
         df = open(filePath, 'rb')
-        obj = pickle.load(df)
+        obj = cPickle.load(df)
         df.close()
         # self.logger.debug("obj:{0}".format(obj))
         return obj
 
     def writePickleFile(self, filePath, obj):
         df = open(filePath, 'wb')
-        pickle.dump(obj, df)
+        cPickle.dump(obj, df)
         df.close()
