@@ -17,6 +17,7 @@ class Switch(object):
         self.programmable = programmable    # bool type, '1' if this switch is a P4 switch
         self.tcamSize = tcamSize
         self.tcamUsage = tcamUsage
+        self._coreUtilization = []
         self.supportNF = [] # e.g. [NF_TYPE_FW]
         self.supportVNF = []    # e.g. [VNF_TYPE_FW]
 

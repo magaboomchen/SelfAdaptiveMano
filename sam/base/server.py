@@ -178,7 +178,7 @@ class Server(object):
         self._coreNUMADistribution = coreNUMADistribution
 
     def getCpuUtil(self):
-        return self._updateCpuUtil
+        return self._coreUtilization
 
     def setHugepagesTotal(self, hugepagesTotal):
         self._hugepagesTotal = hugepagesTotal
