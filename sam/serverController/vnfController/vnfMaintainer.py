@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+'''
+This is the vnfiMaintainer class
+'''
+
 import docker
 
 from sam.base.vnf import *

@@ -47,7 +47,6 @@ class VNFIAdder(object):
             for cpu in each:
                 cpuStr = cpuStr + '%d,' % cpu
         cpuStr = cpuStr[:-1]
-
         vioStart = vioAllo.allocateSource(2)
         _vdev0 = self._sibm.getVdev(vnfi.vnfiID, 0).split(',')
         _vdev1 = self._sibm.getVdev(vnfi.vnfiID, 1).split(',')
