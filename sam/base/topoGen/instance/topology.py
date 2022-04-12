@@ -104,6 +104,8 @@ class Topology(object):
             self.addClassifier()
             self.addNFVIs()
 
+        self._postProcessTopology()
+
         topologyDir = "./topology/{0}/{1}/".format(topoType,
             expNum)
         mkdirs(topologyDir)
@@ -138,6 +140,10 @@ class Topology(object):
         self.switches = {}
         self.servers = {}
         self.addSFCIRequest = {}
+        self.serverLinks = {}
+        self.sfcs = {}
+        self.sfcis = {}
+        self.flows = {}
 
     def _readNodeLinkNum(self, line):
         # self.logger.debug("line:{0}".format(line))
@@ -491,7 +497,11 @@ class Topology(object):
             "sfcRequestSourceDst": self.sfcRequestSourceDst,
             "links": self.links,
             "switches": self.switches,
-            "servers": self.servers
+            "servers": self.servers,
+            "serverLinks": self.serverLinks,
+            "sfcs": self.sfcs,
+            "sfcis": self.sfcis,
+            "flows": self.flows,
         }
 
         pickle.dump(topologyDict, df)
@@ -561,3 +571,37 @@ class Topology(object):
             topoName = "SwitchL3_V={0}_M={1}".format(
                 nPoPNum, SFC_REQUEST_NUM)
             self.topoNameDict["SwitchL3"].append(topoName)
+
+    def _postProcessTopology(self):
+        sc = SocketConverter()
+
+        for serverID, serverInfo in self.servers.items():
+            serverInfo['uplink2NUMA'] = {}
+            serverInfo['Status'] = {'coreAssign': {}}
+
+        for switchID, switchInfo in self.switches.items():
+            switchInfo['Status'] = {'nextHop': {}}
+            switchInfo['switch'].tcamUsage = 0
+
+        for (srcNodeID, dstNodeID), linkInfo in self.links.items():
+            linkInfo['Status'] = {'usedBy': set()}
+
+        for serverID, serverInfo in self.servers.items():
+            server = serverInfo['server']
+            DatapathIP = server.getDatapathNICIP()
+            for switchID, switchInfo in self.switches.items():
+                switch = switchInfo['switch']
+                switchNet = switch.lanNet
+                if sc.isLANIP(DatapathIP, switchNet):
+                    break
+            else:
+                continue
+            bw = server.getNICBandwidth()
+            self.serverLinks[(serverID, switchID)] = {'link': Link(serverID, switchID, bw), 'Active': True,
+                                                      'Status': None}
+            self.serverLinks[(switchID, serverID)] = {'link': Link(switchID, serverID, bw), 'Active': True,
+                                                      'Status': None}
+            serverInfo['uplink2NUMA'][switchID] = 0
+
+        for (srcNodeID, dstNodeID), linkInfo in self.serverLinks.items():
+            linkInfo['Status'] = {'usedBy': set()}

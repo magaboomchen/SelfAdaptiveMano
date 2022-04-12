@@ -6,13 +6,10 @@ store dcn information
 e.g. switch, server, link, sfc, sfci, vnfi, flow
 '''
 
-import uuid
-
 from sam.base.pickleIO import PickleIO
 from sam.base.sfc import SFC, SFCI
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.base.link import Link
-from re import match
 from sam.base.socketConverter import SocketConverter
 
 
@@ -40,44 +37,29 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.flows.clear()
 
     def loadTopology(self, topoFilePath):
-        self.reset()
-        self.topologyDict = self.pIO.readPickleFile(topoFilePath)
+        topologyDict = self.pIO.readPickleFile(topoFilePath)
         # more details in /sam/simulator/test/readme.md
 
-        self.links.update(self.topologyDict["links"])
-        self.switches.update(self.topologyDict["switches"])
-        self.servers.update(self.topologyDict["servers"])
+        self.links = topologyDict["links"]
+        self.switches = topologyDict["switches"]
+        self.servers = topologyDict["servers"]
+        self.serverLinks = topologyDict["serverLinks"]
+        self.sfcs = topologyDict["sfcs"]
+        self.sfcis = topologyDict["sfcis"]
+        self.flows = topologyDict["flows"]
 
-        for serverID, serverInfo in self.servers.items():
-            serverInfo['uplink2NUMA'] = {}
-            serverInfo['Status'] = {'coreAssign': {}}
+    def saveTopology(self, topoFilePath):
+        topologyDict = {
+            "links": self.links,
+            "switches": self.switches,
+            "servers": self.servers,
+            "serverLinks": self.serverLinks,
+            "sfcs": self.sfcs,
+            "sfcis": self.sfcis,
+            "flows": self.flows,
+        }
 
-        for switchID, switchInfo in self.switches.items():
-            switchInfo['Status'] = {'nextHop': {}}
-            switchInfo['switch'].tcamUsage = 0
-
-        for (srcNodeID, dstNodeID), linkInfo in self.links.items():
-            linkInfo['Status'] = {'usedBy': set()}
-
-        for serverID, serverInfo in self.servers.items():
-            server = serverInfo['server']
-            DatapathIP = server.getDatapathNICIP()
-            for switchID, switchInfo in self.switches.items():
-                switch = switchInfo['switch']
-                switchNet = switch.lanNet
-                if self.sc.isLANIP(DatapathIP, switchNet):
-                    break
-            else:
-                continue
-            bw = server.getNICBandwidth()
-            self.serverLinks[(serverID, switchID)] = {'link': Link(serverID, switchID, bw), 'Active': True,
-                                                      'Status': None}
-            self.serverLinks[(switchID, serverID)] = {'link': Link(switchID, serverID, bw), 'Active': True,
-                                                      'Status': None}
-            serverInfo['uplink2NUMA'][switchID] = 0
-
-        for (srcNodeID, dstNodeID), linkInfo in self.serverLinks.items():
-            linkInfo['Status'] = {'usedBy': set()}
+        self.pIO.writePickleFile(topoFilePath, topologyDict)
 
     def turnOffSwitch(self, switchID):
         if switchID not in self.switches:
