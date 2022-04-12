@@ -14,14 +14,14 @@ from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintaine
 handlers = {}
 
 
-def add_commend_handler(cmd_type):
+def add_command_handler(cmd_type):
     def decorator(handler):
         handlers[cmd_type] = handler
 
     return decorator
 
 
-def commend_handler(cmd, sib):
+def command_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
     if cmd.cmdType not in handlers.keys():
         raise ValueError("Unknown command type.")
@@ -101,7 +101,7 @@ def remove_sfci(sfc, sfci, sib):
     sib.sfcis.pop(sfciID)
 
 
-@add_commend_handler(CMD_TYPE_ADD_SFC)
+@add_command_handler(CMD_TYPE_ADD_SFC)
 def add_sfc_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
     sfc = cmd.attributes['sfc']  # type: SFC
@@ -112,7 +112,7 @@ def add_sfc_handler(cmd, sib):
     return {}
 
 
-@add_commend_handler(CMD_TYPE_ADD_SFCI)
+@add_command_handler(CMD_TYPE_ADD_SFCI)
 def add_sfci_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
     sfc = cmd.attributes['sfc']  # type: SFC
@@ -232,7 +232,7 @@ def add_sfci_handler(cmd, sib):
     return {}
 
 
-@add_commend_handler(CMD_TYPE_DEL_SFCI)
+@add_command_handler(CMD_TYPE_DEL_SFCI)
 def del_sfci_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
     sfc = cmd.attributes['sfc']
@@ -241,7 +241,7 @@ def del_sfci_handler(cmd, sib):
     return {}
 
 
-@add_commend_handler(CMD_TYPE_DEL_SFC)
+@add_command_handler(CMD_TYPE_DEL_SFC)
 def del_sfc_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
     sfc = cmd.attributes['sfc']  # type: SFC
@@ -254,7 +254,7 @@ def del_sfc_handler(cmd, sib):
     return {}
 
 
-@add_commend_handler(CMD_TYPE_GET_SERVER_SET)
+@add_command_handler(CMD_TYPE_GET_SERVER_SET)
 def get_server_set_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
     # format ref: SeverManager.serverSet, SeverManager._storeServerInfo
@@ -265,7 +265,7 @@ def get_server_set_handler(cmd, sib):
     return {'servers': result}
 
 
-@add_commend_handler(CMD_TYPE_GET_TOPOLOGY)
+@add_command_handler(CMD_TYPE_GET_TOPOLOGY)
 def get_topology_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
     # see ryu/topoCollector.py -> TopoCollector.get_topology_handler
@@ -285,7 +285,7 @@ def get_topology_handler(cmd, sib):
 #     # TODO
 
 
-@add_commend_handler(CMD_TYPE_GET_FLOW_SET)
+@add_command_handler(CMD_TYPE_GET_FLOW_SET)
 def get_flow_set_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
     result = {}
