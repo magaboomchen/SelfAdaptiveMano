@@ -47,6 +47,16 @@ def load_handler(cmd_list, sib):
         raise ValueError
 
 
+@add_op_handler('save')
+def save_handler(cmd_list, sib):
+    # type: (list, SimulatorInfoBaseMaintainer) -> None
+    opt, arg = getopt(cmd_list, '', ())
+    if not opt and len(arg) == 1:  # load <filename>
+        sib.saveTopology(arg[0])
+    else:
+        raise ValueError
+
+
 @add_op_handler('server')
 def server_handler(cmd_list, sib):
     # type: (list, SimulatorInfoBaseMaintainer) -> None
