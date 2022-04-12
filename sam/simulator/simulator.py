@@ -3,17 +3,14 @@
 
 import logging
 import os
-import random
 import threading
 import time
 from Queue import Queue
-from getopt import getopt
 
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import SIMULATOR_PORT
 from sam.base.command import CommandMaintainer, CMD_STATE_FAIL, \
     CMD_STATE_SUCCESSFUL, CommandReply
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.base.flow import Flow
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import MessageAgent, SIMULATOR_QUEUE, SAMMessage, MSG_TYPE_SIMULATOR_CMD_REPLY, \
     MEDIATOR_QUEUE
@@ -22,35 +19,8 @@ from sam.simulator.op_handler import op_handler
 from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintainer
 
 
-# import subprocess
-# predictor=subprocess.Popen(('python3','predict.py'),cwd=os.path.dirname(os.path.abspath(__file__)), stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-
-# def predict(target, competitors):
-#     assert isinstance(target, NF)
-#     for competitor in competitors:
-#         assert isinstance(competitor, NF)
-#     predictor.stdin.write('%d'%len(competitors))
-#     predictor.stdin.write(str(target))
-#     for competitor in competitors:
-#         predictor.stdin.write(str(competitor))
-#     return float(predictor.stdout.readline())
-
-# predictor = subprocess.Popen(('python3', 'predict.py'), cwd=os.path.dirname(os.path.abspath(__file__)),
-#                              stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-
-
-# def predict(target, competitors):
-# assert isinstance(target, NF)
-# for competitor in competitors:
-#     assert isinstance(competitor, NF)
-# predictor.stdin.write('%d' % len(competitors))
-# predictor.stdin.write(str(target))
-# for competitor in competitors:
-#     predictor.stdin.write(str(competitor))
-# return float(predictor.stdout.readline())
-
-
 class Simulator(object):
+
     def __init__(self, op_input):
         # type: (Queue) -> None
         logConfigur = LoggerConfigurator(__name__, './log',
@@ -72,7 +42,7 @@ class Simulator(object):
         self._messageAgent.startRecvMsg(SIMULATOR_QUEUE)
         self._messageAgent.startMsgReceiverRPCServer("localhost", SIMULATOR_PORT)
 
-        self.op_input = op_input
+        self.op_input = op_input  # type: Queue
 
     def get_op_input(self):
         self.op_input.join()
@@ -84,7 +54,7 @@ class Simulator(object):
         except EOFError:
             pass
 
-    def startSimulator(self):
+    def start_simulator(self):
         try:
             thrd = threading.Thread(target=self.get_op_input, name='simulator input')
             thrd.setDaemon(True)
@@ -172,7 +142,6 @@ if __name__ == "__main__":
         pass
     s = Simulator(op_input)
     try:
-        s.startSimulator()
-        # predictor.terminate()
+        s.start_simulator()
     except Exception as e:
         raise e
