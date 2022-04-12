@@ -57,6 +57,12 @@ def save_handler(cmd_list, sib):
         raise ValueError
 
 
+@add_op_handler('exit')
+def exit_handler(cmd_list, sib):
+    # type: (list, SimulatorInfoBaseMaintainer) -> None
+    raise SystemExit
+
+
 @add_op_handler('server')
 def server_handler(cmd_list, sib):
     # type: (list, SimulatorInfoBaseMaintainer) -> None

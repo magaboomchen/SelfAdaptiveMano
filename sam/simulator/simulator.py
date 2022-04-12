@@ -146,6 +146,9 @@ class Simulator(object):
             cmd_type = cmd_str.split(' ', 1)[0].lower()
             op_handler(cmd_type, cmd_str, self._sib)
             print('OK: ' + cmd_str)
+        except SystemExit as e:
+            self.logger.debug('Simulator exit')
+            raise e
         except Exception as ex:
             print('FAIL: ' + cmd_str)
             ExceptionProcessor(self.logger).logException(ex, "simulator command")
@@ -170,6 +173,6 @@ if __name__ == "__main__":
     s = Simulator(op_input)
     try:
         s.startSimulator()
-    except KeyboardInterrupt as e:
         # predictor.terminate()
+    except Exception as e:
         raise e
