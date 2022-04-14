@@ -6,7 +6,7 @@ import json
 
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.ryu.ribMaintainerBase import RIBMaintainerBase
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 
 # TODO: test
 

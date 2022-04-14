@@ -3,8 +3,6 @@
 
 import os
 import os.path
-import csv
-import time
 import matplotlib
 
 matplotlib.use('Agg')

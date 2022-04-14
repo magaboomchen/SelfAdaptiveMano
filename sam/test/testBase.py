@@ -2,40 +2,34 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import subprocess
-import time
 import logging
 
 from scapy.all import *
-import psutil
-import pytest
 
 from sam.base.sfc import *
 from sam.base.vnf import *
+from sam.base.slo import SLO
 from sam.base.server import *
 from sam.base.path import *
 from sam.base.switch import *
-from sam.base.server import *
-from sam.base.link import *
 from sam.base.command import *
-from sam.base.socketConverter import *
-from sam.base.routingMorphic import *
-from sam.base.test.fixtures.ipv4MorphicDict import *
-from sam.base.test.fixtures.ipv6MorphicDict import *
-from sam.base.test.fixtures.geoMorphicDict import *
-from sam.base.shellProcessor import ShellProcessor
-from sam.test.fixtures.mediatorStub import *
-from sam.test.fixtures.orchestrationStub import *
-from sam.toolkit import cleanAllLogFile
-from sam.toolkit import clearAllSAMQueue
-from sam.toolkit import killAllSAMPythonScripts
-from sam.serverController.classifierController import *
-from sam.serverAgent.serverAgent import ServerAgent
-from sam.serverController.serverManager.serverManager import *
+from sam.base.messageAgent import *
+from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.routingMorphic import RoutingMorphic
+from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
+from sam.base.test.fixtures.ipv6MorphicDict import ipv6MorphicDictTemplate
+from sam.base.test.fixtures.geoMorphicDict import geoMorphicDictTemplate
+from sam.test.fixtures.mediatorStub import MediatorStub
+from sam.test.fixtures.orchestrationStub import OrchestrationStub
+from sam.toolkit.cleanAllLogFile import cleanAllLogFile
+from sam.toolkit.clearAllSAMQueue import clearAllSAMQueue
+from sam.toolkit.killAllSAMPythonScripts import killAllSAMPythonScripts
+from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
 from sam.serverController.classifierController import classifierControllerCommandAgent
 from sam.serverController.sffController import sffControllerCommandAgent
 from sam.serverController.vnfController import vnfController
-from sam.serverController.serverManager import serverManager
 from sam.orchestration import orchestrator
 from sam.mediator import mediator
 from sam.measurement import measurer
@@ -392,19 +386,21 @@ class TestBase(object):
         messageAgentTmp = MessageAgent()
         messageAgentTmp.startRecvMsg(queue)
         logging.info("testBase:recvCmd")
-        while True:
-            msg = messageAgentTmp.getMsg(queue)
-            msgType = msg.getMessageType()
-            if msgType == None:
-                pass
-            else:
-                body = msg.getbody()
-                if messageAgentTmp.isCommand(body):
-                    return body
+        try:
+            while True:
+                msg = messageAgentTmp.getMsg(queue)
+                msgType = msg.getMessageType()
+                if msgType == None:
+                    pass
                 else:
-                    logging.error("Unknown massage body: {0}".format(
-                        type(body)))
-        del messageAgentTmp
+                    body = msg.getbody()
+                    if messageAgentTmp.isCommand(body):
+                        return body
+                    else:
+                        logging.error("Unknown massage body: {0}".format(
+                            type(body)))
+        finally:
+           del messageAgentTmp
 
     def recvCmdRply(self, queue):
         messageAgentTmp = MessageAgent()
@@ -447,7 +443,6 @@ class TestBase(object):
         del messageAgentTmp
 
     def sendCmdByRPC(self, dstIP, dstPort, msgType, cmd):
-        # messageAgentTmp = MessageAgent()
         msg = SAMMessage(msgType, cmd)
         self.messageAgentTmp.sendMsgByRPC(dstIP, dstPort, msg)
 
@@ -466,28 +461,30 @@ class TestBase(object):
     def recvReply(self, queue):
         messageAgentTmp = MessageAgent()
         messageAgentTmp.startRecvMsg(queue)
-        while True:
-            msg = messageAgentTmp.getMsg(queue)
-            msgType = msg.getMessageType()
-            if msgType == None:
-                pass
-            else:
-                body = msg.getbody()
-                if messageAgentTmp.isReply(body):
-                    logging.info("testBase: recv a reply")
-                    return body
+        try:
+            while True:
+                msg = messageAgentTmp.getMsg(queue)
+                msgType = msg.getMessageType()
+                if msgType == None:
+                    pass
                 else:
-                    logging.error("Unknown massage body")
-        del messageAgentTmp
+                    body = msg.getbody()
+                    if messageAgentTmp.isReply(body):
+                        logging.info("testBase: recv a reply")
+                        return body
+                    else:
+                        logging.error("Unknown massage body")
+        finally:
+            del messageAgentTmp
 
     def clearQueue(self):
-        self.sP.runShellCommand("python " + clearAllSAMQueue.__file__)
+        clearAllSAMQueue()
 
     def cleanLog(self):
-        self.sP.runShellCommand("python " + cleanAllLogFile.__file__)
+        cleanAllLogFile()
 
     def killAllModule(self):
-        self.sP.runShellCommand("python " + killAllSAMPythonScripts.__file__)
+        killAllSAMPythonScripts()
 
     def genSwitchList(self, num, switchType, 
             switchLANNetlist, switchIDList, supportVNFList=None):

@@ -8,7 +8,7 @@ import networkx
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.switch import *
-from sam.base.link import *
+from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
 from sam.base.server import *
 from sam.base.path import *
 from sam.base.command import *

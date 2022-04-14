@@ -22,9 +22,10 @@ queueList = [
 ]
 '''
 
-from sam.base.shellProcessor import *
+from sam.base.shellProcessor import ShellProcessor
 
-if __name__ == "__main__":
+
+def clearAllSAMQueue():
     sP = ShellProcessor()
     res = sP.runShellCommand("sudo rabbitmqctl list_queues")
     res = res.strip().split('\n')
@@ -42,3 +43,6 @@ if __name__ == "__main__":
                     pass
         else:
             print(line)
+
+if __name__ == "__main__":
+    clearAllSAMQueue()

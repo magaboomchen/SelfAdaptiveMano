@@ -11,7 +11,7 @@ else:
 from sam.base.path import *
 from sam.base.switch import *
 from sam.base.server import *
-from sam.base.link import *
+from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
 from sam.test.testBase import *
 from sam.orchestration.oSFCAdder import *
 from sam.orchestration.oSFCDeleter import *

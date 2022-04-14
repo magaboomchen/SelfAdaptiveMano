@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.slo import *
 from sam.base.vnf import *
 
 SFC_DOMAIN_PREFIX = "10.0.0.0"

@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.server import *
-from sam.base.switch import *
+from sam.base.server import Server
+from sam.base.switch import Switch
 
 VNF_TYPE_CLASSIFIER = 0
 VNF_TYPE_FORWARD = 1
@@ -59,11 +59,11 @@ class VNFI(object):
         self.node = node # server or switch
         self.vnfiStatus = vnfiStatus
         self.minCPUNum = 1
-        self.maxCPUNum = 2
+        self.maxCPUNum = 2  # CPU core number
         self.cpuCoreDistribution = []   # place vnfi on specific core
         # e.g. [1,2,3,4] allocates core 1,2,3,4 for this vnfi
         self.minMem = 1024
-        self.maxMem = 1024
+        self.maxMem = 1024  # unit: MB
         self.memNUMADistribution = []   # place memory on specific numa node
         # e.g. [2,2] allocates 2 huge page on numa0 and 2 hugepages on numa1
 

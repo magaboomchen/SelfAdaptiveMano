@@ -3,7 +3,7 @@
 
 import copy
 
-from sam.serverController.serverManager.serverManager import *
+from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
 from sam.orchestration.algorithms.base.performanceModel import *
 
 

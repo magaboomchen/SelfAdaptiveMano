@@ -3,7 +3,7 @@
 
 from sam.base.messageAgent import *
 from sam.base.command import *
-from sam.test.fixtures.orchestrationStub import *
+from sam.test.fixtures.orchestrationStub import OrchestrationStub
 
 
 class MediatorStub(OrchestrationStub):

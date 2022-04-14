@@ -5,7 +5,7 @@ import logging
 
 from sam.base.switch import *
 from sam.base.server import *
-from sam.base.link import *
+from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
 from sam.test.testBase import *
 from sam.measurement import measurer
 

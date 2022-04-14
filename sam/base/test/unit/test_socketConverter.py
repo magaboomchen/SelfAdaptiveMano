@@ -5,7 +5,7 @@ import logging
 
 import pytest
 
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 
 MANUAL_TEST = True
 

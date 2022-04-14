@@ -9,7 +9,7 @@ import pytest
 
 from sam.base.server import *
 from sam.base.command import *
-from sam.test.fixtures.orchestrationStub import *
+from sam.test.fixtures.orchestrationStub import OrchestrationStub
 from sam.test.fixtures.measurementStub import *
 from sam.test.fixtures.serverManagerStub import *
 from sam.test.testBase import *

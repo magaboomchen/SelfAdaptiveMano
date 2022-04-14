@@ -15,6 +15,7 @@ Usage of this unit test:
 '''
 
 import time
+from time import sleep
 
 import pytest
 
@@ -23,14 +24,13 @@ from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
 from sam.base.command import *
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import *
-from sam.test.fixtures.mediatorStub import *
+from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.simulator.test.testSimulatorBase import *
 from sam.simulator import simulator
-from time import sleep
 
 MANUAL_TEST = True
 

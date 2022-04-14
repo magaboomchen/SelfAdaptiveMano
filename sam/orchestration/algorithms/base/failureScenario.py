@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.link import *
+from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
 from sam.base.server import *
 from sam.base.switch import *
 

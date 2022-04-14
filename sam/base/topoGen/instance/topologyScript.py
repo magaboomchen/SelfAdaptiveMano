@@ -5,7 +5,7 @@
 use script to generate topology
 '''
 
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.base.exceptionProcessor import *
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.topoGen.base.common import *

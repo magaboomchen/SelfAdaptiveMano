@@ -8,7 +8,7 @@ import time
 from scapy.all import *
 
 from sam.base.argParser import *
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.test.testBase import *
 
 

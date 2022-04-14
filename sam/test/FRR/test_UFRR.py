@@ -9,7 +9,7 @@ import pytest
 from ryu.controller import dpset
 
 from sam.ryu.topoCollector import TopoCollector
-from sam.base.slo import *
+from sam.base.slo import SLO
 from sam.base.server import *
 from sam.base.command import *
 from sam.base.shellProcessor import ShellProcessor

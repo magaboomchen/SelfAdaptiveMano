@@ -7,7 +7,7 @@ Caution: bits must be multiple of 8
 
 import numpy as np
 
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 
 
 class RoutingMorphic(object):

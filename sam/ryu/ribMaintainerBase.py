@@ -3,7 +3,7 @@
 
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.xibMaintainer import XInfoBaseMaintainer
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.ryu.conf.ryuConf import *
 
 # TODO: test

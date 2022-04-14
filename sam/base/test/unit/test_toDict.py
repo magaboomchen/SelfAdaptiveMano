@@ -11,9 +11,9 @@ import pytest
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
-from sam.serverController.classifierController import *
+from sam.serverController.classifierController import ClassifierControllerCommandAgent
 from sam.base.command import *
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.test.testBase import *
 
 

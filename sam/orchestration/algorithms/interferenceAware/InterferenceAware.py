@@ -9,7 +9,7 @@ import numpy as np
 from sam.base.path import *
 from sam.base.server import *
 from sam.base.messageAgent import *
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 

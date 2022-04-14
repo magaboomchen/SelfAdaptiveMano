@@ -4,7 +4,7 @@
 import os
 
 from sam.base.server import *
-from sam.base.link import *
+from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator

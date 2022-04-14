@@ -3,7 +3,8 @@
 
 from sam.base.shellProcessor import *
 
-if __name__ == "__main__":
+
+def killAllSAMPythonScripts():
     sP = ShellProcessor()
     sP.killPythonScript("measurer.py")
     sP.killPythonScript("mediator.py")
@@ -15,3 +16,6 @@ if __name__ == "__main__":
     sP.killPythonScript("sffControllerCommandAgent.py")
     sP.killPythonScript("vnfController.py")
     sP.killPythonScript("simulator.py")
+
+if __name__ == "__main__":
+    killAllSAMPythonScripts()

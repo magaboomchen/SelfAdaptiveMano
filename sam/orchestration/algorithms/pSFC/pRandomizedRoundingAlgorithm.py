@@ -18,7 +18,7 @@ from sam.base.path import *
 from sam.base.server import *
 from sam.base.messageAgent import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.serverController.serverManager.serverManager import *
+from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
 from sam.orchestration.algorithms.base.multiLayerGraph import *
 from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import *
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import *

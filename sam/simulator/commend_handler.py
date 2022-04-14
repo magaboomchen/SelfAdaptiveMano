@@ -6,10 +6,9 @@ from sam.base.command import CMD_TYPE_ADD_SFC, CMD_TYPE_DEL_SFC, CMD_TYPE_ADD_SF
 from sam.base.command import Command
 from sam.base.flow import Flow
 from sam.base.path import DIRECTION2_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
-from sam.base.server import Server
+from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.sfc import SFC, SFCI
 from sam.base.switch import Switch
-from sam.base.vnf import SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.simulator.nf import NF
 from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintainer
 

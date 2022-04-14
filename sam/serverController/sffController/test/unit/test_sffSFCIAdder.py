@@ -10,11 +10,11 @@ import pytest
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
-from sam.serverController.classifierController import *
+from sam.serverController.classifierController import ClassifierControllerCommandAgent
 from sam.base.command import *
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.base.shellProcessor import ShellProcessor
-from sam.test.fixtures.mediatorStub import *
+from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.fixtures.vnfControllerStub import *
 from sam.test.testBase import *
 from sam.serverController.sffController import sffControllerCommandAgent

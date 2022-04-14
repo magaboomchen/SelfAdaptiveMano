@@ -11,7 +11,7 @@ import base64
 
 from sam.base.request import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.serverController.serverManager.serverManager import *
+from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
 from sam.orchestration.algorithms.performanceModel import *
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
 from sam.test.testBase import *

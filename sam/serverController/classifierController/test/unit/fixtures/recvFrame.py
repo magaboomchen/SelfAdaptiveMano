@@ -3,7 +3,7 @@
 
 from scapy.all import *
 
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 
 def recvFrame(inIntf):
     sniff(filter="", iface=inIntf, prn=frame_callback, store=0, count=1)

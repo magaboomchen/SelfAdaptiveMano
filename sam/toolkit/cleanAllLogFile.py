@@ -1,10 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import os
+import shutil
 import logging
 
-from sam.base.shellProcessor import *
+from sam.base.shellProcessor import ShellProcessor
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration import orchestrator
 from sam.mediator import mediator
 from sam.measurement import measurer
@@ -19,7 +22,17 @@ def getFileDirectory(filePath):
     directoryPath = filePath[0:index]
     return directoryPath
 
-if __name__ == "__main__":
+def delDirectory(directoryPath):
+    if os.path.exists(directoryPath):
+        shutil.rmtree(directoryPath)
+    else:
+        print("The direcoty {0} does not exist".format(directoryPath))
+
+def cleanAllLogFile():
+    logConfigur = LoggerConfigurator(__name__, './log',
+        'cleanAllLogFile.log', level='info')
+    logger = logConfigur.getLogger()
+
     fileList = [
         orchestrator.__file__,
         measurer.__file__,
@@ -30,20 +43,22 @@ if __name__ == "__main__":
         serverManager.__file__
     ]
 
-    sP = ShellProcessor()
-
     for filePath in fileList:
         try:
             directoryPath = getFileDirectory(filePath)
             logging.info("clean logs:" + directoryPath + "/log/")
-            sP.runShellCommand("sudo rm -rf " + directoryPath + "/log/")
+            logDirectory = "{0}/log/".format(directoryPath)
+            delDirectory(logDirectory)
         except Exception as ex:
-            ExceptionProcessor(self.logger).logException(ex)
+            ExceptionProcessor(logger).logException(ex)
 
     try:
         directoryPath = getFileDirectory(orchestrator.__file__)
         logging.info("clean logs:" + directoryPath + "/test/integrate/log")
-        sP.runShellCommand("sudo rm -rf " + directoryPath
-            + "/test/integrate/log")
+        logDirectory = "{0}/test/integrate/log".format(directoryPath)
+        delDirectory(logDirectory)
     except Exception as ex:
-        ExceptionProcessor(self.logger).logException(ex)
+        ExceptionProcessor(logger).logException(ex)
+
+if __name__ == "__main__":
+    cleanAllLogFile()

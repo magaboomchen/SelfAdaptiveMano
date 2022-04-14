@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 MAX_MESSAGE_LENGTH = int(2**31 - 1)
+TEST_PORT = "49999"
 
 SIMULATOR_IP = "127.0.0.1"
 SIMULATOR_PORT = "50000"

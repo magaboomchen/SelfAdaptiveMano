@@ -10,7 +10,7 @@ import time
 from scapy.all import *
 
 from sam.base.argParser import *
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 
 
 TESTER_SERVER_DATAPATH_MAC = "18:66:da:85:f9:ed"

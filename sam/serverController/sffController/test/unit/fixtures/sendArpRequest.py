@@ -4,7 +4,7 @@
 import os
 from scapy.all import *
 import time
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.serverController.sffController.test.unit.test_sffSFCIAdder import *
 
 def sendArpRequest( outIntf, requestIP):

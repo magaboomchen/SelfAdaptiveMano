@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import subprocess
 import sys
 if sys.version > '3':
     import queue as Queue
@@ -17,16 +16,14 @@ import base64
 
 import pika
 import grpc
-import pickle
 import cPickle
 from concurrent import futures
 
-from sam.base.command import *
-from sam.base.request import *
+from sam.base.command import Command, CommandReply
+from sam.base.request import Request, Reply
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
-# from sam.base.messageAgentAuxillary.msgAgentRPCConf import *
-from sam.base.messageAgentAuxillary.msgAgentRPCConf import *
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import MAX_MESSAGE_LENGTH
 import sam.base.messageAgentAuxillary.messageAgent_pb2 as messageAgent_pb2
 import sam.base.messageAgentAuxillary.messageAgent_pb2_grpc as messageAgent_pb2_grpc
 
@@ -127,7 +124,6 @@ class MessageAgent(object):
         self.msgQueues = {}
         self._threadSet = {}
         self._publisherConnection = None
-        # self._consumerConnection = None # self._connectRabbitMQServer()
         self.listenIP = None
         self.listenPort = None
         self.gRPCChannel = None
@@ -184,7 +180,6 @@ class MessageAgent(object):
                     properties=pika.BasicProperties(delivery_mode = 2)
                     # make message persistent
                     )
-                # self.logger.debug(" [x] Sent %r" % message)
                 self.logger.debug(" [x] Sent ")
                 channel.close()
             except Exception as ex:
@@ -233,10 +228,8 @@ class MessageAgent(object):
         msg = None
         if srcQueueName in self.msgQueues:
             if not self.msgQueues[srcQueueName].empty():
-                # encodedMsg, source = self.msgQueues[srcQueueName].get()
                 encodedMsg = self.msgQueues[srcQueueName].get()
                 msg =  self._decodeMessage(encodedMsg)
-                # msg.setSource(source)
             else:
                 msg =  SAMMessage(None,None)
         else:
@@ -252,6 +245,22 @@ class MessageAgent(object):
             5672, '/', credentials)
         connection = pika.BlockingConnection(parameters)
         return connection
+
+    def deleteQueue(self, queueName):
+        while True:
+            try:
+                self._publisherConnection = self._connectRabbitMQServer()
+                channel = self._publisherConnection.channel()
+                channel.queue_purge(queue=queueName)
+                self.logger.debug(" Delete queueu {0} successfully!".format(queueName))
+                channel.close()
+            except Exception as ex:
+                ExceptionProcessor(self.logger).logException(ex,
+                    "MessageAgent delete queue failed temporally. Retry")
+            finally:
+                if self._publisherConnection.is_open:
+                    self._publisherConnection.close()
+                break
 
     def sendMsgByRPC(self, dstIP, dstPort, message):
         if self.listenIP == None or self.listenPort == None:
@@ -283,7 +292,6 @@ class MessageAgent(object):
         self.gRPCChannel.close()
 
     def startMsgReceiverRPCServer(self, listenIP, listenPort):
-        # self.logger.info("{0}".format(MAX_MESSAGE_LENGTH))
         self.listenIP = listenIP
         self.listenPort = listenPort
         srcQueueName = "{0}:{1}".format(listenIP, listenPort)
@@ -352,8 +360,6 @@ class MessageAgent(object):
         if self._publisherConnection != None:
             if self._publisherConnection.is_open:
                 self._publisherConnection.close()
-        # if self._consumerConnection.is_open:
-        #     self._consumerConnection.close()
 
 
 class MsgStorageServicer(messageAgent_pb2_grpc.MessageStorageServicer):
@@ -362,20 +368,12 @@ class MsgStorageServicer(messageAgent_pb2_grpc.MessageStorageServicer):
 
     def Store(self, request, context):
         pickles = request.picklebytes
-        # data = self._decodeMessage(pickles)
         data = pickles
         if self.msgQueue.qsize() < MESSAGE_AGENT_MAX_QUEUE_SIZE:
-            # self.msgQueue.put((data, {"comType":"RPC",
-            #                     "srcIP": str(context.peer()).split(":")[1],
-            #                     "srcPort": str(context.peer()).split(":")[2],
-            #                     }))
             self.msgQueue.put(data)
         else:
             raise ValueError("MessageAgent recv qeueu full! Drop new msg!")
         return messageAgent_pb2.Status(booly=True)
-
-    # def _decodeMessage(self, message):
-    #     return pickle.loads(base64.b64decode(message))
 
 
 class QueueReciever(threading.Thread):
@@ -408,15 +406,6 @@ class QueueReciever(threading.Thread):
                 self._closeConnection()
                 self.logger.info("msgAgent recv thread get keyboardInterrupt, quit recv().")
                 return None
-            # except ChannelClosed:
-            #     self.logger.warning(
-            #         "channel closed by broker, reconnect to broker.")
-            # except ReentrancyError:
-            #     self.logger.error(
-            #         "The requested operation would result in unsupported"
-            #         " recursion or reentrancy."
-            #         "Used by BlockingConnection/BlockingChannel.")
-            #     return None
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex,
                                     "MessageAgent recvMsg failed")
@@ -484,12 +473,9 @@ class QueueReciever(threading.Thread):
             self.logger.info("Unknown connection status.")
 
     def callback(self, ch, method, properties, body):
-        # self.logger.debug(" [x] Received %r" % body)
         self.logger.debug(" [x] Received ")
         threadLock.acquire()
         if self.msgQueue.qsize() < MESSAGE_AGENT_MAX_QUEUE_SIZE:
-            # self.msgQueue.put((body, {"comType":"msgQueue",
-            #                     "srcQueueName": self.srcQueueName}))
             self.msgQueue.put(body)
         else:
             raise ValueError("MessageAgent recv qeueu full! Drop new msg!")

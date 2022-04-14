@@ -3,7 +3,7 @@
 
 import math
 
-from sam.base.link import *
+from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
 # from sam.base.loggerConfigurator import LoggerConfigurator
 
 SPEED_OF_LIGHT = 3.0 * pow(10, 8)

@@ -12,11 +12,11 @@ from sam.base.server import *
 from sam.base.command import *
 from sam.base.messageAgent import *
 from sam.base.routingMorphic import *
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.test.testBase import *
-from sam.base.test.fixtures.ipv4MorphicDict import *
-from sam.base.test.fixtures.ipv6MorphicDict import *
-from sam.base.test.fixtures.geoMorphicDict import *
+from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
+from sam.base.test.fixtures.ipv6MorphicDict import ipv6MorphicDictTemplate
+from sam.base.test.fixtures.geoMorphicDict import geoMorphicDictTemplate
 
 MANUAL_TEST = True
 

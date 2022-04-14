@@ -1,20 +1,16 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import time
 import logging
 
-import pytest
-
-from sam import base
 from sam.base.sfc import *
 from sam.base.vnf import *
 from sam.base.server import *
 from sam.base.command import *
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.test.fixtures.mediatorStub import *
+from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.testBase import *
 
 MANUAL_TEST = True

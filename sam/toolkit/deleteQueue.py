@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 
-from sam.base.shellProcessor import *
+from sam.base.shellProcessor import ShellProcessor
 
 if __name__ == "__main__":
     sP = ShellProcessor()

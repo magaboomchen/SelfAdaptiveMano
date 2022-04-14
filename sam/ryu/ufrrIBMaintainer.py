@@ -8,7 +8,7 @@ try:
 except NameError:
     from sets import Set as set
 
-from sam.base.socketConverter import *
+from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.ryu.ribMaintainerBase import RIBMaintainerBase
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.ryu.binaryTrie import BinaryTrie, BinaryTrieNode
