@@ -1,15 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import copy
-import time
-
-import numpy as np
-
-from sam.base.path import *
-from sam.base.server import *
-from sam.base.messageAgent import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 
@@ -25,8 +16,8 @@ class InterferenceAware(object):
     def mapSFCI(self):
         self.logger.info("InterferenceAware mapSFCI")
         # implement your mapping algorithm here
-        pass
 
+        forwardingPathSetsDict = {}
         # If you want to calculate sfc path, here is the format of forwardingPathSetsDict
         # self.forwardingPathSetsDict[rIndex] = ForwardingPathSet(
         #     primaryForwardingPath,

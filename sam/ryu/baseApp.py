@@ -10,16 +10,13 @@ from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import arp, ipv4, icmp
 from ryu.lib.packet import ether_types
-from ryu.controller import ofp_event
-from ryu.controller.handler import set_ev_cls
-from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ruamel import yaml
 
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.ryu.conf.switchConfGenerator import SwitchConf
-from sam.ryu.conf.ryuConf import *
+from sam.ryu.conf.ryuConf import SWITCH_CONF_FILEPATH
 from sam.base.socketConverter import SocketConverter
-from sam.base.messageAgent import *
+from sam.base.messageAgent import MessageAgent
 
 
 class BaseApp(app_manager.RyuApp):

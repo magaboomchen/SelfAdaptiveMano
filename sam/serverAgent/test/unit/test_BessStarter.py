@@ -1,14 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import subprocess
+import psutil
 import logging
+import subprocess
 
-import pytest
-
-from sam.serverAgent.bessStarter import *
+from sam.serverAgent.bessStarter import BessStarter
 
 logging.basicConfig(level=logging.INFO)
+
 
 class TestBessStarterClass(object):
     @classmethod

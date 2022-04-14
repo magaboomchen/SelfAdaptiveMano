@@ -1,32 +1,26 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import copy
 import time
+import logging
 
-from ryu.controller import ofp_event
-from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
-from ryu.controller.handler import set_ev_cls
 from ryu.controller import dpset
 from ryu.ofproto import ofproto_v1_3
-from ryu.lib.packet import packet
-from ryu.lib.packet import ipv4
-from ryu.lib.packet import arp
 from ryu.lib.packet import ether_types
-from ryu.topology import switches
-from ryu.base.app_manager import *
+from ryu.base.app_manager import lookup_service_brick
 
-from sam.ryu.conf.ryuConf import *
-from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
+from sam.ryu.conf.ryuConf import MAIN_TABLE, SOFTWARE_SFF, \
+    ARP_MAX_RETRY_NUM, HARDWARE_SFF
+from sam.ryu.topoCollector import TopoCollector
 from sam.ryu.datapathStateSynchronizer import DatapathStateSynchronizer
 from sam.ryu.baseApp import BaseApp
 from sam.ryu.conf.ryuConf import DCNGATEWAY_INBOUND_PORT, ARP_TIMEOUT
-from sam.base.messageAgent import *
-from sam.base.command import *
-from sam.base.path import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.base.vnf import *
-from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
+from sam.base.command import CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
+from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
+from sam.base.server import Server
+from sam.base.socketConverter import SocketConverter
+from sam.base.vnf import VNF_TYPE_CLASSIFIER
+from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.exceptionProcessor import ExceptionProcessor
 
 
@@ -482,6 +476,7 @@ class FRR(BaseApp):
             self._deleteRoute4Switch2Classifier(sfc.sfcUUID, datapath)
 
     def _deleteRoute4Switch2Classifier(self, sfcUUID, datapath):
+        raise ValueError("No multi table!")
         dpid = datapath.id
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser

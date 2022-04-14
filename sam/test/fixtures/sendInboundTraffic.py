@@ -6,12 +6,15 @@ sudo python sendInboundTraffic.py -i eno2 -sip 2.2.0.36 -dip 2.2.0.33 -smac 18:6
 '''
 
 import time
+import argparse
 
-from scapy.all import *
+from scapy.all import Raw, sendp
+from scapy.layers.l2 import Ether
+from scapy.layers.inet import IP, TCP
 
-from sam.base.argParser import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.test.testBase import *
+from sam.base.argParser import ArgParserBase
+from sam.test.testBase import WEBSITE_REAL_IP, OUTTER_CLIENT_IP, \
+    TESTER_SERVER_DATAPATH_MAC, CLASSIFIER_DATAPATH_MAC
 
 
 class ArgParser(ArgParserBase):

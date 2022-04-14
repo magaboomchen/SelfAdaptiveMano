@@ -1,21 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import time
-import uuid
+import logging
 import threading
-import cmd as simulatorCLI  # use this name or contect me to change
 
-from sam.base.messageAgent import *
-from sam.base.sfc import *
-from sam.base.switch import *
-from sam.base.server import *
-from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
-from sam.base.vnf import *
-from sam.base.command import *
-from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.exceptionProcessor import ExceptionProcessor
 
 
 class CLIThread(threading.Thread):
@@ -34,7 +23,7 @@ class CLIThread(threading.Thread):
         self.logger.info("start CLI.")
         while True:
             self.logger.info("Please input data")
-            raw_input()
+            raw_input()  # type: ignore
 
     # TODO：开始实验
     # 生成实验参数，启动实验，保存中间结果，分析结果，保存结果

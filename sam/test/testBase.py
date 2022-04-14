@@ -2,31 +2,27 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
+import random
 import logging
 
-from scapy.all import *
-
-from sam.base.sfc import *
-from sam.base.vnf import *
+from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
+from sam.base.vnf import VNFI, VNF_TYPE_FORWARD, VNF_TYPE_MAX
 from sam.base.slo import SLO
-from sam.base.server import *
-from sam.base.path import *
-from sam.base.switch import *
-from sam.base.command import *
-from sam.base.messageAgent import *
-from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
-from sam.base.messageAgentAuxillary.msgAgentRPCConf import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI, \
+    SERVER_TYPE_TESTER
+from sam.base.path import ForwardingPathSet, MAPPING_TYPE_UFRR, MAPPING_TYPE_E2EP
+from sam.base.switch import Switch
+from sam.base.request import Request, REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
+    REQUEST_STATE_INITIAL, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI
+from sam.base.messageAgent import SAMMessage, MessageAgent, MSG_TYPE_REQUEST, \
+    REQUEST_PROCESSOR_QUEUE
 from sam.base.routingMorphic import RoutingMorphic
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 from sam.base.test.fixtures.ipv6MorphicDict import ipv6MorphicDictTemplate
-from sam.base.test.fixtures.geoMorphicDict import geoMorphicDictTemplate
-from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.fixtures.orchestrationStub import OrchestrationStub
 from sam.toolkit.cleanAllLogFile import cleanAllLogFile
 from sam.toolkit.clearAllSAMQueue import clearAllSAMQueue
 from sam.toolkit.killAllSAMPythonScripts import killAllSAMPythonScripts
-from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
+from sam.serverController.serverManager import serverManager
 from sam.serverController.classifierController import classifierControllerCommandAgent
 from sam.serverController.sffController import sffControllerCommandAgent
 from sam.serverController.vnfController import vnfController
@@ -385,99 +381,126 @@ class TestBase(object):
             backupForwardingPath)
 
     def recvCmd(self, queue):
-        messageAgentTmp = MessageAgent()
-        messageAgentTmp.startRecvMsg(queue)
+        tmpMessageAgent = MessageAgent()
+        tmpMessageAgent.startRecvMsg(queue)
         logging.info("testBase:recvCmd")
         try:
             while True:
-                msg = messageAgentTmp.getMsg(queue)
+                msg = tmpMessageAgent.getMsg(queue)
                 msgType = msg.getMessageType()
                 if msgType == None:
                     pass
                 else:
                     body = msg.getbody()
-                    if messageAgentTmp.isCommand(body):
+                    if tmpMessageAgent.isCommand(body):
                         return body
                     else:
                         logging.error("Unknown massage body: {0}".format(
                             type(body)))
         finally:
-           del messageAgentTmp
+           del tmpMessageAgent
 
     def recvCmdRply(self, queue):
-        messageAgentTmp = MessageAgent()
-        messageAgentTmp.startRecvMsg(queue)
+        tmpMessageAgent = MessageAgent()
+        tmpMessageAgent.startRecvMsg(queue)
         while True:
-            msg = messageAgentTmp.getMsg(queue)
+            msg = tmpMessageAgent.getMsg(queue)
             msgType = msg.getMessageType()
             if msgType == None:
                 pass
             else:
                 body = msg.getbody()
-                if messageAgentTmp.isCommandReply(body):
+                if tmpMessageAgent.isCommandReply(body):
                     logging.info("testBase:recvCmdRply")
                     return body
                 else:
                     logging.error("Unknown massage body")
 
     def startMsgAgentRPCReciever(self, ip, port):
-        self.messageAgentTmp = MessageAgent()
-        self.messageAgentTmp.startMsgReceiverRPCServer(ip, port)
+        self.tmpMessageAgent = MessageAgent()
+        self.tmpMessageAgent.startMsgReceiverRPCServer(ip, port)
 
     def recvCmdRplyByRPC(self, ip, port):
         while True:
-            msg = self.messageAgentTmp.getMsg("{0}:{1}".format(ip, port))
+            msg = self.tmpMessageAgent.getMsg("{0}:{1}".format(ip, port))
             msgType = msg.getMessageType()
             if msgType == None:
                 pass
             else:
                 body = msg.getbody()
-                if self.messageAgentTmp.isCommandReply(body):
+                if self.tmpMessageAgent.isCommandReply(body):
                     logging.info("testBase:recvCmdRply")
                     return body
                 else:
                     logging.error("Unknown massage body")
 
     def sendCmd(self, queue, msgType, cmd):
-        messageAgentTmp = MessageAgent()
+        tmpMessageAgent = MessageAgent()
         msg = SAMMessage(msgType, cmd)
-        messageAgentTmp.sendMsg(queue, msg)
-        del messageAgentTmp
+        tmpMessageAgent.sendMsg(queue, msg)
+        del tmpMessageAgent
 
     def sendCmdByRPC(self, dstIP, dstPort, msgType, cmd):
         msg = SAMMessage(msgType, cmd)
-        self.messageAgentTmp.sendMsgByRPC(dstIP, dstPort, msg)
+        self.tmpMessageAgent.sendMsgByRPC(dstIP, dstPort, msg)
 
     def sendCmdRply(self, queue, msgType, cmdRply):
-        messageAgentTmp = MessageAgent()
+        tmpMessageAgent = MessageAgent()
         msg = SAMMessage(msgType, cmdRply)
-        messageAgentTmp.sendMsg(queue, msg)
-        del messageAgentTmp
+        tmpMessageAgent.sendMsg(queue, msg)
+        del tmpMessageAgent
 
     def sendRequest(self, queue, request):
-        messageAgentTmp = MessageAgent()
+        tmpMessageAgent = MessageAgent()
         msg = SAMMessage(MSG_TYPE_REQUEST, request)
-        messageAgentTmp.sendMsg(queue, msg)
-        del messageAgentTmp
+        tmpMessageAgent.sendMsg(queue, msg)
+        del tmpMessageAgent
+
+    def sendRequestByGRPC(self, dstIP, dstPort, request):
+        tmpMessageAgent = MessageAgent()
+        oSP = tmpMessageAgent.getOpenSocketPort()
+        tmpMessageAgent.startMsgReceiverRPCServer("localhost", oSP)
+        msg = SAMMessage(MSG_TYPE_REQUEST, request)
+        tmpMessageAgent.sendMsgByRPC(dstIP, dstPort, msg)
+        return tmpMessageAgent
 
     def recvReply(self, queue):
-        messageAgentTmp = MessageAgent()
-        messageAgentTmp.startRecvMsg(queue)
+        tmpMessageAgent = MessageAgent()
+        tmpMessageAgent.startRecvMsg(queue)
         try:
             while True:
-                msg = messageAgentTmp.getMsg(queue)
+                msg = tmpMessageAgent.getMsg(queue)
                 msgType = msg.getMessageType()
                 if msgType == None:
                     pass
                 else:
                     body = msg.getbody()
-                    if messageAgentTmp.isReply(body):
+                    if tmpMessageAgent.isReply(body):
                         logging.info("testBase: recv a reply")
                         return body
                     else:
                         logging.error("Unknown massage body")
         finally:
-            del messageAgentTmp
+            del tmpMessageAgent
+
+    def recvReplyByRPC(self, listenIP, listenPort):
+        tmpMessageAgent = MessageAgent()
+        tmpMessageAgent.startMsgReceiverRPCServer(listenIP, listenPort)
+        try:
+            while True:
+                msg = tmpMessageAgent.getMsgByRPC(listenIP, listenPort)
+                msgType = msg.getMessageType()
+                if msgType == None:
+                    pass
+                else:
+                    body = msg.getbody()
+                    if tmpMessageAgent.isReply(body):
+                        logging.info("testBase: recv a reply")
+                        return body
+                    else:
+                        logging.error("Unknown massage body")
+        finally:
+            del tmpMessageAgent
 
     def clearQueue(self):
         clearAllSAMQueue()

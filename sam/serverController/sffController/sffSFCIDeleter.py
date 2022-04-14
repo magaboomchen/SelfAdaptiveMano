@@ -5,15 +5,12 @@ from __future__ import print_function
 import grpc
 from google.protobuf.any_pb2 import Any
 
-import sam.serverController.builtin_pb.service_pb2 as service_pb2
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
 import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
 import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
-import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
-from sam.serverController.bessControlPlane import *
-from sam.serverController.sffController.sffInitializer import *
-from sam.serverController.sffController.sibMaintainer import *
-from sam.base.server import *
+from sam.serverController.bessControlPlane import BessControlPlane
+
+from sam.base.server import Server
 
 
 class SFFSFCIDeleter(BessControlPlane):

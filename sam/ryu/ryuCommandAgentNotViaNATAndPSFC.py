@@ -3,13 +3,14 @@
 
 import logging
 
-from ryu.controller import event as ryuControllerEvent
-from ryu.base.app_manager import *
+from ryu.base.app_manager import lookup_service_brick
 from ryu.lib import hub
 
-from sam.base.messageAgent import *
-from sam.base.command import *
-from sam.ryu.conf.ryuConf import *
+from sam.base.messageAgent import NETWORK_CONTROLLER_QUEUE, MSG_TYPE_NETWORK_CONTROLLER_CMD
+from sam.base.command import CMD_TYPE_ADD_SFC, \
+    CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_DEL_SFC, CMD_TYPE_GET_TOPOLOGY, \
+    CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE
+from sam.ryu.conf.ryuConf import ZONE_NAME
 from sam.ryu.baseApp import BaseApp
 
 

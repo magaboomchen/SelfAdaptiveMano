@@ -6,18 +6,12 @@ from __future__ import print_function
 from google.protobuf.any_pb2 import Any
 import grpc
 
-import sam.serverController.builtin_pb.service_pb2 as service_pb2
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
 import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
 import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
 import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
-from sam.base.server import Server
-from sam.base.messageAgent import *
-from sam.base.sfc import *
-from sam.base.socketConverter import SocketConverter
-from sam.base.command import *
-from sam.base.path import *
-from sam.serverController.bessControlPlane import *
+from sam.base.sfc import SFC_DOMAIN_PREFIX, SFC_DOMAIN_PREFIX_LENGTH
+from sam.serverController.bessControlPlane import BessControlPlane
 
 
 class SFFInitializer(BessControlPlane):

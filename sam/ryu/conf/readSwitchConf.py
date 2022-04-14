@@ -2,7 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 from ruamel import yaml
-from genSwitchConf import SwitchConf
+from sam.ryu.conf.genSwitchConfLogicalTwoTier import SwitchConf
+
 
 def ls(obj):
     print("\n".join([x for x in dir(obj) if x[0] != "_"]))

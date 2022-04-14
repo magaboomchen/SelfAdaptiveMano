@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.argParser import *
+import argparse
+
+from sam.base.argParser import ArgParserBase
 from sam.base.sshAgent import SSHAgent
 from sam.base.loggerConfigurator import LoggerConfigurator
 

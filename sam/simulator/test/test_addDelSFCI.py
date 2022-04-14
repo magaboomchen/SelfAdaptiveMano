@@ -13,20 +13,18 @@ Usage of this unit test:
     sudo python -m pytest ./test_addDelSFCI.py -s --disable-warnings
 '''
 
+import logging
 from time import sleep
 
 import pytest
 
-from sam import base
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
+    MEDIATOR_QUEUE
+from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.simulator.test.testSimulatorBase import *
+from sam.simulator.test.testSimulatorBase import TestSimulatorBase, CLASSIFIER_DATAPATH_IP
 from sam.simulator import simulator
 
 MANUAL_TEST = True
@@ -71,7 +69,7 @@ class TestAddSFCIClass(TestSimulatorBase):
     def test_addOneSFCIWithVNFIOnAServer(self, setup_addOneSFCIWithVNFIOnAServer):
         # exercise
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
-        self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD , self.addSFCICmd)
+        self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, self.addSFCICmd)
 
         # verify
         self.verifyAddSFCICmdRply()

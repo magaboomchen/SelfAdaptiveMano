@@ -8,25 +8,27 @@ enp4s0 10Gbps intel 82599es
 sudo python ./sendSFCTraffic.py -i enp4s0 -smac 00:1b:21:c0:8f:ae -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.128.1.1 -isip 1.1.1.1 -idip 3.3.3.3
 '''
 
+import uuid
 import logging
-from scapy.all import *
-import time
 
 import pytest
-from scapy.all import *
+from scapy.all import Raw, sendp, sniff
+from scapy.layers.l2 import Ether, ARP
+from scapy.layers.inet import IP, TCP
 
 from sam.base import server
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.vpn import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
+    SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
+from sam.base.vnf import VNFI, VNF_TYPE_VPN
+from sam.base.server import Server, SERVER_TYPE_NORMAL
+from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.vpn import VPNTuple
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.fixtures.vnfControllerStub import *
-from sam.test.testBase import *
-from sam.serverController.classifierController import ClassifierControllerCommandAgent
+from sam.test.testBase import TestBase, WEBSITE_REAL_IP, OUTTER_CLIENT_IP, \
+    TESTER_SERVER_DATAPATH_MAC, CLASSIFIER_DATAPATH_IP, SFCI1_0_EGRESS_IP, \
+    SFCI1_1_EGRESS_IP
 
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
@@ -138,7 +140,7 @@ class TestVNFAddVPN(TestBase):
         # self.verifyDirection1Traffic()
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
-        raw_input()
+        raw_input()  # type: ignore
 
     def verifyDirection0Traffic(self):
         self._sendDirection0Traffic2SFF()

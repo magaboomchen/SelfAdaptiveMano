@@ -3,9 +3,7 @@
 
 import logging
 
-import pytest
-
-from sam.base.dhcpServer import *
+from sam.base.topoGen.base.dhcpServer import DHCPServer
 
 MANUAL_TEST = True
 

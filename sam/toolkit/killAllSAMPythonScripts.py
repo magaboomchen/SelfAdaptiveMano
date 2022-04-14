@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.shellProcessor import *
+from sam.base.shellProcessor import ShellProcessor
 
 
 def killAllSAMPythonScripts():

@@ -4,9 +4,12 @@
 import pickle
 import base64
 
-from sam.base.sfc import *
-from sam.base.command import *
-from sam.base.request import *
+from sam.base.sfc import STATE_IN_PROCESSING, STATE_ACTIVE, \
+    STATE_DELETED, STATE_INACTIVE
+from sam.base.command import CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
+from sam.base.request import REQUEST_STATE_IN_PROCESSING, REQUEST_TYPE_ADD_SFC, \
+    REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_DEL_SFC, \
+    REQUEST_STATE_SUCCESSFUL, REQUEST_STATE_FAILED
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 
 

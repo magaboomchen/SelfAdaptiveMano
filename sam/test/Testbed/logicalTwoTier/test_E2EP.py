@@ -5,25 +5,20 @@
 Before start test, please run ch17/ufrr/logicalTwoTier/init_bridge.sh in pica8-switch1 and pica8-switch2
 '''
 
-import sys
 import time
 import logging
-import copy
 
 import pytest
-from ryu.controller import dpset
 
 from sam import base
-from sam.ryu.topoCollector import TopoCollector
 from sam.base.path import *
 from sam.base.vnf import *
-from sam.base.pickleIO import *
+from sam.base.pickleIO import PickleIO
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.testBase import *
-from sam.test.fixtures.vnfControllerStub import *
 from sam.test.Testbed.logicalTwoTier.testbedFRR import *
-from sam.orchestration.oSFCAdder import *
-from sam.measurement.dcnInfoBaseMaintainer import *
+from sam.orchestration.oSFCAdder import OSFCAdder
+from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)

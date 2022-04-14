@@ -1,16 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-import pickle
-import base64
-import numpy as np
-import pandas as pd
+import copy
 
-from sam.base.path import *
-from sam.serverController.serverManager import *
-from sam.orchestration.algorithms.mMLBSFC.mMLBSFC import *
-from sam.orchestration.algorithms.base.failureScenario import *
+from sam.base.link import Link
+from sam.base.path import MAPPING_TYPE_E2EP, MAPPING_TYPE_UFRR, MAPPING_TYPE_NOTVIA_PSFC
+from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
+from sam.orchestration.algorithms.mMLBSFC.mMLBSFC import MMLBSFC
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 
@@ -28,7 +24,7 @@ class ForwardingPathSetsMaintainer(MMLBSFC):
     def _printFPSD(self):
         self.logger.debug("forwardingPathSetsDict: {0}\n_____".format(
             self.forwardingPathSetsDict))
-        raw_input()
+        raw_input()  # type: ignore
 
     def getPrimaryForwardingPath(self, rIndex):
         return self.forwardingPathSetsDict[rIndex].primaryForwardingPath[1]
@@ -114,7 +110,7 @@ class ForwardingPathSetsMaintainer(MMLBSFC):
                 # self.logger.debug(
                 #     "merged forwarding backupForwardingPath:{0}".format(
                 #         self.forwardingPathDict[rIndex]))
-                # raw_input()
+                # raw_input()  # type: ignore
                 break 
         else:
             self.logger.warning(
@@ -182,7 +178,7 @@ class ForwardingPathSetsMaintainer(MMLBSFC):
                         # self.logger.debug("is failure link? {0}".format(isFailureLink))
                         # self.logger.debug("layerLinkID:{0}".format(layerLinkID))
                         # self.logger.debug("has bypass path? {0}".format(hasNotViaBackupPath))
-                        # raw_input()
+                        # raw_input()  # type: ignore
 
                         if (isFailureLink and hasNotViaBackupPath):
                             byPassPath = self._getNotViaByPassPath(layerLinkID)
@@ -190,7 +186,7 @@ class ForwardingPathSetsMaintainer(MMLBSFC):
                             mergeSwitchID = byPassPath[0][-1][1]
                             # self.logger.debug("mergeSwitchID:{0}".format(
                             #     mergeSwitchID))
-                            # raw_input()
+                            # raw_input()  # type: ignore
                             mergeFlag = True
                         else:
                             newSegPath.append((layerNum, nodeID))
@@ -212,7 +208,7 @@ class ForwardingPathSetsMaintainer(MMLBSFC):
             self.logger.debug("notVia can protect this link {0}"
                                 "newForwardingPath:{1}".format(
                                     self.failureElementList, newForwardingPath))
-            # raw_input()
+            # raw_input()  # type: ignore
 
             self.forwardingPathDict[rIndex] = newForwardingPath
             # return newForwardingPath
@@ -392,7 +388,7 @@ class ForwardingPathSetsMaintainer(MMLBSFC):
 
             # # self.logger.debug("newForwardingPath:{0}".format(
             # #         newForwardingPath))
-            # # raw_input()
+            # # raw_input()  # type: ignore
 
             # return newForwardingPath
 

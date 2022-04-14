@@ -1,15 +1,24 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import uuid
+import pytest
 import logging
 
-from sam.base.switch import *
-from sam.base.server import *
-from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
-from sam.test.testBase import *
+from sam.base.switch import Switch, SWITCH_TYPE_NPOP
+from sam.base.server import Server, SERVER_TYPE_NORMAL
+from sam.base.request import Request, REQUEST_STATE_SUCCESSFUL, \
+    REQUEST_TYPE_GET_DCN_INFO
+from sam.base.link import Link
+from sam.base.messageAgent import MEDIATOR_QUEUE, MEASURER_QUEUE, \
+    MSG_TYPE_MEDIATOR_CMD_REPLY, ORCHESTRATOR_QUEUE, DCN_INFO_RECIEVER_QUEUE
+from sam.base.command import CommandReply, CMD_TYPE_GET_TOPOLOGY, CMD_STATE_SUCCESSFUL
+from sam.base.shellProcessor import ShellProcessor
 from sam.measurement import measurer
+from sam.test.testBase import TestBase
 
 logging.basicConfig(level=logging.INFO)
+
 
 class TestMeasurerClass(TestBase):
     @pytest.fixture(scope="function")
@@ -107,6 +116,6 @@ class TestMeasurerClass(TestBase):
 
     def genGetDCNInfoRequest(self, srcQueue):
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_GET_DCN_INFO,
-            ORCHESTRATOR_QUEUE)
+            srcQueue)
         return request
 

@@ -8,6 +8,7 @@ import psutil
 
 from sam.base.loggerConfigurator import LoggerConfigurator
 
+
 class ShellProcessor(object):
     def __init__(self):
         logging.getLogger("psutil").setLevel(logging.ERROR)

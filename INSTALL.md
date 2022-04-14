@@ -30,7 +30,8 @@ sudo python -m pip install paramiko enum34 psutil pika netifaces getmac pytest n
 ```
 
 ```
-apt-get install python-tk
+sudo apt-get install python-tk
+sudo apt-get install python-eventlet python-routes python-webob python-paramiko
 ```
 
 ## Ansible-playbook

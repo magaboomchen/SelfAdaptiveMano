@@ -1,24 +1,25 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import uuid
 import logging
-from scapy.all import *
-import time
 
 import pytest
+from scapy.all import sniff
+from scapy.layers.inet import IP
 
 from sam import base
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.nat import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
+    SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
+from sam.base.vnf import VNFI, VNF_TYPE_NAT
+from sam.base.server import Server, SERVER_TYPE_NORMAL
+from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.nat import NATTuple
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.fixtures.vnfControllerStub import *
-from sam.test.testBase import *
-from sam.serverController.classifierController import ClassifierControllerCommandAgent
+from sam.test.testBase import TestBase, SFCI1_1_EGRESS_IP, \
+    TESTER_SERVER_DATAPATH_MAC, CLASSIFIER_DATAPATH_IP, SFCI1_0_EGRESS_IP
 
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.199"

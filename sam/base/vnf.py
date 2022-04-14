@@ -73,7 +73,7 @@ class VNFI(object):
         elif type(self.node) == Server:
             nodeID = self.node.getServerID()
         else:
-            raise ValueError("Unknown node type {0}".format(type(node)))
+            raise ValueError("Unknown node type {0}".format(type(self.node)))
 
         vnfDict = {
             "vnfType": self.vnfType,

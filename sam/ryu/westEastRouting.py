@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
 import copy
 
 import networkx as nx
@@ -15,11 +14,10 @@ from ryu.lib.packet import ethernet
 from ryu.lib.packet import ipv4
 from ryu.lib.packet import arp
 from ryu.lib.packet import ether_types
-from ryu.topology import event, switches 
 from ryu.controller import dpset
-from ryu.base.app_manager import *
+from ryu.base.app_manager import lookup_service_brick
 
-from sam.ryu.conf.ryuConf import *
+from sam.ryu.conf.ryuConf import MAIN_TABLE
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
 from sam.ryu.baseApp import BaseApp
 from sam.base.loggerConfigurator import LoggerConfigurator

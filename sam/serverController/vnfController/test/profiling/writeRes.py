@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from scapy.all import *
-
 from sam.base.pickleIO import PickleIO
 
 

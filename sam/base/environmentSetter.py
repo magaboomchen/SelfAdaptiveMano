@@ -5,7 +5,6 @@ import site
 import os
 import pwd
 import subprocess
-import argparse
 
 
 class EnvironmentSetter(object):

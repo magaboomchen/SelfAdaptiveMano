@@ -5,7 +5,7 @@ import logging
 
 import pytest
 
-from sam.base.sshAgent import *
+from sam.base.sshAgent import SSHAgent
 
 MANUAL_TEST = True
 

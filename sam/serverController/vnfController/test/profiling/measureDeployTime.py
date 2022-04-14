@@ -1,25 +1,24 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-from scapy.all import *
 import time
+import uuid
+import random
+import logging
 
-import pytest
-
-from sam.base.acl import *
-from sam.base import server
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.command import *
+from sam.base.acl import ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP
+from sam.base.vnf import VNFI, VNF_TYPE_FW
+from sam.base.server import Server, SERVER_TYPE_NORMAL
+from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.pickleIO import PickleIO
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.base.shellProcessor import ShellProcessor
+from sam.base.messageAgent import MessageAgent, SAMMessage, MEDIATOR_QUEUE, \
+    SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, \
+    MSG_TYPE_VNF_CONTROLLER_CMD, VNF_CONTROLLER_QUEUE
+from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.fixtures.vnfControllerStub import *
-from sam.test.testBase import *
-from sam.serverController.classifierController import ClassifierControllerCommandAgent
+from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.test.testBase import TestBase, WEBSITE_REAL_IP, OUTTER_CLIENT_IP
 
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"

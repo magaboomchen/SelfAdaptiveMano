@@ -1,20 +1,16 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import sys
-import time
 import logging
 
 import pytest
-from ryu.controller import dpset
 
 from sam import base
-from sam.ryu.topoCollector import TopoCollector
-from sam.base.path import *
+from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NOTVIA_PSFC
 from sam.base.shellProcessor import ShellProcessor
-from sam.test.testBase import *
-from sam.test.fixtures.vnfControllerStub import *
-from sam.test.Testbed.triangleTopo.testbedFRR import *
+from sam.test.testBase import CLASSIFIER_DATAPATH_IP
+from sam.test.fixtures.mediatorStub import MediatorStub
+from sam.test.Testbed.triangleTopo.testbedFRR import TestbedFRR
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
@@ -80,11 +76,11 @@ class TestNotViaClass(TestbedFRR):
     def test_addUniSFCI(self, setup_addUniSFCI):
         logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
-        raw_input()
+        raw_input()  # type: ignore
 
         self.addSFC2NetworkController()
         self.addSFCI2NetworkController()
 
         logging.info("Input 'ovs-ofctl mod-port br1 ge-1/1/26 down' to test notvia")
         logging.info("After test, press any key to quit!")
-        raw_input()
+        raw_input()  # type: ignore

@@ -3,19 +3,9 @@
 
 import uuid
 
-import networkx
-
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.switch import *
-from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
-from sam.base.server import *
-from sam.base.path import *
-from sam.base.command import *
-from sam.base.socketConverter import SocketConverter
-from sam.orchestration.pathComputer import *
-from sam.orchestration.orchestrator import *
-from sam.orchestration.oConfig import *
+from sam.base.command import Command, CMD_TYPE_DEL_SFCI, CMD_TYPE_DEL_SFC
+from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI, \
+    REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_DEL_SFC
 
 
 class OSFCDeleter(object):

@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
-from sam.base.server import *
-from sam.base.switch import *
+from sam.base.link import Link
+from sam.base.server import Server
+from sam.base.switch import Switch
 
 
 class FailureScenario(object):

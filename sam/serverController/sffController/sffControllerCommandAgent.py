@@ -3,20 +3,19 @@
 
 from __future__ import print_function
 
-from google.protobuf.any_pb2 import Any
-import grpc
-
-from sam.base.sfc import *
-from sam.base.server import Server
-from sam.base.messageAgent import *
+from sam.base.messageAgent import SAMMessage, MessageAgent, SFF_CONTROLLER_QUEUE, \
+    MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD_REPLY
+from sam.base.command import CommandReply, CMD_STATE_PROCESSING, CMD_TYPE_PAUSE_BESS, \
+    CMD_TYPE_RESUME_BESS, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_GET_SFCI_STATE, \
+    CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.serverController.sffController.sibMaintainer import *
-from sam.serverController.sffController.sffSFCIAdder import *
-from sam.serverController.sffController.sffSFCIDeleter import *
-from sam.serverController.sffController.sffMonitor import *
-from sam.serverController.sffController.sffFailureEmulator import *
+
+from sam.serverController.sffController.sffSFCIAdder import SFFSFCIAdder
+from sam.serverController.sffController.sffSFCIDeleter import SFFSFCIDeleter
+from sam.serverController.sffController.sffMonitor import SFFMonitor
+from sam.serverController.sffController.sffFailureEmulator import SFFFailureEmulator
+from sam.serverController.sffController.sibMaintainer import SIBMS
 from sam.serverController.sffController.argParser import ArgParser
 
 # TODO: finish sfci monitor
@@ -94,7 +93,7 @@ class SFFControllerCommandAgent(object):
                     cmdRply.attributes["source"] = {"sffController"}
                     rplyMsg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD_REPLY,
                         cmdRply)
-                    self._messageAgent.sendMsg(MEDIATOR_QUEUE,rplyMsg)
+                    self._messageAgent.sendMsg(MEDIATOR_QUEUE, rplyMsg)
             elif msg.getMessageType() == None:
                 pass
             else:

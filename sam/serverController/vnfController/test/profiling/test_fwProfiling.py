@@ -8,24 +8,23 @@ enp4s0 10Gbps intel 82599es
 sudo python ./sendSFCTraffic.py -i enp4s0 -smac 00:1b:21:c0:8f:ae -dmac 00:1b:21:c0:8f:98 -osip 2.2.0.36 -odip 10.32.1.1 -isip 1.1.1.1 -idip 3.3.3.3
 '''
 
+import uuid
 import logging
-from scapy.all import *
-import time
 
 import pytest
 
 from sam.base import server
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.acl import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.vnf import VNFI, VNF_TYPE_FW
+from sam.base.server import Server, SERVER_TYPE_NORMAL
+from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
+    SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
+from sam.base.acl import ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.fixtures.vnfControllerStub import *
-from sam.test.testBase import *
-from sam.serverController.classifierController import ClassifierControllerCommandAgent
+from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, WEBSITE_REAL_IP, \
+    TESTER_SERVER_DATAPATH_MAC, OUTTER_CLIENT_IP
 
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
@@ -107,13 +106,13 @@ class TestVNFAddFW(TestBase):
         logging.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
+            MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delVNFI4Server(self):
-        logging.warning("DeletingÂ VNFI")
+        logging.warning("Deleting VNFI")
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
@@ -125,13 +124,13 @@ class TestVNFAddFW(TestBase):
         logging.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE,
-            MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
+            MSG_TYPE_VNF_CONTROLLER_CMD, self.addSFCICmd)
 
         # verifiy
         self.verifyCmdRply()
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
-        raw_input()
+        raw_input()  # type: ignore
 
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)

@@ -3,7 +3,7 @@
 
 import os
 
-from sam.base.exceptionProcessor import *
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 

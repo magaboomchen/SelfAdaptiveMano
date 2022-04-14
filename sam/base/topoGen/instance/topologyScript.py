@@ -5,13 +5,8 @@
 use script to generate topology
 '''
 
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.base.exceptionProcessor import *
-from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.topoGen.base.common import *
-from sam.base.topoGen.base.mkdirs import *
-from sam.base.topoGen.base.samSimulationArgParser import *
-from sam.base.topoGen.instance.topology import *
+from sam.base.topoGen.base.samSimulationArgParser import SamSimulationArgParser
+from sam.base.topoGen.instance.topology import Topology
 
 
 if __name__ == "__main__":

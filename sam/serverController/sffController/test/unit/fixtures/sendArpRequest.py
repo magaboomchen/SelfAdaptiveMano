@@ -1,11 +1,15 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-from scapy.all import *
 import time
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.serverController.sffController.test.unit.test_sffSFCIAdder import *
+
+from scapy.all import sendp
+from scapy.layers.l2 import Ether, ARP
+
+from sam.base.socketConverter import BCAST_MAC
+from sam.serverController.sffController.test.unit.test_sffSFCIAdder import TESTER_SERVER_DATAPATH_IP, \
+    TESTER_SERVER_DATAPATH_MAC,  SFF1_DATAPATH_IP 
+
 
 def sendArpRequest( outIntf, requestIP):
     arp = ARP(op=1,
@@ -18,4 +22,4 @@ def sendArpRequest( outIntf, requestIP):
 
 if __name__=="__main__":
     time.sleep(0.5)
-    sendArpRequest("toVNF1",SFF1_DATAPATH_IP)
+    sendArpRequest("toVNF1", SFF1_DATAPATH_IP)

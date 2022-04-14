@@ -1,14 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import random
 import uuid
 
-from sam.base.command import *
-from sam.base.switch import *
-from sam.base.server import *
-from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
-from sam.test.testBase import *
+from sam.test.testBase import TestBase
+from sam.base.messageAgent import MEASURER_QUEUE, MSG_TYPE_MEDIATOR_CMD_REPLY
+from sam.base.command import CommandReply, CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_TOPOLOGY
+from sam.base.switch import SWITCH_TYPE_NPOP
+from sam.base.server import SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NORMAL, SERVER_TYPE_NFVI
+from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 
 
 class TestMeasurerClass(TestBase):

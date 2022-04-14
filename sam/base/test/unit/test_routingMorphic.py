@@ -1,19 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import uuid
-import numpy
 import logging
-import struct
 
-import pytest
-
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.messageAgent import *
-from sam.base.routingMorphic import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.test.testBase import *
+from sam.test.testBase import TestBase
+from sam.base.routingMorphic import RoutingMorphic
+from sam.base.socketConverter import SocketConverter
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 from sam.base.test.fixtures.ipv6MorphicDict import ipv6MorphicDictTemplate
 from sam.base.test.fixtures.geoMorphicDict import geoMorphicDictTemplate

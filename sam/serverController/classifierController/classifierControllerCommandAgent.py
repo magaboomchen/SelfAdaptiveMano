@@ -2,24 +2,21 @@
 # -*- coding: UTF-8 -*-
 
 from __future__ import print_function
-import grpc
+import logging
 
-import sam.serverController.builtin_pb.service_pb2 as service_pb2
-import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
-import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
-import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
-import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
-
-from sam.base.server import Server
-from sam.base.messageAgent import *
-from sam.base.sfc import *
-from sam.base.command import *
-from sam.base.path import *
+from sam.base.messageAgent import SAMMessage, MessageAgent, \
+    SERVER_CLASSIFIER_CONTROLLER_QUEUE, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, \
+    MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY, MEDIATOR_QUEUE
+from sam.base.command import CommandReply, CMD_TYPE_ADD_SFC, \
+    CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_DEL_SFC, \
+    CMD_STATE_PROCESSING, CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.serverController.classifierController.cibMaintainer import *
-from sam.serverController.classifierController.classifierSFCIAdder import *
-from sam.serverController.classifierController.classifierSFCIDeleter import *
+from sam.serverController.classifierController.cibMaintainer import CIBMS
+from sam.serverController.classifierController.classifierSFCAdder import ClassifierSFCAdder
+from sam.serverController.classifierController.classifierSFCIAdder import ClassifierSFCIAdder
+from sam.serverController.classifierController.classifierSFCIDeleter import ClassifierSFCIDeleter
+from sam.serverController.classifierController.classifierSFCDeleter import ClassifierSFCDeleter
 from sam.serverController.classifierController.argParser import ArgParser
 
 
@@ -79,7 +76,7 @@ class ClassifierControllerCommandAgent(object):
                     cmdRply.attributes["source"] = {"classifierController"}
                     rplyMsg = SAMMessage(MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY, 
                         cmdRply)
-                    self._messageAgent.sendMsg(MEDIATOR_QUEUE,rplyMsg)
+                    self._messageAgent.sendMsg(MEDIATOR_QUEUE, rplyMsg)
             elif msg.getMessageType() == None:
                 pass
             else:

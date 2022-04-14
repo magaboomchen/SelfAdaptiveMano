@@ -7,10 +7,9 @@ test UFFR/NotVia-PSFC/End-to-endProtection
 """
 
 import re
-import sys
 import os
 import time
-from signal import SIGINT
+import uuid
 
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info, error
@@ -24,9 +23,10 @@ from mininet.link import TCLink
 from mininet.util import irange, quietRun, pmonitor
 from functools import partial
 
-from sam.base.messageAgent import *
-from sam.base.command import *
-from sam.test.FRR.test3InBoundTrafficSendRecv import *
+from sam.base.messageAgent import SAMMessage, MessageAgent, MSG_TYPE_TESTER_CMD, \
+    MININET_TESTER_QUEUE
+from sam.base.command import Command, CMD_TYPE_TESTER_REMAP_SFCI
+from sam.test.FRR.test3InBoundTrafficSendRecv import Test3InBoundTrafficSendRecv
 
 # KVM Bridge
 INT_TO_CLASSIFIER = 'eth1'
@@ -224,7 +224,7 @@ class ManoTester(object):
         while True:
             print("\nPlease input the mode number: "
                     "(Input help to check mode number)")
-            self.mode = raw_input()
+            self.mode = raw_input()  # type: ignore
             if self.mode in [
                 MODE_UFRR,
                 MODE_NOTVIA_REMAPPING,
@@ -238,7 +238,8 @@ class ManoTester(object):
                 self.sendRecvInBoundTraffic()
             elif self.mode == MODE_START_STOP_SWITCH:
                 print("Please input start/stop switchName")
-                switchCmd = raw_input().strip('\n')
+                rawSwitchCmd = raw_input()  # type: ignore
+                switchCmd = rawSwitchCmd.strip('\n')  
                 print(switchCmd)
                 action = switchCmd.split(' ')[0]
                 switchName = switchCmd.split(' ')[1]
@@ -268,7 +269,7 @@ class ManoTester(object):
                             MODE_START_STOP_SWITCH
                         )
                     )
-                raw_input()
+                raw_input()  # type: ignore
             else:
                 print("Your input is {0}".format(self.mode))
                 continue

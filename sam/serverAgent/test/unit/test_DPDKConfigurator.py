@@ -4,11 +4,11 @@
 import logging
 import subprocess
 
-import pytest
-
-from sam.serverAgent.dpdkConfigurator import *
+from sam.serverAgent.dpdkConfigurator import DPDKConfigurator, \
+    UNBIND, BIND_IGB_UIO
 
 logging.basicConfig(level=logging.INFO)
+
 
 class TestDPDKConfiguratorClass(object):
     banList = """

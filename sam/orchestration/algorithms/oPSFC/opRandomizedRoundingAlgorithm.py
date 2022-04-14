@@ -7,20 +7,14 @@ original sfc mapping
 Low-Cost Service Function Chain
 '''
 
-import copy
-
 import numpy as np
-import gurobipy as gp
-from gurobipy import *
-from gurobipy import GRB
 
-from sam.base.path import *
-from sam.base.server import *
-from sam.base.messageAgent import *
+from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NOTVIA_PSFC
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.base.pathServerFiller import *
-from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
-from sam.orchestration.algorithms.base.multiLayerGraph import *
+from sam.orchestration.algorithms.base.pathServerFiller import PathServerFiller
+from sam.orchestration.algorithms.base.mappingAlgorithmBase import MappingAlgorithmBase
+from sam.orchestration.algorithms.base.multiLayerGraph import MultiLayerGraph, \
+    WEIGHT_TYPE_CONST, WEIGHT_TYPE_0100_UNIFORAM_MODEL
 
 
 class OPRandomizedRoundingAlgorithm(MappingAlgorithmBase, PathServerFiller):

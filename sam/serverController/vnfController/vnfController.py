@@ -1,17 +1,19 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.command import *
-from sam.base.server import *
-from sam.base.messageAgent import *
+from sam.base.command import CommandReply, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, \
+    CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL, CMD_STATE_PROCESSING
+from sam.base.server import Server
+from sam.base.messageAgent import SAMMessage, MessageAgent, VNF_CONTROLLER_QUEUE, \
+    MSG_TYPE_VNF_CONTROLLER_CMD, MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, MEDIATOR_QUEUE
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.serverController.vnfController.vcConfig import vcConfig
-from sam.serverController.vnfController.vnfiAdder import *
-from sam.serverController.vnfController.vnfiDeleter import *
-from sam.serverController.vnfController.vnfMaintainer import *
-from sam.serverController.vnfController.sourceAllocator import *
+from sam.serverController.vnfController.vnfiAdder import VNFIAdder
+from sam.serverController.vnfController.vnfiDeleter import VNFIDeleter
+from sam.serverController.vnfController.vnfMaintainer import VNFIMaintainer, \
+    VNFI_STATE_DEPLOYED, VNFI_STATE_FAILED
+from sam.serverController.vnfController.sourceAllocator import SourceAllocator, CPUAllocator
 from sam.serverController.vnfController.argParser import ArgParser
 
 

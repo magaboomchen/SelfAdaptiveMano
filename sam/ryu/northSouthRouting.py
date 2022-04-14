@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
 import copy
 
 from ryu.controller import ofp_event
@@ -11,12 +10,12 @@ from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import arp
-from ryu.lib.packet import ether_types
-from ryu.topology import event, switches 
+from ryu.lib.packet import ether_types 
 from ryu.controller import dpset
 import networkx as nx
 
-from sam.ryu.conf.ryuConf import *
+from sam.ryu.conf.ryuConf import MAIN_TABLE, DCN_GATEWAY_PEER_ARP, \
+    DEFAULT_DCN_GATEWAY_PEER_SWITCH_MAC, DEFAULT_DCN_GATEWAY_OUTBOUND_PORT_NUMBER
 from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
 from sam.ryu.baseApp import BaseApp
 from sam.base.loggerConfigurator import LoggerConfigurator

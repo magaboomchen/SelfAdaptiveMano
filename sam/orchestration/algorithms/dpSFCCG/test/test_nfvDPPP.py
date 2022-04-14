@@ -1,20 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import uuid
 import logging
-from datetime import datetime
 
 import pytest
-import pickle
-import base64
 
-from sam.base.request import *
-from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
-from sam.orchestration.algorithms.performanceModel import *
-from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
-from sam.test.testBase import *
+from sam.orchestration.algorithms.base.mappingAlgorithmBase import MappingAlgorithmBase
+from sam.test.testBase import TestBase
 
 MANUAL_TEST = True
 logging.basicConfig(level=logging.INFO)

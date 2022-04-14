@@ -12,28 +12,25 @@ To add more mapping algorithms, you need add code in following functions:
 import uuid
 import copy
 
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.switch import *
-from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
-from sam.base.server import *
-from sam.base.path import *
-from sam.base.command import *
+from sam.base.vnf import VNFI
+from sam.base.path import ForwardingPathSet, MAPPING_TYPE_E2EP, MAPPING_TYPE_UFRR, \
+    MAPPING_TYPE_NOTVIA_PSFC, MAPPING_TYPE_INTERFERENCE, MAPPING_TYPE_NETPACK, \
+    MAPPING_TYPE_NETSOLVER_ILP, MAPPING_TYPE_NONE
+from sam.base.command import Command, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI
+from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_ADD_SFC, \
+    REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI
 from sam.base.socketConverter import SocketConverter
-from sam.orchestration.oConfig import *
-from sam.orchestration.pathComputer import *
-from sam.orchestration.orchestrator import *
-from sam.orchestration.vnfiIDAssigner import *
-from sam.orchestration.algorithms.pSFC.pSFC import *
-from sam.orchestration.algorithms.oPSFC.oPSFC import *
-from sam.orchestration.algorithms.notVia.notVia import *
-from sam.orchestration.algorithms.dpSFCCG.dpSFCCG import *
-from sam.orchestration.algorithms.mMLPSFC.mMLPSFC import *
-from sam.orchestration.algorithms.mMLBSFC.mMLBSFC import *
-from sam.orchestration.algorithms.netPack.netPack import *
-from sam.orchestration.algorithms.netSolverILP.netSolverILP import *
-from sam.orchestration.algorithms.base.resourceAllocator import *
-from sam.orchestration.algorithms.base.performanceModel import *
+from sam.orchestration.oConfig import DEFAULT_MAPPING_TYPE
+from sam.orchestration.vnfiIDAssigner import VNFIIDAssigner
+from sam.orchestration.algorithms.pSFC.pSFC import PSFC
+from sam.orchestration.algorithms.oPSFC.oPSFC import OPSFC
+from sam.orchestration.algorithms.notVia.notVia import NotVia
+from sam.orchestration.algorithms.dpSFCCG.dpSFCCG import DPSFCCG
+from sam.orchestration.algorithms.mMLPSFC.mMLPSFC import MMLPSFC
+from sam.orchestration.algorithms.mMLBSFC.mMLBSFC import MMLBSFC
+from sam.orchestration.algorithms.netPack.netPack import NetPack
+from sam.orchestration.algorithms.netSolverILP.netSolverILP import NetSolverILP
+from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 
 
 class OSFCAdder(object):
@@ -263,7 +260,7 @@ class OSFCAdder(object):
             request = copy.deepcopy(requestBatchQueue.get())
             # self.logger.debug(request)
             # self.logger.debug("*****************")
-            # raw_input()
+            # raw_input()  # type: ignore
             if request.attributes.has_key('mappingType'):
                 mappingType = request.attributes['mappingType']
             else:
@@ -273,7 +270,7 @@ class OSFCAdder(object):
                 requestDict[mappingType] = []
             requestDict[mappingType].append(request)
             # self.logger.debug(requestDict[mappingType])
-            # raw_input()
+            # raw_input()  # type: ignore
         return requestDict
 
     def _updateRequestDictIngAndEg(self, requestDict):

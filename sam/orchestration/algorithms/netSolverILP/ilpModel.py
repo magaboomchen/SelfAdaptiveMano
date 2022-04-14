@@ -5,24 +5,17 @@
 [2020][AI]Scalable constraint-based virtual data center allocation
 '''
 
-import copy
-from random import randrange
+import math
+import random
 
-import numpy as np
 import gurobipy as gp
-from gurobipy import GRB
-from gurobipy import *
+from gurobipy import GRB, LinExpr
 
-from sam.base.vnf import *
-from sam.base.path import *
-from sam.base.server import *
-from sam.base.mkdirs import *
-from sam.base.messageAgent import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NETSOLVER_ILP
+from sam.base.mkdirs import mkdirs
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.base.multiLayerGraph import *
-from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
-from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import *
+from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import OPRandomizedRoundingAlgorithm
 
 INITIAL_PATH_PER_REQUEST_NUM = 2
 
@@ -97,7 +90,7 @@ class ILPModel(OPRandomizedRoundingAlgorithm):
         #     if capacity < 1:
         #         self.logger.debug("nfvDPPP, link:{0}, capacity:{1}".format(
         #             link, capacity))
-        #         raw_input()
+        #         raw_input()  # type: ignore
 
         # self.logger.debug("phsicalLink:{0}, self.linkCapacity:{1}".format(
         #     self.physicalLink, self.linkCapacity))

@@ -14,20 +14,18 @@ Usage of this unit test:
 '''
 
 import time
+import logging
 from time import sleep
 
 import pytest
 
-from sam import base
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.messageAgent import MSG_TYPE_SIMULATOR_CMD
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT, SIMULATOR_PORT
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.simulator.test.testSimulatorBase import *
+from sam.simulator.test.testSimulatorBase import TestSimulatorBase
 from sam.simulator import simulator
 
 MANUAL_TEST = True

@@ -2,12 +2,16 @@
 # -*- coding: UTF-8 -*-
 
 import time
+import argparse
 
-from scapy.all import *
+from scapy.all import Raw, sendp
+from scapy.layers.l2 import Ether
+from scapy.layers.inet import IP, TCP
 
-from sam.base.argParser import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.test.testBase import *
+from sam.base.argParser import ArgParserBase
+from sam.test.testBase import TestBase, WEBSITE_REAL_IP, OUTTER_CLIENT_IP, \
+    TESTER_SERVER_DATAPATH_MAC, CLASSIFIER_DATAPATH_MAC, SFCI1_0_EGRESS_IP, \
+    VNFI1_0_IP
 
 
 class ArgParser(ArgParserBase):

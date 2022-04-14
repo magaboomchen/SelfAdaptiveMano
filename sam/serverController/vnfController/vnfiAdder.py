@@ -1,15 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
 import docker
 
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.acl import *
-from sam.base.lb import *
-from sam.serverController.sffController.sibMaintainer import *
-from sam.serverController.vnfController.sourceAllocator import *
+from sam.base.vnf import VNF_TYPE_FORWARD, VNF_TYPE_FW, \
+    VNF_TYPE_FORWARD, VNF_TYPE_FW, VNF_TYPE_MONITOR, \
+    VNF_TYPE_LB, VNF_TYPE_NAT, VNF_TYPE_VPN
+from sam.serverController.sffController.sibMaintainer import SIBMaintainer
 from sam.serverController.vnfController.vcConfig import vcConfig
 
 

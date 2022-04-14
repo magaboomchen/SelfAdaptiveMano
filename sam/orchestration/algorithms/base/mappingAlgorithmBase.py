@@ -3,8 +3,8 @@
 
 import copy
 
-from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
-from sam.orchestration.algorithms.base.performanceModel import *
+from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 
 
 class MappingAlgorithmBase(object):

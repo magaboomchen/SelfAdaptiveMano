@@ -4,9 +4,7 @@
 import pytest
 
 from sam.orchestration.algorithms.netPack.netPack import NetPack
-from sam.measurement.dcnInfoBaseMaintainer import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 
 class TestNetPackClass(object):

@@ -2,10 +2,11 @@
 # -*- coding: UTF-8 -*-
 
 import logging
+import subprocess
 
 import pytest
 
-from sam.base.shellProcessor import *
+from sam.base.shellProcessor import ShellProcessor
 from sam.base.test.unit.fixtures import tmpScript
 
 MANUAL_TEST = True

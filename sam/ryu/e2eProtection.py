@@ -1,29 +1,22 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import copy
 import time
 
 from ryu.controller import ofp_event
-from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
+from ryu.controller.handler import CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
-from ryu.controller import dpset
-from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import ether_types
-from ryu.topology import event, switches
+from ryu.topology import event
 
-from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
-from sam.ryu.conf.ryuConf import *
-from sam.ryu.e2eProtectionIBMaintainer import *
+from sam.ryu.conf.ryuConf import MAIN_TABLE
+from sam.ryu.e2eProtectionIBMaintainer import E2EProtectionIBMaintainer, \
+    LOWER_BACKUP_ENTRY_PRIORITY, UPPER_BACKUP_ENTRY_PRIORITY, PRIMARY_ENTRY_PRIORITY
 from sam.ryu.frr import FRR
-from sam.base.messageAgent import *
-from sam.base.command import *
-from sam.base.path import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.base.vnf import *
+from sam.base.messageAgent import SAMMessage, MEDIATOR_QUEUE, MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY
+from sam.base.command import CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL, CommandReply
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
 
 
 class E2EProtection(FRR):

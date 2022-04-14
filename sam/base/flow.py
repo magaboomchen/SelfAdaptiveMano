@@ -1,10 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import numpy as np
-
-from sam.base.routingMorphic import *
-
 
 class Flow(object):
     def __init__(self, identifierDict, trafficRate=None, trafficBandwidth=None):

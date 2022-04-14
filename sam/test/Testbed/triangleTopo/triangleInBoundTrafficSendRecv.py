@@ -6,12 +6,13 @@ sudo python ./triangleInBoundTrafficSendRecv.py -i eth0 -sip 1.1.1.2 -dip 3.3.3.
 '''
 
 import time
+import argparse
 
-from scapy.all import *
+from scapy.all import Raw, sendp, AsyncSniffer
+from scapy.layers.l2 import Ether
+from scapy.layers.inet import IP, TCP
 
-from sam.base.argParser import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-
+from sam.base.argParser import ArgParserBase
 
 TESTER_SERVER_DATAPATH_MAC = "18:66:da:85:f9:ed"
 CLASSIFIER_DATAPATH_MAC = "00:1b:21:c0:8f:ae"

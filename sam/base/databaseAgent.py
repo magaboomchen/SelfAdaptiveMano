@@ -1,10 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-import uuid
-from datetime import datetime
-
 import MySQLdb
 
 from sam.base.loggerConfigurator import LoggerConfigurator

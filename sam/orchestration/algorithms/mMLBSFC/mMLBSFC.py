@@ -3,17 +3,17 @@
 
 import copy
 
-from sam.base.path import *
-from sam.base.server import *
-from sam.base.messageAgent import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.server import Server
+from sam.base.switch import Switch
+from sam.base.link import Link
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.base.multiLayerGraph import *
-from sam.orchestration.algorithms.base.performanceModel import *
-from sam.orchestration.algorithms.base.frrPathIDAllocator import *
-from sam.orchestration.algorithms.base.failureScenario import *
-from sam.orchestration.algorithms.base.resourceAllocator import *
-from sam.orchestration.algorithms.mMLPSFC.mMLPSFC import *
+from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.orchestration.algorithms.base.multiLayerGraph import MultiLayerGraph, \
+    WEIGHT_TYPE_DELAY_MODEL
+from sam.orchestration.algorithms.base.frrPathIDAllocator import FRRPathIDAllocator
+from sam.orchestration.algorithms.base.failureScenario import FailureScenario
+from sam.orchestration.algorithms.base.resourceAllocator import ResourceAllocator
+from sam.orchestration.algorithms.mMLPSFC.mMLPSFC import MMLPSFC
 
 
 class MMLBSFC(MMLPSFC):
@@ -423,7 +423,7 @@ class MMLBSFC(MMLPSFC):
             # self.logger.debug("firstHalfPath:{0}, backupPath:{1}".format(
             #     firstHalfPath, backupPath
             # ))
-            # raw_input()
+            # raw_input()  # type: ignore
             if self._isRequestAffectedByFailure(rIndex):
                 uFPSDict[rIndex] = self._mergePath2UFP(backupPath,
                     uFPSDict[rIndex])

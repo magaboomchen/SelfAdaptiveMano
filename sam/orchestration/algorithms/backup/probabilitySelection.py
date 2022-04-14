@@ -27,5 +27,5 @@ norm = tuple([float(i)/sum(weights) for i in weights])
 # print ''.join(np.random.choice(values, size=1, replace=True, p=norm))
 index = np.random.choice(values, size=1, replace=True, p=norm)[0]
 
-print index
+print(index)
 # print dic[index]

@@ -6,8 +6,6 @@ store dcn information
 e.g. switch, server, link, sfc, sfci, vnfi
 '''
 
-import uuid
-
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 
 

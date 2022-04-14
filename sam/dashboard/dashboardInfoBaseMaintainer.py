@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.databaseAgent import DatabaseAgent
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 
 

@@ -1,16 +1,14 @@
-import pika
-import subprocess
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 import logging
-import threading
 import time
-import ctypes
-import inspect
-import uuid
-import base64
-import pickle
-import sys
-from sam.base.messageAgent import *
+from sam.base.messageAgent import SAMMessage, MessageAgent, \
+    MSG_TYPE_STRING
+
 # TODO: refactor, pytest
+
+
 class SAMMessageTester(object):
     def __init__(self):
         samMsg = SAMMessage(MSG_TYPE_STRING,"apple")

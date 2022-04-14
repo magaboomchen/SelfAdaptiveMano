@@ -3,12 +3,10 @@
 
 import logging
 
-import pytest
-from ryu.controller import dpset
-
-from sam.ryu.L2 import *
+from sam.ryu.L2 import L2
 
 logging.basicConfig(level=logging.INFO)
+
 
 class TestL2Class(object):
     @classmethod

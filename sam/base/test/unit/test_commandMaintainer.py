@@ -6,9 +6,9 @@ import logging
 
 import pytest
 
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.messageAgent import *
+from sam.base.command import Command, CommandMaintainer, CommandReply, CMD_TYPE_ADD_SFCI, \
+    CMD_TYPE_DEL_SFCI, CMD_STATE_SUCCESSFUL, CMD_STATE_WAITING, CMD_STATE_FAIL
+from sam.base.messageAgent import MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, MSG_TYPE_SERVER_MANAGER_CMD
 
 MANUAL_TEST = True
 
@@ -32,7 +32,7 @@ class TestCommandMaintainerClass(object):
         self.cCmdID2 = uuid.uuid1()
         self.cCmd2 = Command(CMD_TYPE_DEL_SFCI,self.cCmdID2,attributes={'sfcUUID':self.sfcUUID})
 
-        self.cmdRply = CommandReply(self.cCmdID,CMD_STATE_SUCCESSFUL)
+        self.cmdRply = CommandReply(self.cCmdID, CMD_STATE_SUCCESSFUL)
 
     def teardown_method(self, method):
         """ teardown any state that was previously setup with a setup_method

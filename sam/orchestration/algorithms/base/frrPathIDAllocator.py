@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import copy
-
 
 class FRRPathIDAllocator(object):
     def __init__(self, requestList):

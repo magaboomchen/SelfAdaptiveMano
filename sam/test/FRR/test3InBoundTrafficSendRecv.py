@@ -2,11 +2,13 @@
 # -*- coding: UTF-8 -*-
 
 import time
+import argparse
 
-from scapy.all import *
+from scapy.all import Raw, sendp, AsyncSniffer
+from scapy.layers.l2 import Ether
+from scapy.layers.inet import IP, TCP
 
-from sam.base.argParser import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.argParser import ArgParserBase
 
 TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"
 CLASSIFIER_DATAPATH_MAC = "52:54:00:05:4D:7D"

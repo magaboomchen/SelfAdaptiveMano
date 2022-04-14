@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 class test(object):
     def __init__(self):
         self.podNum = 4

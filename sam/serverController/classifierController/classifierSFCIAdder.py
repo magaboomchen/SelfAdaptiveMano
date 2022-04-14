@@ -5,16 +5,13 @@ from __future__ import print_function
 import grpc
 from google.protobuf.any_pb2 import Any
 
-import sam.serverController.builtin_pb.service_pb2 as service_pb2
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
 import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
 import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
-import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
-
-from sam.serverController.bessControlPlane import *
-from sam.serverController.bessInfoBaseMaintainer import *
-from sam.serverController.classifierController.classifierInitializer import *
-from sam.serverController.classifierController.classifierSFCAdder import *
+from sam.serverController.bessControlPlane import BessControlPlane
+from sam.serverController.classifierController.classifierInitializer import ClassifierInitializer
+from sam.serverController.classifierController.classifierSFCAdder import ClassifierSFCAdder
+from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
 
 
 class ClassifierSFCIAdder(BessControlPlane):

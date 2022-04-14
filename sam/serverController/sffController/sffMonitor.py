@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.serverController.bessControlPlane import *
+from sam.serverController.bessControlPlane import BessControlPlane
 
 
 class SFFMonitor(BessControlPlane):

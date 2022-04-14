@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.vnf import *
-
 SFC_DOMAIN_PREFIX = "10.0.0.0"
 SFC_DOMAIN_PREFIX_LENGTH = 8  # DO NOT MODIFY THIS VALUE,
 # otherwise BESS will incurr error

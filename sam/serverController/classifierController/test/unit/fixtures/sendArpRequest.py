@@ -2,11 +2,13 @@
 # -*- coding: UTF-8 -*-
 
 import time
+import argparse
 
-from scapy.all import *
+from scapy.all import sendp
+from scapy.layers.l2 import Ether, ARP
 
-from sam.base.argParser import *
-from sam.test.testBase import *
+from sam.base.argParser import ArgParserBase
+from sam.base.socketConverter import BCAST_MAC
 
 
 class ArgParser(ArgParserBase):

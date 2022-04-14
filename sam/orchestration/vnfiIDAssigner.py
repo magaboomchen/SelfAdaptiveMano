@@ -3,7 +3,7 @@
 
 import uuid
 
-from sam.orchestration.oConfig import *
+from sam.orchestration.oConfig import VNFI_ASSIGN_MODE
 
 
 class VNFIIDAssigner(object):

@@ -1,7 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.messageAgent import *
+import time
+
+from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.messageAgent import MessageAgent, MEDIATOR_QUEUE
+
 
 class Consumer(object):
     def __init__(self, queueName):
@@ -35,7 +39,6 @@ class Consumer(object):
 
 
 if __name__ == "__main__":
-    # queueName = "ORCHESTRATOR_QUEUE_0_19"
     queueName = MEDIATOR_QUEUE
     c = Consumer(queueName)
     c.startConsumer()

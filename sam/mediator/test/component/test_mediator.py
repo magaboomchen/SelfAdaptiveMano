@@ -1,19 +1,23 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import uuid
-import time
 import logging
 
 import pytest
 
-from sam.base.server import *
-from sam.base.command import *
+from sam.base.messageAgent import SERVER_MANAGER_QUEUE, \
+    MEASURER_QUEUE, MSG_TYPE_MEDIATOR_CMD,  \
+    SERVER_CLASSIFIER_CONTROLLER_QUEUE, SFF_CONTROLLER_QUEUE, \
+    NETWORK_CONTROLLER_QUEUE, MEDIATOR_QUEUE, \
+    ORCHESTRATOR_QUEUE, VNF_CONTROLLER_QUEUE
+from sam.base.command import CommandReply, \
+    CMD_TYPE_ADD_SFCI, CMD_TYPE_GET_SERVER_SET, \
+    CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
+from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.orchestrationStub import OrchestrationStub
-from sam.test.fixtures.measurementStub import *
-from sam.test.fixtures.serverManagerStub import *
-from sam.test.testBase import *
-from sam.mediator.mediator import *
+from sam.test.fixtures.measurementStub import MeasurementStub
+from sam.test.fixtures.serverManagerStub import ServerManagerStub
+from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP
 
 MANUAL_TEST = True
 
@@ -21,6 +25,7 @@ MANUAL_TEST = True
 # need to be test
 
 logging.basicConfig(level=logging.INFO)
+
 
 class TestMediatorClass(TestBase):
     def setup_method(self, method):
@@ -56,14 +61,14 @@ class TestMediatorClass(TestBase):
         # measurement send command, serverManger recv command
         # exercise
         getServerSetCmd = self.mS.genCMDGetServerSet()
-        self.sendCmd(MEDIATOR_QUEUE,MSG_TYPE_MEDIATOR_CMD,getServerSetCmd)
+        self.sendCmd(MEDIATOR_QUEUE, MSG_TYPE_MEDIATOR_CMD, getServerSetCmd)
         # verify
         recvCmd = self.recvCmd(SERVER_MANAGER_QUEUE)
         assert recvCmd.cmdType == CMD_TYPE_GET_SERVER_SET
 
         # server Manager send command reply, measurement recv command reply
         # exercise
-        cmdRply = CommandReply(recvCmd.cmdID,CMD_STATE_SUCCESSFUL,
+        cmdRply = CommandReply(recvCmd.cmdID, CMD_STATE_SUCCESSFUL,
             {1:self.server})
         self.sMS.sendCmdRply(cmdRply)
         # verify
@@ -79,7 +84,7 @@ class TestMediatorClass(TestBase):
         # orchestration send command, networkController,classifierController
         # SFFController recv command
         addSFCICmd = self.oS.genCMDAddSFCI(self.sfc,self.sfci)
-        self.sendCmd(MEDIATOR_QUEUE,MSG_TYPE_MEDIATOR_CMD,addSFCICmd)
+        self.sendCmd(MEDIATOR_QUEUE, MSG_TYPE_MEDIATOR_CMD, addSFCICmd)
         recvCmdNetworkCtl = self.recvCmd(NETWORK_CONTROLLER_QUEUE)
         assert recvCmdNetworkCtl.cmdType == CMD_TYPE_ADD_SFCI
         recvCmdClassifierCtl = self.recvCmd(SERVER_CLASSIFIER_CONTROLLER_QUEUE)

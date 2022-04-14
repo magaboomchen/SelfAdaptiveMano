@@ -1,25 +1,32 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
 import sys
 if sys.version > '3':
     import queue as Queue
 else:
     import Queue
+from datetime import datetime
 
-from sam.base.path import *
-from sam.base.switch import *
-from sam.base.server import *
-from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
-from sam.test.testBase import *
-from sam.orchestration.oSFCAdder import *
-from sam.orchestration.oSFCDeleter import *
-from sam.measurement.dcnInfoBaseMaintainer import *
+import pytest
+
+from sam.base.slo import SLO
+from sam.base.sfc import SFCI
+from sam.base.vnf import VNF_TYPE_MAX
+from sam.base.path import ForwardingPathSet, MAPPING_TYPE_UFRR, MAPPING_TYPE_E2EP
+from sam.base.shellProcessor import ShellProcessor
+from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI, \
+    SERVER_TYPE_NORMAL
+from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
+from sam.base.path import MAPPING_TYPE_NOTVIA_PSFC
+from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, SWITCH_TYPE_NPOP
+from sam.base.link import Link
+from sam.test.testBase import TestBase
+from sam.orchestration.oSFCAdder import OSFCAdder
+from sam.orchestration.oSFCDeleter import OSFCDeleter
+from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
-
-# logging.basicConfig(level=logging.WARNING)
 
 DEFAULT_ZONE = ""
 
@@ -198,7 +205,7 @@ class TestOSFCAdderDeleterClass(TestBase):
             backupForwardingPath = forwardingPathSet.backupForwardingPath
             self.logger.info("forwardingPathSet:{0}".format(
                 forwardingPathSet))
-            raw_input()
+            raw_input()  # type: ignore
             # each time will print (vnfiID, serverID) information
             # if program reuse vnfi, you will find that the same (vnfiID, serverID) twice
 

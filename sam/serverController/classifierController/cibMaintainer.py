@@ -2,14 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 from __future__ import print_function
-import uuid
 
-from sam.base.server import Server
-from sam.base.messageAgent import *
-from sam.base.sfc import *
-from sam.base.command import *
-from sam.base.path import *
-from sam.serverController.bessInfoBaseMaintainer import *
+from sam.serverController.bessInfoBaseMaintainer import BessInfoBaseMaintainer
 
 # TODO: need test
 

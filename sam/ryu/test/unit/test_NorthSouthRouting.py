@@ -3,12 +3,8 @@
 
 import logging
 
-import pytest
-from ryu.controller import dpset
-
-from sam.ryu.topoCollector import TopoCollector
-
 logging.basicConfig(level=logging.INFO)
+
 
 class TestNorthSouthRoutingClass(object):
     @classmethod

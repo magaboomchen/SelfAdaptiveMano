@@ -1,7 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.argParser import *
+import argparse
+
+from sam.base.argParser import ArgParserBase
+
 
 class ArgParser(ArgParserBase):
     def __init__(self, *args, **kwargs):

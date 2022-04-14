@@ -2,25 +2,16 @@
 # -*- coding: UTF-8 -*-
 
 import copy
-import math
 import random
 
 import networkx as nx
-import gurobipy as gp
-from gurobipy import *
-from gurobipy import GRB
-# import matplotlib
-# matplotlib.use('Agg')
-# import matplotlib.pyplot as plt
 
-from sam.base.path import *
-from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
-from sam.base.switch import *
-from sam.base.server import *
-from sam.base.messageAgent import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.link import Link
+from sam.base.switch import Switch
+from sam.base.server import Server
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.base.performanceModel import *
+from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 
 WEIGHT_TYPE_CONST = "WEIGHT_TYPE_CONST"
 WEIGHT_TYPE_PROPAGATION_DELAY_MODEL = "WEIGHT_TYPE_PROPAGATION_DELAY_MODEL"
@@ -131,7 +122,7 @@ class MultiLayerGraph(object):
             # nx.draw(G, with_labels=True)
             # plt.savefig("./temp.png")
             # plt.show()
-            # raw_input()
+            # raw_input()  # type: ignore
 
         return G
 
@@ -213,7 +204,7 @@ class MultiLayerGraph(object):
                         self.zoneName, self.abandonNodeIDList):
                 weight = self.getLinkWeight(link, isConnectingLink=True)
                 # self.logger.debug("weight:{0}".format(weight))
-                # raw_input()
+                # raw_input()  # type: ignore
                 mLG.add_edge(srcLayerNodeID, dstLayerNodeID, weight=weight)
             else:
                 self.logger.warning(
@@ -278,7 +269,7 @@ class MultiLayerGraph(object):
     def deLoop(self, path):
         pathTmp = copy.deepcopy(path)
         # self.logger.debug("path:{0}".format(path))
-        # raw_input()
+        # raw_input()  # type: ignore
         while self.hasLoop(pathTmp):
             deDuplicateFlag = False
             for index in range(len(pathTmp)):

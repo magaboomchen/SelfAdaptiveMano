@@ -13,20 +13,18 @@ Usage of this unit test:
     sudo python -m pytest ./test_getFlowSet.py -s --disable-warnings
 '''
 
+import logging
 from time import sleep
 
 import pytest
 
-from sam import base
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
+    MEDIATOR_QUEUE
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.simulator.test.testSimulatorBase import *
+from sam.simulator.test.testSimulatorBase import TestSimulatorBase
 from sam.simulator import simulator
 
 MANUAL_TEST = True

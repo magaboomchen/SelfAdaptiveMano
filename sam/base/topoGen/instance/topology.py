@@ -6,20 +6,19 @@ read gml and generate topology
 or read customized topology and generate topology
 '''
 
-import os
 import pickle
+import datetime
 
-from sam.base.sfc import *
-from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
-from sam.base.switch import *
-from sam.base.server import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.base.exceptionProcessor import *
+from sam.base.link import Link
+from sam.base.switch import Switch, SWITCH_TYPE_DCNGATEWAY, \
+    SWITCH_TYPE_NPOP, SWITCH_TYPE_FORWARD
+from sam.base.server import Server, SERVER_TYPE_NFVI, SERVER_TYPE_CLASSIFIER
+from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
-from sam.base.topoGen.base.common import *
-from sam.base.topoGen.base.mkdirs import *
-from sam.base.topoGen.base.dhcpServer import *
+from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
+from sam.base.topoGen.base.common import SFC_REQUEST_NUM, VNF_NUM, SERVER_NUM
+from sam.base.topoGen.base.mkdirs import mkdirs
+from sam.base.topoGen.base.dhcpServer import DHCPServer
 
 SERVER_NUMA_CPU_DISTRIBUTION = [range(0,25,2), range(1,25,2)]
 SERVER_NUMA_MEMORY_DISTRIBUTION = [256, 256]

@@ -1,18 +1,20 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import sys
-import time
+import uuid
 import logging
 
-import pytest
-from ryu.controller import dpset
-
-from sam.ryu.topoCollector import TopoCollector
-from sam.base.command import *
-from sam.base.shellProcessor import ShellProcessor
-from sam.test.testBase import *
-from sam.test.fixtures.vnfControllerStub import *
+from sam.base.slo import SLO
+from sam.base.vnf import VNFI, VNF_TYPE_FORWARD
+from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
+from sam.base.command import Command, CMD_STATE_SUCCESSFUL, \
+    CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE
+from sam.base.messageAgent import SAMMessage, SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
+    NETWORK_CONTROLLER_QUEUE, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, \
+    MSG_TYPE_NETWORK_CONTROLLER_CMD, MEDIATOR_QUEUE, SFF_CONTROLLER_QUEUE, \
+    MSG_TYPE_SFF_CONTROLLER_CMD, VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD
+from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
+from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, WEBSITE_REAL_IP
 
 TESTER_SERVER_DATAPATH_MAC = "18:66:da:85:f9:ed"
 OUTTER_CLIENT_IP = "1.1.1.2"
@@ -65,7 +67,7 @@ class TestbedFRR(TestBase):
         logging.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-                        MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
+                        MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
@@ -74,7 +76,7 @@ class TestbedFRR(TestBase):
         logging.info("teardown delete SFCI to sff")
         self.delSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-                        MSG_TYPE_SFF_CONTROLLER_CMD , self.delSFCICmd)
+                        MSG_TYPE_SFF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.delSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
@@ -98,7 +100,7 @@ class TestbedFRR(TestBase):
     def addVNFI2Server(self):
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(VNF_CONTROLLER_QUEUE,
-                        MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
+                        MSG_TYPE_VNF_CONTROLLER_CMD, self.addSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
@@ -107,7 +109,7 @@ class TestbedFRR(TestBase):
         logging.warning("Deleting VNFI")
         self.delSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(VNF_CONTROLLER_QUEUE,
-                        MSG_TYPE_VNF_CONTROLLER_CMD , self.delSFCICmd)
+                        MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.delSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL

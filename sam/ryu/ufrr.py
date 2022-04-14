@@ -1,34 +1,22 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import copy
-import time
-
 from ryu.controller import ofp_event
-from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
+from ryu.controller.handler import CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
-from ryu.controller import dpset
-from ryu.controller import event as ryuControllerEvent
-from ryu.ofproto import ofproto_v1_3
-from ryu.lib.packet import packet
-from ryu.lib.packet import ipv4
-from ryu.lib.packet import ether_types
-from ryu.topology import switches
-from ryu.base.app_manager import *
+from ryu.ofproto import ofproto_v1_3, ofproto_v1_4
 
-from sam.ryu.topoCollector import TopoCollector, TopologyChangeEvent
-from sam.ryu.conf.ryuConf import *
-from sam.ryu.ufrrIBMaintainer import *
+from ryu.lib.packet import ether_types
+from ryu.base.app_manager import lookup_service_brick
+
+from sam.ryu.conf.ryuConf import MAIN_TABLE
+from sam.ryu.ufrrIBMaintainer import UFRRIBMaintainer
 from sam.ryu.frr import FRR
-from sam.base.messageAgent import *
-from sam.base.command import *
-from sam.base.path import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.base.vnf import *
+from sam.base.messageAgent import SAMMessage, MSG_TYPE_NETWORK_CONTROLLER_CMD_REPLY, MEDIATOR_QUEUE
+from sam.base.command import CommandReply, CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
 from sam.base.sshAgent import SSHAgent
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
 
 
 class UFRR(FRR):

@@ -1,27 +1,23 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import uuid
 import logging
-from scapy.all import *
-import time
 
 import pytest
 
-from sam.base import server
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.acl import *
-from sam.base.lb import *
-from sam.base.vpn import *
-from sam.base.nat import *
-from sam.base.command import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.vnf import VNF_TYPE_FW, VNFI, VNF_TYPE_FORWARD
+from sam.base.server import Server, SERVER_TYPE_NORMAL
+from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
+from sam.base.acl import ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP, \
+    ACL_ACTION_DENY
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
+    SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.fixtures.vnfControllerStub import *
-from sam.test.testBase import *
-from sam.serverController.classifierController import ClassifierControllerCommandAgent
+from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, WEBSITE_REAL_IP, \
+    TESTER_SERVER_DATAPATH_MAC, OUTTER_CLIENT_IP
 
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
@@ -36,6 +32,7 @@ MAX_SFCI_NUM = 1
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
+
 
 class TestVNFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
@@ -162,7 +159,7 @@ class TestVNFSFCIAdderClass(TestBase):
         # verifiy
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
-        raw_input()
+        raw_input()  # type: ignore
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")
@@ -177,8 +174,6 @@ class TestVNFSFCIAdderClass(TestBase):
 
     def addVNFI2Server(self):
         for sfciIndex in range(MAX_SFCI_NUM):
-            # logging.info("press any key to continue place vnfi")
-            # raw_input()
             addSFCICmd = self.addSFCICmdList[sfciIndex]
             addSFCICmd.cmdID = uuid.uuid1()
             self.sendCmd(VNF_CONTROLLER_QUEUE,
@@ -188,7 +183,7 @@ class TestVNFSFCIAdderClass(TestBase):
             assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
+        logging.warning("Deleting VNFI")
         for sfciIndex in range(MAX_SFCI_NUM):
             sfci = self.sfciList[sfciIndex]
             delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, sfci)

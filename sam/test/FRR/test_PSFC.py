@@ -1,18 +1,19 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import sys
-import time
+import uuid
 import logging
 
 import pytest
-from ryu.controller import dpset
 
-from sam.ryu.topoCollector import TopoCollector
-from sam.base.path import *
+from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NOTVIA_PSFC
 from sam.base.shellProcessor import ShellProcessor
-from sam.test.testBase import *
-from sam.test.fixtures.vnfControllerStub import *
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.messageAgent import MessageAgent, NETWORK_CONTROLLER_QUEUE, \
+    MSG_TYPE_NETWORK_CONTROLLER_CMD, MEDIATOR_QUEUE
+from sam.test.testBase import CLASSIFIER_DATAPATH_IP
+from sam.test.fixtures.mediatorStub import MediatorStub
+from sam.test.fixtures.vnfControllerStub import VNFControllerStub
 from sam.test.FRR.testFRR import TestFRR
 
 logging.basicConfig(level=logging.INFO)
@@ -72,7 +73,7 @@ class TestPSFCClass(TestFRR):
     def test_addUniSFCI(self, setup_addUniSFCI):
         logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
-        raw_input()
+        raw_input()  # type: ignore
 
         self._deploySFC()
         self._deploySFCI()
@@ -81,16 +82,16 @@ class TestPSFCClass(TestFRR):
             "server software failure\n"
             "After the test, "
             "Press any key to quit!")
-        raw_input()
+        raw_input()  # type: ignore
         self.sendHandleServerSoftwareFailureCmd()
 
         logging.info("Please input '6',"
             "then input 'stop s2' to stop switch s2\n"
             "After the test, Press any key to quit!")
-        raw_input()
+        raw_input()  # type: ignore
 
         logging.info("Press any key to quit!")
-        raw_input()
+        raw_input()  # type: ignore
 
     def _deploySFC(self):
         # exercise: mapping SFC
@@ -119,4 +120,4 @@ class TestPSFCClass(TestFRR):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
         logging.info("Press any key to quit!")
-        raw_input()
+        raw_input()  # type: ignore

@@ -3,9 +3,7 @@
 
 import uuid
 import logging
-from datetime import datetime
 
-import pytest
 import pickle
 import base64
 
@@ -75,14 +73,14 @@ class TestDatabaseAgentClass(object):
                 self.REQUEST_UUID, self._encodeObject2Pickle(self.testObject))
             )
         results = self.dbA.query("Request", "*")
-        assert results[0][:-1] == (1L, 'Mac', 'Mohan', 20L, 'M', 2000.0,
-            str(self.REQUEST_UUID), 'gAJ9cQBVA2tleXEBSwFzLg==')
+        assert results[0][:-1] == ('1L', 'Mac', 'Mohan', '20L', 'M', 2000.0,
+            str(self.REQUEST_UUID), 'gAJ9cQBVA2tleXEBSwFzLg==' )
         assert self._decodePickle2Object(results[0][7]) == self.testObject
 
     def test_update(self):
         self.dbA.update("Request", "AGE = 10", " SEX = 'M'")
         results = self.dbA.query("Request", "*")
-        assert results[0][:-1] == (1L, 'Mac', 'Mohan', 10L, 'M', 2000.0,
+        assert results[0][:-1] == ('1L', 'Mac', 'Mohan', '10L', 'M', 2000.0,
             str(self.REQUEST_UUID), 'gAJ9cQBVA2tleXEBSwFzLg==')
         assert type(uuid.UUID(results[0][6])) == type(uuid.uuid1())
 

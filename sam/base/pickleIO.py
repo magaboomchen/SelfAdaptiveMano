@@ -1,9 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
 import cPickle
-import base64
 
 
 class PickleIO(object):

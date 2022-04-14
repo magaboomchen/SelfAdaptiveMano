@@ -9,24 +9,19 @@ Reliable Service Function Chaining
 column generation model
 '''
 
-import copy
 from random import randrange
 
-import numpy as np
 import gurobipy as gp
-from gurobipy import GRB
-from gurobipy import *
+from gurobipy import GRB, LinExpr
 
-from sam.base.vnf import *
-from sam.base.path import *
-from sam.base.server import *
-from sam.base.mkdirs import *
-from sam.base.messageAgent import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.vnf import VNF_TYPE_MAX
+from sam.base.path import ForwardingPathSet, MAPPING_TYPE_E2EP
+from sam.base.mkdirs import mkdirs
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.base.multiLayerGraph import *
-from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
-from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import *
+from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.orchestration.algorithms.base.multiLayerGraph import MultiLayerGraph, \
+    WEIGHT_TYPE_PROPAGATION_DELAY_MODEL, WEIGHT_TYPE_01_UNIFORAM_MODEL
+from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import OPRandomizedRoundingAlgorithm
 
 INITIAL_PATH_PER_REQUEST_NUM = 2
 
@@ -372,7 +367,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             #     self.logger.debug("capacity:{0}".format(
             #         self.links[(srcNodeID, dstNodeID)]
             #     ))
-            #     raw_input()
+            #     raw_input()  # type: ignore
 
         self.physicalLink , self.linkCapacity = gp.multidict(self.links)
 
@@ -380,7 +375,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         #     if capacity < 1:
         #         self.logger.debug("nfvCGDP, link:{0}, capacity:{1}".format(
         #             link, capacity))
-        #         raw_input()
+        #         raw_input()  # type: ignore
 
         # self.logger.debug("phsicalLink:{0}, self.linkCapacity:{1}".format(
         #     self.physicalLink, self.linkCapacity))

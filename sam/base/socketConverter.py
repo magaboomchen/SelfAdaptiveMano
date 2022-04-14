@@ -6,8 +6,8 @@ import struct
 
 ETHERTYPE_IP = 0x0800
 ETHERTYPE_ARP = 0x0806
-
 BCAST_MAC = 'ff:ff:ff:ff:ff:ff'
+
 
 class SocketConverter(object):
     def __init__(self):

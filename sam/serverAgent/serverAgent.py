@@ -1,16 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import pika
-import sys
-import base64
 import time
-import uuid
-import os
-import subprocess
-import threading
-
-import pickle
 
 from sam.serverAgent.argParser import ArgParser
 from sam.serverAgent.systemChecker import SystemChecker
@@ -18,7 +9,8 @@ from sam.serverAgent.bessStarter import BessStarter
 from sam.serverAgent.dockerConfigurator import DockerConfigurator
 from sam.serverAgent.dpdkConfigurator import DPDKConfigurator
 from sam.base.server import Server
-from sam.base.messageAgent import *
+from sam.base.messageAgent import SAMMessage, MessageAgent, SERVER_MANAGER_QUEUE, \
+    MSG_TYPE_SERVER_REPLY
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 HEAT_BEAT_TIME = 10
@@ -59,7 +51,7 @@ class ServerAgent(object):
     def _sendServerInfo(self):
         msg = SAMMessage(MSG_TYPE_SERVER_REPLY, self._server)
         self.logger.debug(msg.getMessageID())
-        self._messageAgent.sendMsg(SERVER_MANAGER_QUEUE,msg)
+        self._messageAgent.sendMsg(SERVER_MANAGER_QUEUE ,msg)
 
 
 if __name__=="__main__":

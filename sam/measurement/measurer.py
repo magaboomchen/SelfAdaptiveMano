@@ -1,27 +1,26 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import base64
 import time
 import uuid
-import subprocess
-import struct
-import copy
+import ctypes
+import inspect
+import threading
 
-import pickle
-
-from sam.base.server import Server
-from sam.base.messageAgent import *
-from sam.base.switch import *
-from sam.base.sfc import *
-from sam.base.command import *
-from sam.base.request import *
+from sam.base.messageAgent import SIMULATOR_ZONE, SAMMessage, MessageAgent, MEASURER_QUEUE, \
+    DCN_INFO_RECIEVER_QUEUE, MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD, MEDIATOR_QUEUE
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
+    MEASURER_PORT, SIMULATOR_IP, SIMULATOR_PORT, NETWORK_CONTROLLER_IP, \
+    NETWORK_CONTROLLER_PORT, SERVER_MANAGER_IP, SERVER_MANAGER_PORT, \
+    CLASSIFIER_CONTROLLER_IP, CLASSIFIER_CONTROLLER_PORT, \
+    VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
+from sam.base.command import Command, CMD_TYPE_GET_TOPOLOGY, \
+    CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_SFCI_STATE, CMD_TYPE_GET_VNFI_STATE
+from sam.base.request import Reply, REQUEST_STATE_SUCCESSFUL, REQUEST_TYPE_GET_DCN_INFO
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
-from sam.measurement.dcnInfoBaseMaintainer import *
-
-# TODO: database agent, multiple zones
+from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 
 
 class Measurer(object):
@@ -36,7 +35,8 @@ class Measurer(object):
 
         self._messageAgent = MessageAgent(self.logger)
         self.queueName = self._messageAgent.genQueueName(MEASURER_QUEUE)
-        self._messageAgent.startRecvMsg(self.queueName)
+        # self._messageAgent.startRecvMsg(self.queueName)
+        self._messageAgent.startMsgReceiverRPCServer(MEASURER_IP, MEASURER_PORT)
 
         self._threadSet = {}
         self.logger.info("self.queueName:{0}".format(self.queueName))
@@ -81,15 +81,18 @@ class Measurer(object):
 
     def _runService(self):
         while True:
-            msg = self._messageAgent.getMsg(self.queueName)
+            # msg = self._messageAgent.getMsg(self.queueName)
+            msg = self._messageAgent.getMsgByRPC(MEASURER_IP, MEASURER_PORT)
             msgType = msg.getMessageType()
             if msgType == None:
                 pass
             else:
                 body = msg.getbody()
+                source = msg.getSource()
                 try:
                     if self._messageAgent.isRequest(body):
-                        self._requestHandler(body)
+                        rply = self._requestHandler(body)
+                        self.sendReply(rply, source["srcIP"], source["srcPort"])
                     elif self._messageAgent.isCommandReply(body):
                         self._commandReplyHandler(body)
                     else:
@@ -104,22 +107,23 @@ class Measurer(object):
             attributes = self.getTopoAttributes()
             rply = Reply(request.requestID,
                 REQUEST_STATE_SUCCESSFUL, attributes)
-            queueName = DCN_INFO_RECIEVER_QUEUE
-            self.sendReply(rply, queueName)
+            return rply
         else:
-            self.logger.warning("Unknown request:{0}".format(request.requestType))
+            self.logger.warning("Unknown request:{0}".format(
+                request.requestType))
 
     def getTopoAttributes(self):
         servers = self._dib.getServersInAllZone()
         switches = self._dib.getSwitchesInAllZone()
         links = self._dib.getLinksInAllZone()
         vnfis = self._dib.getVnfisInAllZone()
-        return {'switches':switches,'links':links,'servers':servers,
+        return {'switches':switches, 'links':links, 'servers':servers,
             'vnfis':vnfis}
 
-    def sendReply(self, rply, queueName):
+    def sendReply(self, rply, dstIP, dstPort):
         msg = SAMMessage(MSG_TYPE_REPLY, rply)
-        self._messageAgent.sendMsg(queueName, msg)
+        # self._messageAgent.sendMsg(queueName, msg)
+        self._messageAgent.sendMsgByRPC(dstIP, dstPort, msg)
 
     def _commandReplyHandler(self, cmdRply):
         self.logger.info("Get a command reply")
@@ -137,6 +141,8 @@ class Measurer(object):
                 self._dib.updateVnfisByZone(value, zoneName)
             elif key == 'zone':
                 pass
+            elif key == 'source':
+                pass
             else:
                 self.logger.warning("Unknown attributes:{0}".format(key))
         self.logger.debug("dib:{0}".format(self._dib))
@@ -152,38 +158,63 @@ class MeasurerCommandSender(threading.Thread):
 
     def run(self):
         self.logger.debug("thread MeasurerCommandSender.run().")
-        try:
-            while True:
+        while True:
+            try:
                 zoneNameList = self._dashib.getAllZone()
+                # zoneNameList = [SIMULATOR_ZONE]
+                self.logger.debug("zoneNameList is {0}".format(zoneNameList))
                 for zoneName in zoneNameList:
                     self.logger.debug("zoneName: {0}".format(zoneName))
                     self.sendGetTopoCmd(zoneName)
                     self.sendGetServersCmd(zoneName)
-                    # TODO: self.sendGetSFCIStateCmd(zoneName)
+                    self.sendGetSFCIStateCmd(zoneName)
+                    self.sendGetVNFIStateCmd(zoneName)
+            except Exception as ex:
+                ExceptionProcessor(self.logger).logException(ex)
+            finally:
                 time.sleep(5)
-        except Exception as ex:
-            ExceptionProcessor(self.logger).logException(ex)
 
     def sendGetTopoCmd(self, zoneName):
         getTopoCmd = Command(CMD_TYPE_GET_TOPOLOGY, uuid.uuid1(),
             {"zone":zoneName})
         msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getTopoCmd)
-        self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
+        # self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
+        if zoneName == SIMULATOR_ZONE:
+            self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
+        else:
+            self._messageAgent.sendMsgByRPC(NETWORK_CONTROLLER_IP, NETWORK_CONTROLLER_PORT, msg)
 
     def sendGetServersCmd(self, zoneName):
         getServersCmd = Command(CMD_TYPE_GET_SERVER_SET, uuid.uuid1(),
             {"zone":zoneName})
         msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getServersCmd)
-        self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
+        # self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
+        if zoneName == SIMULATOR_ZONE:
+            self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
+        else:
+            self._messageAgent.sendMsgByRPC(SERVER_MANAGER_IP, SERVER_MANAGER_PORT, msg)
 
     def sendGetSFCIStateCmd(self, zoneName):
         getSFCIStateCmd = Command(CMD_TYPE_GET_SFCI_STATE, uuid.uuid1(),
             {"zone":zoneName})
         msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getSFCIStateCmd)
         self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
+        if zoneName == SIMULATOR_ZONE:
+            self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
+        else:
+            self._messageAgent.sendMsgByRPC(CLASSIFIER_CONTROLLER_IP, CLASSIFIER_CONTROLLER_PORT, msg)
+
+    def sendGetVNFIStateCmd(self, zoneName):
+        getVNFIStateCmd = Command(CMD_TYPE_GET_VNFI_STATE, uuid.uuid1(),
+            {"zone":zoneName})
+        msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getVNFIStateCmd)
+        self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
+        if zoneName == SIMULATOR_ZONE:
+            self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
+        else:
+            self._messageAgent.sendMsgByRPC(VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT, msg)
 
 
 if __name__=="__main__":
     m = Measurer()
     m.startMeasurer()
-

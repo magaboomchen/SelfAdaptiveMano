@@ -3,15 +3,14 @@
 
 import copy
 
-from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
-from sam.orchestration.algorithms.base.performanceModel import *
+from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 
 
 class PathServerFiller(object):
     def __init__(self):
         self.abandonElementIDList = []
 
-    def _selectNPoPNodeAndServers(self, path, rIndex, abandonElementIDList=[]):
+    def _selectNPoPNodeAndServers(self, path, rIndex, abandonElementIDList=None):
         self.logger.debug("path: {0}".format(path))
         # Example 1
         # before adding servers
@@ -98,7 +97,7 @@ class PathServerFiller(object):
         return dividedPath
 
     def _selectNFVI4EachStage(self, dividedPath, request,
-                                abandonElementIDList=[]):
+                                abandonElementIDList=None):
         self.abandonElementIDList = abandonElementIDList
         sfc = request.attributes['sfc']
         trafficDemand = sfc.getSFCTrafficDemand()

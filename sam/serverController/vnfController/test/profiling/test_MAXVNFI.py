@@ -1,26 +1,22 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-from scapy.all import *
-import time
+import uuid
 import random
+import logging
 
 import pytest
 
-from sam.base.vnf import *
-from sam.base.acl import *
-from sam.base import server
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.vnf import VNFI, VNF_TYPE_FW
+from sam.base.acl import ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP
+from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
+    SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
+from sam.base.server import Server, SERVER_TYPE_NORMAL
+from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
+from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.fixtures.vnfControllerStub import *
-from sam.test.testBase import *
-from sam.serverController.classifierController import ClassifierControllerCommandAgent
+from sam.test.testBase import TestBase, OUTTER_CLIENT_IP, WEBSITE_REAL_IP
 
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
@@ -122,7 +118,7 @@ class TestVNFSFCIAdderClass(TestBase):
         # verifiy
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
-        raw_input()
+        raw_input()  # type: ignore
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")
@@ -137,8 +133,6 @@ class TestVNFSFCIAdderClass(TestBase):
 
     def addVNFI2Server(self):
         for sfciIndex in range(MAX_SFCI):
-            # logging.info("press any key to continue place vnfi")
-            # raw_input()
             addSFCICmd = self.addSFCICmdList[sfciIndex]
             addSFCICmd.cmdID = uuid.uuid1()
             self.sendCmd(VNF_CONTROLLER_QUEUE,

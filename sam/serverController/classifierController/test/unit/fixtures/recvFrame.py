@@ -1,9 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from scapy.all import *
+from scapy.all import sniff
 
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
 
 def recvFrame(inIntf):
     sniff(filter="", iface=inIntf, prn=frame_callback, store=0, count=1)

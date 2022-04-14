@@ -14,12 +14,14 @@ REQUEST_TYPE_DEL_SFC = "REQUEST_TYPE_DEL_SFC"
 
 
 class Request(object):
-    def __init__(self, userID, requestID, requestType, requestSrcQueue,
-            requestState=REQUEST_STATE_INITIAL, attributes={}):
+    def __init__(self, userID, requestID, requestType, requestSrcQueue=None,
+            requestSource=None, requestState=REQUEST_STATE_INITIAL,
+            attributes=None):
         self.userID =  userID # 0 is root
         self.requestID = requestID # uuid1()
         self.requestType = requestType
         self.requestSrcQueue = requestSrcQueue
+        self.requestSource = requestSource
         self.requestState = requestState
         self.attributes = attributes
         # {'sfc':sfc, 'error':error}
@@ -35,7 +37,7 @@ class Request(object):
 
 
 class Reply(object):
-    def __init__(self, requestID, requestState, attributes={}):
+    def __init__(self, requestID, requestState, attributes=None):
         self.requestID = requestID
         self.requestState = requestState
         self.attributes = attributes

@@ -7,25 +7,24 @@ test UFFR/NotVia/ReMapping
 """
 
 import re
-import sys
 import os
 import time
-from signal import SIGINT
+import uuid
 
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info, error
 from mininet.net import Mininet
 from mininet.link import Intf
-from mininet.topolib import TreeTopo
 from mininet.util import quietRun
-from mininet.node import OVSSwitch, Controller, RemoteController
+from mininet.node import RemoteController
 from mininet.topo import Topo
 from mininet.link import TCLink
 from mininet.util import irange, quietRun, pmonitor
 from functools import partial
 
-from sam.base.messageAgent import *
-from sam.base.command import *
+from sam.base.messageAgent import SAMMessage, MessageAgent, MSG_TYPE_TESTER_CMD, MININET_TESTER_QUEUE
+from sam.base.command import Command, CMD_TYPE_TESTER_REMAP_SFCI
+
 
 # KVM Bridge
 INT_TO_CLASSIFIER = 'eth1'
@@ -215,7 +214,7 @@ class ManoTester(object):
                 "quit: to quit"
                 )
             print("Please input the mode number:")
-            self.mode = raw_input()
+            self.mode = raw_input()  # type: ignore
             if self.mode == "0" or self.mode == "1":
                 self.testHandler()
             elif self.mode == "2":

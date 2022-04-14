@@ -1,21 +1,27 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import uuid
 import logging
-from scapy.all import *
 
 import pytest
+from scapy.all import Raw, sendp, sniff
+from scapy.layers.l2 import Ether, ARP
+from scapy.layers.inet import IP, TCP
 
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.sfc import SFC, APP_TYPE_NORTHSOUTH_WEBSITE
+from sam.base.vnf import VNF_TYPE_FORWARD
+from sam.base.server import Server, SERVER_TYPE_CLASSIFIER
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.messageAgent import SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
+    MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, MEDIATOR_QUEUE
 from sam.base.shellProcessor import ShellProcessor
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, CLASSIFIER_SERVERID, \
+    SFCI1_0_EGRESS_IP, OUTTER_CLIENT_IP, VNFI1_0_IP
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.testBase import *
-from sam.serverController.classifierController import ClassifierControllerCommandAgent
 from sam.test.fixtures import sendArpRequest, sendInboundTraffic, sendOutSFCDomainTraffic
+
 
 MANUAL_TEST = True
 
@@ -109,7 +115,7 @@ class TestSFCIAdderClass(TestBase):
         self.verifyOutSFCDomainTraffic()
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
-        raw_input()
+        raw_input()  # type: ignore
 
     def verifyArpResponder(self):
         self._sendArpRequest(requestIP=CLASSIFIER_DATAPATH_IP)

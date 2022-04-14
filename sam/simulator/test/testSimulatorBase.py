@@ -1,17 +1,16 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import uuid
 import logging
 
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.base.shellProcessor import ShellProcessor
-from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.testBase import *
+from sam.base.slo import SLO
+from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
+from sam.base.vnf import VNFI, VNF_TYPE_FORWARD
+from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
+from sam.base.path import ForwardingPathSet, MAPPING_TYPE_INTERFERENCE
+from sam.base.messageAgent import SIMULATOR_ZONE
+from sam.test.testBase import TestBase, WEBSITE_REAL_IP, CLASSIFIER_DATAPATH_IP
 
 MANUAL_TEST = True
 

@@ -1,12 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import sys
-
-from ruamel import yaml
-
-from sam.base.socketConverter import SocketConverter
-from sam.ryu.conf.switchConfGenerator import *
+from sam.ryu.conf.switchConfGenerator import SwitchConf
 
 
 if __name__ == '__main__':

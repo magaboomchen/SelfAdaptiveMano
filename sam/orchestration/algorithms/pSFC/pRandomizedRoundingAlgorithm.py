@@ -9,19 +9,9 @@ Low-Cost Service Function Chain
 
 import copy
 
-import numpy as np
-import gurobipy as gp
-from gurobipy import *
-from gurobipy import GRB
-
-from sam.base.path import *
-from sam.base.server import *
-from sam.base.messageAgent import *
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.serverController.serverManager.serverManager import SeverManager, SERVERID_OFFSET
-from sam.orchestration.algorithms.base.multiLayerGraph import *
-from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import *
-from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
+from sam.orchestration.algorithms.base.multiLayerGraph import MultiLayerGraph
+from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import OPRandomizedRoundingAlgorithm
 
 
 class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
@@ -59,7 +49,7 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
             bp = self.requestPartialPathBp[pIndex]
             # print(bp)
             # print(type(bp))
-            # raw_input()
+            # raw_input()  # type: ignore
             self._dibDict[bp] = copy.deepcopy(self._initDib)
 
     def randomizedRoundingAlgorithm(self):
@@ -110,7 +100,7 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
         path.append((maxVnfLayerNum+1, tp))
 
         self.logger.debug("none joint link candidate path:{0}".format(path))
-        # raw_input()
+        # raw_input()  # type: ignore
 
         return path
 

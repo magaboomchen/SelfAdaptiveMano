@@ -3,11 +3,6 @@
 
 import docker
 
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.serverController.vnfController.sourceAllocator import *
-from sam.serverController.vnfController.vcConfig import vcConfig
-
 
 class VNFIDeleter(object):
     def __init__(self, dockerPort):

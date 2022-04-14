@@ -1,9 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.command import CMD_TYPE_ADD_SFC, CMD_TYPE_DEL_SFC, CMD_TYPE_ADD_SFCI, \
+from sam.base.command import Command, CMD_TYPE_ADD_SFC, CMD_TYPE_DEL_SFC, CMD_TYPE_ADD_SFCI, \
     CMD_TYPE_DEL_SFCI, CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_GET_FLOW_SET
-from sam.base.command import Command
 from sam.base.flow import Flow
 from sam.base.path import DIRECTION2_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI

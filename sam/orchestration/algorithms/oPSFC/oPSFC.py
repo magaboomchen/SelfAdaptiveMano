@@ -9,19 +9,10 @@ Low-Cost Service Function Chain
 
 import copy
 
-import numpy as np
-import gurobipy as gp
-from gurobipy import GRB
-from gurobipy import *
-
-from sam.base.path import *
-from sam.base.server import *
-from sam.base.messageAgent import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.oPSFC.originalPartialLP import *
-from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import *
-from sam.orchestration.algorithms.base.multiLayerGraph import *
+from sam.orchestration.algorithms.oPSFC.originalPartialLP import OriginalPartialLP
+from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import OPRandomizedRoundingAlgorithm
 
 
 class OPSFC(object):

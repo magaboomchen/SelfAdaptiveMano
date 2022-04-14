@@ -5,7 +5,6 @@ import os
 import shutil
 import logging
 
-from sam.base.shellProcessor import ShellProcessor
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration import orchestrator

@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
@@ -10,13 +8,12 @@ from ryu.controller import dpset
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
-from ryu.lib.packet import arp, ipv4, icmp
+from ryu.lib.packet import arp, ipv4
 from ryu.lib.packet import ether_types
-from ryu.topology import event, switches 
+from ryu.topology import event
 
 from sam.ryu.topoCollector import TopoCollector
-from sam.ryu.conf.switchConfGenerator import SwitchConf
-from sam.ryu.conf.ryuConf import *
+from sam.ryu.conf.ryuConf import MAIN_TABLE
 from sam.ryu.baseApp import BaseApp
 from sam.base.loggerConfigurator import LoggerConfigurator
 

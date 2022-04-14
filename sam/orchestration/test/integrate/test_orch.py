@@ -1,13 +1,15 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-import time
+import pytest
 import logging
 
-from sam.base.path import *
-from sam.base.request import *
-from sam.test.testBase import *
+from sam.base.sfc import SFCI
+from sam.base.path import ForwardingPathSet, MAPPING_TYPE_UFRR
+from sam.base.shellProcessor import ShellProcessor
+from sam.base.messageAgent import ORCHESTRATOR_QUEUE
+from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.test.testBase import TestBase
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 logging.basicConfig(level=logging.INFO)
@@ -54,7 +56,7 @@ class TestOrchestratorClass(TestBase):
     def test_AddDel(self, setup_startOrchestrator):
         # exercise
         self.logger.info("press any key to send add sfc requests.")
-        raw_input()
+        raw_input()  # type: ignore
         self.logger.info("send requests")
 
         self.addSFCRequest = self.genAddSFCRequest(self.sfc)
@@ -62,7 +64,7 @@ class TestOrchestratorClass(TestBase):
 
         # exercise
         self.logger.info("press any key to send add sfci requests.")
-        raw_input()
+        raw_input()  # type: ignore
         self.logger.info("send requests")
 
         self.addSFCIRequest = self.genAddSFCIRequest(self.sfc, self.sfci)
@@ -70,7 +72,7 @@ class TestOrchestratorClass(TestBase):
 
         # exercise
         self.logger.info("press any key to send del sfci requests.")
-        raw_input()
+        raw_input()  # type: ignore
         self.logger.info("send requests")
 
         self.delSFCIRequest = self.genDelSFCIRequest(self.sfc, self.sfci)
@@ -78,11 +80,11 @@ class TestOrchestratorClass(TestBase):
 
         # exercise
         self.logger.info("press any key to send del sfc requests.")
-        raw_input()
+        raw_input()  # type: ignore
         self.logger.info("send requests")
 
         self.delSFCRequest = self.genDelSFCRequest(self.sfc)
         self.sendRequest(ORCHESTRATOR_QUEUE, self.delSFCRequest)
 
         self.logger.info("press any key to quit.")
-        raw_input()
+        raw_input()  # type: ignore

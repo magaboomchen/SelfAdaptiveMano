@@ -3,13 +3,10 @@
 
 import logging
 
-from sam.base.messageAgent import *
-from sam.base.command import *
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.shellProcessor import *
-from sam.base.sshAgent import *
-from sam.serverController.sffController.sibMaintainer import *
+from sam.base.messageAgent import SAMMessage, MessageAgent, MEDIATOR_QUEUE, \
+    MSG_TYPE_VNF_CONTROLLER_CMD_REPLY
+from sam.base.sshAgent import SSHAgent
+from sam.serverController.sffController.sibMaintainer import SIBMaintainer
 
 
 class VNFControllerStub(object):
@@ -17,19 +14,18 @@ class VNFControllerStub(object):
         self.mA = MessageAgent()
         self.sibm = SIBMaintainer()
         self.vnfBase = {}
-        # self.mA.startRecvMsg(VNF_CONTROLLER_QUEUE)
 
-    def sendCmdRply(self,cmdRply):
+    def sendCmdRply(self, cmdRply):
         msg = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, cmdRply)
-        self.mA.sendMsg(MEDIATOR_QUEUE,msg)
+        self.mA.sendMsg(MEDIATOR_QUEUE, msg)
 
-    def installVNF(self,sshUsrname,sshPassword,remoteIP,vnfiID):
+    def installVNF(self, sshUsrname, sshPassword, remoteIP, vnfiID):
         self.vnfBase[remoteIP] = {}
         self.vnfBase[remoteIP]["VNFAggCount"] = 0
-        command = self.genVNFInstallationCommand(remoteIP,vnfiID)
+        command = self.genVNFInstallationCommand(remoteIP, vnfiID)
         self.sshA = SSHAgent()
         self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
-        shellCmdRply = self.sshA.runShellCommandWithSudo(command,1)
+        shellCmdRply = self.sshA.runShellCommandWithSudo(command, 1)
         return shellCmdRply
 
     def genVNFInstallationCommand(self,remoteIP,vnfiID):

@@ -2,20 +2,16 @@
 # -*- coding: UTF-8 -*-
 
 import logging
-from scapy.all import *
 
 import pytest
 
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.shellProcessor import ShellProcessor
+from sam.base.messageAgent import SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
+    MEDIATOR_QUEUE, MSG_TYPE_CLASSIFIER_CONTROLLER_CMD
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.testBase import *
-from sam.serverController.classifierController import ClassifierControllerCommandAgent
-from sam.serverController.classifierController import classifierControllerCommandAgent
+from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP
 
 MANUAL_TEST = True
 
@@ -23,6 +19,7 @@ TESTER_SERVER_DATAPATH_IP = "192.168.123.1"
 TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"
 
 logging.basicConfig(level=logging.INFO)
+
 
 class TestSFCIDeleterClass(TestBase):
     @pytest.fixture(scope="function")
@@ -58,7 +55,7 @@ class TestSFCIDeleterClass(TestBase):
         self.verifyDelSFCICmdRply()
 
         self.logger.info("press any key to send del sfc cmd.")
-        raw_input()
+        raw_input()  # type: ignore
         self.logger.info("send cmd")
 
         # exercise

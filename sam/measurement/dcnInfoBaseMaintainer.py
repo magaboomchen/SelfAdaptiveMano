@@ -1,13 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-
-from sam.base.server import *
-from sam.base.link import Link, LINK_DEFAULT_BANDWIDTH
+from sam.base.server import SERVER_TYPE_NFVI, SERVER_TYPE_CLASSIFIER
+from sam.base.link import Link
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 from sam.base.socketConverter import SocketConverter
-from sam.base.loggerConfigurator import LoggerConfigurator
 
 # TODO : test
 

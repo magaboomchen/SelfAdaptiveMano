@@ -1,7 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.serverController.bessControlPlane import *
+import grpc
+
+import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
+import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
+from sam.serverController.bessControlPlane import BessControlPlane
 
 
 class SFFFailureEmulator(BessControlPlane):

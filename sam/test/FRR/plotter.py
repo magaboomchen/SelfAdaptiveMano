@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-import os.path
 import matplotlib
 
 matplotlib.use('Agg')
@@ -11,7 +9,6 @@ import matplotlib.ticker as ticker
 import numpy as np
 
 import drawkit.figure_style as fs
-from drawkit.figure_style import *
 
 
 class Plotter(object):
@@ -30,7 +27,7 @@ class Plotter(object):
 
         self.pointChart(data_set, savePath, line_name_set, xlabel_name, ylabel_name,
             x_tick_spacing = self.X_TICK_SPACING,
-            figure_size=SMALL_FIGURE_SIZE, xticklabels=xticklabels)
+            figure_size=fs.SMALL_FIGURE_SIZE, xticklabels=xticklabels)
 
     def drawDropRate(self, dropRateList, line_name_set, savePath):
         xticklabels = [str(x) for x in range(-5,100,5)]
@@ -48,7 +45,7 @@ class Plotter(object):
             xmin_limit=0, xmax_limit=70,
             ymin_limit=1, ymax_limit=0,
             grid_on=True, tight=False,
-            figure_size=SMALL_FIGURE_SIZE, xticklabels=xticklabels,
+            figure_size=fs.SMALL_FIGURE_SIZE, xticklabels=xticklabels,
             color_list=self.colorList, marker_list=self.markerList)
 
     def drawE2EDelay(self, delayList, line_name_set, savePath):
@@ -68,7 +65,7 @@ class Plotter(object):
             xmin_limit=0, xmax_limit=70,
             ymin_limit=1, ymax_limit=0,
             grid_on=True, tight=False,
-            figure_size=SMALL_FIGURE_SIZE, xticklabels=xticklabels,
+            figure_size=fs.SMALL_FIGURE_SIZE, xticklabels=xticklabels,
             color_list=self.colorList, marker_list=self.markerList)
 
     def pointChart(self, data_set,

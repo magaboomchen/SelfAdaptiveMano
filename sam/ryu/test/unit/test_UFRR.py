@@ -1,17 +1,20 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import sys
+import uuid
 import time
 import logging
 
 import pytest
-from ryu.controller import dpset
-
-from sam.ryu.topoCollector import TopoCollector
 from sam.base.shellProcessor import ShellProcessor
-from sam.test.testBase import *
-from sam.test.fixtures.vnfControllerStub import *
+from sam.base.messageAgent import SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
+    MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, SFF_CONTROLLER_QUEUE, MEDIATOR_QUEUE, \
+    MSG_TYPE_SFF_CONTROLLER_CMD, MSG_TYPE_SFF_CONTROLLER_CMD, \
+    NETWORK_CONTROLLER_QUEUE, MSG_TYPE_NETWORK_CONTROLLER_CMD
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP
+from sam.test.fixtures.mediatorStub import MediatorStub
+from sam.test.fixtures.vnfControllerStub import VNFControllerStub
 
 logging.basicConfig(level=logging.INFO)
 
@@ -97,7 +100,7 @@ class TestUFRRClass(TestBase):
     def test_UFRRAddUniSFCI(self, setup_addUniSFCI):
         logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
-        raw_input()
+        raw_input()  # type: ignore
         # exercise
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,
@@ -110,7 +113,7 @@ class TestUFRRClass(TestBase):
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
         logging.info("Press any key to quit!")
-        raw_input()
+        raw_input()  # type: ignore
 
     @pytest.fixture(scope="function")
     def setup_delUniSFCI(self):
@@ -154,7 +157,7 @@ class TestUFRRClass(TestBase):
     def test_UFRRDelUniSFCI(self, setup_delUniSFCI):
         logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
-        raw_input()
+        raw_input()  # type: ignore
         # exercise
         logging.info("Sending add SFCI command to ryu")
         self.addSFCICmd.cmdID = uuid.uuid1()
@@ -168,7 +171,7 @@ class TestUFRRClass(TestBase):
 
         logging.info("Ready to send delete SFCI command to ryu"
                 "Press any key to continue!")
-        raw_input()
+        raw_input()  # type: ignore
         self.delSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,
             MSG_TYPE_NETWORK_CONTROLLER_CMD,

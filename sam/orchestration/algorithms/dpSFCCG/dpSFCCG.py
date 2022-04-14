@@ -9,24 +9,14 @@ Reliable Service Function Chaining
 https://www.gurobi.com/wp-content/plugins/hd_documentations/documentation/9.1/refman.pdf
 '''
 
-import copy
 import time
 
-import numpy as np
-import gurobipy as gp
-from gurobipy import GRB
-from gurobipy import *
-
-from sam.base.path import *
-from sam.base.server import *
-from sam.base.messageAgent import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.dpSFCCG.nfvCGDP import *
-from sam.orchestration.algorithms.dpSFCCG.nfvDPPP import *
-
+from sam.orchestration.algorithms.dpSFCCG.nfvCGDP import NFVCGDedicatedProtection
+from sam.orchestration.algorithms.dpSFCCG.nfvDPPP import NFVDPPricingProblem
 
 TIME_LIMIT = 180
+
 
 class DPSFCCG(object):
     def __init__(self, dib, requestList):

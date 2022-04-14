@@ -2,9 +2,10 @@
 # -*- coding: UTF-8 -*-
 
 import pprint
+import argparse
 
-from sam.base.argParser import *
-from sam.base.pickleIO import *
+from sam.base.argParser import ArgParserBase
+from sam.base.pickleIO import PickleIO
 
 
 class ArgParser(ArgParserBase):

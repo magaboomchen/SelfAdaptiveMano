@@ -7,7 +7,7 @@ import psutil
 
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-# from sam.serverAgent.dpdkConfigurator import DPDKConfigurator
+
 
 class BessStarter(object):
     def __init__(self, grpcUrl):

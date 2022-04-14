@@ -1,21 +1,21 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import base64
-import time
 import uuid
-import subprocess
-import struct
 import copy
-import logging
 
-import pickle
-
-from sam.base.server import Server
-from sam.base.messageAgent import *
-from sam.base.switch import *
-from sam.base.sfc import *
-from sam.base.command import *
+from sam.base.messageAgent import MessageAgent, SAMMessage, SIMULATOR_ZONE, \
+    MEDIATOR_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, MSG_TYPE_SIMULATOR_CMD, \
+    MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
+    SIMULATOR_QUEUE, MSG_TYPE_NETWORK_CONTROLLER_CMD, NETWORK_CONTROLLER_QUEUE, \
+    MSG_TYPE_SFF_CONTROLLER_CMD, SFF_CONTROLLER_QUEUE, VNF_CONTROLLER_QUEUE, \
+    SERVER_MANAGER_QUEUE, MSG_TYPE_SERVER_MANAGER_CMD, ORCHESTRATOR_QUEUE, \
+    MEASURER_QUEUE, MSG_TYPE_MEDIATOR_CMD_REPLY
+from sam.base.switch import SWITCH_TYPE_NPOP
+from sam.base.command import CommandMaintainer, CommandReply, CMD_TYPE_ADD_SFC, \
+    CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_DEL_SFC, CMD_TYPE_GET_SERVER_SET, \
+    CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_GET_SFCI_STATE, CMD_STATE_PROCESSING, \
+    CMD_STATE_WAITING, CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 
@@ -73,7 +73,7 @@ class Mediator(object):
             # skip self._addSFCIs2Server(cmd), because we need install 
             # entry to sff before install vnf.
             # prepare child cmd first
-            self._prepareChildCmd(cmd,MSG_TYPE_VNF_CONTROLLER_CMD)
+            self._prepareChildCmd(cmd, MSG_TYPE_VNF_CONTROLLER_CMD)
         elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
             if self._mode['classifierType'] == 'Server':
                 self._delSFCI4ClassifierController(cmd)
@@ -427,4 +427,3 @@ if __name__=="__main__":
     }
     m = Mediator(mode)
     m.startMediator()
-

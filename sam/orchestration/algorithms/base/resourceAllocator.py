@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
+from sam.orchestration.algorithms.base.mappingAlgorithmBase import MappingAlgorithmBase
 
 
 class ResourceAllocator(MappingAlgorithmBase):

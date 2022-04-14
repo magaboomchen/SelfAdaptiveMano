@@ -4,7 +4,7 @@
 from sam.base.vnf import NAME_OF_VNFTYPE
 
 
-class NF:
+class NF(object):
     def __init__(self, nf, pkt, flow_count):
         assert isinstance(pkt, int)
         assert isinstance(flow_count, int)

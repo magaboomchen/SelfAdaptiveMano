@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import argparse
-
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 

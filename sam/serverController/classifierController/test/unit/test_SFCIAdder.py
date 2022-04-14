@@ -2,19 +2,19 @@
 # -*- coding: UTF-8 -*-
 
 import logging
-from scapy.all import *
 
 import pytest
+from scapy.all import Raw, sendp, sniff
+from scapy.layers.l2 import Ether, ARP
+from scapy.layers.inet import IP, TCP
 
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.serverController.classifierController import ClassifierControllerCommandAgent
-from sam.base.command import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.messageAgent import SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
+    MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, MEDIATOR_QUEUE
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.testBase import *
+from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, WEBSITE_REAL_IP, \
+    OUTTER_CLIENT_IP, VNFI1_0_IP, CLASSIFIER_DATAPATH_MAC
 from sam.test.fixtures import sendArpRequest, sendInboundTraffic, sendOutSFCDomainTraffic
 
 MANUAL_TEST = True
@@ -24,6 +24,7 @@ TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("pika").setLevel(logging.WARNING)
+
 
 class TestSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")

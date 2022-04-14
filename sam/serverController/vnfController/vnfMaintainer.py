@@ -5,10 +5,6 @@
 This is the vnfiMaintainer class
 '''
 
-import docker
-
-from sam.base.vnf import *
-
 # vnfi states
 VNFI_STATE_PROCESSING = 'VNFI_STATE_PROCESSING'
 VNFI_STATE_DEPLOYED = 'VNFI_STATE_DEPLOYED'

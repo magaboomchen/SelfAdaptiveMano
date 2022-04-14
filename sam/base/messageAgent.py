@@ -9,6 +9,7 @@ else:
 import time
 import uuid
 import json
+import socket
 import ctypes
 import inspect
 import threading
@@ -24,7 +25,8 @@ from sam.base.command import Command, CommandReply
 from sam.base.request import Request, Reply
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.base.messageAgentAuxillary.msgAgentRPCConf import MAX_MESSAGE_LENGTH
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import MAX_MESSAGE_LENGTH, \
+    P4_CONTROLLER_PORT, TEST_PORT
 import sam.base.messageAgentAuxillary.messageAgent_pb2 as messageAgent_pb2
 import sam.base.messageAgentAuxillary.messageAgent_pb2_grpc as messageAgent_pb2_grpc
 
@@ -141,19 +143,6 @@ class MessageAgent(object):
                 "messageAgentConf:\nServer:{0}\nUser:{1}\nPasswd:{2}".format(
                     self.rabbitMqServerIP, self.rabbitMqServerUser,
                     self.rabbitMqServerPasswd))
-        # with open(filePath, 'r') as f:
-        #     lines = f.readlines()
-        #     newLines = []
-        #     for line in lines:
-        #         line = line.strip().split("= ")[1].strip("'")
-        #         newLines.append(line)
-        #     self.rabbitMqServerIP = newLines[0]
-        #     self.rabbitMqServerUser = newLines[1]
-        #     self.rabbitMqServerPasswd = newLines[2]
-        #     self.logger.info(
-        #         "messageAgentConf:\nServer:{0}\nUser:{1}\nPasswd:{2}".format(
-        #             self.rabbitMqServerIP, self.rabbitMqServerUser,
-        #             self.rabbitMqServerPasswd))
 
     def setRabbitMqServer(self, serverIP, serverUser, serverPasswd):
         self.rabbitMqServerIP = serverIP
@@ -300,6 +289,16 @@ class MessageAgent(object):
                 break
 
         self.gRPCChannel.close()
+
+    def getOpenSocketPort(self):
+        while True:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.bind(("", 0))
+            s.listen(1)
+            port = s.getsockname()[1]
+            s.close()
+            if P4_CONTROLLER_PORT < port or port < TEST_PORT:
+                return port
 
     def startMsgReceiverRPCServer(self, listenIP, listenPort):
         self.listenIP = listenIP

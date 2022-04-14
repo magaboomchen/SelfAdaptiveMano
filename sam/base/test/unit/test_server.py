@@ -5,11 +5,12 @@ import logging
 
 import pytest
 
-from sam.base.server import *
+from sam.base.server import Server, SERVER_TYPE_NORMAL
 
 MANUAL_TEST = True
 
 logging.basicConfig(level=logging.INFO)
+
 
 class TestServerClass(object):
     banList = """

@@ -7,16 +7,15 @@ test ryu's app including: L2, northsouth, westeast, uffr, notvia, etc.
 """
 
 import re
-import sys
 import os
 
+from functools import partial
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info, error
 from mininet.net import Mininet
 from mininet.link import Intf
 from mininet.topolib import TreeTopo
 from mininet.util import quietRun
-from functools import partial
 from mininet.node import OVSSwitch, Controller, RemoteController
 from mininet.topo import Topo
 from mininet.link import TCLink

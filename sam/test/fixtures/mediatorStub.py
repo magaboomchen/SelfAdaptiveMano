@@ -1,8 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.messageAgent import *
-from sam.base.command import *
+import uuid
+
+from sam.base.messageAgent import MessageAgent
+from sam.base.command import Command, CMD_TYPE_ADD_SFC, \
+    CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_DEL_SFC, \
+    CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_GET_FLOW_SET
 from sam.test.fixtures.orchestrationStub import OrchestrationStub
 
 

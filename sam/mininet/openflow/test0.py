@@ -9,13 +9,13 @@ hardware interface) to a network after the network is created.
 import re
 import sys
 
+from functools import partial
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info, error
 from mininet.net import Mininet
 from mininet.link import Intf
 from mininet.topolib import TreeTopo
 from mininet.util import quietRun
-from functools import partial
 from mininet.node import OVSSwitch, Controller, RemoteController
 
 INTTOCLASSIFIER = 'eth1'

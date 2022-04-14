@@ -1,22 +1,16 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import uuid
+import time
 import logging
 
-import pytest
-
-from sam.base.server import *
-from sam.base.command import *
-from sam.test.fixtures.orchestrationStub import OrchestrationStub
+from sam.test.testBase import TestBase
 from sam.base.messageAgent import MessageAgent, SAMMessage
-from sam.test.testBase import *
-from sam.mediator.mediator import *
-from sam.base.command import *
 
 MANUAL_TEST = True
 
 logging.basicConfig(level=logging.INFO)
+
 
 class TestMediatorClass(TestBase):
     def setup_method(self, method):

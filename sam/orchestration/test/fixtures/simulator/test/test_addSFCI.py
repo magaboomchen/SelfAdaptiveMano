@@ -25,18 +25,13 @@ Note:
     Class TestBase has many useful function;
 '''
 
-import time
-
 import pytest
 
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.base.command import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.base.shellProcessor import ShellProcessor
+from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
+    MEDIATOR_QUEUE
+from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.testBase import *
+from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP
 
 MANUAL_TEST = True
 

@@ -7,23 +7,13 @@ original sfc mapping
 Low-Cost Service Function Chain
 '''
 
-import copy
-
-import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
-from gurobipy import *
 
-from sam.base.sfc import *
-from sam.base.path import *
-from sam.base.server import *
-from sam.base.mkdirs import *
-from sam.base.messageAgent import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.mkdirs import mkdirs
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration.algorithms.base.multiLayerGraph import *
-from sam.orchestration.algorithms.base.performanceModel import *
-from sam.orchestration.algorithms.oPSFC.originalPartialLP import *
+from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
+from sam.orchestration.algorithms.oPSFC.originalPartialLP import OriginalPartialLP
 
 
 class PartialLP(OriginalPartialLP):

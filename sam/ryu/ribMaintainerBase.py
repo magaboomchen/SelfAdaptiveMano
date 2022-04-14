@@ -3,8 +3,9 @@
 
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.xibMaintainer import XInfoBaseMaintainer
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.ryu.conf.ryuConf import *
+from sam.base.socketConverter import SocketConverter
+from sam.ryu.conf.ryuConf import CURRENT_ENV, PICA8_ENV, MININET_ENV, \
+    PICA8_AS4610_UFRR_LOGICAL_TWO_TIER_ENV, PICA8_P3922_UFRR_LOGICAL_TWO_TIER_ENV
 
 # TODO: test
 
@@ -111,7 +112,7 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
                 count = count + len(self.sfciRIB[sfciID][dpid])
         return count
 
-    def countSwitchCompressedFlowTable(self, switchID, compressType):
+    def countSwitchCompressedFlowTable(self, dpid, compressType):
         count = 0
         for sfciID in self.compSfciRIB[compressType].keys():
             if dpid in self.compSfciRIB[compressType][sfciID].keys():

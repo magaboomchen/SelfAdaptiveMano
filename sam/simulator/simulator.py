@@ -3,7 +3,6 @@
 
 import logging
 import os
-import random
 import threading
 import time
 from Queue import Queue
@@ -17,7 +16,6 @@ from sam.base.flow import Flow
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import MessageAgent, SIMULATOR_QUEUE, SAMMessage, MSG_TYPE_SIMULATOR_CMD_REPLY, \
     MEDIATOR_QUEUE
-from sam.base.path import *
 from sam.simulator.commend_handler import commend_handler
 from sam.simulator.op_handler import op_handler
 from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintainer

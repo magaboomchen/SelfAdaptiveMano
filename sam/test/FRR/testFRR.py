@@ -1,20 +1,19 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import sys
+import uuid
 import time
 import logging
 
-import pytest
-from ryu.controller import dpset
-
-from sam.ryu.topoCollector import TopoCollector
-from sam.base.command import *
-from sam.base.shellProcessor import ShellProcessor
-from sam.test.testBase import *
-from sam.test.fixtures.vnfControllerStub import *
-
-logging.basicConfig(level=logging.INFO)
+from sam.base.command import Command, CMD_STATE_SUCCESSFUL, \
+    CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE
+from sam.base.messageAgent import SAMMessage,SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
+    MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, MEDIATOR_QUEUE, SFF_CONTROLLER_QUEUE, \
+    MSG_TYPE_SFF_CONTROLLER_CMD, MSG_TYPE_NETWORK_CONTROLLER_CMD, \
+    NETWORK_CONTROLLER_QUEUE
+from sam.base.server import Server, SERVER_TYPE_NFVI
+from sam.test.testBase import TestBase, SFF1_DATAPATH_MAC, SFF1_DATAPATH_IP, \
+    SFF1_SERVERID, SFF1_CONTROLNIC_IP, SFF1_CONTROLNIC_MAC
 
 
 class TestFRR(TestBase):
@@ -31,7 +30,7 @@ class TestFRR(TestBase):
         logging.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
+            MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL

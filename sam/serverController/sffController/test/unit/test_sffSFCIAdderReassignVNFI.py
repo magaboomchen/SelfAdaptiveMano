@@ -1,23 +1,22 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
 import time
-from scapy.all import *
+import logging
 
 import pytest
+from scapy.all import sniff
+from scapy.layers.l2 import  ARP
+from scapy.layers.inet import IP
 
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.server import *
-from sam.serverController.classifierController import ClassifierControllerCommandAgent
-from sam.base.command import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.messageAgent import SFF_CONTROLLER_QUEUE, MEDIATOR_QUEUE, \
+    MSG_TYPE_SFF_CONTROLLER_CMD
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.fixtures.vnfControllerStub import *
-from sam.test.testBase import *
-from sam.serverController.sffController import sffControllerCommandAgent
+from sam.test.fixtures.vnfControllerStub import VNFControllerStub
+from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, SFF1_DATAPATH_IP, \
+    SFF1_DATAPATH_MAC, SFCI1_0_EGRESS_IP, WEBSITE_REAL_IP, SFCI1_1_EGRESS_IP
 from sam.test.fixtures import sendArpRequest
 from sam.serverController.sffController.test.unit.fixtures import sendDirection0Traffic
 from sam.serverController.sffController.test.unit.fixtures import sendDirection0Traffic4sfci2

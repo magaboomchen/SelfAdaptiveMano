@@ -3,12 +3,8 @@
 
 import copy
 
-from sam.base.server import Server
-from sam.base.messageAgent import *
-from sam.base.sfc import *
-from sam.base.command import *
-from sam.base.path import *
-from sam.serverController.bessInfoBaseMaintainer import *
+from sam.base.vnf import VNF_TYPE_CLASSIFIER
+from sam.serverController.bessInfoBaseMaintainer import BessInfoBaseMaintainer
 
 # TODO: need test
 

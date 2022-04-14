@@ -1,12 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import copy
-import json
-
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.ryu.ribMaintainerBase import RIBMaintainerBase
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
 
 # TODO: test
 

@@ -7,21 +7,13 @@
 Reliable Service Function Chaining
 '''
 
-import copy
-
-import numpy as np
 import gurobipy as gp
-from gurobipy import GRB
-from gurobipy import *
+from gurobipy import GRB, LinExpr
 
-from sam.base.path import *
-from sam.base.server import *
-from sam.base.mkdirs import *
-from sam.base.messageAgent import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
+from sam.base.mkdirs import mkdirs
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
+from sam.orchestration.algorithms.base.mappingAlgorithmBase import MappingAlgorithmBase
 
 
 class NFVDPPricingProblem(MappingAlgorithmBase):
@@ -70,7 +62,7 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
         #     if capacity < 1:
         #         self.logger.debug("nfvDPPP, link:{0}, capacity:{1}".format(
         #             link, capacity))
-        #         raw_input()
+        #         raw_input()  # type: ignore
 
         # self.logger.debug("phsicalLink:{0}, self.linkCapacity:{1}".format(
         #     self.physicalLink, self.linkCapacity))
@@ -361,7 +353,7 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
                     self.logger.warning("infeasible model")
                     raise ValueError("infeasible model")
                 else:
-                    self.logger.warning("unknown model status:{0}".format(m.status))
+                    self.logger.warning("unknown model status:{0}".format(self.ppModel[rIndex, pb].status))
 
     def _saveSolution(self, rIndex, pb):
         request = self.requestList[rIndex]

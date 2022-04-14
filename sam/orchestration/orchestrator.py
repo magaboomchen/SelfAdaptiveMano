@@ -7,18 +7,23 @@ if sys.version > '3':
 else:
     import Queue
 import time
-import copy
+import math
 
-from sam.base.messageAgent import *
-from sam.base.request import Request, Reply
+from sam.base.messageAgent import SAMMessage, MessageAgent, \
+    MEDIATOR_QUEUE, ORCHESTRATOR_QUEUE, MSG_TYPE_ORCHESTRATOR_CMD
+from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_DEL_SFCI, \
+    REQUEST_TYPE_DEL_SFC, REQUEST_STATE_FAILED
+from sam.base.command import CommandMaintainer, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
+    CMD_TYPE_PUT_ORCHESTRATION_STATE, CMD_TYPE_GET_ORCHESTRATION_STATE, CMD_TYPE_TURN_ORCHESTRATION_ON, \
+    CMD_TYPE_TURN_ORCHESTRATION_OFF, CMD_TYPE_KILL_ORCHESTRATION, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI
 from sam.orchestration.argParser import ArgParser
+from sam.base.request import REQUEST_TYPE_ADD_SFCI
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.measurement.dcnInfoBaseMaintainer import *
-from sam.orchestration.oDcnInfoRetriever import *
-from sam.orchestration.oSFCAdder import *
-from sam.orchestration.oSFCDeleter import *
-from sam.orchestration.oConfig import *
+from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
+from sam.orchestration.oConfig import BATCH_SIZE, BATCH_TIMEOUT, ENABLE_OIB
+from sam.orchestration.oSFCAdder import OSFCAdder
+from sam.orchestration.oSFCDeleter import OSFCDeleter
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 
@@ -40,7 +45,6 @@ class Orchestrator(object):
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
         self._cm = CommandMaintainer()
 
-        # self._odir = ODCNInfoRetriever(self._dib, self.logger)
         self._osa = OSFCAdder(self._dib, self.logger, podNum, minPodIdx, maxPodIdx, self.topoType)
         self._osd = OSFCDeleter(self._dib, self._oib, self.logger)
 

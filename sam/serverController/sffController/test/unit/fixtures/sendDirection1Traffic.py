@@ -1,13 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import os
-from scapy.all import *
-import logging
 import time
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
-from sam.test.testBase import *
-# from sam.serverController.sffController.test.unit.test_sffSFCIAdder import *
+
+from scapy.all import Raw, sendp
+from scapy.layers.l2 import Ether
+from scapy.layers.inet import IP, TCP
+
+from sam.test.testBase import VNFI1_1_IP, SFF1_DATAPATH_MAC, WEBSITE_REAL_IP, \
+    TESTER_SERVER_DATAPATH_MAC, CLASSIFIER_DATAPATH_IP, OUTTER_CLIENT_IP
 
 
 def sendDirection1Traffic():

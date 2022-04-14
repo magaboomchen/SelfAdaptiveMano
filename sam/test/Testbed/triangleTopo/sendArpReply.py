@@ -6,11 +6,12 @@ sudo python sendArpReply.py -i eth0 -sip 1.1.1.2 -dip 2.2.0.33 -smac 18:66:da:85
 '''
 
 import time
+import argparse
 
-from scapy.all import *
+from scapy.all import sendp
+from scapy.layers.l2 import Ether, ARP
 
-from sam.base.argParser import *
-from sam.test.testBase import *
+from sam.base.argParser import ArgParserBase
 
 
 class ArgParser(ArgParserBase):

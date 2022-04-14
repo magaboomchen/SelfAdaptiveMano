@@ -2,11 +2,12 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
+import logging
 
 from sam.base.messageAgent import MessageAgent, ORCHESTRATOR_QUEUE
-from sam.base.command import *
-from sam.base.sfc import *
-from sam.base.vnf import *
+from sam.base.command import Command, CMD_TYPE_GET_SERVER_SET,\
+    CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_GET_TOPOLOGY, \
+        CMD_TYPE_GET_SFCI_STATE
 
 
 class OrchestrationStub(object):

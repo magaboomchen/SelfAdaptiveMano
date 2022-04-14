@@ -1,10 +1,9 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.messageAgent import *
-from sam.base.command import *
-from sam.base.sfc import *
-from sam.base.vnf import *
+from sam.base.messageAgent import SAMMessage, MessageAgent, SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
+    MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY, MEDIATOR_QUEUE
+
 
 class ClassifierControllerStub(object):
     def __init__(self):
@@ -14,4 +13,4 @@ class ClassifierControllerStub(object):
 
     def sendCmdRply(self, cmdRply):
         msg = SAMMessage(MSG_TYPE_CLASSIFIER_CONTROLLER_CMD_REPLY, cmdRply)
-        self.mA.sendMsg(MEDIATOR_QUEUE,msg)
+        self.mA.sendMsg(MEDIATOR_QUEUE, msg)

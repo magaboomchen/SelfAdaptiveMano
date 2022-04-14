@@ -1,18 +1,12 @@
-#!/usr/bin/env python
-import pika
-import sys
-import base64
-import pickle
-import time
-import uuid
-import os
-import subprocess
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
 import logging
-import threading
-from sam.base.messageAgent import *
-from sam.base.server import *
+
+from sam.base.server import Server, SERVER_TYPE_NORMAL
 
 # TODO: refactor, pytest
+
 
 class ServerTester(object):
     def __init__(self,controlIfName):

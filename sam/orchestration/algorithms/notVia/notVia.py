@@ -3,18 +3,14 @@
 
 import copy
 
-import networkx as ax
+import networkx as nx
 
-from sam.base.path import *
-from sam.base.server import *
-from sam.base.messageAgent import *
-from sam.base.socketConverter import SocketConverter, BCAST_MAC
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.orchestration.algorithms.pSFC.partialLP import *
-from sam.orchestration.algorithms.pSFC.pRandomizedRoundingAlgorithm import *
-from sam.orchestration.algorithms.base.multiLayerGraph import *
-from sam.orchestration.algorithms.base.mappingAlgorithmBase import *
+from sam.orchestration.algorithms.pSFC.partialLP import PartialLP
+from sam.orchestration.algorithms.base.multiLayerGraph import MultiLayerGraph, \
+    WEIGHT_TYPE_CONST
+from sam.orchestration.algorithms.base.mappingAlgorithmBase import MappingAlgorithmBase
 
 
 class NotVia(MappingAlgorithmBase):

@@ -10,8 +10,8 @@ if sys.version > '3':
     import queue as Queue
 else:
     import Queue
-import copy
 import operator
+
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 
