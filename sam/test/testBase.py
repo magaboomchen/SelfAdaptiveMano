@@ -92,9 +92,11 @@ class TestBase(object):
     def resetRabbitMQConf(self, filePath, serverIP,
             serverUser, serverPasswd):
         with open(filePath, 'w') as f:
-            f.write("RABBITMQSERVERIP = '{0}'\n".format(serverIP))
-            f.write("RABBITMQSERVERUSER = '{0}'\n".format(serverUser))
-            f.write("RABBITMQSERVERPASSWD = '{0}'\n".format(serverPasswd))
+            f.write("{\n")
+            f.write("    RABBITMQSERVERIP = '{0}'\n".format(serverIP))
+            f.write("    RABBITMQSERVERUSER = '{0}'\n".format(serverUser))
+            f.write("    RABBITMQSERVERPASSWD = '{0}'\n".format(serverPasswd))
+            f.write("}\n")
 
     def assignSFCIID(self):
         TestBase.MAXSFCIID = TestBase.MAXSFCIID + 1

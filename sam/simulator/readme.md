@@ -10,7 +10,7 @@ simulator的开发可能会用到/sam/base，/sam/measurement/dcnInfoBaseMaintai
 python sam/simulator/simulator.py
 ```
 启动时会默认执行`sam/simulator/simulator_init`文件中的命令。
-如果需要修改rabbitMQ的配置，请修改`sam/base/rabbitMQConf.conf`，`MessageAgent.setRabbitMqServer`方法无法改变连接时的配置（暂不知道是有意的设计还是bug）。
+如果需要修改rabbitMQ的配置，请修改`sam/base/rabbitMQConf.json`，`MessageAgent.setRabbitMqServer`方法无法改变连接时的配置（暂不知道是有意的设计还是bug）。
 
 ### 命令说明
 1. 清除全部拓扑数据。

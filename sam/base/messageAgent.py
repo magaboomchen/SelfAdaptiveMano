@@ -8,6 +8,7 @@ else:
     import Queue
 import time
 import uuid
+import json
 import ctypes
 import inspect
 import threading
@@ -130,20 +131,29 @@ class MessageAgent(object):
         self.gRPCServersList = []
 
     def readRabbitMQConf(self):
-        filePath = __file__.split("/messageAgent.py")[0] + '/rabbitMQConf.conf'
-        with open(filePath, 'r') as f:
-            lines = f.readlines()
-            newLines = []
-            for line in lines:
-                line = line.strip().split("= ")[1].strip("'")
-                newLines.append(line)
-            self.rabbitMqServerIP = newLines[0]
-            self.rabbitMqServerUser = newLines[1]
-            self.rabbitMqServerPasswd = newLines[2]
+        filePath = __file__.split("/messageAgent.py")[0] + '/rabbitMQConf.json'
+        with open(filePath, 'r') as jsonfile:
+            json_string = json.load(jsonfile)
+            self.rabbitMqServerIP = str(json_string["RABBITMQSERVERIP"])
+            self.rabbitMqServerUser = str(json_string["RABBITMQSERVERUSER"])
+            self.rabbitMqServerPasswd = str(json_string["RABBITMQSERVERPASSWD"])
             self.logger.info(
                 "messageAgentConf:\nServer:{0}\nUser:{1}\nPasswd:{2}".format(
                     self.rabbitMqServerIP, self.rabbitMqServerUser,
                     self.rabbitMqServerPasswd))
+        # with open(filePath, 'r') as f:
+        #     lines = f.readlines()
+        #     newLines = []
+        #     for line in lines:
+        #         line = line.strip().split("= ")[1].strip("'")
+        #         newLines.append(line)
+        #     self.rabbitMqServerIP = newLines[0]
+        #     self.rabbitMqServerUser = newLines[1]
+        #     self.rabbitMqServerPasswd = newLines[2]
+        #     self.logger.info(
+        #         "messageAgentConf:\nServer:{0}\nUser:{1}\nPasswd:{2}".format(
+        #             self.rabbitMqServerIP, self.rabbitMqServerUser,
+        #             self.rabbitMqServerPasswd))
 
     def setRabbitMqServer(self, serverIP, serverUser, serverPasswd):
         self.rabbitMqServerIP = serverIP

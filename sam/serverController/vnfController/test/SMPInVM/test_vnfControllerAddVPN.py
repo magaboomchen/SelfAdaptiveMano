@@ -55,7 +55,7 @@ class TestVNFAddVPN(TestBase):
         # raw_input()
         # setup
         self.resetRabbitMQConf(
-            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.conf",
+            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.json",
             "192.168.0.158", "mq", "123456")
         self.sP = ShellProcessor()
         self.clearQueue()

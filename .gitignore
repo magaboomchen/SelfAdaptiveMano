@@ -63,7 +63,7 @@ instance/*
 .pytest_cache/
 __pycache__/
 samSimulation/
-sam/base/rabbitMQConf.conf
+sam/base/rabbitMQConf.json
 results/
 results*/
 .idea

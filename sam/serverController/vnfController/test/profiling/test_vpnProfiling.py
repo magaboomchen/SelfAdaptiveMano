@@ -62,7 +62,7 @@ class TestVNFAddVPN(TestBase):
         self.killAllModule()
 
         rabbitMQFilePath = server.__file__.split("server.py")[0] \
-            + "rabbitMQConf.conf"
+            + "rabbitMQConf.json"
         logging.info(rabbitMQFilePath)
         self.resetRabbitMQConf(rabbitMQFilePath, "192.168.0.194",
             "mq", "123456")
