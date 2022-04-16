@@ -21,13 +21,13 @@ class SimulatorStub(object):
         self.logger = logConfigur.getLogger()
 
         self.mA = MessageAgent()
+        self.mA.startMsgReceiverRPCServer(SIMULATOR_IP, SIMULATOR_PORT)
 
     def sendCmdRply(self,cmdRply):
         msg = SAMMessage(MSG_TYPE_SIMULATOR_CMD_REPLY, cmdRply)
         self.mA.sendMsg(SIMULATOR_QUEUE, msg)
     
     def recvCmdFromMeasurer(self):
-        self.mA.startMsgReceiverRPCServer(SIMULATOR_IP, SIMULATOR_PORT)
         while True:
             msg = self.mA.getMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT)
             msgType = msg.getMessageType()

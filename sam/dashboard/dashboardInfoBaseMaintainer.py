@@ -45,8 +45,7 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
         results = self.dbA.query("Zone", " ZONE_NAME ")
         zoneList = []
         for zone in results:
-            zoneList.append(zone)
-        print('aabb')
+            zoneList.append(zone[0])
         return zoneList
 
     def _initUserTable(self):

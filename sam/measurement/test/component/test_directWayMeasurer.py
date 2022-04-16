@@ -6,19 +6,10 @@ import uuid
 import pytest
 import logging
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, MEASURER_PORT
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.orchestration.oDcnInfoRetriever import ODCNInfoRetriever
 
-from sam.simulator import simulator
-from sam.base.switch import Switch, SWITCH_TYPE_NPOP
-from sam.base.server import Server, SERVER_TYPE_NORMAL
-from sam.base.request import Request, REQUEST_STATE_SUCCESSFUL, \
-    REQUEST_TYPE_GET_DCN_INFO
-from sam.base.link import Link
-from sam.base.messageAgent import MEDIATOR_QUEUE, MEASURER_QUEUE, \
-    MSG_TYPE_MEDIATOR_CMD_REPLY, ORCHESTRATOR_QUEUE, DCN_INFO_RECIEVER_QUEUE
-from sam.base.command import CommandReply, CMD_TYPE_GET_TOPOLOGY, CMD_STATE_SUCCESSFUL
+from sam.base.request import Request, REQUEST_TYPE_GET_DCN_INFO
 from sam.base.shellProcessor import ShellProcessor
 from sam.measurement import measurer
 from sam.test.fixtures.simulatorStub import SimulatorStub
@@ -32,10 +23,9 @@ class TestMeasurerClass(TestBase):
     def setup_collectDCNInfo(self):
         # setup
         self.sP = ShellProcessor()
-        self.clearQueue()
 
+        self.sS = SimulatorStub()
         self.runMeasurer()
-        # self.runSimulator()
 
         yield
         # teardown
@@ -44,7 +34,6 @@ class TestMeasurerClass(TestBase):
     @pytest.mark.skip(reason='Temporarly')
     def test_collectTopology(self, setup_collectDCNInfo):
         # exercise
-        self.sS = SimulatorStub()
         self.sS.recvCmdFromMeasurer()
         # verify
         logging.info("Please check measurer's log, " \
@@ -60,19 +49,10 @@ class TestMeasurerClass(TestBase):
     def killMeasurer(self):
         self.sP.killPythonScript("/measurement/measurer.py")
 
-    # def runSimulator(self):
-    #     filePath = simulator.__file__
-    #     logging.info(filePath)
-    #     self.sP.runPythonScript(filePath)
-
-    # def killMeasurer(self):
-    #     self.sP.killPythonScript("/simulator/simulator.py")
-
     # @pytest.mark.skip(reason='Temporarly')
     def test_requestHandler(self, setup_collectDCNInfo):
         logging.info("test_requestHanler")
         # exercise
-        self.sS = SimulatorStub()
         self.sS.recvCmdFromMeasurer()
         time.sleep(5)
         logConfigur = LoggerConfigurator(__name__, './log',
@@ -81,21 +61,6 @@ class TestMeasurerClass(TestBase):
         dib = DCNInfoBaseMaintainer()
         oDCNIR = ODCNInfoRetriever(dib, self.logger)
         oDCNIR.getDCNInfo()
-        # request = self.genGetDCNInfoRequest()
-        # tmpMA = self.sendRequestByGRPC(MEASURER_IP, MEASURER_PORT, request)
-
-        # verify
-        # reply = self.recvReplyByRPC(tmpMA.listenIP, tmpMA.listenPort)
-        # assert reply.requestID == request.requestID
-        # assert reply.requestState == REQUEST_STATE_SUCCESSFUL
-
-        # for key,values in reply.attributes.items():
-        #     logging.info("{0},{1}".format(key, values))
-            # if type(values) == list:
-            #     for item in values:
-            #         logging.info(item)
-        
-        # del tmpMA
 
         logging.info(dib)
         logging.info("Please check dib output, " \
