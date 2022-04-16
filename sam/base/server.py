@@ -51,6 +51,8 @@ class Server(object):
         self._serverID = serverID
 
     def setControlNICIP(self, controlNICIP):
+        self._serverControlNICIP = controlNICIP
+
         ifName = self._controlIfName
         self._ifSet[ifName] = {}
         self._ifSet[ifName]["IP"] = controlNICIP
@@ -98,6 +100,9 @@ class Server(object):
 
     def getDatapathNICMac(self):
         return self._serverDatapathNICMAC.lower()
+
+    # def getServerControlNICIP(self):
+    #     return self._serverControlNICIP
 
     def getControlNICIP(self):
         ifName = self._controlIfName
@@ -221,7 +226,16 @@ class Server(object):
         self._updateHugepagesFree()
         self._updateHugepagesSize()
 
+    def __isSMP(self):
+        rv = subprocess.check_output("lscpu | grep -i 'Socket(s)'", shell=True)
+        rv = str(rv)
+        rv = int(rv.split(":")[1].strip("\\n'"))
+        return rv == 1
+
     def _updateMemAccessMode(self):
+        if self.__isSMP():
+            self._memoryAccessMode = "SMP"
+            return None
         rv = subprocess.check_output("lscpu | grep -i numa | grep 'NUMA node(s):'", shell=True)
         rv = int(rv.strip("\n").split(":")[1])
         if rv <= 1:
@@ -231,30 +245,49 @@ class Server(object):
 
     def _updateSocketNum(self):
         rv = subprocess.check_output(' lscpu | grep Socket ', shell=True)
-        rv = rv.strip("\n").split(":")[1]
+        rv = str(rv)
+        rv = int(rv.split(":")[1].strip("\\n'"))
         self._socketNum = int(rv)
+
+    def _getSMPCoresNum(self):
+        rv = subprocess.check_output(" lscpu | grep 'CPU(s):' ", shell=True)
+        rv = str(rv)
+        rv = int(rv.split(":")[1].strip("\\n'"))
+        return rv
 
     def _updateCoreSocketDistribution(self):
         self._coreSocketDistribution = []
+        if self.__isSMP():
+            self._coreSocketDistribution = [list(range(self._getSMPCoresNum()))]
+            return None
         for nodeIndex in range(self._socketNum):
             regexp = "'NUMA node{0} CPU(s):'".format(nodeIndex)
             cmd = "lscpu | grep -i numa | grep {0}".format(regexp)
             rv = subprocess.check_output([cmd], shell=True)
+            rv = str(rv)
             rv = rv.strip("\n").split(":")[1].split(",")
             coreNum = len(rv)
             self._coreSocketDistribution.append(coreNum)
 
     def _updateNUMANum(self):
+        if self.__isSMP():
+            self._numaNum = 1
+            return None
         rv = subprocess.check_output(" lscpu | grep 'NUMA node(s)' ", shell=True)
+        rv = str(rv)
         rv = rv.strip("\n").split(":")[1]
         self._numaNum = int(rv)
 
     def _updateCoreNUMADistribution(self):
         self._coreNUMADistribution = []
+        if self.__isSMP():
+            self._coreNUMADistribution = [list(range(self._getSMPCoresNum()))]
+            return None
         for nodeIndex in range(self._socketNum):
             regexp = "'NUMA node{0} CPU(s):'".format(nodeIndex)
             cmd = "lscpu | grep -i numa | grep {0}".format(regexp)
             rv = subprocess.check_output([cmd], shell=True)
+            rv = str(rv)
             rv = rv.strip("\n").split(":")[1]
             if rv.find(",") != -1:
                 rv = rv.split(",")
@@ -272,24 +305,35 @@ class Server(object):
 
     def _updateHugepagesTotal(self):
         self._hugepagesTotal = []
+        if self.__isSMP():
+            return None
         for nodeIndex in range(self._socketNum):
             regexp = "'Node {0} HugePages_Total:'".format(nodeIndex)
             cmd = "cat /sys/devices/system/node/node*/meminfo | fgrep Huge | grep {0}".format(regexp)
             rv = subprocess.check_output([cmd], shell=True)
+            rv = str(rv)
             rv = int(rv.strip("\n").split(":")[1])
             self._hugepagesTotal.append(rv)
 
     def _updateHugepagesFree(self):
         self._hugepagesFree = []
+        if self.__isSMP():
+            rv = subprocess.check_output(" grep Huge /proc/meminfo | grep 'HugePages_Free:' ", shell=True)
+            rv = str(rv)
+            rv = int(rv.split(":")[1].strip("\\n'"))
+            self._hugepagesFree.append(rv)
+            return None
         for nodeIndex in range(self._socketNum):
             regexp = "'Node {0} HugePages_Free:'".format(nodeIndex)
             cmd = "cat /sys/devices/system/node/node*/meminfo | fgrep Huge | grep {0}".format(regexp)
             rv = subprocess.check_output([cmd], shell=True)
+            rv = str(rv)
             rv = int(rv.strip("\n").split(":")[1])
             self._hugepagesFree.append(rv)
 
     def _updateHugepagesSize(self):
         out_bytes = subprocess.check_output(['grep Huge /proc/meminfo | grep Hugepagesize'], shell=True)
+        out_bytes = str(out_bytes)
         self._hugepageSize = int(out_bytes.split(':')[1].split('kB')[0])
 
     def setNICBandwidth(self, bandwidth):

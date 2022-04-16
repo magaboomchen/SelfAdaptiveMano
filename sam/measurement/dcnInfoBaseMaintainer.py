@@ -1,57 +1,41 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.server import SERVER_TYPE_NFVI, SERVER_TYPE_CLASSIFIER
-from sam.base.link import Link
-from sam.base.xibMaintainer import XInfoBaseMaintainer
+from sam.base.server import *
+from sam.base.link import *
 from sam.base.socketConverter import SocketConverter
+from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.measurement.serverInfoBaseMaintainer import ServerInfoBaseMaintainer
+from sam.measurement.switchInfoBaseMaintainer import SwitchInfoBaseMaintainer
+from sam.measurement.linkInfoBaseMaintainer import LinkInfoBaseMaintainer
+from sam.measurement.vnfiInfoBaseMaintainer import VNFIInfoBaseMaintainer
 
 # TODO : test
 
 
-class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
-    def __init__(self, *args, **kwargs):
-        super(DCNInfoBaseMaintainer, self).__init__(*args, **kwargs)
-        self._servers = {}  # [zoneName][serverID] = {'server':server, 'Active':True/False, 'timestamp':time, 'status':none}
-        self._switches = {} # [zoneName][switchID] = {'switch':switch, 'active':True/False, 'status':none}
-        self._links = {}    # [zoneName][(srcID,dstID)] = {'link':link, 'active':True/False, 'status':none}
-        self._vnfis = {}
-
-        self._serversReservedResources = {} # [zoneName][serverID] = {'bandwidth':bw, 'cores':cpu, 'memory':mem}
-        self._switchesReservedResources = {}
-        self._linksReservedResources = {}
-        self._vnfisReservedResources = {}
-
-        self._sc = SocketConverter()
-
+class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
+                            SwitchInfoBaseMaintainer,
+                            LinkInfoBaseMaintainer,
+                            VNFIInfoBaseMaintainer):
+    def __init__(self):
+        super(DCNInfoBaseMaintainer, self).__init__()
         # can't implement logger, because it doesn't support deepcopy
         # logConfigur = LoggerConfigurator(__name__, './log',
         #     'DCNInfoBaseMaintainer.log', level='debug')
         # self.logger = logConfigur.getLogger()
+        self._sc = SocketConverter()
 
-    def updateByNewDib(self, newDib):
-        self.updateServersInAllZone(newDib.getServersInAllZone())
-        self.updateSwitchesInAllZone(newDib.getSwitchesInAllZone())
-        self.updateLinksInAllZone(newDib.getLinksInAllZone())
-        self.updateVnfisInAllZone(newDib.getVnfisInAllZone())
-
-    def updateServersInAllZone(self, servers):
-        self._servers = servers
-
-    def updateServersByZone(self, servers, zoneName):
-        self._servers[zoneName] = servers
-
-    def updateSwitchesInAllZone(self, switches):
-        self._switches = switches
-
-    def updateSwitchesByZone(self, switches, zoneName):
-        self._switches[zoneName] = switches
-
-    def updateLinksInAllZone(self, links):
-        self._links = links
-
-    def updateLinksByZone(self, links, zoneName):
-        self._links[zoneName] = links
+    def enableDataBase(self, host, user, passwd, reInitialTable=False):
+        self.addDatabaseAgent(host, user, passwd)
+        if not self.dbA.isConnectingDB():
+            self.dbA.connectDB(db = "Measurer")
+        if reInitialTable:
+            self.dbA.dropTable("Server")
+            self.dbA.dropTable("Switch")
+            self.dbA.dropTable("Link")
+        self._initServerTable()
+        self._initSwitchTable()
+        self._initLinkTable()
 
     def updateSwitch2ServerLinksByZone(self, zoneName):
         servers = self.getServersByZone(zoneName)
@@ -71,80 +55,6 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
                 'link': Link(switchID, serverID, bandwidth=bw),
                 'Active': True
                 }
-
-    def updateVnfisInAllZone(self, vnfis):
-        self._vnfis = vnfis
-
-    def updateVnfisByZone(self, vnfis, zoneName):
-        self._vnfis[zoneName] = vnfis
-
-    def getServersInAllZone(self):
-        return self._servers
-
-    def getServersByZone(self, zoneName):
-        return self._servers[zoneName]
-
-    def getSwitchesInAllZone(self):
-        return self._switches
-
-    def getSwitchesByZone(self, zoneName):
-        return self._switches[zoneName]
-
-    def getLinksInAllZone(self):
-        return self._links
-
-    def getLinksByZone(self, zoneName):
-        return self._links[zoneName]
-
-    def getVnfisInAllZone(self):
-        return self._vnfis
-
-    def getVnfisByZone(self, zoneName):
-        return self._vnfis[zoneName]
-
-    def getServer(self, serverID, zoneName):
-        return self._servers[zoneName][serverID]['server']
-
-    def getAllZone(self):
-        zoneList = []
-        for zone in self._servers.keys():
-            if zone not in zoneList:
-                zoneList.append(zone)
-
-        for zone in self._switches.keys():
-            if zone not in zoneList:
-                zoneList.append(zone)
-
-        for zone in self._links.keys():
-            if zone not in zoneList:
-                zoneList.append(zone)
-
-        return zoneList
-
-    def delServer(self, serverID, zoneName):
-        del self._servers[zoneName][serverID]
-
-    def delSwitch(self, switchID, zoneName):
-        del self._switches[zoneName][switchID]
-
-    def delLink(self, srcID, dstID, zoneName):
-        del self._links[zoneName][(srcID, dstID)]
-
-    def isSwitchID(self, nodeID):
-        switches = self.getSwitchesInAllZone()
-        for switchesInAZoneDict in switches.values():
-            if nodeID in switchesInAZoneDict.keys():
-                return True
-        else:
-            return False
-
-    def isServerID(self, nodeID):
-        servers = self.getServersInAllZone()
-        for serversInAZoneDict in servers.values():
-            if nodeID in serversInAZoneDict.keys():
-                return True
-        else:
-            return False
 
     def isLinkConnectServer(self, srcID, dstID):
         if self.isServerID(srcID) or self.isServerID(dstID):
@@ -192,70 +102,6 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
                 servers.append(server)
         return servers
 
-    def getSwitch(self, switchID, zoneName):
-        return self._switches[zoneName][switchID]['switch']
-
-    def getLink(self, srcID, dstID, zoneName):
-        return self._links[zoneName][(srcID, dstID)]['link']
-
-    def reserveServerResources(self, serverID, reservedCores, reservedMemory,
-            reservedBandwidth, zoneName):
-        if not self._serversReservedResources.has_key(zoneName):
-            self._serversReservedResources[zoneName] = {}
-        if not self._serversReservedResources[zoneName].has_key(serverID):
-            self._serversReservedResources[zoneName][serverID] = {}
-            self._serversReservedResources[zoneName][serverID]["cores"] = reservedCores
-            self._serversReservedResources[zoneName][serverID]["memory"] = reservedMemory
-            self._serversReservedResources[zoneName][serverID]["bandwidth"] = reservedBandwidth
-        else:
-            cores = self._serversReservedResources[zoneName][serverID]["cores"]
-            memory = self._serversReservedResources[zoneName][serverID]["memory"]
-            bandwidth = self._serversReservedResources[zoneName][serverID]["bandwidth"]
-            self._serversReservedResources[zoneName][serverID]["cores"] = cores \
-                + reservedCores
-            self._serversReservedResources[zoneName][serverID]["memory"] = memory \
-                + reservedMemory
-            self._serversReservedResources[zoneName][serverID]["bandwidth"] = bandwidth \
-                + reservedBandwidth
-
-    def releaseServerResources(self, serverID, releaseCores, releaseMemory,
-            releaseBandwidth, zoneName):
-        if not self._serversReservedResources.has_key(zoneName):
-            self._serversReservedResources[zoneName] = {}
-        if not self._serversReservedResources.has_key(serverID):
-            raise ValueError("Unknown serverID:{0}".format(serverID))
-        else:
-            cores = self._serversReservedResources[zoneName][serverID]["cores"]
-            memory = self._serversReservedResources[zoneName][serverID]["memory"]
-            bandwidth = self._serversReservedResources[zoneName][serverID]["bandwidth"]
-            self._serversReservedResources[zoneName][serverID]["cores"] = cores \
-                - releaseCores
-            self._serversReservedResources[zoneName][serverID]["memory"] = memory \
-                - releaseMemory
-            self._serversReservedResources[zoneName][serverID]["bandwidth"] = bandwidth \
-                - releaseBandwidth
-
-    def getServerReservedResources(self, serverID, zoneName):
-        if not self._serversReservedResources.has_key(zoneName):
-            self._serversReservedResources[zoneName] = {}
-        if not self._serversReservedResources.has_key(serverID):
-            # raise ValueError("Unknown serverID:{0}".format(serverID))
-            self.reserveServerResources(serverID, 0, 0, 0, zoneName)
-        cores = self._serversReservedResources[zoneName][serverID]["cores"]
-        memory = self._serversReservedResources[zoneName][serverID]["memory"]
-        bandwidth = self._serversReservedResources[zoneName][serverID]["bandwidth"]
-        return (cores, memory, bandwidth)
-
-    def getServerResidualResources(self, serverID, zoneName):
-        reservedResource = self.getServerReservedResources(serverID, zoneName)
-        (reseCores, reseMemory, reseBandwidth) = reservedResource
-        server = self.getServer(serverID, zoneName)
-        coreCapacity = server.getMaxCores()
-        memoryCapacity = server.getMaxMemory()
-        bandwidthCapacity = server.getNICBandwidth()
-        return (coreCapacity-reseCores, 
-            memoryCapacity-reseMemory, bandwidthCapacity-reseBandwidth)
-
     def getServersReservedResources(self, serverList, zoneName):
         coresSum = 0
         memorySum = 0
@@ -290,28 +136,6 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
             memorySum = memorySum + memory
             bandwidthSum = bandwidthSum + bandwidth
         return (coresSum, memorySum, bandwidthSum)
-
-    def hasEnoughServerResources(self, serverID, expectedResource, zoneName):
-        (expectedCores, expectedMemory, expectedBandwidth) = expectedResource
-        server = self._servers[zoneName][serverID]['server']
-        # (coresCapacity, memoryCapacity, bandwidthCapacity) = self.getServersResourcesCapacity(
-        #     [server], zoneName)
-        serverID = server.getServerID()
-        (avaCores, avaMemory, avaBandwidth) = self.getServerResidualResources(
-            serverID, zoneName)
-        if (expectedCores <= avaCores
-                and expectedMemory <= avaMemory
-                and expectedBandwidth <= avaBandwidth):
-            return True
-        else:
-
-            # print("expectedCores:{0}\texpectedMemory:{1}\texpectedBandwidth:{2}\n"
-            #     "avaCores:{3}\tavaMemory:{4}\tavaBandwidth:{5}\n".format(
-            #         expectedCores, expectedMemory, expectedBandwidth,
-            #         avaCores, avaMemory, avaBandwidth))
-            # os.system("pause")
-
-            return False
 
     def hasEnoughNPoPServersResources(self, nodeID,
             expectedCores, expectedMemory, expectedBandwidth, zoneName, abandonServerIDList=[]):
@@ -353,116 +177,6 @@ class DCNInfoBaseMaintainer(XInfoBaseMaintainer):
                     + self.getServerResidualResources(serverID,
                         zoneName)[0] # server.getMaxCores()
         return coreNum
-
-    def reserveSwitchResource(self, switchID, reservedTcamUsage, zoneName):
-        if not self._switchesReservedResources.has_key(zoneName):
-            self._switchesReservedResources[zoneName] = {}
-        if not self._switchesReservedResources[zoneName].has_key(switchID):
-            self._switchesReservedResources[zoneName][switchID] = {}
-            self._switchesReservedResources[zoneName][switchID]["tcamUsage"] = reservedTcamUsage
-        else:
-            tcamUsage = self._switchesReservedResources[zoneName][switchID]["tcamUsage"]
-            self._switchesReservedResources[zoneName][switchID]["tcamUsage"] = tcamUsage \
-                + reservedTcamUsage
-
-    def releaseSwitchResource(self, switchID, releaseTcamUsage, zoneName):
-        if not self._switchesReservedResources.has_key(zoneName):
-            self._switchesReservedResources[zoneName] = {}
-        if not self._switchesReservedResources[zoneName].has_key(switchID):
-            raise ValueError("Unknown switchID:{0}".format(switchID))
-        else:
-            tcamUsage = self._switchesReservedResources[zoneName][switchID]["tcamUsage"]
-            self._switchesReservedResources[zoneName][switchID]["tcamUsage"] = tcamUsage \
-                - releaseTcamUsage
-
-    def getSwitchReservedResource(self, switchID, zoneName):
-        if not self._switchesReservedResources.has_key(zoneName):
-            self._switchesReservedResources[zoneName] = {}
-        if not self._switchesReservedResources[zoneName].has_key(switchID):
-            # raise ValueError("Unknown switchID:{0}".format(switchID))
-            self.reserveSwitchResource(switchID, 0, zoneName)
-        return self._switchesReservedResources[zoneName][switchID]["tcamUsage"]
-
-    def getSwitchResidualResource(self, switchID, zoneName):
-        reservedTCAMUsage = self.getSwitchReservedResource(switchID, zoneName)
-        switch = self.getSwitch(switchID, zoneName)
-        tcamCapacity = switch.tcamSize
-        return tcamCapacity - reservedTCAMUsage
-
-    def hasEnoughSwitchResource(self, switchID, expectedTCAM, zoneName):
-        # TCAM resources
-        switch = self.getSwitch(switchID, zoneName)
-        tCAMCapacity = switch.tcamSize
-        reservedTCAM = self.getSwitchReservedResource(
-            switchID, zoneName)
-        residualTCAM = tCAMCapacity - reservedTCAM
-        # self.logger.debug(
-        #     "switch resource, tCAMCapacity:{0}, reservedTCAM:{1}, expectedTCAM:{2}".format(
-        #         tCAMCapacity, reservedTCAM, expectedTCAM
-        #     ))
-        if residualTCAM > expectedTCAM:
-            return True
-        else:
-            return False
-
-    def reserveLinkResource(self, srcID, dstID, reservedBandwidth, zoneName):
-        if not self._linksReservedResources.has_key(zoneName):
-            self._linksReservedResources[zoneName] = {}
-        linkKey = (srcID, dstID)
-        if not self._linksReservedResources[zoneName].has_key(linkKey):
-            self._linksReservedResources[zoneName][linkKey] = {}
-            self._linksReservedResources[zoneName][linkKey]["bandwidth"] = reservedBandwidth
-        else:
-            bandwidth = self._linksReservedResources[zoneName][linkKey]["bandwidth"]
-            self._linksReservedResources[zoneName][linkKey]["bandwidth"] = bandwidth \
-                + reservedBandwidth
-
-    def releaseLinkResource(self, srcID, dstID, releaseBandwidth, zoneName):
-        if not self._linksReservedResources.has_key(zoneName):
-            self._linksReservedResources[zoneName] = {}
-        linkKey = (srcID, dstID)
-        if not self._linksReservedResources[zoneName].has_key(linkKey):
-            raise ValueError("Unknown linkKey:{0}".format(linkKey))
-        else:
-            bandwidth = self._linksReservedResources[zoneName][linkKey]["bandwidth"]
-            self._linksReservedResources[zoneName][linkKey]["bandwidth"] = bandwidth \
-                - releaseBandwidth
-
-    def getLinkReservedResource(self, srcID, dstID, zoneName):
-        if not self._linksReservedResources.has_key(zoneName):
-            self._linksReservedResources[zoneName] = {}
-        linkKey = (srcID, dstID)
-        if not self._linksReservedResources[zoneName].has_key(linkKey):
-            # raise ValueError("Unknown linkKey:{0}".format(linkKey))
-            self.reserveLinkResource(srcID, dstID, 0, zoneName)
-        return self._linksReservedResources[zoneName][linkKey]["bandwidth"]
-
-    def getLinkResidualResource(self, srcID, dstID, zoneName):
-        reservedBandwidth = self.getLinkReservedResource(srcID, dstID, zoneName)
-        link = self.getLink(srcID, dstID, zoneName)
-        bandwidthCapacity = link.bandwidth
-        residualBandwidth = bandwidthCapacity - reservedBandwidth
-        return residualBandwidth
-
-    def hasEnoughLinkResource(self, link, expectedBandwidth, zoneName):
-        reservedBandwidth = self.getLinkReservedResource(
-            link.srcID, link.dstID, zoneName)
-        bandwidth = link.bandwidth
-        residualBandwidth = bandwidth - reservedBandwidth
-        # self.logger.debug(
-        #     "link resource, bandwidth:{0}, reservedBandwidth:{1}, expectedBandwidth:{2}".format(
-        #         bandwidth, reservedBandwidth,expectedBandwidth
-        #     ))
-        if residualBandwidth > expectedBandwidth:
-            return True
-        else:
-            return False
-
-    def getLinkUtil(self, link, zoneName):
-        reservedBandwidth = self.getLinkReservedResource(
-            link.srcID, link.dstID, zoneName)
-        bandwidth = link.bandwidth
-        return reservedBandwidth*1.0/bandwidth
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

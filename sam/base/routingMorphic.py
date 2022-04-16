@@ -20,10 +20,14 @@ class RoutingMorphic(object):
         self.headerOffsets = None
         self.headerBits = None
         self.etherType = None
+        self.nshProtocolNumber = None
         self.ipProto = None
 
     def addMorphicName(self, morphicName):
         self.morphicName = morphicName
+
+    def getMorphicName(self):
+        return self.morphicName
 
     def addIdentifierName(self, identifierName):
         self.identifierName = identifierName
@@ -39,6 +43,9 @@ class RoutingMorphic(object):
 
     def addEtherType(self, etherType):
         self.etherType = etherType
+
+    def addNSHProto(self, nshProtocolNumber):
+        self.nshProtocolNumber = nshProtocolNumber
 
     def addIPProto(self, ipProto):
         self.ipProto = ipProto
@@ -69,6 +76,7 @@ class RoutingMorphic(object):
         self.addHeaderOffsets(routingMorphicDictTemplate["headerOffsets"])
         self.addHeaderBits(routingMorphicDictTemplate["headerBits"])
         self.addEtherType(routingMorphicDictTemplate["etherType"])
+        self.addNSHProto(routingMorphicDictTemplate["nshProtocolNumber"])
         self.addIPProto(routingMorphicDictTemplate["ipProto"])
         nhpDict = routingMorphicDictTemplate["commonField"]["nextHeaderProtocol"]
         self.addNextHeaderProtocol(nhpDict["value"],

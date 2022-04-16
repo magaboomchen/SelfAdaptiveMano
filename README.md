@@ -13,7 +13,7 @@ Ubuntu 16.04 LTS / 18.04 LTS
 # Installation
 please read INSTALL.md
 
-# For Yuming Liu's Information
+# For Yangpu Li's Information
 ## TODO list
 * add interference algorithm (you may need to implement some other algorithm for comparison)
 * add interference model into sam/orchestration/algorithms/base/performanceModel.py
@@ -76,15 +76,15 @@ ryu
 Readme.md
 * add rabbitmq setting
 
-Base
-* add routing/addressing scheme name to sfci's attributes
+<!-- Base
+* add routing/addressing scheme name to sfci's attributes -->
 
 Dashboard
-* give requirements
-* ask Weilin Zhou to give a design
+<!-- * give requirements -->
 * user can add new routing scheme, stores it to database, sends it to control layer's module
 * select routing/addressing scheme
 * validate SFCIID selection
+* add _initRoutingSchemeTable() and other functions in sam\dashboard\dashboardInfoBaseMaintainer.py
 
 Dispatcher
 * Sync dib into mysql periodically

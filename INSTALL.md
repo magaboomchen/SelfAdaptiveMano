@@ -28,6 +28,10 @@ sudo python -m pip install sklearn
 ```
 sudo python -m pip install paramiko enum34 psutil pika netifaces getmac pytest networkx numpy pandas gurobipy tinyrpc==0.8 ruamel.yaml==0.15.52 matplotlib scapy grpcio grpcio-tools docker sklearn ryu 
 ```
+or
+```
+pip3 install enum34 psutil pika netifaces getmac pytest networkx numpy pandas gurobipy tinyrpc==0.8 ruamel matplotlib scapy grpcio grpcio-tools docker
+```
 
 ```
 sudo apt-get install python-tk
@@ -81,6 +85,7 @@ systemctl start rabbitmq-server.service
 ```
 sudo apt-get install libmysqlclient-dev
 sudo python -m pip install MySQL-python
+sudo service mysql start
 ```
 #### Ubuntu 18.04
 ```

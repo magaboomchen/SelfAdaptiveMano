@@ -34,11 +34,12 @@ STATE_PROTECTION_MODE = "STATE_PROTECTION_MODE"  # when a failure happen, sfc/sf
 
 class SFCI(object):
     def __init__(self, sfciID, vnfiSequence=None, sloRealTimeValue=None,
-                 forwardingPathSet=None):
+                    forwardingPathSet=None, routingMorphic=None):
         self.sfciID = sfciID
         self.vnfiSequence = vnfiSequence  # only show the direction1
         self.sloRealTimeValue = sloRealTimeValue
         self.forwardingPathSet = forwardingPathSet
+        self.routingMorphic = routingMorphic
 
     def getVNFTypeByStageNum(self, stageNum):
         if stageNum == len(self.vnfiSequence):
@@ -52,7 +53,8 @@ class SFCI(object):
         sfciDict = {
             "sfciID": self.sfciID,
             "vnfiSequenceLength": len(self.vnfiSequence),
-            "forwardingPath": self.forwardingPathSet.primaryForwardingPath[1]
+            "forwardingPath": self.forwardingPathSet.primaryForwardingPath[1],
+            "routingMorphic": self.routingMorphic
         }
 
         for vnfiIndex in range(len(self.vnfiSequence)):
