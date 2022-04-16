@@ -9,10 +9,11 @@ from django.contrib.auth import views as user_views
 
 # app_name = 'webserver'
 urlpatterns = [
-    url(r'^$', views.login),
+    # url(r'^$', views.login),
     url(r'^login/$',views.login),
-    url(r'^index/$',views.index),
+    url(r'^index/',views.index),
     url(r'^logout/$',views.logout),
+    url(r'^menu/$',views.menu),
     # url(r'^user/list/$',views.userList, name='user_list'),
     # url(r'^user/list/(.+)/$',views.showUserList,name='user_listcc'),
     # url(r'^user/$',views.showUserList),
@@ -40,6 +41,7 @@ urlpatterns = [
     url(r'^SFC/list/$',views.showSFCList, name='SFC_list'),
     url(r'^SFC/list/(.+)/$',views.showSFCList,name='SFC_listcc'),
     url(r'^SFC/$',views.showSFCList),
+     url(r'^addsfc',views.addSFC),
     url(r'^SFCI/list/$',views.showSFCIList, name='SFCI_list'),
     url(r'^SFCI/list/(.+)/$',views.showSFCIList,name='SFCI_listcc'),
     url(r'^SFCI/$',views.showSFCIList),

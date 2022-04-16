@@ -36,28 +36,33 @@
 * 实现XXXInfoBaseMaintainer来承载不同的数据
 * 实现unit test
     * 通过调用不同的XXXInfoBaseMaintainer：
-        * 清空数据库Tables
-        * 将需要展示的数据存入数据库中
+        * [done]清空数据库Tables
+        * [done]将需要展示的数据存入数据库中
 
 ## 添加请求
-* 添加路由模态
-    * 路由模态名称
-    * 报头长度
-    * 匹配域列表：[(offset,bytes), (offset,bytes),...]
 * 添加SFC
-    * 选择业务类型
-        * 高带宽，低时延，高可用，尽力而为
-    * 添加SFC
-        * VNF顺序
-        * 扩缩容模式
-        * 自动，手动
-    * 选择路由模态
-        * IPv4，IPv6，NDN，自定义1，自定义2等等
-    * 选择VNF的设备模态
-        * 自动（由程序自动选择），P4，x86
+    * 显示已有的SFC
+    * 选择业务类型（appType）
+        * 高带宽（"highBW"），低时延（"lowDelay"），高可用（"HighAvaiablity"），尽力而为（"bestEffort"）
+    * 输入SFC信息（sfcInfo）
+        * VNF顺序（vnfSeq）
+            * 类型（vnfType）：VNF_TYPE_FW，VNF_TYPE_NAT, VNF_TYPE_LB, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER
+            * 配置规则（config）：租户输入一段文字
+        * 扩缩容模式（scalingMode）
+            * 自动（"Auto"），手动（"Manual"）
+    * 选择路由模态（routingMorphic）
+        * "IPv4"，"IPv6"，"SRv6", "RecoV1"
+    * 选择VNF的设备模态（deviceMorphic）
+        * "auto"，"P4"，"x86"
 * 添加SFCI
+    * 显示已有的SFCI
+    * 按钮添加SFCI
 * 删除SFCI
+    * 显示已有的SFCI
+    * 按钮删除SFCI
 * 删除SFC
+    * 显示已有的SFC
+    * 按钮添加SFC
 
 ## 符合审美的数据展示
 * 基于echart实现多样化的数据展示

@@ -31,7 +31,7 @@ class TestSFCClass(DashboardTestBase):
     def setup_sfcInfo(self):
         # setup
         self.oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123", reInitialTable=True)
-        self.sfcNum = 2
+        self.sfcNum = 100
         self.SFCList = self.genSFCList(self.sfcNum)
 
         yield

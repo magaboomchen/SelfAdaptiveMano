@@ -29,7 +29,7 @@ class TestRoutingMorphicClass(DashboardTestBase):
     def setup_routingMorphicInfo(self):
         # setup
         self.dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent", "123")
-        self.routingMorphicNum = 2
+        self.routingMorphicNum = 100
         self.routingMorphicList = self.genRoutingMorphicList(self.routingMorphicNum)
 
         yield

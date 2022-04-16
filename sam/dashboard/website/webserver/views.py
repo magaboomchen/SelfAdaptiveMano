@@ -101,6 +101,17 @@ def index(req):
     return render(req, 'index.html', {'OsVersion': OsVersion})
 
 @login_required
+def menu(req):
+    # system = platform.system()
+    # if system == 'Windows':
+    #     version = platform.version()
+    #     OsVersion = system + '. '+ version
+    # else:
+    #     node = platform.node()
+    #     OsVersion = node + '@' + system
+    return render(req, 'menu.html')
+
+@login_required
 def logout(req):
     '''
     注销
@@ -840,6 +851,25 @@ def showSFCList(req):
                 'pageNum': pageNum,
                 'numDict': numDict
             })
+
+@login_required
+def addSFC(req):
+    SFCsTupleList = getAllSFCsFromDataBase()
+    SFCs = getAllSFCsDictList(SFCsTupleList)
+    pageNum = getPageNumFromHttpRequest(req)
+    displayedSFCsList = getDisplayedSFCsListOnPage(SFCs, pageNum)
+    SFCsNumPerPage = 11
+    totalPageNum = getTotalPageNum(len(SFCs), SFCsNumPerPage)
+    pageRange = getPageRange(pageNum, totalPageNum)
+    numDict=getNumDict(pageNum, totalPageNum)
+    print(pageNum)
+    return render(req, 'addSFC.html',
+            {'displayedSFCsList' : displayedSFCsList,
+                'pageRange': pageRange,
+                'totalPageNum': totalPageNum,
+                'pageNum': pageNum,
+                'numDict': numDict
+            })       
 
 def getAllSFCIsFromDataBase():
     dibm = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
