@@ -20,7 +20,7 @@ from sam.base.topoGen.base.common import SFC_REQUEST_NUM, VNF_NUM, SERVER_NUM
 from sam.base.topoGen.base.mkdirs import mkdirs
 from sam.base.topoGen.base.dhcpServer import DHCPServer
 
-SERVER_NUMA_CPU_DISTRIBUTION = [range(0,25,2), range(1,25,2)]
+SERVER_NUMA_CPU_DISTRIBUTION = [range(0,24,2), range(1,25,2)]
 SERVER_NUMA_MEMORY_DISTRIBUTION = [256, 256]
 
 
@@ -144,6 +144,8 @@ class Topology(object):
         self.sfcs = {}
         self.sfcis = {}
         self.flows = {}
+        self.vnfis = {}
+        self.bgProcesses = {}
 
     def _readNodeLinkNum(self, line):
         # self.logger.debug("line:{0}".format(line))
@@ -502,6 +504,8 @@ class Topology(object):
             "sfcs": self.sfcs,
             "sfcis": self.sfcis,
             "flows": self.flows,
+            "bgProcesses": self.bgProcesses,
+            "vnfis": self.vnfis,
         }
 
         pickle.dump(topologyDict, df)

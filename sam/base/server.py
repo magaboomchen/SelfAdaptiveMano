@@ -210,7 +210,7 @@ class Server(object):
         self._coreSocketDistribution = [12,12]
         self._numaNum = 2
         self._coreNUMADistribution = [12,12]
-        self._coreUtilization = [0,0,0,0,0,0,0,0,0,0,0,0]
+        self._coreUtilization = [0] * 24
         self._hugepagesTotal = [256,256]
         self._hugepagesFree = [256,256]
         self._hugepageSize = 1048576

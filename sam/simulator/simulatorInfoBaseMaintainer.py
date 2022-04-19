@@ -26,6 +26,8 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.sfcs = {}
         self.sfcis = {}
         self.flows = {}
+        self.bgProcesses = {}
+        self.vnfis = {}
 
     def reset(self):
         self.links.clear()
@@ -35,6 +37,8 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.sfcs.clear()
         self.sfcis.clear()
         self.flows.clear()
+        self.bgProcesses.clear()
+        self.vnfis.clear()
 
     def loadTopology(self, topoFilePath):
         topologyDict = self.pIO.readPickleFile(topoFilePath)
@@ -47,6 +51,8 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.sfcs = topologyDict["sfcs"]
         self.sfcis = topologyDict["sfcis"]
         self.flows = topologyDict["flows"]
+        self.vnfis = topologyDict["vnfis"]
+        self.bgProcesses = topologyDict["bgProcesses"]
 
     def saveTopology(self, topoFilePath):
         topologyDict = {
@@ -57,6 +63,8 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
             "sfcs": self.sfcs,
             "sfcis": self.sfcis,
             "flows": self.flows,
+            "vnfis": self.vnfis,
+            "bgProcesses": self.bgProcesses,
         }
 
         self.pIO.writePickleFile(topoFilePath, topologyDict)
