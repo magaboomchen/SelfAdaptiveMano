@@ -1,2 +1,1 @@
-reset
-load /home/smith/Projects/SelfAdaptiveMano/sam/simulator/topologyExamples/fat-tree-k=32_V=512_M=100.M=100.pickle
+load sam/simulator/topologyExamples/fat-tree-k=32_V=512_M=100.M=100.pickle

@@ -5,15 +5,19 @@
 store dcn information
 e.g. switch, server, link, sfc, sfci, vnfi, flow
 '''
+import math
+import numpy as np
+from typing import List
 
-import uuid
-
+from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
 from sam.base.pickleIO import PickleIO
 from sam.base.sfc import SFC, SFCI
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.base.link import Link
-from re import match
 from sam.base.socketConverter import SocketConverter
+from sam.base.server import Server
+
+BG_LINK_NUM = 1000
 
 
 class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
@@ -29,6 +33,9 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.sfcs = {}
         self.sfcis = {}
         self.flows = {}
+        self.bgProcesses = {}
+        self.vnfis = {}
+        self.podPaths = []
 
     def reset(self):
         self.links.clear()
@@ -38,46 +45,40 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.sfcs.clear()
         self.sfcis.clear()
         self.flows.clear()
+        self.bgProcesses.clear()
+        self.vnfis.clear()
+        self.podPaths = []
 
     def loadTopology(self, topoFilePath):
-        self.reset()
-        self.topologyDict = self.pIO.readPickleFile(topoFilePath)
+        topologyDict = self.pIO.readPickleFile(topoFilePath)
         # more details in /sam/simulator/test/readme.md
 
-        self.links.update(self.topologyDict["links"])
-        self.switches.update(self.topologyDict["switches"])
-        self.servers.update(self.topologyDict["servers"])
+        self.links = topologyDict["links"]
+        self.switches = topologyDict["switches"]
+        self.servers = topologyDict["servers"]
+        self.serverLinks = topologyDict["serverLinks"]
+        self.sfcs = topologyDict["sfcs"]
+        self.sfcis = topologyDict["sfcis"]
+        self.flows = topologyDict["flows"]
+        self.vnfis = topologyDict["vnfis"]
+        self.bgProcesses = topologyDict["bgProcesses"]
+        self.podPaths = topologyDict["podPaths"]
 
-        for serverID, serverInfo in self.servers.items():
-            serverInfo['uplink2NUMA'] = {}
-            serverInfo['Status'] = {'coreAssign': {}}
+    def saveTopology(self, topoFilePath):
+        topologyDict = {
+            "links": self.links,
+            "switches": self.switches,
+            "servers": self.servers,
+            "serverLinks": self.serverLinks,
+            "sfcs": self.sfcs,
+            "sfcis": self.sfcis,
+            "flows": self.flows,
+            "vnfis": self.vnfis,
+            "bgProcesses": self.bgProcesses,
+            "podPaths": self.podPaths,
+        }
 
-        for switchID, switchInfo in self.switches.items():
-            switchInfo['Status'] = {'nextHop': {}}
-            switchInfo['switch'].tcamUsage = 0
-
-        for (srcNodeID, dstNodeID), linkInfo in self.links.items():
-            linkInfo['Status'] = {'usedBy': set()}
-
-        for serverID, serverInfo in self.servers.items():
-            server = serverInfo['server']
-            DatapathIP = server.getDatapathNICIP()
-            for switchID, switchInfo in self.switches.items():
-                switch = switchInfo['switch']
-                switchNet = switch.lanNet
-                if self.sc.isLANIP(DatapathIP, switchNet):
-                    break
-            else:
-                continue
-            bw = server.getNICBandwidth()
-            self.serverLinks[(serverID, switchID)] = {'link': Link(serverID, switchID, bw), 'Active': True,
-                                                      'Status': None}
-            self.serverLinks[(switchID, serverID)] = {'link': Link(switchID, serverID, bw), 'Active': True,
-                                                      'Status': None}
-            serverInfo['uplink2NUMA'][switchID] = 0
-
-        for (srcNodeID, dstNodeID), linkInfo in self.serverLinks.items():
-            linkInfo['Status'] = {'usedBy': set()}
+        self.pIO.writePickleFile(topoFilePath, topologyDict)
 
     def turnOffSwitch(self, switchID):
         if switchID not in self.switches:
@@ -127,3 +128,89 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         # identifierDict['value'] = <object routingMorphic>.encodeIdentifierForSFC(sfciID, vnfID)
         # identifierDict['humanReadable'] = <object routingMorphic>.value2HumanReadable(identifierDict['value'])
         # flow(identifierDict)
+
+    def updateServerResource(self):
+        serverProcesses = {}
+        for serverID, vnfis in self.vnfis:
+            serverProcesses[serverID] = [{'cpu': vnfi['cpu'](), 'mem': vnfi['mem']} for vnfi in vnfis]
+
+        for serverID, process in self.bgProcesses:
+            serverProcesses.setdefault(serverID, []).append({'cpu': process['cpu'](), 'mem': process['mem']()})
+
+        for serverID, processes in serverProcesses:
+            server = self.servers[serverID]['server']  # type: Server
+            cpu = reduce(lambda x, y: x + y, [process['cpu'] for process in processes])
+            distribution = server.getCoreNUMADistribution()
+            utilization = [0] * len(server._coreUtilization)
+            for singleCpu in distribution:
+                for core in singleCpu:
+                    if cpu <= 0:
+                        break
+                    usage = min(cpu, 100)
+                    utilization[core] = usage
+                    cpu -= usage
+            server._coreUtilization = utilization
+
+            pageSize = server.getHugepagesSize()
+            pageUsage = reduce(lambda x, y: x + y,
+                               [int(math.ceil(process['mem'] * 1024 / pageSize)) for process in processes])
+            server._hugepagesFree = server.getHugepagesTotal() - pageUsage
+
+    def updateLinkUtilization(self):
+        for linkInfo in self.links.values():
+            link = linkInfo['link']
+            link.utilization = 0.0
+
+        for sfciID, sfci in self.sfcis.items():
+            directions = sfci['sfc'].directions
+            primaryForwardingPath = sfci['sfci'].forwardingPathSet.primaryForwardingPath
+            for direction in directions:
+                dirID = direction['ID']
+                if dirID == 0:
+                    pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+                elif dirID == 1:
+                    pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
+                if len(sfci['traffics'][dirID]) == 0:
+                    bw = 0
+                else:
+                    bw = reduce(lambda x, y: x + y,
+                                [self.flows[traffic_id]['bw']() for traffic_id in sfci['traffics'][dirID]])
+                for stage, path in enumerate(pathlist):
+                    for hop, (_, srcID) in enumerate(path):
+                        if hop != len(path) - 1:
+                            dstID = path[hop + 1][1]
+                            if hop == 0:  # server -> switch, switchID is server
+                                link = self.serverLinks[(srcID, dstID)]['link']  # type: Link
+                            elif hop == len(path) - 2:  # switch -> server
+                                link = self.serverLinks[(srcID, dstID)]['link']
+                            else:  # switch -> switch
+                                link = self.links[(srcID, dstID)]['link']
+                            link.utilization = min(100 * bw / (link.bandwidth * 1024), 100.0)
+
+        tm = np.random.uniform(0.0, 1024.0, (384, 384))
+        index = np.random.rand(384, 384)
+        scale = float(BG_LINK_NUM) / (384 * 383)
+        for i in range(384):
+            for j in range(384):
+                if i == j or index[i][j] > scale:
+                    continue
+                paths = self.shortestPaths(i + 896, j + 896)
+                parts = len(paths)
+                for path in paths:
+                    for link in path:
+                        link.utilization = min(100 * tm[i][j] / parts / (link.bandwidth * 1024) + link.utilization,
+                                               100.0)
+
+    def shortestPaths(self, i, j):
+        # type: (int, int) -> List[List[Link]]
+        pod_i = (i - 768) // 16
+        pod_j = (j - 768) // 16
+        paths = []
+        for podPath in self.podPaths[pod_i][pod_j]:
+            paths.append([self.links[(i, podPath[0])]['link']])
+            for ii, src in enumerate(podPath):
+                if ii != len(podPath) - 1:
+                    paths[-1].append(self.links[(src, podPath[ii + 1])]['link'])
+                else:
+                    paths[-1].append(self.links[(src, j)]['link'])
+        return paths

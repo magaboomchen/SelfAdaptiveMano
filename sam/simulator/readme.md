@@ -45,3 +45,12 @@ traffic traffic_id --trafficPattern=constant --value=<value> [--pktSize=<pkt siz
 ```
 traffic traffic_id --trafficPattern=uniform --min=<min> --max=<max> [--pktSize=<pkt size>]
 ```
+10. 模拟对server的资源的使用（静态）
+```
+server server_id cpu|mem --pattern=constant --value=<value>
+```
+11. 模拟对server的资源的使用（均匀分布）
+```
+server server_id cpu|mem --pattern=uniform --min=<value> --max=<value>
+```
+> 注： 上述两条命令中value的单位，cpu为百分比（%），内存为MB。

@@ -1,7 +1,5 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
-
-import time
 import random
 from getopt import getopt
 
@@ -47,13 +45,40 @@ def load_handler(cmd_list, sib):
         raise ValueError
 
 
+@add_op_handler('save')
+def save_handler(cmd_list, sib):
+    # type: (list, SimulatorInfoBaseMaintainer) -> None
+    opt, arg = getopt(cmd_list, '', ())
+    if not opt and len(arg) == 1:  # load <filename>
+        sib.saveTopology(arg[0])
+    else:
+        raise ValueError
+
+
+@add_op_handler('exit')
+def exit_handler(cmd_list, sib):
+    # type: (list, SimulatorInfoBaseMaintainer) -> None
+    raise SystemExit
+
+
 @add_op_handler('server')
 def server_handler(cmd_list, sib):
     # type: (list, SimulatorInfoBaseMaintainer) -> None
-    opt, arg = getopt(cmd_list, '', ())
-    if not opt and len(arg) == 2 and arg[1] in ('up', 'down'):  # server <serverID> up|down
-        server_id = int(arg[0])
-        sib.servers[server_id]['Active'] = (arg[1].lower() == 'up')
+    server_id = int(cmd_list[0])
+    cmd = cmd_list[1]
+    opt, arg = getopt(cmd_list[2:], '', ('pattern=', 'value=', 'min=', 'max='))
+    opt = dict(opt)
+    if not opt and not arg and cmd in ('up', 'down'):  # server <serverID> up|down
+        sib.servers[server_id]['Active'] = (arg[0] == 'up')
+    elif not arg and cmd in ('cpu', 'mem'):
+        sib.bgProcesses.setdefault(server_id, {'cpu': lambda: 0, 'mem': lambda: 0})
+        if opt['--pattern'] == 'constant' and '--value' in opt:
+            func = lambda: float(opt['--value'])
+        elif opt['--pattern'] == 'uniform' and '--max' in opt and '--min' in opt:
+            func = lambda: (float(opt['--min']) + random.random() * (float(opt['--max']) - float(opt['--min'])))
+        else:
+            raise ValueError
+        sib.bgProcesses[server_id][cmd] = func
     else:
         raise ValueError
 
