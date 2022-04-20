@@ -1,7 +1,5 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
-
-import time
 import random
 from getopt import getopt
 
@@ -67,7 +65,7 @@ def exit_handler(cmd_list, sib):
 def server_handler(cmd_list, sib):
     # type: (list, SimulatorInfoBaseMaintainer) -> None
     server_id = int(cmd_list[0])
-    cmd=cmd_list[1]
+    cmd = cmd_list[1]
     opt, arg = getopt(cmd_list[2:], '', ('pattern=', 'value=', 'min=', 'max='))
     opt = dict(opt)
     if not opt and not arg and cmd in ('up', 'down'):  # server <serverID> up|down

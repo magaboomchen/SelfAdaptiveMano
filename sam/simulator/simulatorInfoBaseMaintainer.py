@@ -5,8 +5,9 @@
 store dcn information
 e.g. switch, server, link, sfc, sfci, vnfi, flow
 '''
-import copy
 import math
+import numpy as np
+from typing import List
 
 from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
 from sam.base.pickleIO import PickleIO
@@ -15,6 +16,8 @@ from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.base.link import Link
 from sam.base.socketConverter import SocketConverter
 from sam.base.server import Server
+
+BG_LINK_NUM = 1000
 
 
 class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
@@ -32,6 +35,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.flows = {}
         self.bgProcesses = {}
         self.vnfis = {}
+        self.podPaths = []
 
     def reset(self):
         self.links.clear()
@@ -43,6 +47,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.flows.clear()
         self.bgProcesses.clear()
         self.vnfis.clear()
+        self.podPaths = []
 
     def loadTopology(self, topoFilePath):
         topologyDict = self.pIO.readPickleFile(topoFilePath)
@@ -57,6 +62,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.flows = topologyDict["flows"]
         self.vnfis = topologyDict["vnfis"]
         self.bgProcesses = topologyDict["bgProcesses"]
+        self.podPaths = topologyDict["podPaths"]
 
     def saveTopology(self, topoFilePath):
         topologyDict = {
@@ -69,6 +75,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
             "flows": self.flows,
             "vnfis": self.vnfis,
             "bgProcesses": self.bgProcesses,
+            "podPaths": self.podPaths,
         }
 
         self.pIO.writePickleFile(topoFilePath, topologyDict)
@@ -150,6 +157,10 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
             server._hugepagesFree = server.getHugepagesTotal() - pageUsage
 
     def updateLinkUtilization(self):
+        for linkInfo in self.links.values():
+            link = linkInfo['link']
+            link.utilization = 0.0
+
         for sfciID, sfci in self.sfcis.items():
             directions = sfci['sfc'].directions
             primaryForwardingPath = sfci['sfci'].forwardingPathSet.primaryForwardingPath
@@ -175,3 +186,31 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
                             else:  # switch -> switch
                                 link = self.links[(srcID, dstID)]['link']
                             link.utilization = min(100 * bw / (link.bandwidth * 1024), 100.0)
+
+        tm = np.random.uniform(0.0, 1024.0, (384, 384))
+        index = np.random.rand(384, 384)
+        scale = float(BG_LINK_NUM) / (384 * 383)
+        for i in range(384):
+            for j in range(384):
+                if i == j or index[i][j] > scale:
+                    continue
+                paths = self.shortestPaths(i + 896, j + 896)
+                parts = len(paths)
+                for path in paths:
+                    for link in path:
+                        link.utilization = min(100 * tm[i][j] / parts / (link.bandwidth * 1024) + link.utilization,
+                                               100.0)
+
+    def shortestPaths(self, i, j):
+        # type: (int, int) -> List[List[Link]]
+        pod_i = (i - 768) // 16
+        pod_j = (j - 768) // 16
+        paths = []
+        for podPath in self.podPaths[pod_i][pod_j]:
+            paths.append([self.links[(i, podPath[0])]['link']])
+            for ii, src in enumerate(podPath):
+                if ii != len(podPath) - 1:
+                    paths[-1].append(self.links[(src, podPath[ii + 1])]['link'])
+                else:
+                    paths[-1].append(self.links[(src, j)]['link'])
+        return paths

@@ -7,6 +7,7 @@ or read customized topology and generate topology
 '''
 
 import pickle
+import networkx
 import datetime
 
 from sam.base.link import Link
@@ -20,7 +21,7 @@ from sam.base.topoGen.base.common import SFC_REQUEST_NUM, VNF_NUM, SERVER_NUM
 from sam.base.topoGen.base.mkdirs import mkdirs
 from sam.base.topoGen.base.dhcpServer import DHCPServer
 
-SERVER_NUMA_CPU_DISTRIBUTION = [range(0,24,2), range(1,25,2)]
+SERVER_NUMA_CPU_DISTRIBUTION = [range(0, 24, 2), range(1, 25, 2)]
 SERVER_NUMA_MEMORY_DISTRIBUTION = [256, 256]
 
 
@@ -28,7 +29,7 @@ class Topology(object):
     def __init__(self):
         self._sc = SocketConverter()
         logConfigur = LoggerConfigurator("topology", './log',
-            'topology.log', level='debug')
+                                         'topology.log', level='debug')
         self.logger = logConfigur.getLogger()
 
     def genTestbedSW1Topology(self, expNum, nPoPNum):
@@ -80,7 +81,7 @@ class Topology(object):
         self.startGeneration(topoType, expNum, topoName)
 
     def genAllTopologies(self, expNum):
-        for topoType,topoNameList in self.genTopoNameDict().items():
+        for topoType, topoNameList in self.genTopoNameDict().items():
             for topoName in topoNameList:
                 self.startGeneration(topoType, expNum, topoName)
 
@@ -107,13 +108,13 @@ class Topology(object):
         self._postProcessTopology()
 
         topologyDir = "./topology/{0}/{1}/".format(topoType,
-            expNum)
+                                                   expNum)
         mkdirs(topologyDir)
 
         pickleFilePath \
             = "./topology/{0}/{1}/{2}.M={3}.pickle".format(
-                    topoType, expNum, topoName,
-                    SFC_REQUEST_NUM)
+            topoType, expNum, topoName,
+            SFC_REQUEST_NUM)
 
         self.logger.info("pickleFilePath:{0}".format(pickleFilePath))
 
@@ -124,11 +125,11 @@ class Topology(object):
         with open(filePath, 'r') as f:
             lines = f.readlines()
             self._readNodeLinkNum(lines[0])
-            self._readVnfLocation(lines[1:1+VNF_NUM])
-            self._readSFCSourceDst(lines[VNF_NUM+1:VNF_NUM+1+SFC_REQUEST_NUM])
-            self._readLink(lines[VNF_NUM+SFC_REQUEST_NUM+1:])
+            self._readVnfLocation(lines[1:1 + VNF_NUM])
+            self._readSFCSourceDst(lines[VNF_NUM + 1:VNF_NUM + 1 + SFC_REQUEST_NUM])
+            self._readLink(lines[VNF_NUM + SFC_REQUEST_NUM + 1:])
             if self.linkNum == 0:
-                self._readNode(lines[1:1+VNF_NUM])
+                self._readNode(lines[1:1 + VNF_NUM])
 
     def init(self):
         self._dhcp = DHCPServer()
@@ -146,6 +147,7 @@ class Topology(object):
         self.flows = {}
         self.vnfis = {}
         self.bgProcesses = {}
+        self.podPaths = []
 
     def _readNodeLinkNum(self, line):
         # self.logger.debug("line:{0}".format(line))
@@ -161,7 +163,7 @@ class Topology(object):
             self.vnfLocation[vnfType] = []
             NPoPNum = int(line[1])
             for index in range(NPoPNum):
-                nodeID = int(line[index+2])
+                nodeID = int(line[index + 2])
                 self.vnfLocation[vnfType].append(nodeID)
         self.logger.debug("vnfLocation:{0}".format(self.vnfLocation))
 
@@ -181,26 +183,26 @@ class Topology(object):
             srcNodeID = int(line[0])
             dstNodeID = int(line[1])
             bw = float(line[3])
-            self.links[(srcNodeID,dstNodeID)] = {
-                'link':Link(srcNodeID, dstNodeID, bandwidth=bw),
-                'Active':True,
-                'Status':None}
+            self.links[(srcNodeID, dstNodeID)] = {
+                'link': Link(srcNodeID, dstNodeID, bandwidth=bw),
+                'Active': True,
+                'Status': None}
             if srcNodeID not in self.switches.keys():
                 self.switches[srcNodeID] = {
                     'switch': Switch(srcNodeID,
-                        self._getSwitchType(srcNodeID),
-                        self._dhcp.genLanNet(srcNodeID),
-                        self._isSwitchProgrammable(srcNodeID)),
-                    'Active':True,
-                    'Status':None}
+                                     self._getSwitchType(srcNodeID),
+                                     self._dhcp.genLanNet(srcNodeID),
+                                     self._isSwitchProgrammable(srcNodeID)),
+                    'Active': True,
+                    'Status': None}
             if dstNodeID not in self.switches.keys():
                 self.switches[dstNodeID] = {
                     'switch': Switch(dstNodeID,
-                        self._getSwitchType(dstNodeID),
-                        self._dhcp.genLanNet(dstNodeID),
-                        self._isSwitchProgrammable(dstNodeID)),
-                    'Active':True,
-                    'Status':None}
+                                     self._getSwitchType(dstNodeID),
+                                     self._dhcp.genLanNet(dstNodeID),
+                                     self._isSwitchProgrammable(dstNodeID)),
+                    'Active': True,
+                    'Status': None}
 
     def _readNode(self, lines):
         # self.logger.debug("lines:{0}".format(lines))
@@ -212,11 +214,11 @@ class Topology(object):
             if nodeID not in self.switches.keys():
                 self.switches[nodeID] = {
                     'switch': Switch(nodeID,
-                        self._getSwitchType(nodeID),
-                        self._dhcp.genLanNet(nodeID),
-                        self._isSwitchProgrammable(nodeID)),
-                    'Active':True,
-                    'Status':None}
+                                     self._getSwitchType(nodeID),
+                                     self._dhcp.genLanNet(nodeID),
+                                     self._isSwitchProgrammable(nodeID)),
+                    'Active': True,
+                    'Status': None}
         self.logger.debug("nodes:{0}".format(self.switches))
 
     def _updateSwitchSupportVNF(self):
@@ -261,7 +263,7 @@ class Topology(object):
         nodeVNFSupportDict = self._getNodeVNFSupportDict()
         for nodeID, vnfTypeList in nodeVNFSupportDict.items():
             self.logger.debug("nodeID:{0} vnfTypeList:{1}".format(
-                                nodeID, vnfTypeList))
+                nodeID, vnfTypeList))
             for index in range(SERVER_NUM):
                 self.logger.info(
                     "addServers connecting nodeID:{0}".format(nodeID))
@@ -284,16 +286,16 @@ class Topology(object):
                 server.setCoreNUMADistribution(SERVER_NUMA_CPU_DISTRIBUTION)
                 server.setHugepagesTotal(SERVER_NUMA_MEMORY_DISTRIBUTION)
                 self.servers[serverID] = {'Active': True,
-                            'timestamp': datetime.datetime(2020, 10, 27, 0,
-                                                            2, 39, 408596),
-                            'server': server,
-                            'Status': None}
+                                          'timestamp': datetime.datetime(2020, 10, 27, 0,
+                                                                         2, 39, 408596),
+                                          'server': server,
+                                          'Status': None}
 
     def addNFVIs4FatTree(self, podNum):
         nodeVNFSupportDict = self._getNodeVNFSupportDict()
         for nodeID, vnfTypeList in nodeVNFSupportDict.items():
             self.logger.debug("nodeID:{0} vnfTypeList:{1}".format(
-                                nodeID, vnfTypeList))
+                nodeID, vnfTypeList))
             serverNum = podNum / 2
             for index in range(serverNum):
                 self.logger.info(
@@ -317,16 +319,16 @@ class Topology(object):
                 server.setCoreNUMADistribution(SERVER_NUMA_CPU_DISTRIBUTION)
                 server.setHugepagesTotal(SERVER_NUMA_MEMORY_DISTRIBUTION)
                 self.servers[serverID] = {'Active': True,
-                            'timestamp': datetime.datetime(2020, 10, 27, 0,
-                                                            2, 39, 408596),
-                            'server': server,
-                            'Status': None}
+                                          'timestamp': datetime.datetime(2020, 10, 27, 0,
+                                                                         2, 39, 408596),
+                                          'server': server,
+                                          'Status': None}
 
     def addNFVIs4Testbed_sw1(self, serverNum):
         nodeVNFSupportDict = self._getNodeVNFSupportDict()
         for nodeID, vnfTypeList in nodeVNFSupportDict.items():
             self.logger.debug("nodeID:{0} vnfTypeList:{1}".format(
-                                nodeID, vnfTypeList))
+                nodeID, vnfTypeList))
             for index in range(serverNum):
                 self.logger.info(
                     "addServers connecting nodeID:{0}".format(nodeID))
@@ -349,68 +351,68 @@ class Topology(object):
                 server.setCoreNUMADistribution(SERVER_NUMA_CPU_DISTRIBUTION)
                 server.setHugepagesTotal(SERVER_NUMA_MEMORY_DISTRIBUTION)
                 self.servers[serverID] = {'Active': True,
-                            'timestamp': datetime.datetime(2020, 10, 27, 0,
-                                                            2, 39, 408596),
-                            'server': server,
-                            'Status': None}
+                                          'timestamp': datetime.datetime(2020, 10, 27, 0,
+                                                                         2, 39, 408596),
+                                          'server': server,
+                                          'Status': None}
 
     def addNFVIs4LogicalTwoTier(self):
         # hard-code function
         nodeVNFSupportDict = self._getNodeVNFSupportDict()
         # add servers to nodeID:2
         nodeID = 2
-        self._addServer2Switch(nodeID = nodeID,
-                                ctIntfName="eno1",
-                                ctIP = "192.168.8.17",
-                                ctMAC = "b8:ca:3a:65:f7:f8",
-                                dpIP = "2.2.0.66",
-                                dpMAC = "b8:ca:3a:65:f7:fa",
-                                serverType = SERVER_TYPE_NFVI,
-                                vnfTypeList = nodeVNFSupportDict[nodeID]
-                            )
+        self._addServer2Switch(nodeID=nodeID,
+                               ctIntfName="eno1",
+                               ctIP="192.168.8.17",
+                               ctMAC="b8:ca:3a:65:f7:f8",
+                               dpIP="2.2.0.66",
+                               dpMAC="b8:ca:3a:65:f7:fa",
+                               serverType=SERVER_TYPE_NFVI,
+                               vnfTypeList=nodeVNFSupportDict[nodeID]
+                               )
 
-        self._addServer2Switch(nodeID = nodeID,
-                                ctIntfName="eno1",
-                                ctIP = "192.168.8.18",
-                                ctMAC = "ec:f4:bb:da:39:44",
-                                dpIP = "2.2.0.68",
-                                dpMAC = "ec:f4:bb:da:39:45",
-                                serverType = SERVER_TYPE_NFVI,
-                                vnfTypeList = nodeVNFSupportDict[nodeID]
-                            )
+        self._addServer2Switch(nodeID=nodeID,
+                               ctIntfName="eno1",
+                               ctIP="192.168.8.18",
+                               ctMAC="ec:f4:bb:da:39:44",
+                               dpIP="2.2.0.68",
+                               dpMAC="ec:f4:bb:da:39:45",
+                               serverType=SERVER_TYPE_NFVI,
+                               vnfTypeList=nodeVNFSupportDict[nodeID]
+                               )
 
         # add servers to nodeID:3
         nodeID = 3
-        self._addServer2Switch(nodeID = nodeID,
-                                ctIntfName="eno1",
-                                ctIP = "192.168.0.173",
-                                ctMAC = "18:66:da:85:1c:c3",
-                                dpIP = "2.2.0.100",
-                                dpMAC = "00:1b:21:c0:8f:98",
-                                serverType = SERVER_TYPE_NFVI,
-                                vnfTypeList = nodeVNFSupportDict[nodeID],
-                                coreNUMADistribution=[range(0,250,2), range(1,250,2)]
-                            )
+        self._addServer2Switch(nodeID=nodeID,
+                               ctIntfName="eno1",
+                               ctIP="192.168.0.173",
+                               ctMAC="18:66:da:85:1c:c3",
+                               dpIP="2.2.0.100",
+                               dpMAC="00:1b:21:c0:8f:98",
+                               serverType=SERVER_TYPE_NFVI,
+                               vnfTypeList=nodeVNFSupportDict[nodeID],
+                               coreNUMADistribution=[range(0, 250, 2), range(1, 250, 2)]
+                               )
 
-        self._addServer2Switch(nodeID = nodeID,
-                                ctIntfName="eth1",
-                                ctIP = "192.168.0.127",
-                                ctMAC = "18:66:da:85:f9:ee",
-                                dpIP = "2.2.0.98",
-                                dpMAC = "b8:ca:3a:65:f7:fa",
-                                serverType = SERVER_TYPE_NFVI,
-                                vnfTypeList = nodeVNFSupportDict[nodeID],
-                                coreNUMADistribution=[range(0,250,2), range(1,250,2)]
-                            )
+        self._addServer2Switch(nodeID=nodeID,
+                               ctIntfName="eth1",
+                               ctIP="192.168.0.127",
+                               ctMAC="18:66:da:85:f9:ee",
+                               dpIP="2.2.0.98",
+                               dpMAC="b8:ca:3a:65:f7:fa",
+                               serverType=SERVER_TYPE_NFVI,
+                               vnfTypeList=nodeVNFSupportDict[nodeID],
+                               coreNUMADistribution=[range(0, 250, 2), range(1, 250, 2)]
+                               )
 
     def _addServer2Switch(self, nodeID, ctIntfName, ctIP, ctMAC, dpIP,
-                            dpMAC, serverType, vnfTypeList,
-                            coreNUMADistribution=SERVER_NUMA_CPU_DISTRIBUTION):
+                          dpMAC, serverType, vnfTypeList,
+                          coreNUMADistribution=SERVER_NUMA_CPU_DISTRIBUTION):
         if dpIP == None:
             dpIP = self._dhcp.assignIP(nodeID)
         self.logger.debug("addServers nodeID:{0}, dpIP:{1},"
-                            "ctIP:{2} vnfTypeList:{3}".format(
-                            nodeID, dpIP, ctIP, vnfTypeList))
+                          "ctIP:{2} vnfTypeList:{3}".format(
+            nodeID, dpIP, ctIP, vnfTypeList))
 
         server = Server(ctIntfName, dpIP, serverType)
         server.setControlNICIP(ctIP)
@@ -426,14 +428,14 @@ class Topology(object):
         self.servers[serverID] = {
             'Active': True,
             'timestamp': datetime.datetime(2020, 10, 27, 0,
-                                            2, 39, 408596),
+                                           2, 39, 408596),
             'server': server,
-            'Status':None}
+            'Status': None}
 
     def _getNodeVNFSupportDict(self):
         nodeVNFSupportDict = {}
         for vnfType, nodeIDList in self.vnfLocation.items():
-            self.logger.debug("vnfType{0}, nodeIDList:{1}".format(vnfType,nodeIDList))
+            self.logger.debug("vnfType{0}, nodeIDList:{1}".format(vnfType, nodeIDList))
             for nodeID in nodeIDList:
                 if nodeID not in nodeVNFSupportDict:
                     nodeVNFSupportDict[nodeID] = [vnfType]
@@ -467,24 +469,24 @@ class Topology(object):
             server.setCoreNUMADistribution(SERVER_NUMA_CPU_DISTRIBUTION)
             server.setHugepagesTotal(SERVER_NUMA_MEMORY_DISTRIBUTION)
             self.servers[serverID] = {'Active': True,
-                'timestamp': datetime.datetime(2020, 10, 27, 0,
-                                                2, 39, 408596),
-                'server':server,
-                'Status':None}
+                                      'timestamp': datetime.datetime(2020, 10, 27, 0,
+                                                                     2, 39, 408596),
+                                      'server': server,
+                                      'Status': None}
 
     def addClassifier4LogicalTwoTier(self):
         # hard-code function
         # add servers to nodeID: 1
         nodeID = 1
-        self._addServer2Switch(nodeID = nodeID,
-                                ctIntfName="br1",
-                                ctIP = "192.168.0.194",
-                                ctMAC = "18:66:da:86:4c:15",
-                                dpIP = "2.2.0.36",
-                                dpMAC = "00:1b:21:c0:8f:ae",
-                                serverType = SERVER_TYPE_CLASSIFIER,
-                                vnfTypeList = []
-                            )
+        self._addServer2Switch(nodeID=nodeID,
+                               ctIntfName="br1",
+                               ctIP="192.168.0.194",
+                               ctMAC="18:66:da:86:4c:15",
+                               dpIP="2.2.0.36",
+                               dpMAC="00:1b:21:c0:8f:ae",
+                               serverType=SERVER_TYPE_CLASSIFIER,
+                               vnfTypeList=[]
+                               )
 
     def _assignServerID(self):
         return len(self.servers) + SERVERID_OFFSET
@@ -506,6 +508,7 @@ class Topology(object):
             "flows": self.flows,
             "bgProcesses": self.bgProcesses,
             "vnfis": self.vnfis,
+            "podPaths": self.podPaths,
         }
 
         pickle.dump(topologyDict, df)
@@ -528,7 +531,7 @@ class Topology(object):
     def _addFatTree(self):
         self.topoNameDict["fat-tree"] = []
         for k in [6]:
-            for nPoPNum in [2,3,4,5,6]:
+            for nPoPNum in [2, 3, 4, 5, 6]:
                 topoName = "fat-tree-k={0}_V={1}_M={2}".format(
                     k, nPoPNum, SFC_REQUEST_NUM)
                 self.topoNameDict["fat-tree"].append(topoName)
@@ -609,3 +612,26 @@ class Topology(object):
 
         for (srcNodeID, dstNodeID), linkInfo in self.serverLinks.items():
             linkInfo['Status'] = {'usedBy': set()}
+
+        def isFirstZone(id):
+            return 0 <= id < 64 or 256 <= id < 384 or 768 <= id < 896
+
+        graph = networkx.DiGraph()
+        for link in self.links.keys():
+            if isFirstZone(link[0]) or isFirstZone(link[1]):
+                continue
+            graph.add_edge(*link)
+
+        self.podPaths = [[[] for _ in range(32)] for _ in range(32)]
+        for i in range(8, 32):
+            for j in range(8, 32):
+                if i == j:
+                    for k in range(256 + i * 16, 256 + i * 16 + 16):
+                        self.podPaths[i][j].append([k])
+                elif i < j:
+                    paths = networkx.all_shortest_paths(graph, i * 16 + 768, j * 16 + 768)
+                    for path in paths:
+                        self.podPaths[i][j].append(path[1:-1])
+                else:
+                    for path in self.podPaths[j][i]:
+                        self.podPaths[i][j].append(path[::-1])
