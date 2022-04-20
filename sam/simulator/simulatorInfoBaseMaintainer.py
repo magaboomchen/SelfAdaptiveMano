@@ -5,12 +5,15 @@
 store dcn information
 e.g. switch, server, link, sfc, sfci, vnfi, flow
 '''
+import copy
+import math
 
 from sam.base.pickleIO import PickleIO
 from sam.base.sfc import SFC, SFCI
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.base.link import Link
 from sam.base.socketConverter import SocketConverter
+from sam.base.server import Server
 
 
 class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
@@ -117,3 +120,30 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         # identifierDict['value'] = <object routingMorphic>.encodeIdentifierForSFC(sfciID, vnfID)
         # identifierDict['humanReadable'] = <object routingMorphic>.value2HumanReadable(identifierDict['value'])
         # flow(identifierDict)
+
+    def updateServerResource(self):
+        serverProcesses = {}
+        for serverID, vnfis in self.vnfis:
+            serverProcesses[serverID] = [{'cpu': vnfi['cpu'](), 'mem': vnfi['mem']} for vnfi in vnfis]
+
+        for serverID, process in self.bgProcesses:
+            serverProcesses.setdefault(serverID, []).append({'cpu': process['cpu'](), 'mem': process['mem']()})
+
+        for serverID, processes in serverProcesses:
+            server = self.servers[serverID]['server']  # type: Server
+            cpu = reduce(lambda x, y: x + y, [process['cpu'] for process in processes])
+            distribution = server.getCoreNUMADistribution()
+            utilization = [0] * len(server._coreUtilization)
+            for singleCpu in distribution:
+                for core in singleCpu:
+                    if cpu <= 0:
+                        break
+                    usage = min(cpu, 100)
+                    utilization[core] = usage
+                    cpu -= usage
+            server._coreUtilization = utilization
+
+            pageSize = server.getHugepagesSize()
+            pageUsage = reduce(lambda x, y: x + y,
+                               [int(math.ceil(process['mem'] * 1024 / pageSize)) for process in processes])
+            server._hugepagesFree = server.getHugepagesTotal() - pageUsage

@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
+import random
 
 from sam.base.command import Command, CMD_TYPE_ADD_SFC, CMD_TYPE_DEL_SFC, CMD_TYPE_ADD_SFCI, \
     CMD_TYPE_DEL_SFCI, CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_GET_FLOW_SET
@@ -8,6 +9,7 @@ from sam.base.path import DIRECTION2_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.sfc import SFC, SFCI
 from sam.base.switch import Switch
+from sam.base.vnf import VNFI
 from sam.simulator.nf import NF
 from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintainer
 
@@ -59,16 +61,15 @@ def remove_sfci(sfc, sfci, sib):
     for stage, path in enumerate(pathlist):
         if stage != len(pathlist) - 1:  # dst is vnfi
             serverID = path[-1][1]
-            serverInfo = sib.servers[serverID]
-            server = serverInfo['server']
-            switchID = path[-2][1]
-            numaID = serverInfo['uplink2NUMA'][switchID]
-            for core in server.getCoreNUMADistribution()[numaID]:
-                if serverInfo['Status']['coreAssign'][core] == (sfciID, stage, vnfiSequence[stage][0].vnfType):
-                    serverInfo['Status']['coreAssign'].pop(core)
+            assert serverID in sib.vnfis.keys()
+            for i in range(len(sib.vnfis[serverID])):
+                vnfi = sib.vnfis[i]
+                if vnfi['sfciID'] == sfciID and vnfi['stage'] == stage and vnfi['vnfi'].vnfType == vnfiSequence[stage][
+                    0].vnfType:
+                    sib.vnfis.pop(i)
                     break
             else:
-                raise ValueError('no cores to release on server %d socket %d', serverID, numaID)
+                raise ValueError('no vnfi to remove on server %d vnfType %d', serverID, vnfiSequence[stage][0].vnfType)
     for direction in directions:
         dirID = direction['ID']
         if dirID == 0:
@@ -124,7 +125,7 @@ def add_sfci_handler(cmd, sib):
     vnfiSequence = sfci.vnfiSequence
     for vnfiSeqStage in vnfiSequence:
         assert len(vnfiSeqStage) == 1  # no backup
-        vnfi = vnfiSeqStage[0]
+        vnfi = vnfiSeqStage[0]  # type: VNFI
         vnfID = vnfi.vnfID
         vnfType = vnfi.vnfType
         vnfiID = vnfi.vnfiID
@@ -190,16 +191,14 @@ def add_sfci_handler(cmd, sib):
     for stage, path in enumerate(pathlist):
         if stage != len(pathlist) - 1:  # dst is vnfi
             serverID = path[-1][1]
-            serverInfo = sib.servers[serverID]
-            server = serverInfo['server']
-            switchID = path[-2][1]
-            numaID = serverInfo['uplink2NUMA'][switchID]
-            for core in server.getCoreNUMADistribution()[numaID]:
-                if core not in serverInfo['Status']['coreAssign']:
-                    serverInfo['Status']['coreAssign'][core] = (sfciID, stage, vnfiSequence[stage][0].vnfType)
-                    break
-            else:
-                raise ValueError('no cores available on server %d socket %d', serverID, numaID)
+            vnfi = vnfiSequence[stage][0]
+            sib.vnfis.setdefault(serverID, []).append({
+                'sfciID': sfciID,
+                'stage': stage,
+                'vnfi': vnfi,
+                'cpu': lambda: (100 * (vnfi.minCPUNum + random.random() * (vnfi.maxCPUNum - vnfi.minCPUNum))),
+                'mem': lambda: (vnfi.minMem + random.random() * (vnfi.maxMem - vnfi.minMem)),
+            })
     for direction in directions:
         dirID = direction['ID']
         if dirID == 0:
@@ -258,6 +257,7 @@ def del_sfc_handler(cmd, sib):
 def get_server_set_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
     # format ref: SeverManager.serverSet, SeverManager._storeServerInfo
+    sib.updateServerResource()
     result = {}
     for serverID, serverInfo in sib.servers.items():
         result[serverID] = {'server': serverInfo['server'], 'Active': serverInfo['Active'],
@@ -284,11 +284,10 @@ def get_topology_handler(cmd, sib):
 #     pass
 #     # TODO
 
-
 @add_command_handler(CMD_TYPE_GET_FLOW_SET)
 def get_flow_set_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
-    result = {}
+    result = []
     for sfciID, sfciInfo in sib.sfcis.items():
         sfci = sfciInfo['sfci']
         assert len(sfci.vnfiSequence) == 1  # can only handle single NF instances instead of chains
@@ -351,65 +350,65 @@ def get_flow_set_handler(cmd, sib):
             1]  # last switch on path ingress->vnfi
         serverInfo = sib.servers[serverID]
         server = serverInfo['Server']
-        competitors = []
-        for coreID in server.getCoreNUMADistribution()[serverInfo['uplink2NUMA'][switchID]]:
-            if coreID in serverInfo['Status']['coreAssign'] and serverInfo['Status']['coreAssign'][coreID][:1] != (
-                    sfciID, 0):  # competitor core on the same NUMA node
-                c_sfciID = serverInfo['Status']['coreAssign'][coreID][0]
-                c_sfciInfo = sib.sfcis[c_sfciID]
-                c_sfci = c_sfciInfo['sfci']
-                c_sfc = c_sfciInfo['sfc']
-                c_directions = c_sfc.directions
-                c_traffics_by_dir = c_sfciInfo['traffics']
-                if 0 in c_traffics_by_dir:  # forward
-                    c_traffic_forward = list(c_traffics_by_dir[0])
-                    c_pathlist = c_sfci.forwardingPathSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
-                    c_path = c_pathlist[0]
-                    for i, (_, nodeID) in c_path:
-                        if i == 0 or i == len(c_path) - 1:  # ingress server and vnfi server
-                            if not sib.servers[nodeID]['Active']:
-                                c_traffic_forward = []
-                        else:  # switch
-                            if not sib.switches[nodeID]['Active']:
-                                c_traffic_forward = []
-                        if i == len(c_path) - 1:
-                            pass
-                        elif i == 0 or i == len(c_path) - 2:  # server-switch link
-                            if not sib.serverLinks[(nodeID, c_path[i + 1][1])]['Active']:
-                                c_traffic_forward = []
-                        else:  # switch-switch link
-                            if not sib.links[(nodeID, c_path[i + 1][1])]['Active']:
-                                c_traffic_forward = []
-                else:
-                    c_traffic_forward = []
-
-                if 1 in c_traffics_by_dir:  # backward
-                    c_traffic_backward = list(c_traffics_by_dir[1])
-                    c_pathlist = c_sfci.forwardingPathSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
-                    c_path = c_pathlist[0]
-                    for i, (_, nodeID) in c_path:
-                        if i == 0 or i == len(c_path) - 1:  # ingress server and vnfi server
-                            if not sib.servers[nodeID]['Active']:
-                                c_traffic_backward = []
-                        else:  # switch
-                            if not sib.switches[nodeID]['Active']:
-                                c_traffic_backward = []
-                        if i == len(c_path) - 1:
-                            pass
-                        elif i == 0 or i == len(c_path) - 2:  # server-switch link
-                            if not sib.serverLinks[(nodeID, c_path[i + 1][1])]['Active']:
-                                c_traffic_backward = []
-                        else:  # switch-switch link
-                            if not sib.links[(nodeID, c_path[i + 1][1])]['Active']:
-                                c_traffic_backward = []
-                else:
-                    c_traffic_backward = []
-
-                c_traffics = c_traffic_forward + c_traffic_backward
-                if c_traffics:  # this competitor has traffic
-                    competitors.append(NF(serverInfo['Status']['coreAssign'][coreID][2],
-                                          sib.flows[c_traffics[0]]['pkt_size'],
-                                          4000000))  # no info about flow_count
+        # competitors = []
+        # for coreID in server.getCoreNUMADistribution()[serverInfo['uplink2NUMA'][switchID]]:
+        #     if coreID in serverInfo['Status']['coreAssign'] and serverInfo['Status']['coreAssign'][coreID][:1] != (
+        #             sfciID, 0):  # competitor core on the same NUMA node
+        #         c_sfciID = serverInfo['Status']['coreAssign'][coreID][0]
+        #         c_sfciInfo = sib.sfcis[c_sfciID]
+        #         c_sfci = c_sfciInfo['sfci']
+        #         c_sfc = c_sfciInfo['sfc']
+        #         c_directions = c_sfc.directions
+        #         c_traffics_by_dir = c_sfciInfo['traffics']
+        #         if 0 in c_traffics_by_dir:  # forward
+        #             c_traffic_forward = list(c_traffics_by_dir[0])
+        #             c_pathlist = c_sfci.forwardingPathSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+        #             c_path = c_pathlist[0]
+        #             for i, (_, nodeID) in c_path:
+        #                 if i == 0 or i == len(c_path) - 1:  # ingress server and vnfi server
+        #                     if not sib.servers[nodeID]['Active']:
+        #                         c_traffic_forward = []
+        #                 else:  # switch
+        #                     if not sib.switches[nodeID]['Active']:
+        #                         c_traffic_forward = []
+        #                 if i == len(c_path) - 1:
+        #                     pass
+        #                 elif i == 0 or i == len(c_path) - 2:  # server-switch link
+        #                     if not sib.serverLinks[(nodeID, c_path[i + 1][1])]['Active']:
+        #                         c_traffic_forward = []
+        #                 else:  # switch-switch link
+        #                     if not sib.links[(nodeID, c_path[i + 1][1])]['Active']:
+        #                         c_traffic_forward = []
+        #         else:
+        #             c_traffic_forward = []
+        #
+        #         if 1 in c_traffics_by_dir:  # backward
+        #             c_traffic_backward = list(c_traffics_by_dir[1])
+        #             c_pathlist = c_sfci.forwardingPathSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
+        #             c_path = c_pathlist[0]
+        #             for i, (_, nodeID) in c_path:
+        #                 if i == 0 or i == len(c_path) - 1:  # ingress server and vnfi server
+        #                     if not sib.servers[nodeID]['Active']:
+        #                         c_traffic_backward = []
+        #                 else:  # switch
+        #                     if not sib.switches[nodeID]['Active']:
+        #                         c_traffic_backward = []
+        #                 if i == len(c_path) - 1:
+        #                     pass
+        #                 elif i == 0 or i == len(c_path) - 2:  # server-switch link
+        #                     if not sib.serverLinks[(nodeID, c_path[i + 1][1])]['Active']:
+        #                         c_traffic_backward = []
+        #                 else:  # switch-switch link
+        #                     if not sib.links[(nodeID, c_path[i + 1][1])]['Active']:
+        #                         c_traffic_backward = []
+        #         else:
+        #             c_traffic_backward = []
+        #
+        #         c_traffics = c_traffic_forward + c_traffic_backward
+        #         if c_traffics:  # this competitor has traffic
+        #             competitors.append(NF(serverInfo['Status']['coreAssign'][coreID][2],
+        #                                   sib.flows[c_traffics[0]]['pkt_size'],
+        #                                   4000000))  # no info about flow_count
         input_pps_list = [sib.flows[traffic]['bw']() * 1e6 / 8 / sib.flows[traffic]['pkt_size'] for
                           traffic in traffics]
         input_pps = sum(input_pps_list)
