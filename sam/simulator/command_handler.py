@@ -269,6 +269,7 @@ def get_server_set_handler(cmd, sib):
 def get_topology_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
     # see ryu/topoCollector.py -> TopoCollector.get_topology_handler
+    sib.updateLinkUtilization()
     switches = {}
     for switchID, switchInfo in sib.switches.items():
         switches[switchID] = {'switch': switchInfo['switch'], 'Active': switchInfo['Active']}

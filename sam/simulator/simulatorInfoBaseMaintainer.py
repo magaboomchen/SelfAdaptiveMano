@@ -8,6 +8,7 @@ e.g. switch, server, link, sfc, sfci, vnfi, flow
 import copy
 import math
 
+from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
 from sam.base.pickleIO import PickleIO
 from sam.base.sfc import SFC, SFCI
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
@@ -147,3 +148,30 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
             pageUsage = reduce(lambda x, y: x + y,
                                [int(math.ceil(process['mem'] * 1024 / pageSize)) for process in processes])
             server._hugepagesFree = server.getHugepagesTotal() - pageUsage
+
+    def updateLinkUtilization(self):
+        for sfciID, sfci in self.sfcis.items():
+            directions = sfci['sfc'].directions
+            primaryForwardingPath = sfci['sfci'].forwardingPathSet.primaryForwardingPath
+            for direction in directions:
+                dirID = direction['ID']
+                if dirID == 0:
+                    pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+                elif dirID == 1:
+                    pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
+                if len(sfci['traffics'][dirID]) == 0:
+                    bw = 0
+                else:
+                    bw = reduce(lambda x, y: x + y,
+                                [self.flows[traffic_id]['bw']() for traffic_id in sfci['traffics'][dirID]])
+                for stage, path in enumerate(pathlist):
+                    for hop, (_, srcID) in enumerate(path):
+                        if hop != len(path) - 1:
+                            dstID = path[hop + 1][1]
+                            if hop == 0:  # server -> switch, switchID is server
+                                link = self.serverLinks[(srcID, dstID)]['link']  # type: Link
+                            elif hop == len(path) - 2:  # switch -> server
+                                link = self.serverLinks[(srcID, dstID)]['link']
+                            else:  # switch -> switch
+                                link = self.links[(srcID, dstID)]['link']
+                            link.utilization = min(100 * bw / (link.bandwidth * 1024), 100.0)
