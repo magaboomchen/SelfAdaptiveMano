@@ -141,7 +141,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
             server = self.servers[serverID]['server']  # type: Server
             cpu = reduce(lambda x, y: x + y, [process['cpu'] for process in processes])
             distribution = server.getCoreNUMADistribution()
-            utilization = [0] * len(server._coreUtilization)
+            utilization = [0] * len(server.getCpuUtil())
             for singleCpu in distribution:
                 for core in singleCpu:
                     if cpu <= 0:
@@ -149,12 +149,12 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
                     usage = min(cpu, 100)
                     utilization[core] = usage
                     cpu -= usage
-            server._coreUtilization = utilization
+            server.setCpuUtil(utilization)
 
             pageSize = server.getHugepagesSize()
             pageUsage = reduce(lambda x, y: x + y,
                                [int(math.ceil(process['mem'] * 1024 / pageSize)) for process in processes])
-            server._hugepagesFree = server.getHugepagesTotal() - pageUsage
+            server.setHugePages(server.getHugepagesTotal() - pageUsage)
 
     def updateLinkUtilization(self):
         for linkInfo in self.links.values():
