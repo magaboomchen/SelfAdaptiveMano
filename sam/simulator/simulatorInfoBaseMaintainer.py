@@ -18,6 +18,7 @@ from sam.base.socketConverter import SocketConverter
 from sam.base.server import Server
 
 BG_LINK_NUM = 1000
+CHECK_CONNECTIVITY = False
 
 
 class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
@@ -206,7 +207,25 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         pod_i = (i - 768) // 16
         pod_j = (j - 768) // 16
         paths = []
+        if not self.switches[i]['Active'] or not self.switches[j]['Active']:
+            return paths
         for podPath in self.podPaths[pod_i][pod_j]:
+            # check connectivity
+            if CHECK_CONNECTIVITY:
+                connected = True
+                for ii, src in enumerate(podPath):
+                    if ii != len(podPath) - 1:
+                        dst = podPath[ii + 1]
+                    else:
+                        dst = j
+                    if not self.switches[src]['Active'] \
+                            or not self.switches[dst]['Active'] \
+                            or not self.links[(src, dst)]['Active']:
+                        connected = False
+                        break
+                if not connected:
+                    continue
+
             paths.append([self.links[(i, podPath[0])]['link']])
             for ii, src in enumerate(podPath):
                 if ii != len(podPath) - 1:
