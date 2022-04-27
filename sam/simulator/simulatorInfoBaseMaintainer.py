@@ -17,7 +17,8 @@ from sam.base.link import Link
 from sam.base.socketConverter import SocketConverter
 from sam.base.server import Server
 
-BG_LINK_NUM = 1000
+MAX_BG_BW = 1024.0
+BG_TRAFFIC_NUM = 1000
 CHECK_CONNECTIVITY = False
 
 
@@ -188,9 +189,9 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
                                 link = self.links[(srcID, dstID)]['link']
                             link.utilization = min(100 * bw / (link.bandwidth * 1024), 100.0)
 
-        tm = np.random.uniform(0.0, 1024.0, (384, 384))
+        tm = np.random.uniform(0.0, MAX_BG_BW, (384, 384))
         index = np.random.rand(384, 384)
-        scale = float(BG_LINK_NUM) / (384 * 383)
+        scale = float(BG_TRAFFIC_NUM) / (384 * 383)
         for i in range(384):
             for j in range(384):
                 if i == j or index[i][j] > scale:
