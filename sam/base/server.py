@@ -17,15 +17,15 @@ SERVER_TYPE_TESTER = "tester"
 class Server(object):
     def __init__(self, controlIfName, datapathIfIP, serverType):
         # each server has at least two nic, one for control, another for data processing
-        self._serverID = None   # an uuid
+        self._serverID = None  # an uuid
         self._serverType = serverType
 
-        self._controlIfName = controlIfName # string, e.g. "eno2"
-        self._serverControlNICIP = None     # string, e.g. "2.2.0.35"
-        self._serverControlNICMAC = None    # string, e.g. "18:66:da:86:4c:16"
-        self._serverDatapathNICIP = datapathIfIP    # string, e.g. "2.2.0.36"
-        self._serverDatapathNICMAC = None   # string, e.g. "18:66:da:86:4c:16"
-        self._ifSet = {}    # self.updateIfSet()
+        self._controlIfName = controlIfName  # string, e.g. "eno2"
+        self._serverControlNICIP = None  # string, e.g. "2.2.0.35"
+        self._serverControlNICMAC = None  # string, e.g. "18:66:da:86:4c:16"
+        self._serverDatapathNICIP = datapathIfIP  # string, e.g. "2.2.0.36"
+        self._serverDatapathNICMAC = None  # string, e.g. "18:66:da:86:4c:16"
+        self._ifSet = {}  # self.updateIfSet()
 
         self._routingTag = {}  # 4 type routing tag
         # ['ip'] = ['ip1', 'ip2']
@@ -33,19 +33,19 @@ class Server(object):
         # ['geo'] = ['geo1', 'geo2']
         # ['content'] = ['c1', 'c2']
 
-        self._supportVNFSet = []    # see vnf.py, e.g. [VNF_TYPE_FW, VNF_TYPE_IDS]
+        self._supportVNFSet = []  # see vnf.py, e.g. [VNF_TYPE_FW, VNF_TYPE_IDS]
 
-        self._memoryAccessMode = None # "SMP", "NUMA"
+        self._memoryAccessMode = None  # "SMP", "NUMA"
         # There is a misunderstanding between socket and NUMA, we need discuss with DPDK community
         self._socketNum = None  # int
-        self._coreSocketDistribution = None # list of int, e.g. [6,6] means socket 0 has 6 cores, socket 1 has 6 cores
-        self._numaNum = None    # int
-        self._coreNUMADistribution = None # list of list, e.g. [[0,2,4,6,8,10],[1,3,5,7,9,11]]
-        self._coreUtilization = None # list of float, e.g. [100.0, 0.0, ..., 100.0]
-        self._hugepagesTotal = None # list of int, e.g. [14,13] for two numa nodes
-        self._hugepagesFree = None # list of int, e.g. [10,13] for two numa nodes
-        self._hugepageSize = None # unit: kB
-        self._nicBandwidth = 10 # unit: Gbps, default is 10 Gbps
+        self._coreSocketDistribution = None  # list of int, e.g. [6,6] means socket 0 has 6 cores, socket 1 has 6 cores
+        self._numaNum = None  # int
+        self._coreNUMADistribution = None  # list of list, e.g. [[0,2,4,6,8,10],[1,3,5,7,9,11]]
+        self._coreUtilization = None  # list of float, e.g. [100.0, 0.0, ..., 100.0]
+        self._hugepagesTotal = None  # list of int, e.g. [14,13] for two numa nodes
+        self._hugepagesFree = None  # list of int, e.g. [10,13] for two numa nodes
+        self._hugepageSize = None  # unit: kB
+        self._nicBandwidth = 10  # unit: Gbps, default is 10 Gbps
 
     def setServerID(self, serverID):
         self._serverID = serverID
@@ -92,8 +92,8 @@ class Server(object):
         return self._ifSet
 
     def printIfSet(self):
-        for key,value in self._ifSet.items():
-            logging.info('{key}:{value}'.format(key = key, value = value))
+        for key, value in self._ifSet.items():
+            logging.info('{key}:{value}'.format(key=key, value=value))
 
     def getControlNICMac(self):
         return self._serverControlNICMAC.lower()
@@ -119,13 +119,13 @@ class Server(object):
 
     def _getHwAddrInDPDK(self):
         command = "echo -ne \'\n\' | sudo $RTE_SDK/build/app/testpmd | grep \"Port 0: \""
-        res = subprocess.Popen(command, shell=True, 
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+        res = subprocess.Popen(command, shell=True,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
         result = res.stdout.readlines()
         outputText = str(result)
-        if outputText.find("Port 0: ")==-1:
+        if outputText.find("Port 0: ") == -1:
             raise ValueError("get data path nic mac address error, maybe run out of hugepages?")
-        
+
         for reg in result:
             if reg.count(":") == 6:
                 final = reg.split(' ')[2][0:17]
@@ -142,15 +142,15 @@ class Server(object):
         return ethMac.lower()
 
     def _getIPList(self, ifName):
-        addresses = [i['addr'] for i in ifaddresses(ifName).setdefault(AF_INET,[{'addr':'No IP addr'}])]
+        addresses = [i['addr'] for i in ifaddresses(ifName).setdefault(AF_INET, [{'addr': 'No IP addr'}])]
         addList = []
         for add in addresses:
-            addList.append( str(add) )
+            addList.append(str(add))
         return addList
 
     def addVNFSupport(self, vnfType):
         self._supportVNFSet.append(vnfType)
-    
+
     def getVNFSupport(self):
         return self._supportVNFSet
 
@@ -201,18 +201,18 @@ class Server(object):
         hugepages = 0
         for pages in self.getHugepagesTotal():
             hugepages = hugepages + pages
-        return hugepages*self.getHugepagesSize()/1024/1024    # unit: GB
+        return hugepages * self.getHugepagesSize() / 1024 / 1024  # unit: GB
 
     def fastConstructResourceInfo(self):
         # For fast server instance construction
         self._memoryAccessMode = "NUMA"
         self._socketNum = 2
-        self._coreSocketDistribution = [12,12]
+        self._coreSocketDistribution = [12, 12]
         self._numaNum = 2
-        self._coreNUMADistribution = [12,12]
+        self._coreNUMADistribution = [12, 12]
         self._coreUtilization = [0] * 24
-        self._hugepagesTotal = [256,256]
-        self._hugepagesFree = [256,256]
+        self._hugepagesTotal = [256, 256]
+        self._hugepagesFree = [256, 256]
         self._hugepageSize = 1048576
 
     def updateResource(self):
@@ -291,11 +291,11 @@ class Server(object):
             rv = rv.strip("\n").split(":")[1]
             if rv.find(",") != -1:
                 rv = rv.split(",")
-                rv = map(lambda x : int(x), rv) 
+                rv = map(lambda x: int(x), rv)
             elif rv.find("-") != -1:
                 rv = rv.split("-")
-                rv = map(lambda x : int(x), rv) 
-                rv = range(rv[0], rv[1]+1)
+                rv = map(lambda x: int(x), rv)
+                rv = range(rv[0], rv[1] + 1)
             else:
                 raise ValueError("Can't parse NUMA Core")
             self._coreNUMADistribution.append(rv)
@@ -342,15 +342,20 @@ class Server(object):
     def getNICBandwidth(self):
         return self._nicBandwidth
 
+    def setCpuUtil(self, util):
+        self._coreUtilization = util
+
+    def setHugePages(self, pages):
+        self._hugepagesFree = pages
+
     def __str__(self):
         string = "{0}\n".format(self.__class__)
-        for key,values in self.__dict__.items():
+        for key, values in self.__dict__.items():
             string = string + "{0}:{1}\n".format(key, values)
         return string
 
     def __repr__(self):
         return str(self)
-
 
 # if __name__ =="__main__":
 #     _NUMACpuCore = []

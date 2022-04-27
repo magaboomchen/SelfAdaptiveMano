@@ -15,7 +15,6 @@
 - [x] 模拟背景流量
 - [x] 模拟背景应用资源占用
 
-### TODO
-- [ ] server类添加coreUtilization的setter
-- [ ] 故障对背景流量的影响
-- [ ] 性能测试与优化
+### 2022/04/20 - 2022/04/27
+- [x] server类添加coreUtilization以及hugePageFree的setter
+- [x] 更新背景流量时检查交换机以及链路是否故障

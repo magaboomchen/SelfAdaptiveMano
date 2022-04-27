@@ -17,7 +17,9 @@ from sam.base.link import Link
 from sam.base.socketConverter import SocketConverter
 from sam.base.server import Server
 
-BG_LINK_NUM = 1000
+MAX_BG_BW = 1024.0
+BG_TRAFFIC_NUM = 1000
+CHECK_CONNECTIVITY = False
 
 
 class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
@@ -141,7 +143,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
             server = self.servers[serverID]['server']  # type: Server
             cpu = reduce(lambda x, y: x + y, [process['cpu'] for process in processes])
             distribution = server.getCoreNUMADistribution()
-            utilization = [0] * len(server._coreUtilization)
+            utilization = [0] * len(server.getCpuUtil())
             for singleCpu in distribution:
                 for core in singleCpu:
                     if cpu <= 0:
@@ -149,12 +151,12 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
                     usage = min(cpu, 100)
                     utilization[core] = usage
                     cpu -= usage
-            server._coreUtilization = utilization
+            server.setCpuUtil(utilization)
 
             pageSize = server.getHugepagesSize()
             pageUsage = reduce(lambda x, y: x + y,
                                [int(math.ceil(process['mem'] * 1024 / pageSize)) for process in processes])
-            server._hugepagesFree = server.getHugepagesTotal() - pageUsage
+            server.setHugePages(server.getHugepagesTotal() - pageUsage)
 
     def updateLinkUtilization(self):
         for linkInfo in self.links.values():
@@ -187,9 +189,9 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
                                 link = self.links[(srcID, dstID)]['link']
                             link.utilization = min(100 * bw / (link.bandwidth * 1024), 100.0)
 
-        tm = np.random.uniform(0.0, 1024.0, (384, 384))
+        tm = np.random.uniform(0.0, MAX_BG_BW, (384, 384))
         index = np.random.rand(384, 384)
-        scale = float(BG_LINK_NUM) / (384 * 383)
+        scale = float(BG_TRAFFIC_NUM) / (384 * 383)
         for i in range(384):
             for j in range(384):
                 if i == j or index[i][j] > scale:
@@ -206,7 +208,25 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         pod_i = (i - 768) // 16
         pod_j = (j - 768) // 16
         paths = []
+        if not self.switches[i]['Active'] or not self.switches[j]['Active']:
+            return paths
         for podPath in self.podPaths[pod_i][pod_j]:
+            # check connectivity
+            if CHECK_CONNECTIVITY:
+                connected = True
+                for ii, src in enumerate(podPath):
+                    if ii != len(podPath) - 1:
+                        dst = podPath[ii + 1]
+                    else:
+                        dst = j
+                    if not self.switches[src]['Active'] \
+                            or not self.switches[dst]['Active'] \
+                            or not self.links[(src, dst)]['Active']:
+                        connected = False
+                        break
+                if not connected:
+                    continue
+
             paths.append([self.links[(i, podPath[0])]['link']])
             for ii, src in enumerate(podPath):
                 if ii != len(podPath) - 1:
