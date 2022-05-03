@@ -14,7 +14,7 @@ from typing import List
 from sam.base.link import Link
 from sam.base.switch import Switch, SWITCH_TYPE_DCNGATEWAY, \
     SWITCH_TYPE_NPOP, SWITCH_TYPE_FORWARD
-from sam.base.server import Server, SERVER_TYPE_NFVI, SERVER_TYPE_CLASSIFIER
+from sam.base.server import Server, SERVER_TYPE_NFVI, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NORMAL
 from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
@@ -100,13 +100,13 @@ class Topology(object):
             self.addNFVIs4LogicalTwoTier()
         elif topoType == "fat-tree":
             self.addNFVIs4FatTree(podNum)
+            self._addServers4FatTree([i for i in range(896, 1280)], podNum)
+            self._postProcessTopology4FatTree()
         elif topoType == "testbed_sw1":
             self.addNFVIs4Testbed_sw1(serverNum=1)
         else:
             self.addClassifier()
             self.addNFVIs()
-
-        self._postProcessTopology()
 
         topologyDir = "./topology/{0}/{1}/".format(topoType,
                                                    expNum)
@@ -580,7 +580,36 @@ class Topology(object):
                 nPoPNum, SFC_REQUEST_NUM)
             self.topoNameDict["SwitchL3"].append(topoName)
 
-    def _postProcessTopology(self):
+    def _addServers4FatTree(self, nodeList, podNum):
+        # type: (list,int) -> None
+        for nodeID in nodeList:
+            serverNum = podNum / 2
+            for index in range(serverNum):
+                self.logger.info(
+                    "addServers connecting nodeID:{0}".format(nodeID))
+                serverID = self._assignServerID()
+                dpIP = self._dhcp.assignIP(nodeID)
+                self.logger.debug("serverID:{0} dpIP:{1}".format(serverID, dpIP))
+                server = Server("eno1", dpIP, SERVER_TYPE_NORMAL)
+                # one NIC per server
+                server.setControlNICIP(dpIP)
+                # two NIC per server
+                # server.setControlNICIP(self._dhcp.assignIP(nodeID))
+                ctIP = server.getControlNICIP()
+                self.logger.debug(
+                    "addServers nodeID:{0}, dpIP:{1}, ctIP:{2}".format(
+                        nodeID, dpIP, ctIP))
+                server.setServerID(serverID)
+                server.fastConstructResourceInfo()
+                server.setCoreNUMADistribution(SERVER_NUMA_CPU_DISTRIBUTION)
+                server.setHugepagesTotal(SERVER_NUMA_MEMORY_DISTRIBUTION)
+                self.servers[serverID] = {'Active': True,
+                                          'timestamp': datetime.datetime(2020, 10, 27, 0,
+                                                                         2, 39, 408596),
+                                          'server': server,
+                                          'Status': None}
+
+    def _postProcessTopology4FatTree(self):
         sc = SocketConverter()
 
         for serverID, serverInfo in self.servers.items():
