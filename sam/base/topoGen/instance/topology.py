@@ -7,13 +7,14 @@ or read customized topology and generate topology
 '''
 
 import pickle
-import networkx
 import datetime
+
+from typing import List
 
 from sam.base.link import Link
 from sam.base.switch import Switch, SWITCH_TYPE_DCNGATEWAY, \
     SWITCH_TYPE_NPOP, SWITCH_TYPE_FORWARD
-from sam.base.server import Server, SERVER_TYPE_NFVI, SERVER_TYPE_CLASSIFIER
+from sam.base.server import Server, SERVER_TYPE_NFVI, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NORMAL
 from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
@@ -99,13 +100,13 @@ class Topology(object):
             self.addNFVIs4LogicalTwoTier()
         elif topoType == "fat-tree":
             self.addNFVIs4FatTree(podNum)
+            self._addServers4FatTree([i for i in range(896, 1280)], podNum)
+            self._postProcessTopology4FatTree()
         elif topoType == "testbed_sw1":
             self.addNFVIs4Testbed_sw1(serverNum=1)
         else:
             self.addClassifier()
             self.addNFVIs()
-
-        self._postProcessTopology()
 
         topologyDir = "./topology/{0}/{1}/".format(topoType,
                                                    expNum)
@@ -147,7 +148,7 @@ class Topology(object):
         self.flows = {}
         self.vnfis = {}
         self.bgProcesses = {}
-        self.podPaths = []
+        self.torPaths = []
 
     def _readNodeLinkNum(self, line):
         # self.logger.debug("line:{0}".format(line))
@@ -508,7 +509,7 @@ class Topology(object):
             "flows": self.flows,
             "bgProcesses": self.bgProcesses,
             "vnfis": self.vnfis,
-            "podPaths": self.podPaths,
+            "torPaths": self.torPaths,
         }
 
         pickle.dump(topologyDict, df)
@@ -579,7 +580,36 @@ class Topology(object):
                 nPoPNum, SFC_REQUEST_NUM)
             self.topoNameDict["SwitchL3"].append(topoName)
 
-    def _postProcessTopology(self):
+    def _addServers4FatTree(self, nodeList, podNum):
+        # type: (list,int) -> None
+        for nodeID in nodeList:
+            serverNum = podNum / 2
+            for index in range(serverNum):
+                self.logger.info(
+                    "addServers connecting nodeID:{0}".format(nodeID))
+                serverID = self._assignServerID()
+                dpIP = self._dhcp.assignIP(nodeID)
+                self.logger.debug("serverID:{0} dpIP:{1}".format(serverID, dpIP))
+                server = Server("eno1", dpIP, SERVER_TYPE_NORMAL)
+                # one NIC per server
+                server.setControlNICIP(dpIP)
+                # two NIC per server
+                # server.setControlNICIP(self._dhcp.assignIP(nodeID))
+                ctIP = server.getControlNICIP()
+                self.logger.debug(
+                    "addServers nodeID:{0}, dpIP:{1}, ctIP:{2}".format(
+                        nodeID, dpIP, ctIP))
+                server.setServerID(serverID)
+                server.fastConstructResourceInfo()
+                server.setCoreNUMADistribution(SERVER_NUMA_CPU_DISTRIBUTION)
+                server.setHugepagesTotal(SERVER_NUMA_MEMORY_DISTRIBUTION)
+                self.servers[serverID] = {'Active': True,
+                                          'timestamp': datetime.datetime(2020, 10, 27, 0,
+                                                                         2, 39, 408596),
+                                          'server': server,
+                                          'Status': None}
+
+    def _postProcessTopology4FatTree(self):
         sc = SocketConverter()
 
         for serverID, serverInfo in self.servers.items():
@@ -613,25 +643,25 @@ class Topology(object):
         for (srcNodeID, dstNodeID), linkInfo in self.serverLinks.items():
             linkInfo['Status'] = {'usedBy': set()}
 
-        def isFirstZone(id):
-            return 0 <= id < 64 or 256 <= id < 384 or 768 <= id < 896
+        def list2links(path):
+            # type: (List[int]) -> List[Link]
+            links = []
+            for i in range(len(path) - 1):
+                links.append(self.links[(path[i], path[i + 1])]['link'])
+            return links
 
-        graph = networkx.DiGraph()
-        for link in self.links.keys():
-            if isFirstZone(link[0]) or isFirstZone(link[1]):
+        self.torPaths = [[[] for _ in range(384)] for _ in range(384)]
+        for pod in range(8, 32):
+            for tor in range(768 + pod * 16, 768 + pod * 16 + 16, 2):
+                for agg in range(256 + pod * 16, 256 + pod * 16 + 4):
+                    self.torPaths[tor - 896][tor - 896 + 1].append(list2links([tor, agg, tor + 1]))
+                    self.torPaths[tor - 896 + 1][tor - 896].append(list2links([tor + 1, agg, tor]))
+            if pod % 2 == 1:
                 continue
-            graph.add_edge(*link)
-
-        self.podPaths = [[[] for _ in range(32)] for _ in range(32)]
-        for i in range(8, 32):
-            for j in range(8, 32):
-                if i == j:
-                    for k in range(256 + i * 16, 256 + i * 16 + 16):
-                        self.podPaths[i][j].append([k])
-                elif i < j:
-                    paths = networkx.all_shortest_paths(graph, i * 16 + 768, j * 16 + 768)
-                    for path in paths:
-                        self.podPaths[i][j].append(path[1:-1])
-                else:
-                    for path in self.podPaths[j][i]:
-                        self.podPaths[i][j].append(path[::-1])
+            for tor in range(768 + pod * 16, 768 + pod * 16 + 16):
+                for agg in range(256 + pod * 16 + 4, 256 + pod * 16 + 16):
+                    core = (tor - 768) % 16 + (agg - 256) % 16 * 16
+                    self.torPaths[tor - 896][tor - 896 + 16] \
+                        .append(list2links([tor, agg, core, agg + 16, tor + 16]))
+                    self.torPaths[tor - 896 + 16][tor - 896] \
+                        .append(list2links([tor + 16, agg + 16, core, agg, tor]))

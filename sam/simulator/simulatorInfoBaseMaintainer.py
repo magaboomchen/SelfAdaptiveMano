@@ -7,7 +7,6 @@ e.g. switch, server, link, sfc, sfci, vnfi, flow
 '''
 import math
 import numpy as np
-from typing import List
 
 from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
 from sam.base.pickleIO import PickleIO
@@ -17,9 +16,8 @@ from sam.base.link import Link
 from sam.base.socketConverter import SocketConverter
 from sam.base.server import Server
 
-MAX_BG_BW = 1024.0
-BG_TRAFFIC_NUM = 1000
-CHECK_CONNECTIVITY = False
+MAX_BG_BW = 1024.0 * 4
+CHECK_CONNECTIVITY = True
 
 
 class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
@@ -37,7 +35,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.flows = {}
         self.bgProcesses = {}
         self.vnfis = {}
-        self.podPaths = []
+        self.torPaths = []
 
     def reset(self):
         self.links.clear()
@@ -49,7 +47,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.flows.clear()
         self.bgProcesses.clear()
         self.vnfis.clear()
-        self.podPaths = []
+        self.torPaths = []
 
     def loadTopology(self, topoFilePath):
         topologyDict = self.pIO.readPickleFile(topoFilePath)
@@ -64,7 +62,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         self.flows = topologyDict["flows"]
         self.vnfis = topologyDict["vnfis"]
         self.bgProcesses = topologyDict["bgProcesses"]
-        self.podPaths = topologyDict["podPaths"]
+        self.torPaths = topologyDict["torPaths"]
 
     def saveTopology(self, topoFilePath):
         topologyDict = {
@@ -77,7 +75,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
             "flows": self.flows,
             "vnfis": self.vnfis,
             "bgProcesses": self.bgProcesses,
-            "podPaths": self.podPaths,
+            "torPaths": self.torPaths,
         }
 
         self.pIO.writePickleFile(topoFilePath, topologyDict)
@@ -190,47 +188,29 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
                             link.utilization = min(100 * bw / (link.bandwidth * 1024), 100.0)
 
         tm = np.random.uniform(0.0, MAX_BG_BW, (384, 384))
-        index = np.random.rand(384, 384)
-        scale = float(BG_TRAFFIC_NUM) / (384 * 383)
         for i in range(384):
             for j in range(384):
-                if i == j or index[i][j] > scale:
+                if i == j:
                     continue
-                paths = self.shortestPaths(i + 896, j + 896)
+                if CHECK_CONNECTIVITY:
+                    paths = self.valid_paths(i, j)
+                else:
+                    paths = self.torPaths[i][j]
                 parts = len(paths)
                 for path in paths:
                     for link in path:
                         link.utilization = min(100 * tm[i][j] / parts / (link.bandwidth * 1024) + link.utilization,
                                                100.0)
 
-    def shortestPaths(self, i, j):
-        # type: (int, int) -> List[List[Link]]
-        pod_i = (i - 768) // 16
-        pod_j = (j - 768) // 16
-        paths = []
-        if not self.switches[i]['Active'] or not self.switches[j]['Active']:
-            return paths
-        for podPath in self.podPaths[pod_i][pod_j]:
-            # check connectivity
-            if CHECK_CONNECTIVITY:
-                connected = True
-                for ii, src in enumerate(podPath):
-                    if ii != len(podPath) - 1:
-                        dst = podPath[ii + 1]
-                    else:
-                        dst = j
-                    if not self.switches[src]['Active'] \
-                            or not self.switches[dst]['Active'] \
-                            or not self.links[(src, dst)]['Active']:
-                        connected = False
-                        break
-                if not connected:
-                    continue
-
-            paths.append([self.links[(i, podPath[0])]['link']])
-            for ii, src in enumerate(podPath):
-                if ii != len(podPath) - 1:
-                    paths[-1].append(self.links[(src, podPath[ii + 1])]['link'])
-                else:
-                    paths[-1].append(self.links[(src, j)]['link'])
-        return paths
+    def valid_paths(self, i, j):
+        ret = []
+        paths = self.torPaths[i][j]
+        for path in paths:
+            if not self.switches[path[0].srcID]['Active']:
+                continue
+            for link in path:
+                if not self.switches[link.dstID]['Active'] or not self.links[(link.srcID, link.dstID)]['Active']:
+                    break
+            else:
+                ret.append(path)
+        return ret

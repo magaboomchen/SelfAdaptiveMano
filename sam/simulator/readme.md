@@ -56,8 +56,6 @@ server server_id cpu|mem --pattern=uniform --min=<value> --max=<value>
 > 注： 上述两条命令中value的单位，cpu为百分比（%），内存为MB。
 
 ### 可定义参数
-在 [simulatorInfoBaseMaintainer.py](./simulatorInfoBaseMaintainer.py) 中有三个参数，
-其中`BG_TRAFFIC_NUM`与`CHECK_CONNECTIVITY`，分别表示背景流量的数量以及更新背景流量时是否检查路径的连通性，
-修改这两项可能对性能有影响。
-`MAX_BG_BW`表示背景流量最大带宽，背景流量的带宽将在大于0和小于该值的范围内随机生成，
-该项与`BG_TRAFFIC_NUM`配合使用，避免链路上的带宽过高或过低。
+在 [simulatorInfoBaseMaintainer.py](./simulatorInfoBaseMaintainer.py) 中有两个参数，
+其中`MAX_BG_BW`表示背景流量最大带宽，背景流量的带宽将在大于0和小于该值的范围内随机生成。
+`CHECK_CONNECTIVITY`表示更新背景流量时是否检查路径的连通性。
