@@ -7,6 +7,7 @@ import random
 
 import networkx as nx
 from networkx.exception import NetworkXNoPath, NodeNotFound, NetworkXError
+from sam.base import server
 
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NETPACK
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -14,13 +15,15 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import MappingAlgorithmBase
 from sam.orchestration.algorithms.base.pathServerFiller import PathServerFiller
+from sam.orchestration.oConfig import TXXB_TEST
 
 
 class NetPack(MappingAlgorithmBase, PathServerFiller):
-    def __init__(self, dib, topoType="fat-tree"):
+    def __init__(self, dib, topoType="fat-tree", singlePath=True):
         # self._dib = copy.deepcopy(dib)
         self._dib = dib
         self.topoType = topoType
+        self.singlePath = singlePath
         self.pM = PerformanceModel()
 
         self.podNum = None
@@ -68,7 +71,10 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
             raise ValueError("NetPack needs pod number! It can only be used in DCN.")
         if  minPodIdx == None or maxPodIdx == None:
             raise ValueError("NetPack needs minPodIdx or maxPodIdx.")
-        self._genRequestIngAndEg()
+        if TXXB_TEST:
+            self._genRequestIngAndEg()
+        else:
+            self._updateRequestIngSwitchID()
 
         # switches = self._dib.getSwitchesByZone(self.zoneName)
         # self.logger.debug("switch number: {0}".format(len(switches)))
@@ -89,6 +95,26 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
             self.requestEgSwitchID[rIndex] = egSwitchID
         # self.logger.debug("self.requestIngSwitchID:{0}, self.requestEgSwitchID:{1}".format(
         #     self.requestIngSwitchID, self.requestEgSwitchID))
+
+    def _updateRequestIngSwitchID(self):
+        self.requestIngSwitchID = {}
+        self.requestEgSwitchID = {}
+        for rIndex in range(len(self.requestList)):
+            # assign ing/eg switch in random style
+            # ingSwitchID = random.randint(self.minPodIdx, self.maxPodIdx-1)
+            # egSwitchID = random.randint(self.minPodIdx, self.maxPodIdx-1)
+            request = self.requestList[rIndex]
+            sfc = request.attributes['sfc']
+            ingress = sfc.directions[0]['ingress']
+            if type(ingress) == server:
+                raise ValueError("Ingress is not a switch!")
+            ingSwitchID = ingress.switchID
+            egress = sfc.directions[0]['egress']
+            if type(egress) == server:
+                raise ValueError("Egress is not a switch!")
+            egSwitchID = egress.switchID
+            self.requestIngSwitchID[rIndex] = ingSwitchID
+            self.requestEgSwitchID[rIndex] = egSwitchID
 
     def _mapAllPrimaryPaths(self):
         self.forwardingPathSetsDict = {}
@@ -150,6 +176,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
                 failed = False
                 lastServer = None
                 vnf2SwitchID = [None for idx in range(c)]
+                vnfi2ServerID = [None for idx in range(c)]  # record selected servers in a list
                 for nfIdx in range(c):
                     vnfType = sfc.vNFTypeSequence[nfIdx]
                     resourceDemand = self.pM.getExpectedServerResource(vnfType, trafficDemand)  # expectedCores, expectedMemory, expectedBandwidth
@@ -176,8 +203,9 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
                                                         resourceDemand[0], resourceDemand[1],
                                                         resourceDemand[2], self.zoneName)
                     vnf2SwitchID[nfIdx] = self._dib.getConnectedSwitch(lastServer.getServerID(), self.zoneName).switchID
+                    vnfi2ServerID[nfIdx] = lastServer
                 if not failed:
-                    path = self.allocatePaths(rIndex, vnf2SwitchID, trafficDemand)
+                    path = self.allocatePaths(rIndex, vnf2SwitchID, vnfi2ServerID, trafficDemand)
                     if path != None:
                         acceptFlag = True
                         return path, acceptFlag
@@ -186,7 +214,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
                         # self.logger.info("Allocate path failed!")
         return path, acceptFlag
 
-    def allocatePaths(self, rIndex, vnf2SwitchID, trafficDemand):
+    def allocatePaths(self, rIndex, vnf2SwitchID, vnfi2ServerID, trafficDemand):
         forwardingPath = []
         ingSwitchID = self.requestIngSwitchID[rIndex]
         egSwitchID = self.requestEgSwitchID[rIndex]
@@ -195,6 +223,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         srcTerminalSwitchIDList.append(egSwitchID)
         self.logger.info("srcTerminalSwitchIDList: {0}".format(srcTerminalSwitchIDList))
         bandwidthReservationRecordList = []
+        linkList = []
         for idx in range(len(srcTerminalSwitchIDList)-1):
             paths = []
             u = srcTerminalSwitchIDList[idx]
@@ -206,6 +235,11 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
                 continue
             bandwidth = trafficDemand
             while bandwidth > 1 * 0.001 * 0.001 * 0.001:
+                if self.singlePath:
+                    # Trunc link with low bw tmp
+                    linkList = self._getInsufficientBWLinks(bandwidth)
+                    self.logger.info("linkList is {0}".format(linkList))
+                    self.G.remove_edges_from(linkList)
                 try:
                     # segPath = nx.shortest_path(self.G, u, v)
                     segPath = nx.bidirectional_shortest_path(self.G, u, v)
@@ -215,7 +249,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
                     self._releaseBWFromRecordList(bandwidthReservationRecordList)
                     return None
                 except NetworkXNoPath:
-                    self.logger.error("no path")
+                    self.logger.error("no path from u:{0} to v:{1}".format(u,v))
                     self._releaseBWFromRecordList(bandwidthReservationRecordList)
                     return None
                 except Exception as ex:
@@ -240,9 +274,37 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
                         except NetworkXError:
                             pass
                             self.logger.error("remove link with 0 bandwidth failed!")
-                paths.append(segPath)
+                if idx < len(vnfi2ServerID):
+                    serverID = vnfi2ServerID[idx].getServerID()
+                    segPath.append(serverID)
+                if idx > 0:
+                    serverID = vnfi2ServerID[idx-1].getServerID()
+                    segPath.insert(0, serverID)
+                self.logger.info("original segPath is {0}".format(segPath))
+                segPath = self._trans2CompatibleFormat(segPath, idx)
+                self.logger.info("transed segPath is {0}".format(segPath))
+                if self.singlePath:
+                    paths = segPath
+                else:
+                    paths.append(segPath)
             forwardingPath.append(paths)
+        self.G.add_edges_from(linkList)
         return forwardingPath
+
+    def _trans2CompatibleFormat(self, segPath, idx):
+        newSegPath = []
+        for nodeID in segPath:
+            newSegPath.append((idx, nodeID))
+        return newSegPath
+
+    def _getInsufficientBWLinks(self, bandwidth):
+        lowerBWLinksList = []
+        linksInfoDict = self._dib.getLinksByZone(self.zoneName)
+        for linkIDTuple, linksInfo in linksInfoDict.items():
+            link = linksInfo['link']
+            if not self._dib.hasEnoughLinkResource(link, bandwidth, self.zoneName):
+                lowerBWLinksList.append(linkIDTuple)
+        return lowerBWLinksList
 
     def _releaseBWFromRecordList(self, bandwidthReservationRecordList):
         for record in bandwidthReservationRecordList:
@@ -263,7 +325,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         return G
 
     def isSwitchInSubTopologyZone(self, switchID):
-        if self.topotype == "fat-tree":
+        if self.topoType == "fat-tree":
             coreSwitchNum = math.pow(self.podNum/2, 2)
             aggSwitchNum = self.podNum * self.podNum / 2
             coreSwitchPerPod = math.floor(coreSwitchNum/self.podNum)
@@ -351,7 +413,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
                 podServerSet.append(podServerList)
             return [singleServerSet, rackServerSet, podServerSet]
         else:
-            raise ValueError("Unimplementation of unknown topotype: {0}".format(self.topotype))
+            raise ValueError("Unimplementation of unknown topotype: {0}".format(self.topoType))
 
     def isTorSwitchInSubZone(self, switchID):
         coreSwitchNum = pow(self.podNum/2,2)

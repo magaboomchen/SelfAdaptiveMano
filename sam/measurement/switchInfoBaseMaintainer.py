@@ -1,6 +1,9 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import random
+
+from sam.base.switch import SWITCH_TYPE_DCNGATEWAY
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 
 
@@ -9,6 +12,8 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
         super(SwitchInfoBaseMaintainer, self).__init__()
         self._switches = {} # [zoneName][switchID] = {'switch':switch, 'active':True/False, 'status':none}
         self._switchesReservedResources = {}
+        self._gatewaySwitchIDDict = {}
+        self.isSwitchInfoInDB = False
 
     def _initSwitchTable(self):
         # self.dbA.dropTable("Switch")
@@ -27,45 +32,64 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
                 PRIMARY KEY ( ID )
                 """
                 )
+        self.isSwitchInfoInDB = True
 
     def hasSwitch(self, switchID, zoneName):
-        results = self.dbA.query("Switch", " SWITCH_ID ",
-                    " SWITCH_ID = '{0}' AND ZONE_NAME = '{1}'".format(
-                                                    switchID, zoneName))
-        if results != ():
-            return True
+        if self.isSwitchInfoInDB:
+            results = self.dbA.query("Switch", " SWITCH_ID ",
+                        " SWITCH_ID = '{0}' AND ZONE_NAME = '{1}'".format(
+                                                        switchID, zoneName))
+            if results != ():
+                return True
+            else:
+                return False
         else:
-            return False
+            if switchID in self._switches[zoneName].keys():
+                return True
+            else:
+                return False
 
     def addSwitch(self, switch, zoneName):
-        if not self.hasSwitch(switch.switchID, zoneName):
-            self.dbA.insert("Switch",
-                " ZONE_NAME, SWITCH_ID, SWITCH_TYPE, PROGRAMMABLE_FLAG," \
-                " TOTAL_TCAM, TCAM_USAGE, PICKLE ",
-                " '{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}' ".format(zoneName,
-                                switch.switchID,
-                                switch.switchType,
-                                int(bool(switch.programmable)),
-                                switch.tcamSize,
-                                switch.tcamUsage,
-                                self.pIO.obj2Pickle(switch)
-                ))
+        if self.isSwitchInfoInDB:
+            if not self.hasSwitch(switch.switchID, zoneName):
+                self.dbA.insert("Switch",
+                    " ZONE_NAME, SWITCH_ID, SWITCH_TYPE, PROGRAMMABLE_FLAG," \
+                    " TOTAL_TCAM, TCAM_USAGE, PICKLE ",
+                    " '{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}' ".format(zoneName,
+                                    switch.switchID,
+                                    switch.switchType,
+                                    int(bool(switch.programmable)),
+                                    switch.tcamSize,
+                                    switch.tcamUsage,
+                                    self.pIO.obj2Pickle(switch)
+                    ))
+        else:
+            switchID = switch.switchID
+            self._switches[zoneName][switchID] = {'switch':switch, 'active':True/False, 'status':None}
 
     def delSwitch(self, switchID, zoneName):
-        if self.hasSwitch(switchID, zoneName):
-            self.dbA.delete("Switch",
-                " SWITCH_ID = '{0}' AND ZONE_NAME = '{1}'".format(
-                                                switchID, zoneName))
+        if self.isSwitchInfoInDB:
+            if self.hasSwitch(switchID, zoneName):
+                self.dbA.delete("Switch",
+                    " SWITCH_ID = '{0}' AND ZONE_NAME = '{1}'".format(
+                                                    switchID, zoneName))
+        else:
+            del self._switches[zoneName][switchID]
 
     def getAllSwitch(self):
-        results = self.dbA.query("Switch",
-                    " ID, ZONE_NAME, SWITCH_ID, SWITCH_TYPE, PROGRAMMABLE_FLAG," \
-                    " TOTAL_TCAM, TCAM_USAGE, PICKLE ")
         switchList = []
-        for switch in results:
-            switchList.append(switch)
+        if self.isSwitchInfoInDB:
+            results = self.dbA.query("Switch",
+                        " ID, ZONE_NAME, SWITCH_ID, SWITCH_TYPE, PROGRAMMABLE_FLAG," \
+                        " TOTAL_TCAM, TCAM_USAGE, PICKLE ")
+            for switch in results:
+                switchList.append(switch)
+        else:
+            for zoneName, switchsInfo in self._switches.items():
+                for switchID, switchInfo in switchsInfo.items():
+                    switchList.append(switchInfo['switch'])
         return switchList
-                
+
     def updateSwitchesInAllZone(self, switches):
         self._switches = switches
 
@@ -77,6 +101,14 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def getSwitchesByZone(self, zoneName):
         return self._switches[zoneName]
+
+    def getSpecificTypeOfSwitchByZone(self, zoneName, switchType):
+        switchList = []
+        for switchID in self._switches[zoneName]:
+            switch = self._switches[zoneName][switchID]["switch"]
+            if switch.switchType == switchType:
+                switchList.append(switch)
+        return switchList
 
     def isSwitchID(self, nodeID):
         switches = self.getSwitchesInAllZone()
@@ -139,3 +171,25 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
             return True
         else:
             return False
+
+    def randomSelectDCNGateWaySwitch(self, zoneName):
+        switchList = self.getSpecificTypeOfSwitchByZone(zoneName, SWITCH_TYPE_DCNGATEWAY)
+        rndIdx = random.randint(0, len(switchList)-1)
+        return switchList[rndIdx]
+
+    # def getDCNGateway(self):
+    #     dcnGateway = None
+    #     switchesInfoDict = self.getSwitchesByZone(self.zoneName)
+    #     # self.logger.warning(switchesInfoDict)
+    #     for switchInfoDict in switchesInfoDict.itervalues():
+    #         switch = switchInfoDict['switch']
+    #         # self.logger.debug(switch)
+    #         if switch.switchType == SWITCH_TYPE_DCNGATEWAY:
+    #             # self.logger.debug(
+    #             #     "switch.switchType:{0}".format(switch.switchType)
+    #             #     )
+    #             dcnGateway = switch
+    #             break
+    #     else:
+    #         raise ValueError("Find DCN Gateway failed")
+    #     return dcnGateway

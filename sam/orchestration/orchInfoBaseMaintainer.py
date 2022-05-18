@@ -284,22 +284,26 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     def _addRequest2DB(self, request, cmd):
         fields = " REQUEST_UUID, REQUEST_TYPE, CMD_UUID, PICKLE, "
         values = " '{0}', '{1}', '{2}', '{3}', ".format(request.requestID,
-            cmd.cmdID, request.requestType, self._encodeObject2Pickle(request))
+            request.requestType, cmd.cmdID, self._encodeObject2Pickle(request))
 
         if request.requestType == REQUEST_TYPE_ADD_SFC or \
-            request.requestType == REQUEST_TYPE_DEL_SFC:
+                request.requestType == REQUEST_TYPE_DEL_SFC:
             sfc = cmd.attributes['sfc']
+            sfciID = -1
             fields = fields + " SFC_UUID "
             values = values + " '{0}' ".format(sfc.sfcUUID)
         elif request.requestType == REQUEST_TYPE_ADD_SFCI or \
-            request.requestType == REQUEST_TYPE_DEL_SFCI:
+                request.requestType == REQUEST_TYPE_DEL_SFCI:
+            sfc = cmd.attributes['sfc']
             sfci = cmd.attributes['sfci']
+            sfciID = sfci.sfciID
             fields = fields + " SFCIID "
             values = values + " '{0}' ".format(sfci.sfciID)
         else:
             raise ValueError("Unkown request type. ")
 
-        self.dbA.insert("Request", fields, values)
+        self.addRequest(request, sfc.sfcUUID, sfciID, cmd.cmdID)
+        # self.dbA.insert("Request", fields, values)
 
     def updateRequestState2DB(self, request, state):
         request.requestState = state
@@ -309,12 +313,13 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             )
 
     def _addSFC2DB(self, sfc):
-        fields = " ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE, PICKLE "
-        self.dbA.insert("SFC", fields,
-            " '{0}', '{1}', '{2}', '{3}' ".format(
-                sfc.attributes["zone"],
-                sfc.sfcUUID, "",
-            STATE_IN_PROCESSING, self._encodeObject2Pickle(sfc)))
+        # fields = " ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE, PICKLE "
+        # self.dbA.insert("SFC", fields,
+        #     " '{0}', '{1}', '{2}', '{3}' ".format(
+        #         sfc.attributes["zone"],
+        #         sfc.sfcUUID, "",
+        #     STATE_IN_PROCESSING, self._encodeObject2Pickle(sfc)))
+        self.addSFC(sfc)
 
     def _pruneSFC4DB(self, sfcUUID):
         self.dbA.delete("SFC", " SFC_UUID = '{0}' ".format(sfcUUID))

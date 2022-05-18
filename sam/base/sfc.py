@@ -99,9 +99,16 @@ class SFC(object):
         # [
         # {
         # 'ID': 0   # forwarding direction
-        # 'source' : Outside
-        #       {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or
-        #       other routing addressing format
+        # 'source': None, if tenant hasn't assign this, 
+        #                  default setting assume that the
+        #                  traffic come from outside,
+        #                  orchestrator will assign a DCN
+        #                  gateway switch's port as the source,
+        #                  e.g. {'node': None or Switch(),
+        #                           'IPv4':"*"}
+        #           {'node': Server(), 'IPv4':"3.3.3.3"},
+        #                 if tenants assign to their server,
+        #                 e.g. their database
         # 'ingress': Any 
         #       May be a P4 switch or a server
         # 'match': {{},{},...} 
@@ -110,15 +117,17 @@ class SFC(object):
         #           "size":size, "value": value}
         # 'egress' : Any 
         #       May be a P4 switch or a server
-        # 'destination': websiteIP
-        #       {'IPv4':"0.0.0.0"} or
-        # {'MPLS':srcLable} or other routing addressing format
+        # 'destination': None, if tenant hasn't assign this, 
+        #                  default setting assume traffic 
+        #                  come to outside. In this condition,
+        #                  destination is same as source;
+        #           {'node': Server(), 'IPv4':"5.5.5.5"},
+        #                 if tenants assign to their server,
+        #                 e.g. their website
         # },
         # {
         # 'ID': 1   # reverse direction
-        # 'source' : WEBSITE
-        #       {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or
-        #       other routing addressing format
+        # 'source' : same as destination above
         # 'ingress': Any
         #       May be a P4 switch or a server
         # 'match': {{},{},...}
@@ -126,9 +135,7 @@ class SFC(object):
         #           "size":size, "value": value}
         # 'egress': Any
         #       May be a P4 switch or a server
-        # 'destination': Outside
-        #       {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or
-        #       other routing addressing format
+        # 'destination': same as source above
         # }
         # ]
 

@@ -20,6 +20,7 @@ class Switch(object):
         self._coreUtilization = []
         self.supportNF = [] # e.g. [NF_TYPE_FW]
         self.supportVNF = []    # e.g. [VNF_TYPE_FW]
+        self.gatewayPortLists = []  # e.g. [0]
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

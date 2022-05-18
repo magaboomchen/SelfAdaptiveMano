@@ -8,6 +8,7 @@ def killAllSAMPythonScripts():
     sP = ShellProcessor()
     sP.killPythonScript("measurer.py")
     sP.killPythonScript("mediator.py")
+    sP.killPythonScript("dispatcher.py")
     sP.killPythonScript("orchestrator.py")
     sP.killPythonScript("ryu")
     sP.killPythonScript("serverAgent.py")

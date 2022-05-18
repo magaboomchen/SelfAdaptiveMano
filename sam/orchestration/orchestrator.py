@@ -2,6 +2,9 @@
 # -*- coding: UTF-8 -*-
 
 import sys
+
+from sam.base.switch import Switch
+
 if sys.version > '3':
     import queue as Queue
 else:
@@ -20,8 +23,9 @@ from sam.orchestration.argParser import ArgParser
 from sam.base.request import REQUEST_TYPE_ADD_SFCI
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.base.server import Server
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
-from sam.orchestration.oConfig import BATCH_SIZE, BATCH_TIMEOUT, ENABLE_OIB
+from sam.orchestration.oConfig import BATCH_SIZE, BATCH_TIMEOUT, ENABLE_OIB, RE_INIT_TABLE
 from sam.orchestration.oSFCAdder import OSFCAdder
 from sam.orchestration.oSFCDeleter import OSFCDeleter
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
@@ -42,7 +46,7 @@ class Orchestrator(object):
         self.maxPodIdx = maxPodIdx
 
         self._dib = DCNInfoBaseMaintainer()
-        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
+        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123", RE_INIT_TABLE)
         self._cm = CommandMaintainer()
 
         self._osa = OSFCAdder(self._dib, self.logger, podNum, minPodIdx, maxPodIdx, self.topoType)
@@ -114,26 +118,34 @@ class Orchestrator(object):
                     self._requestBatchQueue.put(request)
                     self.logger.debug("put req into requestBatchQueue")
                     if self._requestBatchQueue.qsize() >= self._batchSize and self.runningState == True:
-                        self.requestCnt += self._requestBatchQueue.qsize()
-                        self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
+                        self.processAllAddSFCIRequests()
+                        # self.requestCnt += self._requestBatchQueue.qsize()
+                        # self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
 
-                        self.logger.info("Trigger batch process.")
-                        # self._odir.getDCNInfo()
-                        reqCmdTupleList = self._osa.genABatchOfRequestAndAddSFCICmds(
-                            self._requestBatchQueue)
+                        # self.logger.info("Trigger batch process.")
+                        # # self._odir.getDCNInfo()
+                        # self.processInvalidAddSFCIRequests(self._requestBatchQueue)
+                        # reqCmdTupleList = self._osa.genABatchOfRequestAndAddSFCICmds(
+                        #     self._requestBatchQueue)
                         # self.logger.info("After mapping, there are {0} request in queue".format(self._requestBatchQueue.qsize()))
-                        for (request, cmd) in reqCmdTupleList:
-                            self._cm.addCmd(cmd)
-                            if ENABLE_OIB:
-                                self._oib.addSFCIRequestHandler(request, cmd)
-                            self.sendCmd(cmd)
-                        self.logger.info("Batch process finish")
-                        self.batchLastTime = time.time()
+                        # for (request, cmd) in reqCmdTupleList:
+                        #     self._cm.addCmd(cmd)
+                        #     if ENABLE_OIB:
+                        #         self._oib.addSFCIRequestHandler(request, cmd)
+                        #     self.sendCmd(cmd)
+                        # self.logger.info("Batch process finish")
+                        # self.batchLastTime = time.time()
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 cmd = self._osd.genDelSFCICmd(request)
-                self.logger.debug("orchestrator classifier's serverID: {0}".format(
-                    cmd.attributes['sfc'].directions[0]['ingress'].getServerID()
-                ))
+                ingress = cmd.attributes['sfc'].directions[0]['ingress']
+                if type(ingress) == Server:
+                    self.logger.debug("orchestrator classifier's serverID: {0}".format(
+                        ingress.getServerID()
+                    ))
+                elif type(ingress) == Switch:
+                    self.logger.debug("orchestrator classifier's switchID: {0}".format(
+                        ingress.switchID
+                    ))
                 self._cm.addCmd(cmd)
                 self._oib.delSFCIRequestHandler(request, cmd)
                 self.sendCmd(cmd)
@@ -153,18 +165,83 @@ class Orchestrator(object):
         finally:
             pass
 
+    def processInvalidAddSFCIRequests(self, requestBatchQueue):
+        self._validRequestBatchQueue = Queue.Queue()
+        self._invalidRequestBatchQueue = Queue.Queue()
+        while not requestBatchQueue.empty():
+            request = requestBatchQueue.get()
+            if self._isValidAddSFCIRequest(request):
+                self._validRequestBatchQueue.put(request)
+            else:
+                self._invalidRequestBatchQueue.put(request)
+                request.requestState = REQUEST_STATE_FAILED
+                self._oib.addRequest(request, sfcUUID=-1,
+                                        sfciID=-1, cmdUUID=-1)
+        self._requestBatchQueue = self._validRequestBatchQueue
+
+    def _isValidAddSFCIRequest(self, request):
+        # if request.requestType  == REQUEST_TYPE_ADD_SFCI or\
+        #         request.requestType  == REQUEST_TYPE_DEL_SFCI:
+        #     if 'sfc' not in request.attributes:
+        #         raise ValueError("Request missing sfc")
+        #     if 'sfci' not in request.attributes:
+        #         raise ValueError("Request missing sfci")
+        #     sfc = request.attributes['sfc']
+        #     if sfc.directions[0]["ingress"] == None \
+        #             or sfc.directions[0]["egress"] == None:
+        #         raise ValueError("Request missing sfc's ingress and egress!")
+        # elif request.requestType  == REQUEST_TYPE_ADD_SFC or\
+        #         request.requestType  == REQUEST_TYPE_DEL_SFC:
+        #     if 'sfc' not in request.attributes:
+        #         raise ValueError("Request missing sfc")
+        # else:
+        #     raise ValueError("Unknown request type.")
+        sfc = request.attributes['sfc']
+        for direction in sfc.directions:
+            self.logger.info("ingress is {0}, egress is {1}".format(
+                direction["ingress"], 
+                direction["egress"]))
+            if direction["ingress"] == None \
+                    or direction["egress"] == None:
+                return False
+            else:
+                return True
+
     def processAllAddSFCIRequests(self):
         self.logger.debug("Batch time out.")
         if self._requestBatchQueue.qsize() > 0 and self.runningState == True:
             self.logger.info("Timeout process - self._requestBatchQueue.qsize():{0}".format(self._requestBatchQueue.qsize()))
             self.requestCnt += self._requestBatchQueue.qsize()
+            self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
+            self.logger.info("Trigger batch process.")
+            self.processInvalidAddSFCIRequests(self._requestBatchQueue)
             reqCmdTupleList = self._osa.genABatchOfRequestAndAddSFCICmds(
                 self._requestBatchQueue)
+            self.logger.info("After mapping, there are {0} request in queue".format(self._requestBatchQueue.qsize()))
             for (request, cmd) in reqCmdTupleList:
                 self._cm.addCmd(cmd)
-                self._oib.addSFCIRequestHandler(request, cmd)
+                if ENABLE_OIB:
+                    self._oib.addSFCIRequestHandler(request, cmd)
                 self.sendCmd(cmd)
             self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
+            self.logger.info("Batch process finish")
+            self.batchLastTime = time.time()
+
+            # self.requestCnt += self._requestBatchQueue.qsize()
+            # self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
+            # self.logger.info("Trigger batch process.")
+            # # self._odir.getDCNInfo()
+            # self.processInvalidAddSFCIRequests(self._requestBatchQueue)
+            # reqCmdTupleList = self._osa.genABatchOfRequestAndAddSFCICmds(
+            #     self._requestBatchQueue)
+            # self.logger.info("After mapping, there are {0} request in queue".format(self._requestBatchQueue.qsize()))
+            # for (request, cmd) in reqCmdTupleList:
+            #     self._cm.addCmd(cmd)
+            #     if ENABLE_OIB:
+            #         self._oib.addSFCIRequestHandler(request, cmd)
+            #     self.sendCmd(cmd)
+            # self.logger.info("Batch process finish")
+            # self.batchLastTime = time.time()
 
     def sendCmd(self, cmd):
         msg = SAMMessage(MSG_TYPE_ORCHESTRATOR_CMD, cmd)
@@ -238,25 +315,26 @@ class Orchestrator(object):
     def _pruneDib(self, dib):
         # For fast orchestration, we need lower down topology scale
         zoneNameList = dib.getAllZone()
-        self.logger.warning("zoneNameList: {0}".format(zoneNameList))
+        self.logger.info("zoneNameList: {0}".format(zoneNameList))
         for zoneName in zoneNameList:
             # prune links
             links = dib.getLinksByZone(zoneName)
             for linkID in links.keys():
                 srcID = linkID[0]
                 dstID = linkID[1]
+                link = links[linkID]['link']
                 for nodeID in linkID:
                     if dib.isServerID(nodeID):
                         switch = dib.getConnectedSwitch(nodeID, zoneName)
                         switchID = switch.switchID
                         if not self.isSwitchInSubTopologyZone(switchID):
                             # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
-                            dib.delLink(srcID, dstID, zoneName)
+                            dib.delLink(link, zoneName)
                             break
                     elif dib.isSwitchID(nodeID):
                         if not self.isSwitchInSubTopologyZone(nodeID):
                             # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
-                            dib.delLink(srcID, dstID, zoneName)
+                            dib.delLink(link, zoneName)
                             break
 
             # prune servers

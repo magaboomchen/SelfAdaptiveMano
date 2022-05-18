@@ -24,6 +24,7 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
         #     'DCNInfoBaseMaintainer.log', level='debug')
         # self.logger = logConfigur.getLogger()
         self._sc = SocketConverter()
+        self.isDBEnable = False
 
     def enableDataBase(self, host, user, passwd, reInitialTable=False):
         self.addDatabaseAgent(host, user, passwd)
@@ -36,6 +37,7 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
         self._initServerTable()
         self._initSwitchTable()
         self._initLinkTable()
+        self.isDBEnable = True
 
     def updateSwitch2ServerLinksByZone(self, zoneName):
         servers = self.getServersByZone(zoneName)
@@ -177,6 +179,39 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
                     + self.getServerResidualResources(serverID,
                         zoneName)[0] # server.getMaxCores()
         return coreNum
+
+    def getAllZone(self):
+        zoneList = []
+        for zone in self._servers.keys():
+            if zone not in zoneList:
+                zoneList.append(zone)
+
+        for zone in self._switches.keys():
+            if zone not in zoneList:
+                zoneList.append(zone)
+
+        for zone in self._links.keys():
+            if zone not in zoneList:
+                zoneList.append(zone)
+
+        return zoneList
+
+    def updateByNewDib(self, newDib):
+        self.updateServersInAllZone(newDib.getServersInAllZone())
+        self.updateSwitchesInAllZone(newDib.getSwitchesInAllZone())
+        self.updateLinksInAllZone(newDib.getLinksInAllZone())
+        self.updateVnfisInAllZone(newDib.getVnfisInAllZone())
+
+    def getClassifierBySwitch(self, switch, zoneName):
+        for serverInfoDict in self.getServersByZone(zoneName).values():
+            server = serverInfoDict['server']
+            ip = server.getDatapathNICIP()
+            serverType = server.getServerType()
+            if self._sc.isLANIP(ip, switch.lanNet) and \
+                serverType == SERVER_TYPE_CLASSIFIER:
+                return server
+        else:
+            raise ValueError("Find classifier of switchID {0} failed".format(switch.switchID))
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

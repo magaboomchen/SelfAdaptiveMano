@@ -48,21 +48,24 @@ class TestSimulatorBase(TestBase):
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
         direction1 = {
             'ID': 0,
-            'source': {"IPv4":"*"},
+            'source': {'node': None, 'IPv4':"*"},
             'ingress': classifier,
             'match': {'srcIP': "*",'dstIP':WEBSITE_REAL_IP,
                 'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
-            'destination': {"IPv4":WEBSITE_REAL_IP}
+            'destination': {'node': None, 'IPv4':WEBSITE_REAL_IP}
         }
         directions = [direction1]
-        slo = SLO(latencyBound=35, throughput=10)
+        slo = SLO(latencyBound=35, throughput=0.1)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
             {'zone': SIMULATOR_ZONE}, slo=slo)
 
-    def genUniDirection10BackupSFCI(self):
-        vnfiSequence = self.gen10BackupVNFISequence()
+    def genUniDirection10BackupSFCI(self, mappedVNFISeq=True):
+        if mappedVNFISeq:
+            vnfiSequence = self.gen10BackupVNFISequence()
+        else:
+            vnfiSequence = None
         return SFCI(self.assignSFCIID(), vnfiSequence, None,
             self.genUniDirection10BackupForwardingPathSet())
 

@@ -9,6 +9,7 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
         super(ServerInfoBaseMaintainer, self).__init__()
         self._servers = {}  # [zoneName][serverID] = {'server':server, 'Active':True/False, 'timestamp':time, 'status':none}
         self._serversReservedResources = {} # [zoneName][serverID] = {'bandwidth':bw, 'cores':cpu, 'memory':mem}
+        self.isServerInfoInDB = False
 
     def _initServerTable(self):
         # self.dbA.dropTable("Server")
@@ -17,7 +18,7 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
                 """
                 ID INT UNSIGNED AUTO_INCREMENT,
                 ZONE_NAME VARCHAR(100) NOT NULL,
-                SERVER_UUID VARCHAR(36),
+                SERVER_ID SMALLINT,
                 SERVER_TYPE VARCHAR(100),
                 IP_ADDRESS VARCHAR(256),
                 TOTAL_CPU_CORE SMALLINT,
@@ -28,43 +29,62 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
                 PRIMARY KEY ( ID )
                 """
                 )
+        self.isServerInfoInDB = True
 
-    def hasServer(self, serverUUID, zoneName):
-        results = self.dbA.query("Server", " SERVER_UUID ",
-                    " SERVER_UUID = '{0}' AND ZONE_NAME = '{1}'".format(
-                                                    serverUUID, zoneName))
-        if results != ():
-            return True
+    def hasServer(self, serverID, zoneName):
+        if self.isServerInfoInDB:
+            results = self.dbA.query("Server", " SERVER_ID ",
+                        " SERVER_ID = '{0}' AND ZONE_NAME = '{1}'".format(
+                                                        serverID, zoneName))
+            if results != ():
+                return True
+            else:
+                return False
         else:
-            return False
+            if serverID in self._servers[zoneName].keys():
+                return True
+            else:
+                return False
 
     def addServer(self, server, zoneName):
-        if not self.hasServer(server.getServerID(), zoneName):
-            self.dbA.insert("Server",
-                " ZONE_NAME, SERVER_UUID, SERVER_TYPE, IP_ADDRESS, TOTAL_CPU_CORE, " \
-                " TOTAL_MEMORY, TOTAL_NIC_BANDWIDTH, PICKLE ",
-                "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}' ".format(zoneName,
-                                server.getServerID(),
-                                server.getServerType(),
-                                server.getControlNICIP(),
-                                server.getMaxCores(),
-                                server.getMaxMemory(),
-                                server.getNICBandwidth(),
-                                self.pIO.obj2Pickle(server)
-                ))
+        if self.isServerInfoInDB:
+            if not self.hasServer(server.getServerID(), zoneName):
+                self.dbA.insert("Server",
+                    " ZONE_NAME, SERVER_ID, SERVER_TYPE, IP_ADDRESS, TOTAL_CPU_CORE, " \
+                    " TOTAL_MEMORY, TOTAL_NIC_BANDWIDTH, PICKLE ",
+                    "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}' ".format(zoneName,
+                                    server.getServerID(),
+                                    server.getServerType(),
+                                    server.getControlNICIP(),
+                                    server.getMaxCores(),
+                                    server.getMaxMemory(),
+                                    server.getNICBandwidth(),
+                                    self.pIO.obj2Pickle(server)
+                    ))
+        else:
+            serverID = server.getServerID()
+            self._servers[zoneName][serverID] = {'server':server, 'Active':True/False, 'timestamp':None, 'status':None}
 
-    def delServer(self, serverUUID, zoneName):
-        if self.hasServer(serverUUID, zoneName):
-            self.dbA.delete("Server",
-                " ZONE_NAME = '{0}' AND SERVER_UUID = '{1}'".format(zoneName, serverUUID))
+    def delServer(self, serverID, zoneName):
+        if self.isServerInfoInDB:
+            if self.hasServer(serverID, zoneName):
+                self.dbA.delete("Server",
+                    " ZONE_NAME = '{0}' AND SERVER_ID = '{1}'".format(zoneName, serverID))
+        else:
+            del self._servers[zoneName][serverID]
 
     def getAllServer(self):
-        results = self.dbA.query("Server",
-                        " ID, ZONE_NAME, SERVER_UUID, SERVER_TYPE, IP_ADDRESS, TOTAL_CPU_CORE, " \
-                        " TOTAL_MEMORY, TOTAL_NIC_BANDWIDTH, PICKLE ")
         serverList = []
-        for server in results:
-            serverList.append(server)
+        if self.isServerInfoInDB:
+            results = self.dbA.query("Server",
+                            " ID, ZONE_NAME, SERVER_ID, SERVER_TYPE, IP_ADDRESS, TOTAL_CPU_CORE, " \
+                            " TOTAL_MEMORY, TOTAL_NIC_BANDWIDTH, PICKLE ")
+            for server in results:
+                serverList.append(server)
+        else:
+            for zoneName, serversInfo in self._servers.items():
+                for serverID, serverInfo in serversInfo.items():
+                    serverList.append(serverInfo['server'])
         return serverList
 
     def updateServersInAllZone(self, servers):
@@ -169,3 +189,15 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
             # os.system("pause")
 
             return False
+
+    def getServerByIP(self, nodeIP, zoneName):
+        for serverID, serverInfo in self._servers[zoneName].items():
+            server = serverInfo['server']
+            if (nodeIP.lower() == server.getControlNICIP().lower()) \
+                    or (nodeIP.lower() == server.getDatapathNICIP().lower()):
+                return server
+        else:
+            return None
+
+    def getServersNumByZone(self, zoneName):
+        return len(self._servers[zoneName])

@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 # if user doesn't assign mapping algorithm, use default mapping algorithm
-DEFAULT_MAPPING_TYPE = "MAPPING_TYPE_NETSOLVER_ILP"
+DEFAULT_MAPPING_TYPE = "MAPPING_TYPE_NETPACK"
 
 # bottom control system
 if DEFAULT_MAPPING_TYPE == "MAPPING_TYPE_NETSOLVER_ILP":
@@ -19,8 +19,12 @@ else:
     BATCH_SIZE = 100
     BATCH_TIMEOUT = 3
 
-
-ENABLE_OIB = False  # Please Enable this in final results.
+MAX_SFC_LENGTH = 7
+RE_INIT_TABLE = True
+ENABLE_OIB = True  # Please Enable this in final results.
 
 # whether use existed vnfi
 VNFI_ASSIGN_MODE = True
+
+
+TXXB_TEST = False

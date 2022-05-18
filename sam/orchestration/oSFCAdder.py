@@ -11,8 +11,11 @@ To add more mapping algorithms, you need add code in following functions:
 
 import uuid
 import copy
+import random
 
 from sam.base.vnf import VNFI
+from sam.base.switch import Switch
+from sam.base.server import SERVER_TYPE_CLASSIFIER, Server
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_E2EP, MAPPING_TYPE_UFRR, \
     MAPPING_TYPE_NOTVIA_PSFC, MAPPING_TYPE_INTERFERENCE, MAPPING_TYPE_NETPACK, \
     MAPPING_TYPE_NETSOLVER_ILP, MAPPING_TYPE_NONE
@@ -49,7 +52,7 @@ class OSFCAdder(object):
 
     def genAddSFCCmd(self, request):
         self.request = request
-        self._checkRequest()
+        self._checkAddSFCRequest()
 
         self.sfc = self.request.attributes['sfc']
         self.zoneName = self.sfc.attributes["zone"]
@@ -63,62 +66,83 @@ class OSFCAdder(object):
 
         return cmd
 
-    # def genAddSFCICmd(self, request):
-    #     self.request = request
-    #     self._checkRequest()
-
-    #     self.sfc = self.request.attributes['sfc']
-    #     self.zoneName = self.sfc.attributes["zone"]
-
-    #     self._mapIngressEgress()    # TODO: get sfc from database
-    #     self.logger.debug("sfc:{0}".format(self.sfc))
-
-    #     self.sfci = self.request.attributes['sfci']
-
-    #     self._mapVNFI()
-    #     self.logger.debug("sfci:{0}".format(self.sfci))
-
-    #     self._mapForwardingPath()
-    #     self.logger.debug("ForwardingPath:{0}".format(
-    #         self.sfci.forwardingPathSet))
-
-    #     cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
-    #         'sfc':self.sfc, 'sfci':self.sfci, 'zone':self.zoneName
-    #     })
-
-    #     return cmd
-
-    def _checkRequest(self):
+    def _checkAddSFCRequest(self):
         if self.request.requestType  == REQUEST_TYPE_ADD_SFCI or\
-            self.request.requestType  == REQUEST_TYPE_DEL_SFCI:
+                self.request.requestType  == REQUEST_TYPE_DEL_SFCI:
             if 'sfc' not in self.request.attributes:
                 raise ValueError("Request missing sfc")
             if 'sfci' not in self.request.attributes:
                 raise ValueError("Request missing sfci")
         elif self.request.requestType  == REQUEST_TYPE_ADD_SFC or\
-            self.request.requestType  == REQUEST_TYPE_DEL_SFC:
+                self.request.requestType  == REQUEST_TYPE_DEL_SFC:
             if 'sfc' not in self.request.attributes:
                 raise ValueError("Request missing sfc")
         else:
             raise ValueError("Unknown request type.")
 
     def _mapIngressEgress(self):
+        self.logger.info("_mapIngressEgress start!")
         for direction in self.sfc.directions:
             source = direction['source']
-            direction['ingress'] = self._selectClassifier(source)
+            if source['node'] == None:
+                nodeIP = source['IPv4']
+                if nodeIP == "*":
+                    dcnGatewaySwitch = self._selectDCNGateWaySwitch()
+                    source['node'] = dcnGatewaySwitch
+                else:
+                    source['node'] = self._dib.getServerByIP(nodeIP, self.zoneName)
+                    if source['node'] == None:
+                        dcnGatewaySwitch = self._selectDCNGateWaySwitch()
+                        source['node'] = dcnGatewaySwitch
+            direction['ingress'] = self._selectClassifierByNode(source['node'])
 
             destination = direction['destination']
-            direction['egress'] = self._selectClassifier(destination)
+            if  destination['node'] == None:
+                nodeIP = destination['IPv4']
+                if nodeIP == "*":
+                    dcnGatewaySwitch = self._selectDCNGateWaySwitch()
+                    destination['node'] = dcnGatewaySwitch
+                else:
+                    destination['node'] = self._dib.getServerByIP(nodeIP, self.zoneName)
+                    if destination['node'] == None:
+                        dcnGatewaySwitch = self._selectDCNGateWaySwitch()
+                        destination['node'] = dcnGatewaySwitch
+            direction['egress'] = self._selectClassifierByNode(destination['node'])
+        self.logger.info("_mapIngressEgress finish!")
 
-    # def _selectClassifier(self, nodeIdentifier):
+    def _selectDCNGateWaySwitch(self):
+        return self._dib.randomSelectDCNGateWaySwitch(self.zoneName)
+
+    def _selectClassifierByNode(self, node):
+        if type(node) == Server:
+            switch = self._dib.getConnectedSwitch(node.getServerID(), self.zoneName)
+            if switch.programmable == True:
+                return switch
+            else:
+                server = self._dib.getClassifierBySwitch(switch, self.zoneName)
+                return server
+        elif type(node) == Switch:
+            if node.programmable == True:
+                return node
+            else:
+                server = self._dib.getClassifierBySwitch(node, self.zoneName)
+                return server
+        else:
+            raise ValueError("Unknown node type: {0}".format(type(node)))
+
+    # def _selectDCNGatewaySwitchInputPort(self, switch):
+    #     rndIdx = random.randint(0, len(switch.gatewayPortLists)-1)
+    #     return switch.gatewayPortLists[rndIdx]
+
+    # def _selectClassifierByNode(self, nodeIdentifier):
     #     if "IPv4" in nodeIdentifier:
     #         nodeIP = nodeIdentifier["IPv4"]
     #     else:
     #         raise ValueError("Unsupport source/destination type")
 
     #     if nodeIP == "*":
-    #         dcnGateway = self._getDCNGateway()
-    #         return self._getClassifierBySwitch(dcnGateway)
+    #         dcnGateway = self._dib.getDCNGateway()
+    #         return self._dib.getClassifierBySwitch(dcnGateway, self.zoneName)
     #     else:
     #         for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
     #             server = serverInfoDict['server']
@@ -133,67 +157,6 @@ class OSFCAdder(object):
     #         else:
     #             raise ValueError("Find ingress/egress failed")
 
-    # def _getDCNGateway(self):
-    #     dcnGateway = None
-    #     switchesInfoDict = self._dib.getSwitchesByZone(self.zoneName)
-    #     # self.logger.warning(switchesInfoDict)
-    #     for switchInfoDict in switchesInfoDict.itervalues():
-    #         switch = switchInfoDict['switch']
-    #         # self.logger.debug(switch)
-    #         if switch.switchType == SWITCH_TYPE_DCNGATEWAY:
-    #             # self.logger.debug(
-    #             #     "switch.switchType:{0}".format(switch.switchType)
-    #             #     )
-    #             dcnGateway = switch
-    #             break
-    #     else:
-    #         raise ValueError("Find DCN Gateway failed")
-    #     return dcnGateway
-
-    # def _getClassifierBySwitch(self, switch):
-    #     self.logger.debug(self._dib.getServersByZone(self.zoneName))
-    #     for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
-    #         server = serverInfoDict['server']
-    #         self.logger.debug(server)
-    #         ip = server.getDatapathNICIP()
-    #         self.logger.debug(ip)
-    #         serverType = server.getServerType()
-    #         if serverType == SERVER_TYPE_CLASSIFIER:
-    #             self.logger.debug(
-    #                 "server type is classifier " \
-    #                 "ip:{0}, switch.lanNet:{1}".format(ip, switch.lanNet))
-    #         if self._sc.isLANIP(ip, switch.lanNet) and \
-    #             serverType == SERVER_TYPE_CLASSIFIER:
-    #             return server
-    #     else:
-    #         raise ValueError("Find ingress/egress failed")
-
-    # def _mapVNFI(self):
-    #     iNum = self.sfc.backupInstanceNumber
-    #     length = len(self.sfc.vNFTypeSequence)
-    #     vSeq = []
-    #     for stage in range(length):
-    #         vnfType = self.sfc.vNFTypeSequence[stage]
-    #         vnfiList = self._roundRobinSelectServers(vnfType, iNum)
-    #         vSeq.append(vnfiList)
-    #     self.sfci.vnfiSequence = vSeq
-
-    # def _roundRobinSelectServers(self, vnfType, iNum):
-    #     vnfiList = []
-    #     for serverInfoDict in self._dib.getServersByZone(self.zoneName).values():
-    #         server = serverInfoDict['server']
-    #         if server.getServerType() == 'nfvi':
-    #             vnfi = VNFI(vnfType, vnfType, uuid.uuid1(), None, server)
-    #             vnfiList.append(vnfi)
-    #     return vnfiList
-
-    # def _mapForwardingPath(self):
-    #     self._pC = PathComputer(self._dib, self.request, self.sfci,
-    #         self.logger)
-    #     self._pC.mapPrimaryFP()
-    #     if self.sfci.forwardingPathSet.mappingType != None:
-    #         self._pC.mapBackupFP()
-
     def genABatchOfRequestAndAddSFCICmds(self, requestBatchQueue):
         self.logger.info("oSFCAdder process batch size: {0}".format(requestBatchQueue.qsize()))
         # while not requestBatchQueue.empty():
@@ -202,7 +165,7 @@ class OSFCAdder(object):
         #     self.logger.info("sfci:{0}".format(request.attributes["sfci"]))
 
         requestDict = self._divRequest(requestBatchQueue)
-        self._updateRequestDictIngAndEg(requestDict)
+        # self._updateRequestDictIngAndEg(requestDict)
         # self._logRequestDict(requestDict)
         reqCmdTupleList = []
         for mappingType in requestDict.keys():
@@ -277,13 +240,31 @@ class OSFCAdder(object):
         for mappingType,requestList in requestDict.items():
             for request in requestList:
                 self.request = request
-                self._checkRequest()
+                self._checkAddSFCIRequest()
 
                 self.sfc = self.request.attributes['sfc']
                 self.zoneName = self.sfc.attributes["zone"]
 
                 # self._mapIngressEgress()
                 # self.logger.debug("sfc:{0}".format(self.sfc))
+
+    def _checkAddSFCIRequest(self):
+        if self.request.requestType  == REQUEST_TYPE_ADD_SFCI or\
+                self.request.requestType  == REQUEST_TYPE_DEL_SFCI:
+            if 'sfc' not in self.request.attributes:
+                raise ValueError("Request missing sfc")
+            if 'sfci' not in self.request.attributes:
+                raise ValueError("Request missing sfci")
+            sfc = self.request.attributes['sfc']
+            if sfc.directions[0]["ingress"] == None \
+                    or sfc.directions[0]["egress"] == None:
+                raise ValueError("Request missing sfc's ingress and egress!")
+        elif self.request.requestType  == REQUEST_TYPE_ADD_SFC or\
+                self.request.requestType  == REQUEST_TYPE_DEL_SFC:
+            if 'sfc' not in self.request.attributes:
+                raise ValueError("Request missing sfc")
+        else:
+            raise ValueError("Unknown request type.")
 
     def _logRequestDict(self, requestDict):
         for mappingType,requestList in requestDict.items():
@@ -391,9 +372,9 @@ class OSFCAdder(object):
             sfci = request.attributes['sfci']
             sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
             # TODO: Can't use following codes, we need to transform netPack to compatible with our forwarding path format first!
-            # if sfci.vnfiSequence in [None,[]]:
-            #     sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
-            #                                             sfci.forwardingPathSet)
+            if sfci.vnfiSequence in [None,[]]:
+                sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
+                                                        sfci.forwardingPathSet)
             cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
                 'sfc':sfc, 'sfci':sfci, 'zone':zoneName
             })

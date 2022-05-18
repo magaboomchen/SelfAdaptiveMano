@@ -9,6 +9,7 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
         super(LinkInfoBaseMaintainer, self).__init__()
         self._links = {}    # [zoneName][(srcID,dstID)] = {'link':link, 'active':True/False, 'status':none}
         self._linksReservedResources = {}
+        self.isLinkInfoInDB = False
 
     def _initLinkTable(self):
         # self.dbA.dropTable("Link")
@@ -26,39 +27,58 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
                 PRIMARY KEY ( ID )
                 """
                 )
+        self.isLinkInfoInDB = True
 
     def hasLink(self, srcID, dstID, zoneName):
-        results = self.dbA.query("Link", " SRC_SWITCH_ID, DST_SWITCH_ID ",
-                    " SRC_SWITCH_ID = '{0}' AND DST_SWITCH_ID = '{1}' AND ZONE_NAME = '{2}'".format(srcID, dstID, zoneName))
-        if results != ():
-            return True
+        if self.isLinkInfoInDB:
+            results = self.dbA.query("Link", " SRC_SWITCH_ID, DST_SWITCH_ID ",
+                        " SRC_SWITCH_ID = '{0}' AND DST_SWITCH_ID = '{1}' AND ZONE_NAME = '{2}'".format(srcID, dstID, zoneName))
+            if results != ():
+                return True
+            else:
+                return False
         else:
-            return False
+            if (srcID, dstID) in self._links[zoneName].keys():
+                return True
+            else:
+                return False
 
     def addLink(self, link, zoneName):
-        if not self.hasLink(link.srcID, link.dstID, zoneName):
-            self.dbA.insert("Link",
-                " ZONE_NAME, SRC_SWITCH_ID, DST_SWITCH_ID, TOTAL_BANDWIDTH," \
-                " BANDWIDTH_UTILIZATION, PICKLE ",
-                "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}' ".format(zoneName,
-                                link.srcID,
-                                link.dstID,
-                                link.bandwidth,
-                                link.utilization,
-                                self.pIO.obj2Pickle(link)
-                ))
+        if self.isLinkInfoInDB:
+            if not self.hasLink(link.srcID, link.dstID, zoneName):
+                self.dbA.insert("Link",
+                    " ZONE_NAME, SRC_SWITCH_ID, DST_SWITCH_ID, TOTAL_BANDWIDTH," \
+                    " BANDWIDTH_UTILIZATION, PICKLE ",
+                    "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}' ".format(zoneName,
+                                    link.srcID,
+                                    link.dstID,
+                                    link.bandwidth,
+                                    link.utilization,
+                                    self.pIO.obj2Pickle(link)
+                    ))
+        else:
+            linkID = link.linkID
+            self._links[zoneName][linkID] = {'link':link, 'active':True/False, 'status':None}
 
     def delLink(self, link, zoneName):
-        if self.hasLink(link.srcID, link.dstID, zoneName):
-            condition = " SRC_SWITCH_ID = {0} AND DST_SWITCH_ID = {1} AND ZONE_NAME = '{2}'".format(link.srcID, link.dstID, zoneName)
-            self.dbA.delete("Link", condition)
+        if self.isLinkInfoInDB:
+            if self.hasLink(link.srcID, link.dstID, zoneName):
+                condition = " SRC_SWITCH_ID = {0} AND DST_SWITCH_ID = {1} AND ZONE_NAME = '{2}'".format(link.srcID, link.dstID, zoneName)
+                self.dbA.delete("Link", condition)
+        else:
+            del self._links[zoneName][(link.srcID, link.dstID)]
 
     def getAllLink(self):
-        results = self.dbA.query("Link", " ID, ZONE_NAME, SRC_SWITCH_ID, " \
-                                " DST_SWITCH_ID, TOTAL_BANDWIDTH, BANDWIDTH_UTILIZATION, PICKLE ")
         linkList = []
-        for link in results:
-            linkList.append(link)
+        if self.isLinkInfoInDB:
+            results = self.dbA.query("Link", " ID, ZONE_NAME, SRC_SWITCH_ID, " \
+                                    " DST_SWITCH_ID, TOTAL_BANDWIDTH, BANDWIDTH_UTILIZATION, PICKLE ")
+            for link in results:
+                linkList.append(link)
+        else:
+            for zoneName, linksInfo in self._links.items():
+                for linkID, linkInfo in linksInfo.items():
+                    linkList.append(linkInfo['link'])
         return linkList
 
     def updateLinksInAllZone(self, links):

@@ -82,21 +82,21 @@ class TestSFCIAdderClass(TestBase):
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
         direction1 = {
             'ID': 0,
-            'source': {"IPv4":"*"},
+            'source': {"IPv4":"*", "node":None},
             'ingress': classifier,
             'match': {'srcIP': "*",'dstIP':WEBSITE_REAL_IP,
                 'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
-            'destination': {"IPv4":WEBSITE_REAL_IP}
+            'destination': {"IPv4":WEBSITE_REAL_IP, "node":None}
         }
         direction2 = {
             'ID': 1,
-            'source': {"IPv4":WEBSITE_REAL_IP},
+            'source': {"IPv4":WEBSITE_REAL_IP, "node":None},
             'ingress': classifier,
             'match': {'srcIP': WEBSITE_REAL_IP,'dstIP': "*",
                 'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
-            'destination': "*"
+            'destination': {"IPv4":"*", "node":None}
         }
         directions = [direction1,direction2]
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,

@@ -14,9 +14,8 @@ if __name__ == "__main__":
             queueName = line[0]
             print("queueName is {0}".format(queueName))
             messageNum = int(line[1])
-            if messageNum > 0:
-                try:
-                    sP.runShellCommand(
-                        "sudo rabbitmqctl delete_queue {0}".format(queueName))
-                except:
-                    pass
+            try:
+                sP.runShellCommand(
+                    "sudo rabbitmqctl delete_queue {0}".format(queueName))
+            except:
+                pass
