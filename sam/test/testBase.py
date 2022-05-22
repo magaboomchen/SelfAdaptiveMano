@@ -32,6 +32,11 @@ from sam.measurement import measurer
 
 OUTTER_CLIENT_IP = "1.1.1.1"
 WEBSITE_REAL_IP = "3.3.3.3"
+APP1_REAL_IP = "4.4.4.4"
+APP2_REAL_IP = "5.5.5.5"
+APP3_REAL_IP = "6.6.6.6"
+APP4_REAL_IP = "7.7.7.7"
+APP5_REAL_IP = "8.8.8.8"
 
 TEST_SERVERID = 19999
 

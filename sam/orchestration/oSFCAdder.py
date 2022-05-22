@@ -202,16 +202,17 @@ class OSFCAdder(object):
                     "Unknown mappingType {0}".format(mappingType))
                 raise ValueError("Unknown mappingType.")
 
-            if mappingType in [MAPPING_TYPE_UFRR, MAPPING_TYPE_E2EP, MAPPING_TYPE_NOTVIA_PSFC]:
+            if mappingType in [MAPPING_TYPE_UFRR, MAPPING_TYPE_E2EP, MAPPING_TYPE_NOTVIA_PSFC, \
+                                MAPPING_TYPE_NETPACK, MAPPING_TYPE_NETSOLVER_ILP, MAPPING_TYPE_NONE]:
                 reqCmdTupleList.extend(
                     self._forwardingPathSetsDict2Cmd(forwardingPathSetsDict,
                         requestBatchList)
                 )
-            elif mappingType in [MAPPING_TYPE_NETPACK, MAPPING_TYPE_NETSOLVER_ILP, MAPPING_TYPE_NONE]:
-                reqCmdTupleList.extend(
-                    self._netPackForwardingPathSetsDict2Cmd(forwardingPathSetsDict,
-                        requestBatchList)
-                )
+            # elif mappingType in [MAPPING_TYPE_NETPACK, MAPPING_TYPE_NETSOLVER_ILP, MAPPING_TYPE_NONE]:
+            #     reqCmdTupleList.extend(
+            #         self._netPackForwardingPathSetsDict2Cmd(forwardingPathSetsDict,
+            #             requestBatchList)
+            #     )
             else:
                 raise ValueError("Unimplement mapping type: {0}".format(mappingType))
 
@@ -360,43 +361,80 @@ class OSFCAdder(object):
             reqCmdTupleList.append((request, cmd))
         return reqCmdTupleList
 
-    def _netPackForwardingPathSetsDict2Cmd(self, forwardingPathSetsDict,
-                                        requestBatchList):
-        self.logger.warning("This function may be deprecated in the futures, we will transform netPack to compatible with our forwarding path format")
-        # self.logger.debug("requestFPSet:{0}".format(forwardingPathSetsDict))
-        reqCmdTupleList = []
-        for rIndex in range(len(requestBatchList)):
-            request = requestBatchList[rIndex]
-            sfc = request.attributes['sfc']
-            zoneName = sfc.attributes['zone']
-            sfci = request.attributes['sfci']
-            sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
-            # TODO: Can't use following codes, we need to transform netPack to compatible with our forwarding path format first!
-            if sfci.vnfiSequence in [None,[]]:
-                sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
-                                                        sfci.forwardingPathSet)
-            cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
-                'sfc':sfc, 'sfci':sfci, 'zone':zoneName
-            })
-            reqCmdTupleList.append((request, cmd))
-        return reqCmdTupleList
+    # def _netPackForwardingPathSetsDict2Cmd(self, forwardingPathSetsDict,
+    #                                     requestBatchList):
+    #     self.logger.warning("This function may be deprecated in the futures, we will transform netPack to compatible with our forwarding path format")
+    #     # self.logger.debug("requestFPSet:{0}".format(forwardingPathSetsDict))
+    #     reqCmdTupleList = []
+    #     for rIndex in range(len(requestBatchList)):
+    #         request = requestBatchList[rIndex]
+    #         sfc = request.attributes['sfc']
+    #         zoneName = sfc.attributes['zone']
+    #         sfci = request.attributes['sfci']
+    #         sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
+    #         # TODO: Can't use following codes, we need to transform netPack to compatible with our forwarding path format first!
+    #         if sfci.vnfiSequence in [None,[]]:
+    #             sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
+    #                                                     sfci.forwardingPathSet)
+    #         cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
+    #             'sfc':sfc, 'sfci':sfci, 'zone':zoneName
+    #         })
+    #         reqCmdTupleList.append((request, cmd))
+    #     return reqCmdTupleList
 
     def _getVNFISeqFromForwardingPathSet(self, sfc, forwardingPathSet):
         sfcLength = len(sfc.vNFTypeSequence)
         tD = sfc.getSFCTrafficDemand()
         pM = PerformanceModel()
         vSeq = []
-        for stage in range(sfcLength):
+        for stage in range(sfcLength-1):
             vnfType = sfc.vNFTypeSequence[stage]
             vnfiList = []
-            serverList = self._getServerListOfStage4FPSet(forwardingPathSet, stage)
-            for server in serverList:
-                vnfiID = self._via._assignVNFIID(vnfType, server.getServerID())
-                vnfi = VNFI(vnfType, vnfType, vnfiID, None, server)
+            nodeList = self._getNodeListOfStage4FPSet(forwardingPathSet, stage)
+            for node in nodeList:
+                if type(node) == Server:
+                    vnfiID = self._via._assignVNFIID(vnfType, node.getServerID())
+                elif type(node) == Switch:
+                    vnfiID = self._via._assignVNFIID(vnfType, node.switchID)
+                else:
+                    raise ValueError("Unknown node type {0}".format(type(node)))
+                vnfi = VNFI(vnfType, vnfType, vnfiID, None, node)
                 vnfi.maxCPUNum = pM.getExpectedServerResource(vnfType, tD)[0]
                 vnfiList.append(vnfi)
             vSeq.append(vnfiList)
         return vSeq
+
+    def _getNodeListOfStage4FPSet(self, forwardingPathSet, stage):
+        nodeIDDict = {}
+        # get node from primary fp
+        primaryForwardingPath = forwardingPathSet.primaryForwardingPath[1]
+        (vnfLayerNum, nodeID) = primaryForwardingPath[stage][-1]
+        nodeIDDict[nodeID] = nodeID
+
+        # get mapping type
+        mappingType = forwardingPathSet.mappingType
+
+        # get node from backup fp
+        backupForwardingPathDict = forwardingPathSet.backupForwardingPath[1]
+        for key, backupForwardingPath in backupForwardingPathDict.items():
+            if mappingType == MAPPING_TYPE_NOTVIA_PSFC:
+                if self._isFRRKey(key):
+                    continue
+            for backupPathStageIndex in range(len(backupForwardingPath)):
+                (vnfLayerNum, nodeID) = backupForwardingPath[backupPathStageIndex][-1]
+                if vnfLayerNum == stage:
+                    nodeIDDict[nodeID] = nodeID
+
+        nodeList = []
+        for nodeID in nodeIDDict.keys():
+            self.logger.debug("nodeID:{0}".format(nodeID))
+            if self._dib.isServerID(nodeID):
+                node = self._dib.getServer(nodeID, self.zoneName)
+            elif self._dib.isSwitchID(nodeID):
+                node = self._dib.getSwitch(nodeID, self.zoneName)
+            nodeList.append(node)
+
+        return nodeList
 
     def _getServerListOfStage4FPSet(self, forwardingPathSet, stage):
         serverIDDict = {}

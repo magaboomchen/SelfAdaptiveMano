@@ -6,11 +6,11 @@ import logging
 
 from sam.base.slo import SLO
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
-from sam.base.vnf import VNFI, VNF_TYPE_FORWARD
+from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_INTERFERENCE
 from sam.base.messageAgent import SIMULATOR_ZONE
-from sam.test.testBase import TestBase, WEBSITE_REAL_IP, CLASSIFIER_DATAPATH_IP
+from sam.test.testBase import APP1_REAL_IP, TestBase, WEBSITE_REAL_IP, CLASSIFIER_DATAPATH_IP
 
 MANUAL_TEST = True
 
@@ -91,10 +91,16 @@ class TestSimulatorBase(TestBase):
         # The primary forwarding path has two stage, the first stage is "ingress->L2Forwarding",
         # the second stage is "L2Forwarding->egress".
         # Each stage is a list of layeredNodeIDTuple which format is (stageIndex, nodeID)
+        # primaryForwardingPath = {
+        #                             1:[
+        #                                 [(0,10001),(0,0),(0,256),(0,768),(0,11281)], # (stageIndex, nodeID)
+        #                                 [(1,11281),(1,768),(1,256),(1,0),(1,10001)]
+        #                             ]
+        #                         }
         primaryForwardingPath = {
                                     1:[
-                                        [(0,10001),(0,0),(0,256),(0,768),(0,11281)], # (stageIndex, nodeID)
-                                        [(1,11281),(1,768),(1,256),(1,0),(1,10001)]
+                                        [(0, 50), (0, 419), (0, 931), (0, 13262)],
+                                        [(2, 13262), (2, 931), (2, 418), (2, 33)]
                                     ]
                                 }
         mappingType = MAPPING_TYPE_INTERFERENCE # This is your mapping algorithm type, e.g. interference-aware mapping algorithm

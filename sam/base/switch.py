@@ -18,8 +18,8 @@ class Switch(object):
         self.tcamSize = tcamSize
         self.tcamUsage = tcamUsage
         self._coreUtilization = []
-        self.supportNF = [] # e.g. [NF_TYPE_FW]
-        self.supportVNF = []    # e.g. [VNF_TYPE_FW]
+        self.supportNF = [] # switch itself can support NFs
+        self.supportVNF = []    # connected servers support VNFs
         self.gatewayPortLists = []  # e.g. [0]
 
     def __str__(self):

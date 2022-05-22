@@ -113,6 +113,7 @@ class Dispatcher(object):
 
     def _requestHandler(self, request):
         # TODO: dispatch requests to different orchestrator instances
+        self.logger.info("Get a request {0}".format(request.requestType))
         try:
             if request.requestType == REQUEST_TYPE_ADD_SFC:
                 sfc = request.attributes["sfc"]

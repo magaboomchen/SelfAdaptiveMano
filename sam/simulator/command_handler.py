@@ -134,6 +134,8 @@ def add_sfci_handler(cmd, sib):
         node = vnfi.node
         if isinstance(node, Server):
             nodeID = node.getServerID()
+            # print("server type {0}".format(sib.servers[nodeID][
+            #     'server'].getServerType()))
             assert nodeID in sib.servers and sib.servers[nodeID][
                 'server'].getServerType() == SERVER_TYPE_NFVI
         elif isinstance(node, Switch):

@@ -20,8 +20,8 @@ else:
     BATCH_TIMEOUT = 3
 
 MAX_SFC_LENGTH = 7
-RE_INIT_TABLE = True
-ENABLE_OIB = True  # Please Enable this in final results.
+RE_INIT_TABLE = True    # Please disable this when presenting after clean up all mysql data.
+ENABLE_OIB = True  # Please enable this in final results.
 
 # whether use existed vnfi
 VNFI_ASSIGN_MODE = True

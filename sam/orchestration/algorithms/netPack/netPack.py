@@ -7,8 +7,8 @@ import random
 
 import networkx as nx
 from networkx.exception import NetworkXNoPath, NodeNotFound, NetworkXError
-from sam.base import server
 
+from sam.base.server import SERVER_TYPE_NFVI, Server
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NETPACK
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
@@ -82,6 +82,9 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         #    self.logger.debug("switchID:{0}".format(switchID))
         # exit(1)
 
+    def pruneNormalServer(self, serverSets):
+        prunedServerSet = {}
+
     def _genRequestIngAndEg(self):
         self.requestIngSwitchID = {}
         self.requestEgSwitchID = {}
@@ -106,11 +109,11 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
             request = self.requestList[rIndex]
             sfc = request.attributes['sfc']
             ingress = sfc.directions[0]['ingress']
-            if type(ingress) == server:
+            if type(ingress) == Server:
                 raise ValueError("Ingress is not a switch!")
             ingSwitchID = ingress.switchID
             egress = sfc.directions[0]['egress']
-            if type(egress) == server:
+            if type(egress) == Server:
                 raise ValueError("Egress is not a switch!")
             egSwitchID = egress.switchID
             self.requestIngSwitchID[rIndex] = ingSwitchID
@@ -221,7 +224,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         srcTerminalSwitchIDList = vnf2SwitchID
         srcTerminalSwitchIDList.insert(0, ingSwitchID)
         srcTerminalSwitchIDList.append(egSwitchID)
-        self.logger.info("srcTerminalSwitchIDList: {0}".format(srcTerminalSwitchIDList))
+        # self.logger.info("srcTerminalSwitchIDList: {0}".format(srcTerminalSwitchIDList))
         bandwidthReservationRecordList = []
         linkList = []
         for idx in range(len(srcTerminalSwitchIDList)-1):
@@ -238,7 +241,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
                 if self.singlePath:
                     # Trunc link with low bw tmp
                     linkList = self._getInsufficientBWLinks(bandwidth)
-                    self.logger.info("linkList is {0}".format(linkList))
+                    # self.logger.info("linkList is {0}".format(linkList))
                     self.G.remove_edges_from(linkList)
                 try:
                     # segPath = nx.shortest_path(self.G, u, v)
@@ -374,13 +377,19 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
                 if self.isTorSwitchInSubZone(switchID):
                     rackServersList = self._dib.getConnectedServers(switchID, self.zoneName)
                     for server in rackServersList:
-                        singleServerSet.append([server])
+                        if server.getServerType() == SERVER_TYPE_NFVI:
+                            singleServerSet.append([server])
             # construct racks serverSet
             rackServerSet = []
             for switchID in range(torSwitchStartIdx, torSwitchEndIdx+1):
                 if self.isTorSwitchInSubZone(switchID):
                     rackServersList = self._dib.getConnectedServers(switchID, self.zoneName)
-                    rackServerSet.append(rackServersList)
+                    # if server.getServerType() == SERVER_TYPE_NFVI:
+                    rackNFVIServersList = []
+                    for server in rackServersList:
+                        if server.getServerType() == SERVER_TYPE_NFVI:
+                            rackNFVIServersList.append(server)
+                    rackServerSet.append(rackNFVIServersList)
             # construct pod serverSet
             podServerSet = []
             for podIdx in range(0, self.podNum):
@@ -388,6 +397,10 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
                 for switchID in range(torSwitchStartIdx+torPerPod*podIdx, torSwitchStartIdx+torPerPod*podIdx+torPerPod):
                     if self.isTorSwitchInSubZone(switchID):
                         rackServersList = self._dib.getConnectedServers(switchID, self.zoneName)
+                        rackNFVIServersList = []
+                        for server in rackServersList:
+                            if server.getServerType() == SERVER_TYPE_NFVI:
+                                rackNFVIServersList.append(server)
                         podServerList.extend(rackServersList)
                 podServerSet.append(podServerList)
             return [singleServerSet, rackServerSet, podServerSet]

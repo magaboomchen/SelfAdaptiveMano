@@ -102,6 +102,7 @@ class Orchestrator(object):
             if request.requestType == REQUEST_TYPE_ADD_SFC:
                 # self._odir.getDCNInfo()
                 cmd = self._osa.genAddSFCCmd(request)
+                cmd.attributes['source'] = self.orchInstanceQueueName
                 self._cm.addCmd(cmd)
                 self._oib.addSFCRequestHandler(request, cmd)
                 self.sendCmd(cmd)
@@ -137,6 +138,7 @@ class Orchestrator(object):
                         # self.batchLastTime = time.time()
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 cmd = self._osd.genDelSFCICmd(request)
+                cmd.attributes['source'] = self.orchInstanceQueueName
                 ingress = cmd.attributes['sfc'].directions[0]['ingress']
                 if type(ingress) == Server:
                     self.logger.debug("orchestrator classifier's serverID: {0}".format(
@@ -151,6 +153,7 @@ class Orchestrator(object):
                 self.sendCmd(cmd)
             elif request.requestType == REQUEST_TYPE_DEL_SFC:
                 cmd = self._osd.genDelSFCCmd(request)
+                cmd.attributes['source'] = self.orchInstanceQueueName
                 self._cm.addCmd(cmd)
                 self._oib.delSFCRequestHandler(request, cmd)
                 self.sendCmd(cmd)
@@ -219,6 +222,7 @@ class Orchestrator(object):
                 self._requestBatchQueue)
             self.logger.info("After mapping, there are {0} request in queue".format(self._requestBatchQueue.qsize()))
             for (request, cmd) in reqCmdTupleList:
+                cmd.attributes['source'] = self.orchInstanceQueueName
                 self._cm.addCmd(cmd)
                 if ENABLE_OIB:
                     self._oib.addSFCIRequestHandler(request, cmd)
