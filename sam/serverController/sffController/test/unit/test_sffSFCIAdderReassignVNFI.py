@@ -25,8 +25,8 @@ from sam.serverController.sffController.test.unit.fixtures import sendDirection1
 
 MANUAL_TEST = True
 
-TESTER_SERVER_DATAPATH_IP = "192.168.124.1"
-TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"
+TESTER_SERVER_DATAPATH_IP = "192.168.8.20"
+TESTER_SERVER_DATAPATH_MAC = "90:e2:ba:b1:4d:0f"
 
 SFCI2_0_EGRESS_IP = "10.0.2.1"
 SFCI2_1_EGRESS_IP = "10.0.2.128"
@@ -113,8 +113,8 @@ class TestSFFSFCIAdderReassignVNFIClass(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def verifyArpResponder(self):
-        self._sendArpRequest(interface="toVNF1", requestIP=SFF1_DATAPATH_IP)
-        self._checkArpRespond(inIntf="toVNF1")
+        self._sendArpRequest(interface=TESTER_SERVER_INTF, requestIP=SFF1_DATAPATH_IP)
+        self._checkArpRespond(inIntf=TESTER_SERVER_INTF)
 
     def _sendArpRequest(self, interface, requestIP):
         filePath = sendArpRequest.__file__
@@ -137,10 +137,10 @@ class TestSFFSFCIAdderReassignVNFIClass(TestBase):
 
     def verifyDirection0Traffic(self):
         self._sendDirection0Traffic2SFF()
-        self._checkEncapsulatedTraffic(inIntf="toVNF1")
+        self._checkEncapsulatedTraffic(inIntf=TESTER_SERVER_INTF)
 
         self._sendDirection0Traffic2SFF4sfci2()
-        self._checkEncapsulatedTraffic4sfci2(inIntf="toVNF1")
+        self._checkEncapsulatedTraffic4sfci2(inIntf=TESTER_SERVER_INTF)
 
     def _sendDirection0Traffic2SFF(self):
         filePath = sendDirection0Traffic.__file__
@@ -188,10 +188,10 @@ class TestSFFSFCIAdderReassignVNFIClass(TestBase):
 
     def verifyDirection1Traffic(self):
         self._sendDirection1Traffic2SFF()
-        self._checkDecapsulatedTraffic(inIntf="toVNF1")
+        self._checkDecapsulatedTraffic(inIntf=TESTER_SERVER_INTF)
 
         self._sendDirection1Traffic2SFF4sfci2()
-        self._checkDecapsulatedTraffic4sfci2(inIntf="toVNF1")
+        self._checkDecapsulatedTraffic4sfci2(inIntf=TESTER_SERVER_INTF)
 
     def _sendDirection1Traffic2SFF(self):
         filePath = sendDirection1Traffic.__file__

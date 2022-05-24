@@ -58,13 +58,13 @@ class ShellProcessor(object):
                         return True
         return False
 
-    def runPythonScript(self, filePath, root=False, cmdPrefix=""):
+    def runPythonScript(self, filePath, root=False, cmdPrefix="", cmdSuffix=""):
         if root == True:
             user = "sudo "
         else:
             user = ""
         subprocess.Popen(
-            [ user + "{0} python ".format(cmdPrefix) + filePath], shell=True)
+            [ user + "{0} python {1} {2}".format(cmdPrefix, filePath, cmdSuffix)], shell=True)
 
     def getPythonScriptProcessPid(self, scriptName):
         for p in psutil.process_iter(attrs=['pid', 'name', 'cmdline']):

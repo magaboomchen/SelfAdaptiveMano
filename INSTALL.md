@@ -54,6 +54,12 @@ ${ABSOLUTE_PATH_TO_THIS_PROJECT}
 EOF
 ```
 
+### MessageAgent gRPC
+```
+cd ~/Projects/SelfAdaptiveMano/sam/base/messageAgentAuxillary
+protoc -I=./protos --python_out=./ ./protos/messageAgent.proto
+```
+
 ## RabbitMQ
 ### install erlang 20.3.8.26-1 (please make sure the version number)
 ```
@@ -107,6 +113,7 @@ sudo apt-get install python-mysqldb
 
 #### Ubuntu 20.04
 ```
+sudo apt-get install libmysqlclient-dev
 sudo wget https://raw.githubusercontent.com/paulfitz/mysql-connector-c/master/include/my_config.h -O /usr/include/mysql/my_config.h
 sudo add-apt-repository 'deb http://archive.ubuntu.com/ubuntu bionic main'
 sudo apt update

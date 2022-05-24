@@ -8,31 +8,47 @@ import pytest
 from scapy.all import sniff
 from scapy.layers.l2 import ARP
 from scapy.layers.inet import IP
+from scapy.all import Raw, sendp, AsyncSniffer
+from scapy.contrib.nsh import NSH
 
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.messageAgent import SFF_CONTROLLER_QUEUE, MEDIATOR_QUEUE, \
     MSG_TYPE_SFF_CONTROLLER_CMD
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
+from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.test.fixtures.vnfControllerStub import VNFControllerStub
-from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, SFF1_DATAPATH_IP, \
-    SFF1_DATAPATH_MAC, SFCI1_0_EGRESS_IP, WEBSITE_REAL_IP, SFCI1_1_EGRESS_IP
+from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, TestBase, CLASSIFIER_DATAPATH_IP, SFF1_CONTROLNIC_IP, \
+    SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC, SFCI1_0_EGRESS_IP, WEBSITE_REAL_IP, SFCI1_1_EGRESS_IP
 from sam.test.fixtures import sendArpRequest
+from sam.serverController.sffController.test.unit.testConfig import TESTER_SERVER_DATAPATH_IP, \
+    TESTER_SERVER_DATAPATH_MAC, TESTER_DATAPATH_INTF, PRIVATE_KEY_FILE_PATH, BESS_SERVER_USER, \
+    BESS_SERVER_USER_PASSWORD
+from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
 from sam.serverController.sffController import sffControllerCommandAgent
-from sam.serverController.sffController.test.unit.fixtures import sendDirection0Traffic
-from sam.serverController.sffController.test.unit.fixtures import sendDirection1Traffic
+from sam.serverController.sffController.test.unit.fixtures.sendDirection0Traffic import sendDirection0Traffic
+from sam.serverController.sffController.test.unit.fixtures.sendDirection1Traffic import sendDirection1Traffic
 
 MANUAL_TEST = True
 
-TESTER_SERVER_DATAPATH_IP = "192.168.124.1"
-TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"
+# SFF1_DATAPATH_IP = "2.2.0.98"
+# SFF1_DATAPATH_MAC = "90:e2:ba:0f:a3:b5"
+# SFF1_CONTROLNIC_IP = "192.168.0.127"
+# SFF1_CONTROLNIC_MAC = "18:66:da:85:f9:ed"
+# SFF1_SERVERID = 10003
 
 logging.basicConfig(level=logging.INFO)
 
 
 class TestSFFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
+
     def setup_addSFCI(self):
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'tester.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
@@ -47,10 +63,12 @@ class TestSFFSFCIAdderClass(TestBase):
             TESTER_SERVER_DATAPATH_MAC)
         self.vC = VNFControllerStub()
         self.runSFFController()
+
         yield
+
         # teardown
-        self.vC.uninstallVNF("t1", "123", "192.168.122.134",
-            self.sfci.vnfiSequence[0][0].vnfiID)
+        self.vC.uninstallVNF(BESS_SERVER_USER, BESS_SERVER_USER_PASSWORD,
+            SFF1_CONTROLNIC_IP, self.sfci.vnfiSequence[0][0].vnfiID, PRIVATE_KEY_FILE_PATH)
         self.killSFFController()
 
     def runSFFController(self):
@@ -64,6 +82,10 @@ class TestSFFSFCIAdderClass(TestBase):
         self.sendCmd(SFF_CONTROLLER_QUEUE,
             MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
 
+        time.sleep(2)
+        # logging.info("Press Any key to test data path!")
+        # raw_input() # type: ignore
+
         # verify
         self.verifyArpResponder()
         self.verifyCmdRply()
@@ -71,16 +93,17 @@ class TestSFFSFCIAdderClass(TestBase):
         # setup again
         try:
             # In normal case, there should be a timeout error!
-            shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
-                self.sfci.vnfiSequence[0][0].vnfiID)
+            shellCmdRply = self.vC.installVNF(BESS_SERVER_USER, BESS_SERVER_USER_PASSWORD, 
+                SFF1_CONTROLNIC_IP, self.sfci.vnfiSequence[0][0].vnfiID, PRIVATE_KEY_FILE_PATH)
             logging.info(
-                "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
+                "Error command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
                 shellCmdRply['stderr'].read().decode('utf-8')))
-        except:
+        except Exception as ex:
             logging.info("If raise IOError: reading from stdin while output is captured")
             logging.info("Then pytest should use -s option!")
+            ExceptionProcessor(self.logger).logException(ex)
 
         # verify again
         time.sleep(5)
@@ -88,19 +111,23 @@ class TestSFFSFCIAdderClass(TestBase):
         self.verifyDirection1Traffic()
 
     def verifyArpResponder(self):
-        self._sendArpRequest(interface="toVNF1", requestIP=SFF1_DATAPATH_IP)
-        self._checkArpRespond(inIntf="toVNF1")
+        self._sendArpRequest(interface=TESTER_DATAPATH_INTF, requestIP=SFF1_DATAPATH_IP)
+        self._checkArpRespond(inIntf=TESTER_DATAPATH_INTF)
 
-    def _sendArpRequest(self, interface, requestIP):
+    def _sendArpRequest(self, interface, requestIP, srcIP=TESTER_SERVER_DATAPATH_IP,
+                        srcMAC=TESTER_SERVER_DATAPATH_MAC):
         filePath = sendArpRequest.__file__
         self.sP.runPythonScript(filePath \
             + " -i " + interface \
-            + " -dip " + requestIP)
+            + " -dip " + requestIP \
+            + " -sip " + srcIP \
+            + " -smac " + srcMAC)
 
     def _checkArpRespond(self,inIntf):
         logging.info("_checkArpRespond: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()) +
             " and arp",iface=inIntf, prn=self.frame_callback,count=1,store=0)
+        logging.info("Check arp response successfully!")
 
     def frame_callback(self,frame):
         frame.show()
@@ -108,55 +135,90 @@ class TestSFFSFCIAdderClass(TestBase):
             mac = frame[ARP].hwsrc
             assert mac.upper() == SFF1_DATAPATH_MAC.upper()
 
-
     def verifyDirection0Traffic(self):
+        aSniffer = self._checkEncapsulatedTraffic(inIntf=TESTER_DATAPATH_INTF)
+        time.sleep(2)
         self._sendDirection0Traffic2SFF()
-        self._checkEncapsulatedTraffic(inIntf="toVNF1")
+        while True:
+            if not aSniffer.running:
+                break
+        # aSniffer.stop()
 
     def _sendDirection0Traffic2SFF(self):
-        filePath = sendDirection0Traffic.__file__
-        self.sP.runPythonScript(filePath)
+        # filePath = sendDirection0Traffic.__file__
+        # self.sP.runPythonScript(filePath)
+        sendDirection0Traffic()
 
     def _checkEncapsulatedTraffic(self,inIntf):
         logging.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
-        sniff(filter=filterRE,
+        aSniffer = AsyncSniffer(filter=filterRE,
             iface=inIntf, prn=self.encap_callback,count=1,store=0)
+        # aSniffer = AsyncSniffer(
+        #     iface=inIntf, prn=self.encap_callback,count=2,store=0)
+        aSniffer.start()
+        return aSniffer
 
     def encap_callback(self,frame):
+        logging.info("Get encap back packet!")
         frame.show()
-        condition = (frame[IP].src == SFF1_DATAPATH_IP and \
-            frame[IP].dst == SFCI1_0_EGRESS_IP and frame[IP].proto == 0x04)
-        assert condition
-        outterPkt = frame.getlayer('IP')[0]
-        innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].dst == WEBSITE_REAL_IP
-
+        if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
+            condition = (frame[IP].src == SFF1_DATAPATH_IP \
+                and frame[IP].dst == SFCI1_0_EGRESS_IP \
+                and frame[IP].proto == 0x04)
+            assert condition == True
+            outterPkt = frame.getlayer('IP')[0]
+            innerPkt = frame.getlayer('IP')[1]
+            assert innerPkt[IP].dst == WEBSITE_REAL_IP
+        elif DEFAULT_CHAIN_TYPE == CHAIN_TYPE_NSHOVERETH:
+            condition = (frame[NSH].spi == DIRECTION0_TRAFFIC_SPI \
+                and frame[NSH].si == 0 \
+                and frame[NSH].nextproto == 0x1)
+            assert condition == True
+            innerPkt = frame.getlayer('IP')[0]
+            assert innerPkt[IP].dst == WEBSITE_REAL_IP
 
     def verifyDirection1Traffic(self):
+        aSniffer = self._checkDecapsulatedTraffic(inIntf=TESTER_DATAPATH_INTF)
+        time.sleep(2)
         self._sendDirection1Traffic2SFF()
-        self._checkDecapsulatedTraffic(inIntf="toVNF1")
+        # aSniffer.stop()
+        while True:
+            if not aSniffer.running:
+                break
 
     def _sendDirection1Traffic2SFF(self):
-        filePath = sendDirection1Traffic.__file__
-        self.sP.runPythonScript(filePath)
+        # filePath = sendDirection1Traffic.__file__
+        # self.sP.runPythonScript(filePath)
+        sendDirection1Traffic()
 
     def _checkDecapsulatedTraffic(self,inIntf):
         logging.info("_checkDecapsulatedTraffic: wait for packet")
-        sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
+        aSniffer = AsyncSniffer(filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback,count=1,store=0)
+        aSniffer.start()
+        return aSniffer
 
     def decap_callback(self,frame):
+        logging.info("Get decap back packet!")
         frame.show()
-        condition = (frame[IP].src == SFF1_DATAPATH_IP and \
-            frame[IP].dst == SFCI1_1_EGRESS_IP and frame[IP].proto == 0x04)
-        assert condition == True
-        outterPkt = frame.getlayer('IP')[0]
-        innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].src == WEBSITE_REAL_IP
+        if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
+            condition = (frame[IP].src == SFF1_DATAPATH_IP and \
+                frame[IP].dst == SFCI1_1_EGRESS_IP and frame[IP].proto == 0x04)
+            assert condition == True
+            outterPkt = frame.getlayer('IP')[0]
+            innerPkt = frame.getlayer('IP')[1]
+            assert innerPkt[IP].src == WEBSITE_REAL_IP
+        elif DEFAULT_CHAIN_TYPE == CHAIN_TYPE_NSHOVERETH:
+            condition = (frame[NSH].spi == DIRECTION1_TRAFFIC_SPI \
+                and frame[NSH].si == 0 \
+                and frame[NSH].nextproto == 0x1)
+            assert condition == True
+            innerPkt = frame.getlayer('IP')[0]
+            assert innerPkt[IP].src == WEBSITE_REAL_IP
 
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
+        logging.info("Verify cmy rply successfully!")

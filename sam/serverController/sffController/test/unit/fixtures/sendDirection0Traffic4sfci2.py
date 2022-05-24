@@ -7,7 +7,7 @@ from scapy.all import Raw, sendp, sniff
 from scapy.layers.l2 import Ether, ARP
 from scapy.layers.inet import IP, TCP
 
-from sam.test.testBase import WEBSITE_REAL_IP, \
+from sam.test.testBase import TESTER_SERVER_INTF, WEBSITE_REAL_IP, \
     TESTER_SERVER_DATAPATH_MAC, OUTTER_CLIENT_IP
 from sam.serverController.sffController.test.unit.test_sffSFCIAdder import SFF1_DATAPATH_MAC, \
     CLASSIFIER_DATAPATH_IP
@@ -23,7 +23,7 @@ def sendDirection0Traffic4sfci2():
     ip2 = IP(src=OUTTER_CLIENT_IP,dst=WEBSITE_REAL_IP)
     tcp = TCP(sport=1234,dport=80)
     frame = ether / ip1 / ip2 / tcp /Raw(load=data)
-    sendp(frame,iface="toVNF1")
+    sendp(frame,iface=TESTER_SERVER_INTF)
 
 if __name__=="__main__":
     time.sleep(0.1)

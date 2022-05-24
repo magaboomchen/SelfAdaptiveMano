@@ -5,6 +5,7 @@ from __future__ import print_function
 import grpc
 from google.protobuf.any_pb2 import Any
 
+from sam.serverController.sffController.sfcConfig import DEFAULT_CHAIN_TYPE
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
 import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
 import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2

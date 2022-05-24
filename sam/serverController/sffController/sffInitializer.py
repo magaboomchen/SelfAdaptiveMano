@@ -6,6 +6,7 @@ from __future__ import print_function
 from google.protobuf.any_pb2 import Any
 import grpc
 
+from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
 import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
 import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
@@ -87,6 +88,16 @@ class SFFInitializer(BessControlPlane):
 
             sibm.addModule("wm2","WildcardMatch")
 
+            # ExactMatch() 1
+            argument = Any()
+            argument.Pack( module_msg_pb2.ExactMatchArg( fields=[
+                {"offset":18, "num_bytes":4}] ))
+            response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
+                name="em1",mclass="ExactMatch",arg=argument))
+            self._checkResponse(response)
+
+            sibm.addModule("em1","ExactMatch")
+
             # ArpResponder()
             argument = Any()
             arg = module_msg_pb2.ArpResponderArg()
@@ -100,6 +111,10 @@ class SFFInitializer(BessControlPlane):
                 name="Sink1",mclass="Sink"))
             self._checkResponse(response)
 
+            # response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
+            #     name="Sink2",mclass="Sink"))
+            # self._checkResponse(response)
+
             # MACSwap()
             argument = Any()
             arg = module_msg_pb2.MACSwapArg()
@@ -109,10 +124,18 @@ class SFFInitializer(BessControlPlane):
             self._checkResponse(response)
 
             # Merge()
+            ## Output merge
             argument = Any()
             argument.Pack( module_msg_pb2.MergeArg( ))
             response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
                 name="outmerge",mclass="Merge",arg=argument))
+            self._checkResponse(response)
+
+            ## mac swap merge
+            argument = Any()
+            argument.Pack( module_msg_pb2.MergeArg( ))
+            response = stub.CreateModule(bess_msg_pb2.CreateModuleRequest(
+                name="macSwapMerge",mclass="Merge",arg=argument))
             self._checkResponse(response)
 
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
@@ -126,7 +149,7 @@ class SFFInitializer(BessControlPlane):
             stub = service_pb2_grpc.BESSControlStub(channel)
             stub.PauseAll(bess_msg_pb2.EmptyRequest())
 
-            # Wildcard match
+            # Wildcard match 1
             # rule 1
             # default gate 0
             argument = Any()
@@ -136,18 +159,18 @@ class SFFInitializer(BessControlPlane):
                 name="wm1",cmd="set_default_gate",arg=argument))
             self._checkResponse(response)
             # rule 2
-            # sfc domain traffic to gate 1
+            # ufrr sfc domain traffic to gate 1
             argument = Any()
             dstIPMask = self._sc.ipPrefix2Mask(SFC_DOMAIN_PREFIX_LENGTH)
             dstIPMask = self._sc.aton(dstIPMask)
             arg = module_msg_pb2.WildcardMatchCommandAddArg(gate=1,
                 values=[
                     {"value_bin": b'\x08\x00'},
-                    {"value_bin":self._sc.aton(SFC_DOMAIN_PREFIX)}
+                    {"value_bin": self._sc.aton(SFC_DOMAIN_PREFIX)}
                 ],
                 masks=[
                     {'value_bin': b'\xFF\xFF'},
-                    {'value_bin':dstIPMask}
+                    {'value_bin': dstIPMask}
                 ])
             argument.Pack(arg)
             response = stub.ModuleCommand(bess_msg_pb2.CommandRequest(
@@ -168,8 +191,25 @@ class SFFInitializer(BessControlPlane):
             response = stub.ModuleCommand(bess_msg_pb2.CommandRequest(
                 name="wm1",cmd="add",arg=argument))
             self._checkResponse(response)
+            # rule 4
+            # nsh sfc domain traffic to gate 1
+            argument = Any()
+            dstIPMask = self._sc.ipPrefix2Mask(SFC_DOMAIN_PREFIX_LENGTH)
+            dstIPMask = self._sc.aton(dstIPMask)
+            arg = module_msg_pb2.WildcardMatchCommandAddArg(gate=3,
+                values=[
+                    {"value_bin": b'\x89\x4F'},
+                    {"value_bin": b'\x00\x00\x00\x00'}
+                ],
+                masks=[
+                    {'value_bin': b'\xFF\xFF'},
+                    {'value_bin': b'\x00\x00'}
+                ])
+            argument.Pack(arg)
+            response = stub.ModuleCommand(bess_msg_pb2.CommandRequest(
+                name="wm1",cmd="add",arg=argument))
 
-            # WildcardMatch
+            # WildcardMatch 2
             # rule 1
             # wm2.set_default_gate(gate=0)
             argument = Any()
@@ -180,6 +220,17 @@ class SFFInitializer(BessControlPlane):
             self._checkResponse(response)
 
             sibm.addOGate2Module("wm2","default",0)
+
+            # ExactMatch 1
+            # rule 1
+            argument = Any()
+            argument.Pack( module_msg_pb2.ExactMatchCommandSetDefaultGateArg(
+                gate=0) )
+            response = stub.ModuleCommand(bess_msg_pb2.CommandRequest(
+                name="em1",cmd="set_default_gate",arg=argument))
+            self._checkResponse(response)
+
+            sibm.addOGate2Module("em1","default",0)
 
             # add rule to ArpResponder
             serverDatapathNICIP = server.getDatapathNICIP()
@@ -224,14 +275,24 @@ class SFFInitializer(BessControlPlane):
                 m1="wm1",m2="ar",ogate=2,igate=0))
             self._checkResponse(response)
 
+            # wm:3 -> ExactMatch()
+            response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
+                m1="wm1",m2="em1",ogate=3,igate=0))
+            self._checkResponse(response)
+
             #   ar-> outmerge
             response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
                 m1="ar",m2="outmerge",ogate=0,igate=0))
             self._checkResponse(response)
 
-            # wm2:0 -> ms
+            # wm2:0 -> macSwapMerge
             response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
-                m1="wm2",m2="ms",ogate=0,igate=0))
+                m1="wm2",m2="macSwapMerge",ogate=0,igate=0))
+            self._checkResponse(response)
+
+            # macSwapMerge -> ms
+            response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
+                m1="macSwapMerge",m2="ms",ogate=0,igate=0))
             self._checkResponse(response)
 
             #       ms -> outmerge
@@ -242,6 +303,11 @@ class SFFInitializer(BessControlPlane):
             # outmerge -> output0
             response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
                 m1="outmerge",m2="output0",ogate=0,igate=0))
+            self._checkResponse(response)
+
+            # em1:0 -> macSwapMerge
+            response = stub.ConnectModules(bess_msg_pb2.ConnectModulesRequest(
+                m1="em1",m2="macSwapMerge",ogate=0,igate=0))
             self._checkResponse(response)
 
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())

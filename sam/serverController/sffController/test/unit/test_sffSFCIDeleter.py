@@ -14,11 +14,11 @@ from sam.test.fixtures.vnfControllerStub import VNFControllerStub
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, SFF1_DATAPATH_IP, \
     SFF1_DATAPATH_MAC, SFCI1_0_EGRESS_IP, WEBSITE_REAL_IP, SFCI1_1_EGRESS_IP
 from sam.serverController.sffController import sffControllerCommandAgent
+from sam.serverController.sffController.test.unit.testConfig import TESTER_SERVER_DATAPATH_IP, \
+    TESTER_SERVER_DATAPATH_MAC, TESTER_DATAPATH_INTF, PRIVATE_KEY_FILE_PATH, BESS_SERVER_USER, \
+    BESS_SERVER_USER_PASSWORD
 
 MANUAL_TEST = True
-
-TESTER_SERVER_DATAPATH_IP = "192.168.124.1"
-TESTER_SERVER_DATAPATH_MAC = "fe:54:00:42:26:44"
 
 logging.basicConfig(level=logging.INFO)
 

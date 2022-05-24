@@ -11,6 +11,7 @@ from sam.base.command import CommandReply, CMD_STATE_PROCESSING, CMD_TYPE_PAUSE_
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 
+from sam.serverController.sffController.sfcConfig import DEFAULT_CHAIN_TYPE
 from sam.serverController.sffController.sffSFCIAdder import SFFSFCIAdder
 from sam.serverController.sffController.sffSFCIDeleter import SFFSFCIDeleter
 from sam.serverController.sffController.sffMonitor import SFFMonitor

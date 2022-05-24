@@ -91,6 +91,27 @@ class SIBMaintainer(BessInfoBaseMaintainer):
                 + ((sfciID & 0xFFF) << 8) + ((directionID & 0x1) <<7)
         return value
 
+    def assignSFFEM1OGate(self, vnfID, directionID):
+        if self.hasModuleOGate("em1", (vnfID,directionID)):
+            oGateNum = self.getModuleOGate("em1", (vnfID,directionID))
+        else:
+            OGateList = self.getModuleOGateNumList("em1")
+            oGateNum = self.genAvailableMiniNum4List(OGateList)
+            self.addOGate2Module("em1", (vnfID,directionID), oGateNum)
+        return oGateNum
+
+    def getSFFEM1MatchValue(self, sfci, vnfiIdx, directionID):
+        spi = sfci.sfciID + (directionID << 23)
+        si = max(len(sfci.vnfiSequence)-vnfiIdx,0)
+        value = ((spi << 8) + si) & 0xFFFFFFFF
+        return value
+
+    def getUpdateValue4NSH(self, sfci, directionID, vnfiIdx):
+        spi = sfci.sfciID + (directionID << 23)
+        si = max(len(sfci.vnfiSequence)-vnfiIdx-1,0)
+        value = ((spi << 8) + si) & 0xFFFFFFFF
+        return value
+
     def show(self):
         self.logger.info("sfcSet:{0}".format(self._sfcSet))
         self.logger.info("modules:{0}".format(self._modules))

@@ -19,13 +19,18 @@ class VNFControllerStub(object):
         msg = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, cmdRply)
         self.mA.sendMsg(MEDIATOR_QUEUE, msg)
 
-    def installVNF(self, sshUsrname, sshPassword, remoteIP, vnfiID):
+    def installVNF(self, sshUsrname, sshPassword, remoteIP, vnfiID, privateKeyFilePath=None):
         self.vnfBase[remoteIP] = {}
         self.vnfBase[remoteIP]["VNFAggCount"] = 0
         command = self.genVNFInstallationCommand(remoteIP, vnfiID)
         self.sshA = SSHAgent()
-        self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
-        shellCmdRply = self.sshA.runShellCommandWithSudo(command, 1)
+        if privateKeyFilePath == None:
+            self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
+        else:
+            self.sshA.connectSSHWithRSA(sshUsrname, privateKeyFilePath, remoteIP)
+            self.sshA.passwd = sshPassword
+        shellCmdRply = self.sshA.runShellCommandWithSudo(command, 2)
+        # shellCmdRply = self.sshA.runShellCommand(command)
         return shellCmdRply
 
     def genVNFInstallationCommand(self,remoteIP,vnfiID):
@@ -45,6 +50,7 @@ class VNFControllerStub(object):
             + "--file-prefix=virtio --log-level=8 -- " \
             + "--txqflags=0xf00 --disable-hw-vlan --forward-mode=io --port-topology=chained --total-num-mbufs=2048 -a"
         self.vnfBase[remoteIP][vnfiID] = {"name":name}
+        logging.info(command)
         return command
 
     def genVNFName(self,remoteIP):
@@ -54,10 +60,15 @@ class VNFControllerStub(object):
     def getVNFName(self,remoteIP,vnfiID):
         return self.vnfBase[remoteIP][vnfiID]["name"]
 
-    def uninstallVNF(self,sshUsrname,sshPassword,remoteIP,vnfiID):
+    def uninstallVNF(self,sshUsrname,sshPassword,remoteIP,vnfiID,privateKeyFilePath=None):
         command = self.genVNFUninstallationCommand(remoteIP,vnfiID)
         self.sshA = SSHAgent()
-        self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
+        # self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
+        if privateKeyFilePath == None:
+            self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
+        else:
+            self.sshA.connectSSHWithRSA(sshUsrname, privateKeyFilePath, remoteIP)
+            self.sshA.passwd = sshPassword
         shellCmdRply = self.sshA.runShellCommandWithSudo(command,None)
         # logging.info(
         #     "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
