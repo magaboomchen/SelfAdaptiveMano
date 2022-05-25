@@ -36,6 +36,12 @@ class SamSimulationArgParser(ArgParserBase):
         self.parser.add_argument('-torNum', metavar='torNum',
             type=int, nargs='?', const=1, default="3",
             help="tor node number")
+        self.parser.add_argument('-serverNum', metavar='serverNum',
+            type=int, nargs='?', const=1, default="20",
+            help="servers per tor")
+        self.parser.add_argument('-nfviNum', metavar='nfviNum',
+             type=int, nargs='?', const=1, default="5",
+             help="nfvi number per tor")
         self.parser.add_argument('-enlargeTimes', metavar='enlargeTimes',
             type=int, nargs='?', const=1, default="1",
             help="enlarge times")

@@ -39,11 +39,11 @@ class Topology(object):
             nPoPNum, SFC_REQUEST_NUM)
         self.startGeneration(topoType, expNum, topoName)
 
-    def genFatTreeTopology(self, expNum, podNum, nPoPNum):
+    def genFatTreeTopology(self, expNum, podNum, nPoPNum, serverNum, nfviNum):
         topoType = "fat-tree"
         topoName = "fat-tree-k={0}_V={1}_M={2}".format(
             podNum, nPoPNum, SFC_REQUEST_NUM)
-        self.startGeneration(topoType, expNum, topoName, podNum)
+        self.startGeneration(topoType, expNum, topoName, podNum, serverNum, nfviNum)
 
     def genVL2Topology(self, expNum, intNum, aggNum, nPoPNum):
         topoType = "VL2"
@@ -86,7 +86,7 @@ class Topology(object):
             for topoName in topoNameList:
                 self.startGeneration(topoType, expNum, topoName)
 
-    def startGeneration(self, topoType, expNum, topoName, podNum=None):
+    def startGeneration(self, topoType, expNum, topoName, podNum=None, serverNum=None, nfviNum=None):
         topoFilePath = "../topogen/topology/{0}/{1}/{2}.dat".format(
             topoType, expNum, topoName)
 
@@ -99,9 +99,8 @@ class Topology(object):
             self.addClassifier4LogicalTwoTier()
             self.addNFVIs4LogicalTwoTier()
         elif topoType == "fat-tree":
-            self.addNFVIs4FatTree(podNum)
-            self._addServers4FatTree([i for i in range(896, 1280)], podNum)
-            self._postProcessTopology4FatTree()
+            self.addNFVIs4FatTree(serverNum, nfviNum)
+            self._postProcessTopology4FatTree(podNum, serverNum)
         elif topoType == "testbed_sw1":
             self.addNFVIs4Testbed_sw1(serverNum=1)
         else:
@@ -292,19 +291,23 @@ class Topology(object):
                                           'server': server,
                                           'Status': None}
 
-    def addNFVIs4FatTree(self, podNum):
+    def addNFVIs4FatTree(self, serverNum, nfviNum):
         nodeVNFSupportDict = self._getNodeVNFSupportDict()
         for nodeID, vnfTypeList in nodeVNFSupportDict.items():
             self.logger.debug("nodeID:{0} vnfTypeList:{1}".format(
                 nodeID, vnfTypeList))
-            serverNum = podNum / 2
             for index in range(serverNum):
                 self.logger.info(
                     "addServers connecting nodeID:{0}".format(nodeID))
                 serverID = self._assignServerID()
                 dpIP = self._dhcp.assignIP(nodeID)
                 self.logger.debug("serverID:{0} dpIP:{1}".format(serverID, dpIP))
-                server = Server("eno1", dpIP, SERVER_TYPE_NFVI)
+                if index < nfviNum:
+                    server = Server("eno1", dpIP, SERVER_TYPE_NFVI)
+                    for vnfType in vnfTypeList:
+                        server.addVNFSupport(vnfType)
+                else:
+                    server = Server("eno1", dpIP, SERVER_TYPE_NORMAL)
                 # one NIC per server
                 server.setControlNICIP(dpIP)
                 # two NIC per server
@@ -314,8 +317,6 @@ class Topology(object):
                     "addServers nodeID:{0}, dpIP:{1}, ctIP:{2}".format(
                         nodeID, dpIP, ctIP))
                 server.setServerID(serverID)
-                for vnfType in vnfTypeList:
-                    server.addVNFSupport(vnfType)
                 server.fastConstructResourceInfo()
                 server.setCoreNUMADistribution(SERVER_NUMA_CPU_DISTRIBUTION)
                 server.setHugepagesTotal(SERVER_NUMA_MEMORY_DISTRIBUTION)
@@ -580,36 +581,11 @@ class Topology(object):
                 nPoPNum, SFC_REQUEST_NUM)
             self.topoNameDict["SwitchL3"].append(topoName)
 
-    def _addServers4FatTree(self, nodeList, podNum):
-        # type: (list,int) -> None
-        for nodeID in nodeList:
-            serverNum = podNum / 2
-            for index in range(serverNum):
-                self.logger.info(
-                    "addServers connecting nodeID:{0}".format(nodeID))
-                serverID = self._assignServerID()
-                dpIP = self._dhcp.assignIP(nodeID)
-                self.logger.debug("serverID:{0} dpIP:{1}".format(serverID, dpIP))
-                server = Server("eno1", dpIP, SERVER_TYPE_NORMAL)
-                # one NIC per server
-                server.setControlNICIP(dpIP)
-                # two NIC per server
-                # server.setControlNICIP(self._dhcp.assignIP(nodeID))
-                ctIP = server.getControlNICIP()
-                self.logger.debug(
-                    "addServers nodeID:{0}, dpIP:{1}, ctIP:{2}".format(
-                        nodeID, dpIP, ctIP))
-                server.setServerID(serverID)
-                server.fastConstructResourceInfo()
-                server.setCoreNUMADistribution(SERVER_NUMA_CPU_DISTRIBUTION)
-                server.setHugepagesTotal(SERVER_NUMA_MEMORY_DISTRIBUTION)
-                self.servers[serverID] = {'Active': True,
-                                          'timestamp': datetime.datetime(2020, 10, 27, 0,
-                                                                         2, 39, 408596),
-                                          'server': server,
-                                          'Status': None}
+    def _postProcessTopology4FatTree(self, podNum, serverNum):
+        coreNum = (podNum / 2) ** 2
+        aggNum = coreNum * 2
+        torNum = aggNum
 
-    def _postProcessTopology4FatTree(self):
         sc = SocketConverter()
 
         for serverID, serverInfo in self.servers.items():
@@ -619,6 +595,11 @@ class Topology(object):
         for switchID, switchInfo in self.switches.items():
             switchInfo['Status'] = {'nextHop': {}}
             switchInfo['switch'].tcamUsage = 0
+            if podNum != 4 and switchID < coreNum:
+                switchInfo['switch'].switchType = SWITCH_TYPE_DCNGATEWAY
+                switchInfo['switch'].programmable = True
+            if switchInfo['switch'].switchType == SWITCH_TYPE_DCNGATEWAY:
+                switchInfo['switch'].gatewayPortLists = [0]
 
         for (srcNodeID, dstNodeID), linkInfo in self.links.items():
             linkInfo['Status'] = {'usedBy': set()}
@@ -650,18 +631,20 @@ class Topology(object):
                 links.append(self.links[(path[i], path[i + 1])]['link'])
             return links
 
-        self.torPaths = [[[] for _ in range(384)] for _ in range(384)]
-        for pod in range(8, 32):
-            for tor in range(768 + pod * 16, 768 + pod * 16 + 16, 2):
-                for agg in range(256 + pod * 16, 256 + pod * 16 + 4):
-                    self.torPaths[tor - 896][tor - 896 + 1].append(list2links([tor, agg, tor + 1]))
-                    self.torPaths[tor - 896 + 1][tor - 896].append(list2links([tor + 1, agg, tor]))
+        self.torPaths = [[[] for _ in range(torNum)] for _ in range(torNum)]
+        for pod in range(podNum):
+            for tor in range(coreNum + aggNum + pod * podNum / 2, coreNum + aggNum + (pod + 1) * podNum / 2, 2):
+                for agg in range(coreNum + pod * podNum / 2, coreNum + (pod + 1) * podNum / 2):
+                    self.torPaths[tor - coreNum - aggNum][tor - coreNum - aggNum + 1].append(
+                        list2links([tor, agg, tor + 1]))
+                    self.torPaths[tor - coreNum - aggNum + 1][tor - coreNum - aggNum].append(
+                        list2links([tor + 1, agg, tor]))
             if pod % 2 == 1:
                 continue
-            for tor in range(768 + pod * 16, 768 + pod * 16 + 16):
-                for agg in range(256 + pod * 16 + 4, 256 + pod * 16 + 16):
-                    core = (tor - 768) % 16 + (agg - 256) % 16 * 16
-                    self.torPaths[tor - 896][tor - 896 + 16] \
-                        .append(list2links([tor, agg, core, agg + 16, tor + 16]))
-                    self.torPaths[tor - 896 + 16][tor - 896] \
-                        .append(list2links([tor + 16, agg + 16, core, agg, tor]))
+            for tor in range(coreNum + aggNum + pod * podNum / 2, coreNum + aggNum + (pod + 1) * podNum / 2):
+                for agg in range(coreNum + pod * podNum / 2, coreNum + (pod + 1) * podNum / 2):
+                    core = (tor - coreNum - aggNum) % (podNum / 2) + (agg - coreNum) % (podNum / 2) * (podNum / 2)
+                    self.torPaths[tor - coreNum - aggNum][tor - coreNum - aggNum + podNum / 2] \
+                        .append(list2links([tor, agg, core, agg + podNum / 2, tor + podNum / 2]))
+                    self.torPaths[tor - coreNum - aggNum + podNum / 2][tor - coreNum - aggNum] \
+                        .append(list2links([tor + podNum / 2, agg + podNum / 2, core, agg, tor]))

@@ -8,7 +8,6 @@ use script to generate topology
 from sam.base.topoGen.base.samSimulationArgParser import SamSimulationArgParser
 from sam.base.topoGen.instance.topology import Topology
 
-
 if __name__ == "__main__":
     argParser = SamSimulationArgParser()
     expNum = argParser.getArgs()['e']
@@ -19,10 +18,12 @@ if __name__ == "__main__":
     intNum = argParser.getArgs()['intNum']
     aggNum = argParser.getArgs()['aggNum']
     torNum = argParser.getArgs()['torNum']
+    serverNum = argParser.getArgs()['serverNum']
+    nfviNum = argParser.getArgs()['nfviNum']
 
     tg = Topology()
     if topologyType == "fat-tree":
-        tg.genFatTreeTopology(expNum, podNum, nPoPNum)
+        tg.genFatTreeTopology(expNum, podNum, nPoPNum, serverNum, nfviNum)
     elif topologyType == "VL2":
         tg.genVL2Topology(expNum, intNum, aggNum, nPoPNum)
     elif topologyType == "testbed_sw1":

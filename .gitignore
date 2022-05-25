@@ -55,7 +55,7 @@ log/
 log*/
 topologyDataSet/
 SFC_info/
-topology/
+/sam/base/topoGen/instance/topology/
 backup/
 solution/*
 solution*/
