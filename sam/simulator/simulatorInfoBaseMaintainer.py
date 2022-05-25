@@ -16,7 +16,8 @@ from sam.base.link import Link
 from sam.base.socketConverter import SocketConverter
 from sam.base.server import Server
 
-MAX_BG_BW = 1024.0 * 4
+MAX_BG_BW = 1024.0 * 3
+BG_RATIO = 0.75
 CHECK_CONNECTIVITY = True
 
 
@@ -185,11 +186,12 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
                                 link = self.serverLinks[(srcID, dstID)]['link']
                             else:  # switch -> switch
                                 link = self.links[(srcID, dstID)]['link']
-                            link.utilization = min(100 * bw / (link.bandwidth * 1024), 100.0)
+                            link.utilization = min(100 * bw / (link.bandwidth * 1024), 100.0 * (1 - BG_RATIO))
 
-        tm = np.random.uniform(0.0, MAX_BG_BW, (384, 384))
-        for i in range(384):
-            for j in range(384):
+        torNum = len(self.torPaths)
+        tm = np.random.uniform(0.0, MAX_BG_BW, (torNum, torNum))
+        for i in range(torNum):
+            for j in range(torNum):
                 if i == j:
                     continue
                 if CHECK_CONNECTIVITY:
@@ -200,7 +202,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
                 for path in paths:
                     for link in path:
                         link.utilization = min(100 * tm[i][j] / parts / (link.bandwidth * 1024) + link.utilization,
-                                               100.0)
+                                               100.0 * BG_RATIO)
 
     def valid_paths(self, i, j):
         ret = []
