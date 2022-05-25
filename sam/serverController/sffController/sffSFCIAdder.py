@@ -197,7 +197,6 @@ class SFFSFCIAdder(BessControlPlane):
                     oGate = sibm.assignSFFEM1OGate(vnfiID, directionID)
                     value = sibm.getSFFEM1MatchValue(sfci, vnfiIdx, directionID)
                     value = self._sc.int2Bytes(value, 4)
-
                     argument = Any()
                     arg = module_msg_pb2.ExactMatchCommandAddArg(
                         gate=oGate,

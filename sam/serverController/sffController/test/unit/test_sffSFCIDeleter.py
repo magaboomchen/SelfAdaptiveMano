@@ -34,13 +34,17 @@ class TestSFFSFCIDeleterClass(TestBase):
         self.sP = ShellProcessor()
         self.clearQueue()
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
-            TESTER_SERVER_DATAPATH_MAC)
+                                            TESTER_SERVER_DATAPATH_MAC)
         self.vC = VNFControllerStub()
         self.runSFFController()
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
+                        MSG_TYPE_SFF_CONTROLLER_CMD,
+                        self.addSFCICmd)
+        self.verifyAddSFCICmdRply()
+
         yield
+
         # teardown
         self.killSFFController()
 
@@ -51,10 +55,12 @@ class TestSFFSFCIDeleterClass(TestBase):
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_delSFCI(self, setup_delSFCI):
         # exercise
-        self.verifyAddSFCICmdRply()
+        logging.info("Press Any key to test data path!")
+        raw_input() # type: ignore
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SFF_CONTROLLER_CMD, self.delSFCICmd)
+                        MSG_TYPE_SFF_CONTROLLER_CMD,
+                        self.delSFCICmd)
 
         # verify
         self.verifyDelSFCICmdRply()

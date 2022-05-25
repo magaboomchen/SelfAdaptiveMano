@@ -32,12 +32,6 @@ from sam.serverController.sffController.test.unit.fixtures.sendDirection1Traffic
 
 MANUAL_TEST = True
 
-# SFF1_DATAPATH_IP = "2.2.0.98"
-# SFF1_DATAPATH_MAC = "90:e2:ba:0f:a3:b5"
-# SFF1_CONTROLNIC_IP = "192.168.0.127"
-# SFF1_CONTROLNIC_MAC = "18:66:da:85:f9:ed"
-# SFF1_SERVERID = 10003
-
 logging.basicConfig(level=logging.INFO)
 
 
@@ -60,7 +54,7 @@ class TestSFFSFCIAdderClass(TestBase):
         self.mediator = MediatorStub()
 
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
-            TESTER_SERVER_DATAPATH_MAC)
+                                            TESTER_SERVER_DATAPATH_MAC)
         self.vC = VNFControllerStub()
         self.runSFFController()
 
@@ -80,7 +74,8 @@ class TestSFFSFCIAdderClass(TestBase):
         # exercise
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(SFF_CONTROLLER_QUEUE,
-            MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
+                        MSG_TYPE_SFF_CONTROLLER_CMD,
+                        self.addSFCICmd)
 
         time.sleep(2)
         # logging.info("Press Any key to test data path!")
