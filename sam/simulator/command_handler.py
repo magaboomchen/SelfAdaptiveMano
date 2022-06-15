@@ -8,9 +8,8 @@ from sam.base.flow import Flow
 from sam.base.path import DIRECTION2_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.sfc import SFC, SFCI
-from sam.base.switch import Switch
+from sam.base.switch import Switch, SWITCH_TYPE_DCNGATEWAY
 from sam.base.vnf import VNFI
-from sam.simulator.nf import NF
 from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintainer
 
 handlers = {}
@@ -37,14 +36,17 @@ def check_sfc(sfc, sib):
     assert len(directions) in {1, 2}
     assert [direction['ID'] for direction in directions] == list(range(len(directions)))
     for direction in directions:
-        ingress = direction['ingress']
-        ingressID = ingress.getServerID()
-        egress = direction['egress']
-        egressID = egress.getServerID()
-        assert ingressID in sib.servers and sib.servers[ingressID][
-            'server'].getServerType() == SERVER_TYPE_CLASSIFIER
-        assert egressID in sib.servers and sib.servers[egressID][
-            'server'].getServerType() == SERVER_TYPE_CLASSIFIER
+        for node in (direction['ingress'], direction['egress']):
+            if isinstance(node, Server):
+                nodeID = node.getServerID()
+                assert nodeID in sib.servers and sib.servers[nodeID][
+                    'server'].getServerType() == SERVER_TYPE_CLASSIFIER
+            elif isinstance(node, Switch):
+                nodeID = node.switchID
+                assert node.programmable and node.switchType == SWITCH_TYPE_DCNGATEWAY
+                assert nodeID in sib.switches and nodeID < len(sib.torPaths) / 2  # coreNum = torNum/2
+            else:
+                raise ValueError('ingress/egress node is neither server nor switch')
 
 
 def remove_sfci(sfc, sfci, sib):
@@ -154,13 +156,25 @@ def add_sfci_handler(cmd, sib):
             raise ValueError('unknown dirID')
         assert len(pathlist) == len(vnfiSequence) + 1
         ingress = direction['ingress']
-        ingressID = ingress.getServerID()
+        if isinstance(ingress, Server):
+            ingressID = ingress.getServerID()
+            assert ingressID == pathlist[0][0][1]
+            assert (pathlist[0][0][1], pathlist[0][1][1]) in sib.serverLinks
+        elif isinstance(ingress, Switch):
+            ingressID = ingress.switchID
+            assert ingressID == pathlist[0][0][1]
+            assert (pathlist[0][0][1], pathlist[0][1][1]) in sib.links
+
         egress = direction['egress']
-        egressID = egress.getServerID()
-        assert ingressID == pathlist[0][0][1]
-        assert (pathlist[0][0][1], pathlist[0][1][1]) in sib.serverLinks
-        assert egressID == pathlist[-1][-1][1]
-        assert (pathlist[-1][-2][1], pathlist[-1][-1][1]) in sib.serverLinks
+        if isinstance(egress, Server):
+            egressID = egress.getServerID()
+            assert egressID == pathlist[-1][-1][1]
+            assert (pathlist[-1][-2][1], pathlist[-1][-1][1]) in sib.serverLinks
+        elif isinstance(egress, Switch):
+            egressID = egress.switchID
+            assert egressID == pathlist[-1][-1][1]
+            assert (pathlist[-1][-2][1], pathlist[-1][-1][1]) in sib.links
+
         for i, vnfiSeqStage in enumerate(vnfiSequence) if dirID == 0 else enumerate(reversed(vnfiSequence)):
             vnfi = vnfiSeqStage[0]  # no backup
             node = vnfi.node
@@ -301,20 +315,18 @@ def get_flow_set_handler(cmd, sib):
             pathlist = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
             path = pathlist[0]
             for i, (_, nodeID) in path:
-                if i == 0 or i == len(path) - 1:  # ingress server and vnfi server
-                    if not sib.servers[nodeID]['Active']:
-                        traffic_forward = []
-                else:  # switch
-                    if not sib.switches[nodeID]['Active']:
-                        traffic_forward = []
+                if nodeID in sib.servers and not sib.servers[nodeID]['Active']:
+                    traffic_forward = []
+                elif nodeID in sib.switches and not sib.switches[nodeID]['Active']:
+                    traffic_forward = []
                 if i == len(path) - 1:
-                    pass
-                elif i == 0 or i == len(path) - 2:  # server-switch link
-                    if not sib.serverLinks[(nodeID, path[i + 1][1])]['Active']:
-                        traffic_forward = []
-                else:  # switch-switch link
-                    if not sib.links[(nodeID, path[i + 1][1])]['Active']:
-                        traffic_forward = []
+                    continue
+                nextNodeID = path[i + 1][1]
+                link = (nodeID, nextNodeID)
+                if link in sib.serverLinks and not sib.serverLinks[link]['Active']:
+                    traffic_forward = []
+                elif link in sib.links and not sib.links[link]['Active']:
+                    traffic_forward = []
         else:
             traffic_forward = []
 
@@ -323,20 +335,18 @@ def get_flow_set_handler(cmd, sib):
             pathlist = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
             path = pathlist[0]
             for i, (_, nodeID) in path:
-                if i == 0 or i == len(path) - 1:  # ingress server and vnfi server
-                    if not sib.servers[nodeID]['Active']:
-                        traffic_backward = []
-                else:  # switch
-                    if not sib.switches[nodeID]['Active']:
-                        traffic_backward = []
+                if nodeID in sib.servers and not sib.servers[nodeID]['Active']:
+                    traffic_backward = []
+                elif nodeID in sib.switches and not sib.switches[nodeID]['Active']:
+                    traffic_backward = []
                 if i == len(path) - 1:
-                    pass
-                elif i == 0 or i == len(path) - 2:  # server-switch link
-                    if not sib.serverLinks[(nodeID, path[i + 1][1])]['Active']:
-                        traffic_backward = []
-                else:  # switch-switch link
-                    if not sib.links[(nodeID, path[i + 1][1])]['Active']:
-                        traffic_backward = []
+                    continue
+                nextNodeID = path[i + 1][1]
+                link = (nodeID, nextNodeID)
+                if link in sib.serverLinks and not sib.serverLinks[link]['Active']:
+                    traffic_backward = []
+                elif link in sib.links and not sib.links[link]['Active']:
+                    traffic_backward = []
         else:
             traffic_backward = []
 
@@ -344,13 +354,13 @@ def get_flow_set_handler(cmd, sib):
             continue
         traffics = traffic_forward + traffic_backward
         assert len({sib.flows[trafficID]['pkt_size'] for trafficID in traffics}) == 1
-        target = NF(sfci.vnfiSequence[0][0].vnfType, sib.flows[traffics[0]]['pkt_size'],
-                    4000000)  # no information about flow_count
-        serverID = sfci.vnfiSequence[0][0].node.getServerID()
-        switchID = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET][0][-2][
-            1]  # last switch on path ingress->vnfi
-        serverInfo = sib.servers[serverID]
-        server = serverInfo['Server']
+        # target = NF(sfci.vnfiSequence[0][0].vnfType, sib.flows[traffics[0]]['pkt_size'],
+        #             4000000)  # no information about flow_count
+        # serverID = sfci.vnfiSequence[0][0].node.getServerID()
+        # switchID = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET][0][-2][
+        #     1]  # last switch on path ingress->vnfi
+        # serverInfo = sib.servers[serverID]
+        # server = serverInfo['Server']
         # competitors = []
         # for coreID in server.getCoreNUMADistribution()[serverInfo['uplink2NUMA'][switchID]]:
         #     if coreID in serverInfo['Status']['coreAssign'] and serverInfo['Status']['coreAssign'][coreID][:1] != (
@@ -435,20 +445,18 @@ def get_flow_set_handler(cmd, sib):
             pathlist = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
             path = pathlist[1]
             for i, (_, nodeID) in path:
-                if i == 0 or i == len(path) - 1:  # ingress server and vnfi server
-                    if not sib.servers[nodeID]['Active']:
-                        no_traffic_fw = True
-                else:  # switch
-                    if not sib.switches[nodeID]['Active']:
-                        no_traffic_fw = True
+                if nodeID in sib.servers and not sib.servers[nodeID]['Active']:
+                    no_traffic_fw = True
+                elif nodeID in sib.switches and not sib.switches[nodeID]['Active']:
+                    no_traffic_fw = True
                 if i == len(path) - 1:
-                    pass
-                elif i == 0 or i == len(path) - 2:  # server-switch link
-                    if not sib.serverLinks[(nodeID, path[i + 1][1])]['Active']:
-                        no_traffic_fw = True
-                else:  # switch-switch link
-                    if not sib.links[(nodeID, path[i + 1][1])]['Active']:
-                        no_traffic_fw = True
+                    continue
+                nextNodeID = path[i + 1][1]
+                link = (nodeID, nextNodeID)
+                if link in sib.serverLinks and not sib.serverLinks[link]['Active']:
+                    no_traffic_fw = True
+                elif link in sib.links and not sib.links[link]['Active']:
+                    no_traffic_fw = True
         else:
             no_traffic_fw = True
 
@@ -457,20 +465,18 @@ def get_flow_set_handler(cmd, sib):
             pathlist = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
             path = pathlist[1]
             for i, (_, nodeID) in path:
-                if i == 0 or i == len(path) - 1:  # ingress server and vnfi server
-                    if not sib.servers[nodeID]['Active']:
-                        no_traffic_bw = True
-                else:  # switch
-                    if not sib.switches[nodeID]['Active']:
-                        no_traffic_bw = True
+                if nodeID in sib.servers and not sib.servers[nodeID]['Active']:
+                    no_traffic_bw = True
+                elif nodeID in sib.switches and not sib.switches[nodeID]['Active']:
+                    no_traffic_bw = True
                 if i == len(path) - 1:
-                    pass
-                elif i == 0 or i == len(path) - 2:  # server-switch link
-                    if not sib.serverLinks[(nodeID, path[i + 1][1])]['Active']:
-                        no_traffic_bw = True
-                else:  # switch-switch link
-                    if not sib.links[(nodeID, path[i + 1][1])]['Active']:
-                        no_traffic_bw = True
+                    continue
+                nextNodeID = path[i + 1][1]
+                link = (nodeID, nextNodeID)
+                if link in sib.serverLinks and not sib.serverLinks[link]['Active']:
+                    no_traffic_bw = True
+                elif link in sib.links and not sib.links[link]['Active']:
+                    no_traffic_bw = True
         else:
             no_traffic_bw = True
 
