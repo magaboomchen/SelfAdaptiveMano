@@ -54,7 +54,7 @@ class TestAddSFCClass(IntTestBaseClass):
         # exercise
         rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
             attributes={
-                "sfc": self.getSFCFromDB(),
+                "sfc": self.getSFCFromDB(self.sfc.sfcUUID),
                 # "sfc": self.sfc,
                 "sfci": self.sfci,
                 "zone": SIMULATOR_ZONE
@@ -68,7 +68,7 @@ class TestAddSFCClass(IntTestBaseClass):
         # exercise
         rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,
             attributes={
-                "sfc": self.getSFCFromDB(),
+                "sfc": self.getSFCFromDB(self.sfc.sfcUUID),
                 # "sfc": self.sfc,
                 "sfci": self.sfci,
                 "zone": SIMULATOR_ZONE
@@ -82,7 +82,7 @@ class TestAddSFCClass(IntTestBaseClass):
         # exercise
         rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_DEL_SFC,
             attributes={
-                "sfc": self.getSFCFromDB(),
+                "sfc": self.getSFCFromDB(self.sfc.sfcUUID),
                 "zone": SIMULATOR_ZONE
             })
         self.sendRequest(DISPATCHER_QUEUE, rq)

@@ -4,7 +4,7 @@
 import uuid
 
 from sam.base.messageAgent import MessageAgent
-from sam.base.command import Command, CMD_TYPE_ADD_SFC, \
+from sam.base.command import CMD_TYPE_GET_SFCI_STATE, CMD_TYPE_GET_VNFI_STATE, Command, CMD_TYPE_ADD_SFC, \
     CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_DEL_SFC, \
     CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_GET_FLOW_SET
 from sam.test.fixtures.orchestrationStub import OrchestrationStub
@@ -54,4 +54,16 @@ class MediatorStub(OrchestrationStub):
         cmdID = uuid.uuid1()
         attr = {}
         cmd = Command(CMD_TYPE_GET_FLOW_SET, cmdID, attr)
+        return cmd
+
+    def genCMDGetSFCIStatus(self):
+        cmdID = uuid.uuid1()
+        attr = {}
+        cmd = Command(CMD_TYPE_GET_SFCI_STATE, cmdID, attr)
+        return cmd
+
+    def genCMDGetVNFIState(self):
+        cmdID = uuid.uuid1()
+        attr = {}
+        cmd = Command(CMD_TYPE_GET_VNFI_STATE, cmdID, attr)
         return cmd

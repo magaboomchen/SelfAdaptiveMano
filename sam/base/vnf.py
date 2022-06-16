@@ -41,13 +41,6 @@ NAME_OF_VNFTYPE={
     VNF_TYPE_NAT_RECEIVER:'VNF_TYPE_NAT_RECEIVER',
     }
 
-class VNFIStatus(object):
-    def __init__(self):
-        self.inputTrafficAmount = None
-        self.inputPacketAmount = None
-        self.outputTrafficAmount = None
-        self.outputPacketAmount = None
-
 
 class VNFI(object):
     def __init__(self, vnfID=None, vnfType=None, vnfiID=None,
@@ -96,10 +89,19 @@ class VNFI(object):
         return str(self)
 
 
-class VNFIRequest(object):
-    def __init__(self, userID, requestID, requestType, vnfiID, config=None):
-        self.userID =  userID # 0 is root
-        self.requestID = requestID # uuid1()
-        self.requestType = requestType # GETCONFIG/UPDATECONFIG/GETVNFI
-        self.vnfiID = vnfiID
-        self.config = config
+# class VNFIRequest(object):
+#     def __init__(self, userID, requestID, requestType, vnfiID, config=None):
+#         self.userID =  userID # 0 is root
+#         self.requestID = requestID # uuid1()
+#         self.requestType = requestType # GETCONFIG/UPDATECONFIG/GETVNFI
+#         self.vnfiID = vnfiID
+#         self.config = config
+
+
+class VNFIStatus(object):
+    def __init__(self):
+        self.inputTrafficAmount = None
+        self.inputPacketAmount = None
+        self.outputTrafficAmount = None
+        self.outputPacketAmount = None
+        self.state = None

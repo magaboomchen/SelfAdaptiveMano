@@ -8,7 +8,7 @@ from sam.base.slo import SLO
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
-from sam.base.path import ForwardingPathSet, MAPPING_TYPE_INTERFERENCE
+from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet, MAPPING_TYPE_INTERFERENCE
 from sam.base.messageAgent import SIMULATOR_ZONE
 from sam.test.testBase import APP1_REAL_IP, TestBase, WEBSITE_REAL_IP, CLASSIFIER_DATAPATH_IP
 
@@ -19,11 +19,11 @@ CLASSIFIER_DATAPATH_MAC = "00:1b:21:c0:8f:ae"   # ignore this
 CLASSIFIER_CONTROL_IP = "192.168.0.194" # ignore this
 CLASSIFIER_SERVERID = 10001
 
-SFF1_DATAPATH_IP = "2.2.96.3"
+SFF1_DATAPATH_IP = "2.2.96.5"
 SFF1_DATAPATH_MAC = "b8:ca:3a:65:f7:fa" # ignore this
 SFF1_CONTROLNIC_IP = "192.168.8.17" # ignore this
 SFF1_CONTROLNIC_MAC = "b8:ca:3a:65:f7:f8"   # ignore this
-SFF1_SERVERID = 11281
+SFF1_SERVERID = 10005
 
 
 class TestSimulatorBase(TestBase):
@@ -99,11 +99,11 @@ class TestSimulatorBase(TestBase):
         #                         }
         primaryForwardingPath = {
                                     1:[
-                                        [(0, 50), (0, 419), (0, 931), (0, 13262)],
-                                        [(2, 13262), (2, 931), (2, 418), (2, 33)]
+                                        [(0, 0), (0, 256), (0, 768), (0, 10005)],
+                                        [(1, 10005), (1, 768), (1, 256), (1, 0)]
                                     ]
                                 }
-        mappingType = MAPPING_TYPE_INTERFERENCE # This is your mapping algorithm type, e.g. interference-aware mapping algorithm
+        mappingType = MAPPING_TYPE_NETPACK # This is your mapping algorithm type
         backupForwardingPath = {}   # you don't need to care about backupForwardingPath
         return ForwardingPathSet(primaryForwardingPath,mappingType,
                                     backupForwardingPath)

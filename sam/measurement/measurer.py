@@ -10,7 +10,7 @@ import threading
 from sam.base.messageAgent import SIMULATOR_ZONE, SAMMessage, MessageAgent, MEASURER_QUEUE, \
     DCN_INFO_RECIEVER_QUEUE, MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD, MEDIATOR_QUEUE
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
-    MEASURER_PORT, SIMULATOR_IP, SIMULATOR_PORT, NETWORK_CONTROLLER_IP, \
+    MEASURER_PORT, P4_CONTROLLER_IP, P4_CONTROLLER_PORT, SFF_CONTROLLER_IP, SFF_CONTROLLER_PORT, SIMULATOR_IP, SIMULATOR_PORT, NETWORK_CONTROLLER_IP, \
     NETWORK_CONTROLLER_PORT, SERVER_MANAGER_IP, SERVER_MANAGER_PORT, \
     CLASSIFIER_CONTROLLER_IP, CLASSIFIER_CONTROLLER_PORT, \
     VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
@@ -169,7 +169,7 @@ class MeasurerCommandSender(threading.Thread):
                     self.logger.debug("zoneName: {0}".format(zoneName))
                     self.sendGetTopoCmd(zoneName)
                     self.sendGetServersCmd(zoneName)
-                    self.sendGetSFCIStateCmd(zoneName)
+                    self.sendGetSFCIStatusCmd(zoneName)
                     self.sendGetVNFIStateCmd(zoneName)
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex)
@@ -184,7 +184,8 @@ class MeasurerCommandSender(threading.Thread):
         if zoneName == SIMULATOR_ZONE:
             self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
         else:
-            self._messageAgent.sendMsgByRPC(NETWORK_CONTROLLER_IP, NETWORK_CONTROLLER_PORT, msg)
+            self._messageAgent.sendMsgByRPC(NETWORK_CONTROLLER_IP, \
+                                            NETWORK_CONTROLLER_PORT, msg)
 
     def sendGetServersCmd(self, zoneName):
         getServersCmd = Command(CMD_TYPE_GET_SERVER_SET, uuid.uuid1(),
@@ -192,11 +193,13 @@ class MeasurerCommandSender(threading.Thread):
         msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getServersCmd)
         # self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
         if zoneName == SIMULATOR_ZONE:
-            self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
+            self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, \
+                                            msg)
         else:
-            self._messageAgent.sendMsgByRPC(SERVER_MANAGER_IP, SERVER_MANAGER_PORT, msg)
+            self._messageAgent.sendMsgByRPC(SERVER_MANAGER_IP, \
+                                            SERVER_MANAGER_PORT, msg)
 
-    def sendGetSFCIStateCmd(self, zoneName):
+    def sendGetSFCIStatusCmd(self, zoneName):
         getSFCIStateCmd = Command(CMD_TYPE_GET_SFCI_STATE, uuid.uuid1(),
             {"zone":zoneName})
         msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getSFCIStateCmd)
@@ -204,7 +207,8 @@ class MeasurerCommandSender(threading.Thread):
         if zoneName == SIMULATOR_ZONE:
             self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
         else:
-            self._messageAgent.sendMsgByRPC(CLASSIFIER_CONTROLLER_IP, CLASSIFIER_CONTROLLER_PORT, msg)
+            self._messageAgent.sendMsgByRPC(SFF_CONTROLLER_IP, \
+                                            SFF_CONTROLLER_PORT, msg)
 
     def sendGetVNFIStateCmd(self, zoneName):
         getVNFIStateCmd = Command(CMD_TYPE_GET_VNFI_STATE, uuid.uuid1(),
@@ -214,7 +218,10 @@ class MeasurerCommandSender(threading.Thread):
         if zoneName == SIMULATOR_ZONE:
             self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
         else:
-            self._messageAgent.sendMsgByRPC(VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT, msg)
+            self._messageAgent.sendMsgByRPC(VNF_CONTROLLER_IP, \
+                                            VNF_CONTROLLER_PORT, msg)
+            self._messageAgent.sendMsgByRPC(P4_CONTROLLER_IP, \
+                                            P4_CONTROLLER_PORT, msg)
 
 
 if __name__=="__main__":

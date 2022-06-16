@@ -7,6 +7,11 @@ SFC_DOMAIN_PREFIX_LENGTH = 8  # DO NOT MODIFY THIS VALUE,
 SFCID_LENGTH = 12  # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 
 APP_TYPE_NORTHSOUTH_WEBSITE = "APP_TYPE_NORTHSOUTH_WEBSITE"
+APP_TYPE_LARGE_BANDWIDTH = "APP_TYPE_LARGE_BANDWIDTH"
+APP_TYPE_HIGH_AVA = "APP_TYPE_HIGH_AVA"
+APP_TYPE_LOW_LATENCY = "APP_TYPE_LOW_LATENCY"
+APP_TYPE_LARGE_CONNECTION = "APP_TYPE_LARGE_CONNECTION"
+APP_TYPE_BEST_EFFORT = "APP_TYPE_BEST_EFFORT"
 
 MANUAL_SCALE = "MANUAL_SCALE"
 ADAPTIVE_SCALE = "ADAPTIVE_SCALE"
@@ -78,9 +83,11 @@ class SFC(object):
                  backupInstanceNumber, applicationType, directions=None,
                  attributes=None, traffic=None, slo=None, sfChainMethod=None,
                  scalingMode=MANUAL_SCALE, sFCIs=None, routingMorphic=None,
-                 protectionMode=WITHOUT_PROTECTION, recoveryMode=MANUAL_RECOVERY):
+                 protectionMode=WITHOUT_PROTECTION, recoveryMode=MANUAL_RECOVERY,
+                 vnfSequence=None):
         self.sfcUUID = sfcUUID
         self.vNFTypeSequence = vNFTypeSequence  # [FW, LB]
+        self.vnfSequence = vnfSequence
         self.scalingMode = scalingMode
         self.maxScalingInstanceNumber = maxScalingInstanceNumber  # 2
         self.protectionMode = protectionMode

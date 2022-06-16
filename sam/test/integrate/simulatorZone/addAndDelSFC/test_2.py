@@ -2,9 +2,9 @@
 # -*- coding: UTF-8 -*-
 
 '''
-This is an example for writing unit test for simulator (test _addSFCIHandler)
+This is an example for writing integrate test
 The work flow:
-    * xxxx
+    * generate 1 addSFC and 1 addSFCI command to dispatcher
 
 Usage of this unit test:
     sudo python -m pytest ./test_1.py -s --disable-warnings
@@ -16,9 +16,9 @@ import logging
 import pytest
 
 from sam.base.messageAgent import DISPATCHER_QUEUE, SIMULATOR_ZONE
-from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
+from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
+                        REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
 from sam.test.integrate.simulatorZone.addAndDelSFC.intTestBase import IntTestBaseClass
-# from sam.test.integrate.simulatorZone.addAndDelSFC.intTestBase import IntTestBaseClass
 
 MANUAL_TEST = True
 
@@ -28,10 +28,28 @@ class TestAddSFCClass(IntTestBaseClass):
     def setup_OneSFC(self):
         self.common_setup()
 
+        self.sfcList = []
+        self.sfciList = []
+
         # you can overwrite following function to test different sfc/sfci
         classifier = None
-        self.sfc = self.genLargeBandwidthSFC(classifier)
-        self.sfci = self.genLargeBandwidthSFCI(mappedVNFISeq=False)
+        sfc1 = self.genLargeBandwidthSFC(classifier)
+        sfci1 = self.genSFCITemplate()
+
+        sfc2 = self.genHighAvaSFC(classifier)
+        sfci2 = self.genSFCITemplate()
+
+        sfc3 = self.genLowLatencySFC(classifier)
+        sfci3 = self.genSFCITemplate()
+
+        sfc4 = self.genLargeConnectionSFC(classifier)
+        sfci4 = self.genSFCITemplate()
+
+        sfc5 = self.genBestEffortSFC(classifier)
+        sfci5 = self.genSFCITemplate()
+
+        self.sfcList = [sfc1, sfc2, sfc3, sfc4, sfc5]
+        self.sfciList = [sfci1, sfci2, sfci3, sfci4, sfci5]
 
         yield
 
@@ -39,54 +57,56 @@ class TestAddSFCClass(IntTestBaseClass):
         self.clearQueue()
         self.killAllModule()
 
-    def test_oneSFCWithVNFIOnAServer(self, setup_OneSFC):
+    def test_FiveSFCsWithVNFIOnAServer(self, setup_OneSFC):
         # exercise
-        rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFC,
-            attributes={
-                "sfc": self.sfc,
-                "zone": SIMULATOR_ZONE
-            })
-        self.sendRequest(DISPATCHER_QUEUE, rq)
+        for idx, sfc in enumerate(self.sfcList):
+            rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFC,
+                attributes={
+                    "sfc": sfc,
+                    "zone": SIMULATOR_ZONE
+                })
+            self.sendRequest(DISPATCHER_QUEUE, rq)
 
         logging.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         raw_input() # type: ignore
 
         # exercise
-        rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
-            attributes={
-                "sfc": self.getSFCFromDB(),
-                # "sfc": self.sfc,
-                "sfci": self.sfci,
-                "zone": SIMULATOR_ZONE
-            })
-        self.sendRequest(DISPATCHER_QUEUE, rq)
+        for idx, sfci in enumerate(self.sfciList):
+            rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
+                attributes={
+                    "sfc": self.getSFCFromDB(self.sfcList[idx].sfcUUID),
+                    "sfci": sfci,
+                    "zone": SIMULATOR_ZONE
+                })
+            self.sendRequest(DISPATCHER_QUEUE, rq)
 
         logging.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         raw_input() # type: ignore
 
         # exercise
-        rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,
-            attributes={
-                "sfc": self.getSFCFromDB(),
-                # "sfc": self.sfc,
-                "sfci": self.sfci,
-                "zone": SIMULATOR_ZONE
-            })
-        self.sendRequest(DISPATCHER_QUEUE, rq)
+        for idx, sfci in enumerate(self.sfciList):
+            rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,
+                attributes={
+                    "sfc": self.getSFCFromDB(self.sfcList[idx].sfcUUID),
+                    "sfci": sfci,
+                    "zone": SIMULATOR_ZONE
+                })
+            self.sendRequest(DISPATCHER_QUEUE, rq)
 
         logging.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         raw_input() # type: ignore
 
         # exercise
-        rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_DEL_SFC,
-            attributes={
-                "sfc": self.getSFCFromDB(),
-                "zone": SIMULATOR_ZONE
-            })
-        self.sendRequest(DISPATCHER_QUEUE, rq)
+        for idx, sfc in enumerate(self.sfcList):
+            rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_DEL_SFC,
+                attributes={
+                    "sfc": self.getSFCFromDB(self.sfcList[idx].sfcUUID),
+                    "zone": SIMULATOR_ZONE
+                })
+            self.sendRequest(DISPATCHER_QUEUE, rq)
 
         logging.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
