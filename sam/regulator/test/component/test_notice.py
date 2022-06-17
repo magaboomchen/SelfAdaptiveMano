@@ -10,23 +10,22 @@ Usage of this unit test:
     sudo python -m pytest ./test_1.py -s --disable-warnings
 '''
 
-import time
 import uuid
 import logging
 
 import pytest
-from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, CommandReply, Command
+from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 from sam.base.loggerConfigurator import LoggerConfigurator
 
-from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_DISPATCHER_CMD, MSG_TYPE_SFF_REGULATOR_CMD, REGULATOR_QUEUE, SIMULATOR_ZONE
+from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_SFF_REGULATOR_CMD, REGULATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
-from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
+from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
 from sam.base.server import SERVER_TYPE_NFVI, Server
 from sam.base.sfc import APP_TYPE_LARGE_BANDWIDTH, SFC, SFCI
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.slo import SLO
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, Switch
-from sam.base.vnf import VNF_TYPE_FORWARD, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI
+from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.simulator.test.testSimulatorBase import SFF1_CONTROLNIC_IP, SFF1_CONTROLNIC_MAC, SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC, SFF1_SERVERID
 from sam.test.Testbed.triangleTopo.testbedFRR import SFF2_DATAPATH_IP

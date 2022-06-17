@@ -28,7 +28,7 @@ STATE_INACTIVE = "STATE_INACTIVE"  # There maybe some resource used in DCN
 STATE_DELETED = "STATE_DELETED"  # All resource of this sfc/sfci has been released
 # Delete an sfc/sfci will not release SFCIID
 # To get back SFCIID, please prune sfc/sfci from database
-STATE_PROTECTION_MODE = "STATE_PROTECTION_MODE"  # when a failure happen, sfc/sfci will be in this state
+# STATE_RECOVER_MODE = "STATE_RECOVER_MODE"  # when a failure happen, sfc/sfci will be in this state
 
 
 # MORPHIC_IPV4 = "MORPHIC_IPV4"

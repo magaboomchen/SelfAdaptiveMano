@@ -47,6 +47,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                 CMD_UUID VARCHAR(36),
                 STATE TEXT NOT NULL,
                 PICKLE BLOB,
+                RETRY_CNT SMALLINT,
                 submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY ( ID ),
                 INDEX SFC_UUID_INDEX (SFC_UUID(36)),
@@ -55,14 +56,15 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                 """
                 )
 
-    def addRequest(self, request, sfcUUID=-1, sfciID=-1, cmdUUID=-1):
+    def addRequest(self, request, sfcUUID=-1, sfciID=-1, cmdUUID=-1, retryCnt=0):
         if not self.hasRequest(request.requestID):
-            fields = " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, STATE, PICKLE "
-            condition = "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}' ".format(request.requestID,
+            fields = " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, STATE, PICKLE, RETRY_CNT "
+            condition = "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}' ".format(request.requestID,
                                                     request.requestType,
                                                     sfcUUID, sfciID, cmdUUID,
                                                     request.requestState,
-                                                    self.pIO.obj2Pickle(request))
+                                                    self.pIO.obj2Pickle(request),
+                                                    retryCnt)
             self.dbA.insert("Request", fields, condition)
 
     def hasRequest(self, requestUUID):
@@ -73,6 +75,15 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         else:
             return False
 
+    def updateRequestState(self, requestUUID, state):
+        if self.hasRequest(requestUUID):
+            self.dbA.update("Request", "STATE = {0}".format(state), " REQUEST_UUID = {0}".format(requestUUID))
+
+    def incRequestRetryCnt(self, requestUUID):
+        if self.hasRequest(requestUUID):
+            retryCnt = self.dbA.query("Request", "RETRY_CNT", " REQUEST_UUID = {0}".format(requestUUID))
+            self.dbA.update("Request", "RETRY_CNT = {0}".format(retryCnt+1), " REQUEST_UUID = {0}".format(requestUUID))
+
     def delRequest(self, requestUUID):
         if self.hasRequest(requestUUID):
             self.dbA.delete("Request", " REQUEST_UUID = '{0}'".format(requestUUID))
@@ -81,8 +92,11 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         fields = " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, STATE, PICKLE "
         results = self.dbA.query("Request", fields)
         requestTupleList = []
-        for requestTuple in results:
-            requestTupleList.append(requestTuple)
+        for requestTuple in results: 
+            reqResList = list(requestTuple)
+            reqResList[-1] = self._decodePickle2Object(reqResList[-1])
+            transedReqTuple = tuple(reqResList)
+            requestTupleList.append(transedReqTuple)
         return requestTupleList
 
     def _initSFCTable(self):
