@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import logging
 import pickle
 import base64
 
@@ -138,6 +139,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                 """
                 ID INT UNSIGNED AUTO_INCREMENT,
                 SFCIID SMALLINT,
+                SFC_UUID VARCHAR(36) NOT NULL,
                 VNFI_LIST BLOB,
                 STATE TEXT NOT NULL,
                 PICKLE BLOB,
@@ -147,14 +149,16 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                 """
                 )
 
-    def addSFCI(self, sfci, state=STATE_IN_PROCESSING, orchTime=-1):
+    def addSFCI(self, sfci, sfcUUID, state=STATE_IN_PROCESSING, orchTime=-1):
         if not self.hasSFCI(sfci.sfciID):
-            fields = " SFCIID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME "
-            condition = "'{0}', '{1}', '{2}', '{3}', '{4}' ".format(sfci.sfciID,
+            fields = " SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME "
+            condition = "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}' ".format(sfci.sfciID,
+                                                    sfcUUID,
                                                     self.pIO.obj2Pickle(sfci.vnfiSequence),
                                                     state,
                                                     self.pIO.obj2Pickle(sfci),
                                                     orchTime)
+            logging.info("{0} -> {1}".format(fields, condition))
             self.dbA.insert("SFCI", fields, condition)
 
     def hasSFCI(self, sfciID):
@@ -170,11 +174,14 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             self.dbA.delete("SFCI", " SFCIID = '{0}'".format(sfciID))
 
     def getAllSFCI(self):
-        fields = " SFCIID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME "
+        fields = " SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME "
         results = self.dbA.query("SFCI", fields)
         sfciTupleList = []
         for sfciTuple in results:
-            sfciTupleList.append(sfciTuple)
+            sfciResList = list(sfciTuple)
+            sfciResList[4] = self._decodePickle2Object(sfciResList[4])
+            transedSFCITuple = tuple(sfciResList)
+            sfciTupleList.append(transedSFCITuple)
         return sfciTupleList
 
     def getAllVNFI(self):
@@ -362,10 +369,11 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         self.dbA.update("SFC", " SFCIID_LIST = '{0}' ".format(sfciIDList),
             " SFC_UUID = '{0}' ".format(sfcUUID))
 
-    def _addSFCI2DB(self, sfci):
-        self.dbA.insert("SFCI", " SFCIID, STATE, PICKLE ", 
-            " '{0}', '{1}', '{2}' ".format(sfci.sfciID, STATE_IN_PROCESSING, 
-            self._encodeObject2Pickle(sfci)))
+    def _addSFCI2DB(self, sfci, sfcUUID):
+        # self.dbA.insert("SFCI", " SFCIID, SFC_UUID, STATE, PICKLE ", 
+        #     " '{0}', '{1}', '{2}', '{3} ".format(sfci.sfciID, sfcUUID, STATE_IN_PROCESSING, 
+        #     self._encodeObject2Pickle(sfci)))
+        self.addSFCI(sfci, sfcUUID)
 
     def getSFCI4DB(self, sfciID):
         results = self.dbA.query("SFCI", " PICKLE ", " SFCIID = '{0}' ".format(sfciID))

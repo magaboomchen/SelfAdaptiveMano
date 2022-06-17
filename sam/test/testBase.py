@@ -469,6 +469,25 @@ class TestBase(object):
         tmpMessageAgent.sendMsgByRPC(dstIP, dstPort, msg)
         return tmpMessageAgent
 
+    def recvRequest(self, queue):
+        tmpMessageAgent = MessageAgent()
+        tmpMessageAgent.startRecvMsg(queue)
+        try:
+            while True:
+                msg = tmpMessageAgent.getMsg(queue)
+                msgType = msg.getMessageType()
+                if msgType == None:
+                    pass
+                else:
+                    body = msg.getbody()
+                    if tmpMessageAgent.isRequest(body):
+                        logging.info("testBase: recv a request")
+                        return body
+                    else:
+                        logging.error("Unknown massage body")
+        finally:
+            del tmpMessageAgent
+
     def recvReply(self, queue):
         tmpMessageAgent = MessageAgent()
         tmpMessageAgent.startRecvMsg(queue)

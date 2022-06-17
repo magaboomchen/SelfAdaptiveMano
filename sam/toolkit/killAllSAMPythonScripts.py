@@ -17,6 +17,7 @@ def killAllSAMPythonScripts():
     sP.killPythonScript("sffControllerCommandAgent.py")
     sP.killPythonScript("vnfController.py")
     sP.killPythonScript("simulator.py")
+    sP.killPythonScript("regulator.py")
 
 if __name__ == "__main__":
     killAllSAMPythonScripts()

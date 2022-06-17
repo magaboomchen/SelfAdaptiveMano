@@ -14,7 +14,7 @@ select * from SFCI;
 import sys
 if sys.version < '3':
     try:
-        input = raw_input
+        input = raw_input   # type: ignore
     except NameError:
         pass
 import uuid
@@ -48,7 +48,7 @@ class TestSFCIClass(DashboardTestBase):
 
     def addSFCIs(self, addSFCISFCIList):
         for idx,sfci in enumerate(addSFCISFCIList):
-            self.oib.addSFCI(sfci)
+            self.oib.addSFCI(sfci, uuid.uuid1())
 
     def delSFCIs(self, addSFCISFCIList):
         for sfci in addSFCISFCIList:
