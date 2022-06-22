@@ -80,7 +80,7 @@ def remove_sfci(sfc, sfci, sib):
             pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
         for stage, path in enumerate(pathlist):
             for hop, (_, switchID) in enumerate(path):
-                if hop != 0 and hop != len(path) - 1:  # switchID is a switch, not server
+                if switchID in sib.switches:  # switchID is a switch, not server
                     switchInfo = sib.switches[switchID]
                     switch = switchInfo['switch']
                     if switch.tcamUsage <= 0:
@@ -90,11 +90,9 @@ def remove_sfci(sfc, sfci, sib):
                 if hop != len(path) - 1:
                     srcID = switchID
                     dstID = path[hop + 1][1]
-                    if hop == 0:  # server -> switch, switchID is server
+                    if (srcID, dstID) in sib.serverLinks:
                         linkInfo = sib.serverLinks[(srcID, dstID)]
-                    elif hop == len(path) - 2:  # switch -> server
-                        linkInfo = sib.serverLinks[(srcID, dstID)]
-                    else:  # switch -> switch
+                    else:
                         linkInfo = sib.links[(srcID, dstID)]
                     linkInfo['Status']['usedBy'].remove((sfciID, dirID, stage, hop))
     # purge information
@@ -223,7 +221,7 @@ def add_sfci_handler(cmd, sib):
             pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
         for stage, path in enumerate(pathlist):
             for hop, (_, switchID) in enumerate(path):
-                if hop != 0 and hop != len(path) - 1:  # switchID is a switch, not server
+                if switchID in sib.switches:  # switchID is a switch, not server
                     switchInfo = sib.switches[switchID]
                     switch = switchInfo['switch']
                     if switch.tcamUsage >= switch.tcamSize:
@@ -233,11 +231,9 @@ def add_sfci_handler(cmd, sib):
                 if hop != len(path) - 1:
                     srcID = switchID
                     dstID = path[hop + 1][1]
-                    if hop == 0:  # server -> switch, switchID is server
+                    if (srcID, dstID) in sib.serverLinks:
                         linkInfo = sib.serverLinks[(srcID, dstID)]
-                    elif hop == len(path) - 2:  # switch -> server
-                        linkInfo = sib.serverLinks[(srcID, dstID)]
-                    else:  # switch -> switch
+                    else:
                         linkInfo = sib.links[(srcID, dstID)]
                     linkInfo['Status']['usedBy'].add((sfciID, dirID, stage, hop))
     # store information
