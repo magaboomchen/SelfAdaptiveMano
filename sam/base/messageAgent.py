@@ -1,6 +1,67 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+"""
+Usage:
+    from sam.base.messageAgent import SAMMessage, MessageAgent, TURBONET_ZONE, \
+                                        REGULATOR_QUEUE, MEASURER_QUEUE, \
+                                        DEFINABLE_MEASURER_QUEUE, ABNORMAL_DETECTOR_QUEUE
+
+Use case 1 - abnormal detector:
+    # Thread 1
+    # send Request to definable measurer to get datacenter infomation
+    while True:
+        time.sleep(3)
+        msgType = MSG_TYPE_REQUEST
+        request = Request(0, uuid.uuid1(), REQUEST_TYPE_GET_DCN_INFO)
+        msg = SAMMessage(msgType, request)
+        mA.sendMsgByRPC(DEFINABLE_MEASURER_IP, DEFINABLE_MEASURER_PORT, msg)
+
+    # Thread 2
+    # recv message in a While loop from a grpc socket: 
+    mA.startMsgReceiverRPCServer(ABNORMAL_DETECTOR_IP, ABNORMAL_DETECTOR_PORT)
+    while True:
+        msg = mA.getMsgByRPC(ABNORMAL_DETECTOR_IP, ABNORMAL_DETECTOR_PORT)
+
+    # send "abnormal handle command" to REGULATOR_QUEUE (PS: regulator can handle abnormal and failure)
+    queueName = REGULATOR_QUEUE
+    mA = MessageAgent()
+    msgType = MSG_TYPE_ABNORMAL_DETECTOR_CMD
+    attr = None # Store all abnormal and failure in this variable
+    cmd = Command(CMD_TYPE_HANDLE_FAILURE_ABNORMAL, uuid.uuid1(), attributes={attr})
+    msg = SAMMessage(msgType, cmd)
+    mA.sendMsg(queueName, msg)
+
+Use case 2 - definable measurer:
+    # Thread 1
+    # send Request to measurer to get datacenter infomation
+    while True:
+        time.sleep(3)
+        msgType = MSG_TYPE_REQUEST
+        request = Request(0, uuid.uuid1(), REQUEST_TYPE_GET_DCN_INFO)
+        msg = SAMMessage(msgType, request)
+        mA.sendMsgByRPC(MEASURER_IP, MEASURER_PORT, msg)
+
+    # Thread 2
+    # recv message in a While loop from a grpc socket: 
+    mA.startMsgReceiverRPCServer(DEFINABLE_MEASURER_IP, DEFINABLE_MEASURER_PORT)
+    while True:
+        msg = mA.getMsgByRPC(DEFINABLE_MEASURER_IP, DEFINABLE_MEASURER_PORT)
+        msgType = msg.getMessageType() # Maybe request from abnormal detector, or dcn info from measurer
+
+    # send message to abnormal detector
+    msg = SAMMessage(msgType, cmd)
+    mA.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
+
+Use case 3 - elastic orchestrator(regulator):
+    # recv message in a While loop from REGULATOR_QUEUE
+    queueName = REGULATOR_QUEUE
+    mA.startRecvMsg(queueName)
+    while True:
+        msg = mA.getMsg(queueName)
+
+"""
+
 import sys
 if sys.version > '3':
     import queue as Queue
@@ -43,6 +104,8 @@ PICA8_ZONE = "PICA8_ZONE"
 REQUEST_PROCESSOR_QUEUE = "REQUEST_PROCESSOR_QUEUE"
 DCN_INFO_RECIEVER_QUEUE = "DCN_INFO_RECIEVER_QUEUE"
 MEASURER_QUEUE = "MEASURER_QUEUE"
+DEFINABLE_MEASURER_QUEUE = "DEFINABLE_MEASURER_QUEUE"
+ABNORMAL_DETECTOR_QUEUE = "ABNORMAL_DETECTOR_QUEUE"
 DISPATCHER_QUEUE = "DISPATCHER_QUEUE"
 ORCHESTRATOR_QUEUE = "ORCHESTRATOR_QUEUE"
 MEDIATOR_QUEUE = "MEDIATOR_QUEUE"
@@ -59,6 +122,8 @@ REGULATOR_QUEUE = "REGULATOR_QUEUE"
 MSG_TYPE_STRING = "MSG_TYPE_STRING"
 MSG_TYPE_REQUEST = "MSG_TYPE_REQUEST"
 MSG_TYPE_REPLY = "MSG_TYPE_REPLY"
+# abnormal detector
+MSG_TYPE_ABNORMAL_DETECTOR_CMD = "MSG_TYPE_ABNORMAL_DETECTOR_CMD"
 # dispather
 MSG_TYPE_DISPATCHER_CMD = "MSG_TYPE_DISPATCHER_CMD"
 # orchestration & measurement use case

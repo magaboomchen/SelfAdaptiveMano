@@ -35,8 +35,7 @@ class TestAddSFCClass(IntTestBaseClass):
         yield
 
         # teardown
-        self.clearQueue()
-        self.killAllModule()
+        self.common_teardown()
 
     def test_oneSFCWithVNFIOnAServer(self, setup_OneSFC):
         # exercise
@@ -52,9 +51,11 @@ class TestAddSFCClass(IntTestBaseClass):
         raw_input() # type: ignore
 
         # exercise
+        sfcInDB = self.getSFCFromDB(self.sfc.sfcUUID)
+        logging.info("sfcInDB is {0}".format(sfcInDB))
         rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
             attributes={
-                "sfc": self.getSFCFromDB(self.sfc.sfcUUID),
+                "sfc": sfcInDB,
                 # "sfc": self.sfc,
                 "sfci": self.sfci,
                 "zone": SIMULATOR_ZONE

@@ -2,9 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import sys
-
-from sam.base.switch import Switch
-
 if sys.version > '3':
     import queue as Queue
 else:
@@ -24,6 +21,7 @@ from sam.base.request import REQUEST_TYPE_ADD_SFCI
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.server import Server
+from sam.base.switch import Switch
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.orchestration.oConfig import BATCH_SIZE, BATCH_TIMEOUT, ENABLE_OIB, RE_INIT_TABLE
 from sam.orchestration.oSFCAdder import OSFCAdder

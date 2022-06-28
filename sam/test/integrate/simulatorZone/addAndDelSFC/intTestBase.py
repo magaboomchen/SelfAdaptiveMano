@@ -36,16 +36,26 @@ class IntTestBaseClass(TestBase):
         self.cleanLog()
         self.clearQueue()
         self.killAllModule()
+        self.cleanSFCAndSFCIInDB()
         time.sleep(3)
         logging.info("Please start dispatcher, mediator and simulator!"\
                         " Then press Any key to continue!")
         raw_input() # type: ignore
+
+    def common_teardown(self):
+        self.clearQueue()
+        self.killAllModule()
+        # self.cleanSFCAndSFCIInDB()
 
     def getSFCFromDB(self, sfcUUID):
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             False)
         self.sfcInDB = self._oib.getSFC4DB(sfcUUID)
         return self.sfcInDB
+
+    def cleanSFCAndSFCIInDB(self):
+        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
+                                            True)
 
     def genLargeBandwidthSFC(self, classifier):
         sfcUUID = uuid.uuid1()

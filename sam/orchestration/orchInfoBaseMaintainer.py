@@ -219,8 +219,9 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         request.requestState = REQUEST_STATE_IN_PROCESSING
         self._addRequest2DB(request, cmd)
 
+        sfc = cmd.attributes['sfc']
         sfci = cmd.attributes['sfci']
-        self._addSFCI2DB(sfci)
+        self._addSFCI2DB(sfci, sfc.sfcUUID)
 
     def delSFCIRequestHandler(self, request, cmd):
         request.requestState = REQUEST_STATE_IN_PROCESSING

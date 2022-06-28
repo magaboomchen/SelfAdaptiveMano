@@ -100,7 +100,8 @@ class TestSimulatorBase(TestBase):
         primaryForwardingPath = {
                                     1:[
                                         [(0, 0), (0, 256), (0, 768), (0, 10005)],
-                                        [(1, 10005), (1, 768), (1, 256), (1, 0)]
+                                        [(1, 10005), (1, 10005)],
+                                        [(2, 10005), (2, 768), (2, 256), (2, 0)]
                                     ]
                                 }
         mappingType = MAPPING_TYPE_NETPACK # This is your mapping algorithm type

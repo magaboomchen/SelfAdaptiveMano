@@ -127,4 +127,7 @@ NetworkController
 Database Agent
 * add database agent to orchestrator, measurer, dashboard, adaptive
 
+Regulator
+* design CMD_TYPE_FAILURE_ABNORMAL_RESUME
+
 # FEATURE REQUEST LIST

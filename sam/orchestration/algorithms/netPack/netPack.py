@@ -232,9 +232,21 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
             u = srcTerminalSwitchIDList[idx]
             v = srcTerminalSwitchIDList[idx+1]
             if u == v:
-                segPath = [u,v]
+                # segPath = [u,v]
                 # self.logger.info("segPath: {0}".format(segPath))
-                paths.append(segPath)
+                segPath = []
+                if idx < len(vnfi2ServerID):
+                    serverID = vnfi2ServerID[idx].getServerID()
+                    segPath.append(serverID)
+                if idx > 0:
+                    serverID = vnfi2ServerID[idx-1].getServerID()
+                    segPath.insert(0, serverID)
+                segPath = self._trans2CompatibleFormat(segPath, idx)
+                if self.singlePath:
+                    paths = segPath
+                else:
+                    paths.append(segPath)
+                forwardingPath.append(paths)
                 continue
             bandwidth = trafficDemand
             while bandwidth > 1 * 0.001 * 0.001 * 0.001:

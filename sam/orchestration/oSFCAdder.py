@@ -349,12 +349,12 @@ class OSFCAdder(object):
             zoneName = sfc.attributes['zone']
             sfci = request.attributes['sfci']
             sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
-            # self.logger.warning("before sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
-            # if sfci.vnfiSequence == None:
+            self.logger.info("before trans, forwardingPathSet is {0}".format(sfci.forwardingPathSet))
+            self.logger.warning("before sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
             if sfci.vnfiSequence in [None,[]]:
                 sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
                                                         sfci.forwardingPathSet)
-            # self.logger.warning("after sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
+            self.logger.warning("after sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
             cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
                 'sfc':sfc, 'sfci':sfci, 'zone':zoneName
             })
@@ -384,10 +384,11 @@ class OSFCAdder(object):
 
     def _getVNFISeqFromForwardingPathSet(self, sfc, forwardingPathSet):
         sfcLength = len(sfc.vNFTypeSequence)
+        self.logger.info("sfcLength is {0}".format(sfcLength))
         tD = sfc.getSFCTrafficDemand()
         pM = PerformanceModel()
         vSeq = []
-        for stage in range(sfcLength-1):
+        for stage in range(sfcLength):
             vnfType = sfc.vNFTypeSequence[stage]
             vnfiList = []
             nodeList = self._getNodeListOfStage4FPSet(forwardingPathSet, stage)
@@ -409,6 +410,8 @@ class OSFCAdder(object):
         # get node from primary fp
         primaryForwardingPath = forwardingPathSet.primaryForwardingPath[1]
         (vnfLayerNum, nodeID) = primaryForwardingPath[stage][-1]
+        self.logger.info("vnfLayerNum is {0}, nodeID is {1}".format(vnfLayerNum, nodeID))
+        # nodeID = primaryForwardingPath[stage][-1][1]
         nodeIDDict[nodeID] = nodeID
 
         # get mapping type
@@ -432,38 +435,40 @@ class OSFCAdder(object):
                 node = self._dib.getServer(nodeID, self.zoneName)
             elif self._dib.isSwitchID(nodeID):
                 node = self._dib.getSwitch(nodeID, self.zoneName)
+            else:
+                raise ValueError("Unknown node ID {0}".format(nodeID))
             nodeList.append(node)
 
         return nodeList
 
-    def _getServerListOfStage4FPSet(self, forwardingPathSet, stage):
-        serverIDDict = {}
-        # get server from primary fp
-        primaryForwardingPath = forwardingPathSet.primaryForwardingPath[1]
-        (vnfLayerNum, serverID) = primaryForwardingPath[stage][-1]
-        serverIDDict[serverID] = serverID
+    # def _getServerListOfStage4FPSet(self, forwardingPathSet, stage):
+    #     serverIDDict = {}
+    #     # get server from primary fp
+    #     primaryForwardingPath = forwardingPathSet.primaryForwardingPath[1]
+    #     (vnfLayerNum, serverID) = primaryForwardingPath[stage][-1]
+    #     serverIDDict[serverID] = serverID
 
-        # get mapping type
-        mappingType = forwardingPathSet.mappingType
+    #     # get mapping type
+    #     mappingType = forwardingPathSet.mappingType
 
-        # get server from backup fp
-        backupForwardingPathDict = forwardingPathSet.backupForwardingPath[1]
-        for key, backupForwardingPath in backupForwardingPathDict.items():
-            if mappingType == MAPPING_TYPE_NOTVIA_PSFC:
-                if self._isFRRKey(key):
-                    continue
-            for backupPathStageIndex in range(len(backupForwardingPath)):
-                (vnfLayerNum, serverID) = backupForwardingPath[backupPathStageIndex][-1]
-                if vnfLayerNum == stage:
-                    serverIDDict[serverID] = serverID
+    #     # get server from backup fp
+    #     backupForwardingPathDict = forwardingPathSet.backupForwardingPath[1]
+    #     for key, backupForwardingPath in backupForwardingPathDict.items():
+    #         if mappingType == MAPPING_TYPE_NOTVIA_PSFC:
+    #             if self._isFRRKey(key):
+    #                 continue
+    #         for backupPathStageIndex in range(len(backupForwardingPath)):
+    #             (vnfLayerNum, serverID) = backupForwardingPath[backupPathStageIndex][-1]
+    #             if vnfLayerNum == stage:
+    #                 serverIDDict[serverID] = serverID
 
-        serverList = []
-        for serverID in serverIDDict.keys():
-            self.logger.debug("serverID:{0}".format(serverID))
-            server = self._dib.getServer(serverID, self.zoneName)
-            serverList.append(server)
+    #     serverList = []
+    #     for serverID in serverIDDict.keys():
+    #         self.logger.debug("serverID:{0}".format(serverID))
+    #         server = self._dib.getServer(serverID, self.zoneName)
+    #         serverList.append(server)
 
-        return serverList
+    #     return serverList
 
     def _isFRRKey(self, key):
         for keyTag in key:
