@@ -6,7 +6,7 @@ import logging
 
 from sam.base.slo import SLO
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
-from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNF_TYPE_FORWARD
+from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNF, VNFI, VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet, MAPPING_TYPE_INTERFERENCE
 from sam.base.messageAgent import SIMULATOR_ZONE

@@ -10,6 +10,12 @@ import numpy as np
 from sam.base.socketConverter import SocketConverter
 
 
+IPV4_ROUTE_PROTOCOL = "IPV4_ROUTE_PROTOCOL"
+IPV6_ROUTE_PROTOCOL = "IPV6_ROUTE_PROTOCOL"
+SRV6_ROUTE_PROTOCOL = "SRV6_ROUTE_PROTOCOL"
+ROCEV1_ROUTE_PROTOCOL = "ROCEV1_ROUTE_PROTOCOL"
+
+
 class RoutingMorphic(object):
     def __init__(self):
         self._sc = SocketConverter()

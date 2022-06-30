@@ -41,11 +41,32 @@ NAME_OF_VNFTYPE={
     VNF_TYPE_NAT_RECEIVER:'VNF_TYPE_NAT_RECEIVER',
     }
 
+PREFERRED_DEVICE_TYPE_P4 = "DEVICE_TYPE_P4"
+PREFERRED_DEVICE_TYPE_SERVER = "DEVICE_TYPE_SERVER"
+
+
+class VNF(object):
+    def __init__(self, vnfUUID= None, vnfType=None, config=None, 
+                                        preferredDeviceType=None):
+        self.vnfUUID = vnfUUID
+        self.vnfType = vnfType
+        self.config = config
+        self.preferredDeviceType = preferredDeviceType
+
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
+
+    def __repr__(self):
+        return str(self)
+
 
 class VNFI(object):
     def __init__(self, vnfID=None, vnfType=None, vnfiID=None,
                     config=None, node=None, vnfiStatus=None):
-        self.vnfID = vnfID
+        self.vnfID = vnfID  # equal to the vnfType
         self.vnfType = vnfType
         self.vnfiID = vnfiID
         self.config = config
