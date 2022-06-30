@@ -24,7 +24,7 @@ MANUAL_TEST = True
 
 class TestAddSFCClass(IntTestBaseClass):
     @pytest.fixture(scope="function")
-    def setup_OneSFC(self):
+    def setup_oneSFC(self):
         self.common_setup()
 
         # you can overwrite following function to test different sfc/sfci
@@ -37,7 +37,7 @@ class TestAddSFCClass(IntTestBaseClass):
         # teardown
         self.common_teardown()
 
-    def test_oneSFCWithVNFIOnAServer(self, setup_OneSFC):
+    def test_oneSFC(self, setup_oneSFC):
         # exercise
         rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFC,
             attributes={

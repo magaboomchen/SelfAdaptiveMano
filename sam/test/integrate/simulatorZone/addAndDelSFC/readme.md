@@ -5,7 +5,7 @@ cd ~/Projects/SelfAdaptiveMano/sam/test/integrate/simulatorZone/addAndDelSFC
 python -m pytest ./test_1.py -s --disable-warnings
 '''
 
-## Terminal 2
+## Terminal 2 (dispatcher will initial orchestrator automatically)
 '''
 cd ~/Projects/SelfAdaptiveMano/sam/dispatcher
 python ./dispatcher.py -parallelMode

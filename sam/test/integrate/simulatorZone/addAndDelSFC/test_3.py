@@ -5,10 +5,10 @@
 This is an example for writing integrate test
 The work flow:
     * generate 5 addSFC and 5 addSFCI command to dispatcher
-    * get dcn info from measurer and print interest info
+    * generate 1 server failure using simulator, check whether regulator enable failover of the corresponding SFCI
 
 Usage of this unit test:
-    sudo python -m pytest ./test_2.py -s --disable-warnings
+    sudo python -m pytest ./test_3.py -s --disable-warnings
 '''
 
 import uuid
@@ -26,7 +26,7 @@ MANUAL_TEST = True
 
 class TestAddSFCClass(IntTestBaseClass):
     @pytest.fixture(scope="function")
-    def setup_manySFCs(self):
+    def setup_oneSFC(self):
         self.common_setup()
 
         self.sfcList = []
@@ -58,7 +58,7 @@ class TestAddSFCClass(IntTestBaseClass):
         self.clearQueue()
         self.killAllModule()
 
-    def test_fiveSFCs(self, setup_manySFCs):
+    def test_fiveSFCs(self, setup_oneSFC):
         # exercise
         for idx, sfc in enumerate(self.sfcList):
             rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFC,

@@ -295,8 +295,7 @@ class Orchestrator(object):
                 self._dib.updateByNewDib(newDib)
                 # self._osa.nPInstance.updateServerSets(self.podNum, self.minPodIdx, self.maxPodIdx)
             elif cmd.cmdType == CMD_TYPE_GET_ORCHESTRATION_STATE:
-                pass
-                # TODO
+                raise ValueError("Unimplemented cmd type handler CMD_TYPE_GET_ORCHESTRATION_STATE")
             elif cmd.cmdType == CMD_TYPE_TURN_ORCHESTRATION_ON:
                 self.logger.info("turn on")
                 self.runningState = True
@@ -318,69 +317,112 @@ class Orchestrator(object):
         # For fast orchestration, we need lower down topology scale
         zoneNameList = dib.getAllZone()
         self.logger.info("zoneNameList: {0}".format(zoneNameList))
+        self._prepareSwitchIdxInfo()
         for zoneName in zoneNameList:
-            # prune links
+            # prune links and save servers to delete in a list
+            delServerCandidateDict = {}
+            delSwitchCandidateDict = {}
             links = dib.getLinksByZone(zoneName)
             for linkID in links.keys():
                 srcID = linkID[0]
                 dstID = linkID[1]
                 link = links[linkID]['link']
-                for nodeID in linkID:
+                for idx, nodeID in enumerate(linkID):
                     if dib.isServerID(nodeID):
-                        switch = dib.getConnectedSwitch(nodeID, zoneName)
-                        switchID = switch.switchID
-                        if not self.isSwitchInSubTopologyZone(switchID):
-                            # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
-                            dib.delLink(link, zoneName)
+                        switchID = linkID[1-idx]
+                        if dib.isSwitchID(switchID):
+                            if not self.isSwitchInSubTopologyZone(switchID):
+                                serverID = nodeID
+                                delServerCandidateDict[serverID] = 1
+                                delSwitchCandidateDict[switchID] = 1
+                                # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
+                                dib.delLink(link, zoneName)
                             break
                     elif dib.isSwitchID(nodeID):
                         if not self.isSwitchInSubTopologyZone(nodeID):
                             # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
+                            delSwitchCandidateDict[nodeID] = 1
                             dib.delLink(link, zoneName)
                             break
 
             # prune servers
-            servers = dib.getServersByZone(zoneName)
-            for serverID in servers.keys():
-                switch = dib.getConnectedSwitch(serverID, zoneName)
-                switchID = switch.switchID
-                if not self.isSwitchInSubTopologyZone(switchID):
-                    # self.logger.warning("deServer: {0}".format(serverID))
-                    dib.delServer(serverID, zoneName)
+            for serverID in delServerCandidateDict.keys():
+                dib.delServer(serverID, zoneName)
 
             # prune switches
-            switches = dib.getSwitchesByZone(zoneName)
-            for switchID in switches.keys():
-                if not self.isSwitchInSubTopologyZone(switchID):
-                    # self.logger.warning("deSwitch: {0}".format(switchID))
-                    dib.delSwitch(switchID, zoneName)
+            for switchID in delSwitchCandidateDict.keys():
+                dib.delSwitch(switchID, zoneName)
 
         return dib
 
-    def isSwitchInSubTopologyZone(self, switchID):
+    # def _pruneDib(self, dib):
+    #     # For fast orchestration, we need lower down topology scale
+    #     zoneNameList = dib.getAllZone()
+    #     self.logger.info("zoneNameList: {0}".format(zoneNameList))
+    #     self._prepareSwitchIdxInfo()
+    #     for zoneName in zoneNameList:
+    #         # prune links
+    #         links = dib.getLinksByZone(zoneName)
+    #         for linkID in links.keys():
+    #             srcID = linkID[0]
+    #             dstID = linkID[1]
+    #             link = links[linkID]['link']
+    #             for nodeID in linkID:
+    #                 if dib.isServerID(nodeID):
+    #                     switch = dib.getConnectedSwitch(nodeID, zoneName)
+    #                     switchID = switch.switchID
+    #                     if not self.isSwitchInSubTopologyZone(switchID):
+    #                         # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
+    #                         dib.delLink(link, zoneName)
+    #                         break
+    #                 elif dib.isSwitchID(nodeID):
+    #                     if not self.isSwitchInSubTopologyZone(nodeID):
+    #                         # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
+    #                         dib.delLink(link, zoneName)
+    #                         break
+
+    #         # prune servers
+    #         servers = dib.getServersByZone(zoneName)
+    #         for serverID in servers.keys():
+    #             switch = dib.getConnectedSwitch(serverID, zoneName)
+    #             switchID = switch.switchID
+    #             if not self.isSwitchInSubTopologyZone(switchID):
+    #                 # self.logger.warning("deServer: {0}".format(serverID))
+    #                 dib.delServer(serverID, zoneName)
+
+    #         # prune switches
+    #         switches = dib.getSwitchesByZone(zoneName)
+    #         for switchID in switches.keys():
+    #             if not self.isSwitchInSubTopologyZone(switchID):
+    #                 # self.logger.warning("deSwitch: {0}".format(switchID))
+    #                 dib.delSwitch(switchID, zoneName)
+
+    #     return dib
+
+    def _prepareSwitchIdxInfo(self):
         if self.topoType == "fat-tree":
             coreSwitchNum = math.pow(self.podNum/2, 2)
             aggSwitchNum = self.podNum * self.podNum / 2
             coreSwitchPerPod = math.floor(coreSwitchNum/self.podNum)
             # get core switch range
-            minCoreSwitchIdx = self.minPodIdx * coreSwitchPerPod
-            maxCoreSwitchIdx = minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1
+            self.minCoreSwitchIdx = self.minPodIdx * coreSwitchPerPod
+            self.maxCoreSwitchIdx = self.minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1
             # get agg switch range
-            minAggSwitchIdx = coreSwitchNum + self.minPodIdx * self.podNum / 2
-            maxAggSwitchIdx = minAggSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1
+            self.minAggSwitchIdx = coreSwitchNum + self.minPodIdx * self.podNum / 2
+            self.maxAggSwitchIdx = self.minAggSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1
             # get tor switch range
-            minTorSwitchIdx = coreSwitchNum + aggSwitchNum + self.minPodIdx * self.podNum / 2
-            maxTorSwitchIdx = minTorSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1
-            # self.logger.info("{0},{1},{2},{3},{4},{5}".format(
-            #         minCoreSwitchIdx, maxCoreSwitchIdx,
-            #         minAggSwitchIdx, maxAggSwitchIdx,
-            #         minTorSwitchIdx, maxTorSwitchIdx
-            #     )
-            # )
+            self.minTorSwitchIdx = coreSwitchNum + aggSwitchNum + self.minPodIdx * self.podNum / 2
+            self.maxTorSwitchIdx = self.minTorSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1
+        elif self.topoType == "testbed_sw1":
+            return True
+        else:
+            raise ValueError("Unimplementation topo type")
 
-            if (switchID >= minCoreSwitchIdx and switchID <= maxCoreSwitchIdx) \
-                    or (switchID >= minAggSwitchIdx and switchID <= maxAggSwitchIdx) \
-                    or (switchID >= minTorSwitchIdx and switchID <= maxTorSwitchIdx):
+    def isSwitchInSubTopologyZone(self, switchID):
+        if self.topoType == "fat-tree":
+            if (switchID >= self.minCoreSwitchIdx and switchID <= self.maxCoreSwitchIdx) \
+                    or (switchID >= self.minAggSwitchIdx and switchID <= self.maxAggSwitchIdx) \
+                    or (switchID >= self.minTorSwitchIdx and switchID <= self.maxTorSwitchIdx):
                 return True
             else:
                 return False
