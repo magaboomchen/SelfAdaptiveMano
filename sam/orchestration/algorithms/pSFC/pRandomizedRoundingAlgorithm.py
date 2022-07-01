@@ -243,7 +243,6 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
         # # add start node and end node
         startNodeID = self.requestPartialPathSrcSwitchID[pIndex]
         endNodeID = self.requestPartialPathDstSwitchID[pIndex]
-        # dividedPath = self._addStartNodeIDAndEndNodeID2Path(dividedPath, startNodeID, endNodeID)
 
         # select a server for each stage
         serverList = self._selectNFVI4EachStage(dividedPath, pIndex)

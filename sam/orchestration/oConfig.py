@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 # if user doesn't assign mapping algorithm, use default mapping algorithm
-DEFAULT_MAPPING_TYPE = "MAPPING_TYPE_NETPACK"
+DEFAULT_MAPPING_TYPE = "MAPPING_TYPE_MMLPSFC"
 
 # bottom control system
 if DEFAULT_MAPPING_TYPE == "MAPPING_TYPE_NETSOLVER_ILP":
@@ -27,4 +27,6 @@ ENABLE_OIB = True  # Please enable this in final results.
 VNFI_ASSIGN_MODE = True
 
 
-TXXB_TEST = False
+ENABLE_INGRESS_EGRESS_GENERATION = False    # for TXXB test
+
+ENABLE_PREFERRED_DEVICE_SELECTION = True

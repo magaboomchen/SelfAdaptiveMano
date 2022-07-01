@@ -11,14 +11,15 @@ To add more mapping algorithms, you need add code in following functions:
 
 import uuid
 import copy
-import random
 
 from sam.base.vnf import VNFI
 from sam.base.switch import Switch
-from sam.base.server import SERVER_TYPE_CLASSIFIER, Server
-from sam.base.path import ForwardingPathSet, MAPPING_TYPE_E2EP, MAPPING_TYPE_UFRR, \
-    MAPPING_TYPE_NOTVIA_PSFC, MAPPING_TYPE_INTERFERENCE, MAPPING_TYPE_NETPACK, \
-    MAPPING_TYPE_NETSOLVER_ILP, MAPPING_TYPE_NONE
+from sam.base.server import Server
+from sam.base.path import MAPPING_TYPE_MMLPSFC, ForwardingPathSet, \
+                            MAPPING_TYPE_E2EP, MAPPING_TYPE_UFRR, \
+                            MAPPING_TYPE_NOTVIA_PSFC, MAPPING_TYPE_NETPACK, \
+                            MAPPING_TYPE_INTERFERENCE, MAPPING_TYPE_NONE, \
+                            MAPPING_TYPE_NETSOLVER_ILP
 from sam.base.command import Command, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_ADD_SFC, \
     REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI
@@ -37,25 +38,27 @@ from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 
 
 class OSFCAdder(object):
-    def __init__(self, dib, logger, podNum=None, minPodIdx=None, maxPodIdx=None, topoType="fat-tree"):
+    def __init__(self, dib, logger, podNum=None, minPodIdx=None,
+                    maxPodIdx=None, topoType="fat-tree", zoneName=None):
         self._dib = dib
         self.logger = logger
         self._via = VNFIIDAssigner()
         self._sc = SocketConverter()
-        self.zoneName = None
+        self.zoneName = zoneName
         self.topoType = topoType
         self.podNum = podNum
         self.minPodIdx = minPodIdx
         self.maxPodIdx = maxPodIdx
-
-        self.nPInstance = NetPack(self._dib, self.topoType)
+        
+        self.isNetPackInit = False
 
     def genAddSFCCmd(self, request):
         self.request = request
         self._checkAddSFCRequest()
 
         self.sfc = self.request.attributes['sfc']
-        self.zoneName = self.sfc.attributes["zone"]
+        zoneName = self.sfc.attributes["zone"]
+        assert zoneName == self.zoneName
 
         self._mapIngressEgress()
         self.logger.debug("sfc:{0}".format(self.sfc))
@@ -175,6 +178,9 @@ class OSFCAdder(object):
             if mappingType == MAPPING_TYPE_UFRR:
                 self.logger.info("ufrr")
                 forwardingPathSetsDict = self.ufrr(requestBatchList)
+            elif mappingType == MAPPING_TYPE_MMLPSFC:
+                self.logger.info("mMLPSFC")
+                forwardingPathSetsDict = self.mMLPSFC(requestBatchList)
             elif mappingType == MAPPING_TYPE_E2EP:
                 self.logger.info("e2ep")
                 forwardingPathSetsDict = self.e2eProtection(
@@ -202,19 +208,26 @@ class OSFCAdder(object):
                     "Unknown mappingType {0}".format(mappingType))
                 raise ValueError("Unknown mappingType.")
 
-            if mappingType in [MAPPING_TYPE_UFRR, MAPPING_TYPE_E2EP, MAPPING_TYPE_NOTVIA_PSFC, \
-                                MAPPING_TYPE_NETPACK, MAPPING_TYPE_NETSOLVER_ILP, MAPPING_TYPE_NONE]:
-                reqCmdTupleList.extend(
-                    self._forwardingPathSetsDict2Cmd(forwardingPathSetsDict,
-                        requestBatchList)
-                )
-            # elif mappingType in [MAPPING_TYPE_NETPACK, MAPPING_TYPE_NETSOLVER_ILP, MAPPING_TYPE_NONE]:
+            self.logger.info("forwardingPathSetsDict is {0}".format(forwardingPathSetsDict))
+
+            reqCmdTupleList.extend(
+                self._forwardingPathSetsDict2Cmd(forwardingPathSetsDict,
+                    requestBatchList)
+            )
+
+            # if mappingType in [MAPPING_TYPE_UFRR, MAPPING_TYPE_E2EP, MAPPING_TYPE_NOTVIA_PSFC, \
+            #                     MAPPING_TYPE_NETPACK, MAPPING_TYPE_NETSOLVER_ILP, MAPPING_TYPE_NONE]:
             #     reqCmdTupleList.extend(
-            #         self._netPackForwardingPathSetsDict2Cmd(forwardingPathSetsDict,
+            #         self._forwardingPathSetsDict2Cmd(forwardingPathSetsDict,
             #             requestBatchList)
             #     )
-            else:
-                raise ValueError("Unimplement mapping type: {0}".format(mappingType))
+            # # elif mappingType in [MAPPING_TYPE_NETPACK, MAPPING_TYPE_NETSOLVER_ILP, MAPPING_TYPE_NONE]:
+            # #     reqCmdTupleList.extend(
+            # #         self._netPackForwardingPathSetsDict2Cmd(forwardingPathSetsDict,
+            # #             requestBatchList)
+            # #     )
+            # else:
+            #     raise ValueError("Unimplement mapping type: {0}".format(mappingType))
 
         return reqCmdTupleList
 
@@ -312,6 +325,13 @@ class OSFCAdder(object):
 
         return forwardingPathSetsDict
 
+    def mMLPSFC(self, requestBatchList):
+        mMLPSFC = MMLPSFC(self._dib, requestBatchList)
+        forwardingPathSetsDict = mMLPSFC.mapSFCI()
+        for key,fpsd in forwardingPathSetsDict.items():
+            fpsd.mappingType = MAPPING_TYPE_MMLPSFC
+        return forwardingPathSetsDict
+
     def interferenceAware(self, requestBatchList):
         # you can refer to def e2eProtection(self, requestBatchList) to write your algorithm's api
         # call your algorithm's api here
@@ -332,11 +352,20 @@ class OSFCAdder(object):
 
         return forwardingPathSetsDict
 
+    def initNetPack(self):
+        self.nPInstance = NetPack(self._dib, self.topoType, argsDict={
+                                        "podNum": self.podNum,
+                                        "minPodIdx": self.minPodIdx,
+                                        "maxPodIdx": self.maxPodIdx,
+                                        "zoneName": self.zoneName
+                                    })
+        self.isNetPackInit = True
+
     def netPack(self, requestBatchList):
         # self.logger.debug(" OSFCAdder self._dib: {0}".format(self._dib))
-        netPackResultDict = self.nPInstance.mapSFCI(requestBatchList,
-                                                self.podNum, self.minPodIdx,
-                                                            self.maxPodIdx)
+        if not self.isNetPackInit:
+            self.initNetPack()
+        netPackResultDict = self.nPInstance.mapSFCI(requestBatchList)
         return netPackResultDict["forwardingPathSetsDict"]
 
     def _forwardingPathSetsDict2Cmd(self, forwardingPathSetsDict,

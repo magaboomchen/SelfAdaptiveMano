@@ -3,6 +3,9 @@
 
 import copy
 
+from sam.base.switch import Switch
+from sam.base.server import Server
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, PREFERRED_DEVICE_TYPE_SERVER
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 
 
@@ -39,8 +42,10 @@ class PathServerFiller(object):
         # add ingress and egress
         ingID = self._getIngressID(request)
         egID = self._getEgressID(request)
-        dividedPath = self._addStartNodeIDAndEndNodeID2Path(dividedPath,
-            ingID, egID)
+        if self._getFirstNodeID4DividedPath(dividedPath) != ingID:
+            dividedPath = self._addStartNodeID2DividedPath(dividedPath, ingID)
+        if self._getLastNodeID4DividedPath(dividedPath) != egID:
+            dividedPath = self._addEndNodeID2DividedPath(dividedPath, egID)
 
         # select a server for each stage
         serverList = self._selectNFVI4EachStage(dividedPath, request,
@@ -69,25 +74,42 @@ class PathServerFiller(object):
     def _getIngressID(self, request):
         sfc = request.attributes['sfc']
         ingress = sfc.directions[0]['ingress']
-        return ingress.getServerID()
+        if type(ingress) == Server:
+            return ingress.getServerID()
+        elif type(ingress) == Switch:
+            return ingress.switchID
+        else:
+            raise ValueError("Unknown node type {0}".format(type(ingress)))
 
     def _getEgressID(self, request):
         sfc = request.attributes['sfc']
         egress = sfc.directions[0]['egress']
-        return egress.getServerID()
+        if type(egress) == Server:
+            return egress.getServerID()
+        elif type(egress) == Switch:
+            return egress.switchID
+        else:
+            raise ValueError("Unknown node type {0}".format(type(egress)))
 
-    def _addStartNodeIDAndEndNodeID2Path(self, dividedPath,
-                                        startNodeID, endNodeID):
+    # def _addStartNodeIDAndEndNodeID2Path(self, dividedPath,
+    #                                     startNodeID, endNodeID):
+    #     dividedPath[0].insert(0, (0, startNodeID))
+    #     lastLayerNum = dividedPath[-1][0][0]
+    #     # dividedPath[-1].append((len(dividedPath)-1, endNodeID))
+    #     dividedPath[-1].append((lastLayerNum, endNodeID))
+    #     self.logger.debug(
+    #         "add start and end node to dividedPath:{0}".format(
+    #             dividedPath))
+    #     return dividedPath
+
+    def _addStartNodeID2DividedPath(self, dividedPath, startNodeID):
         dividedPath[0].insert(0, (0, startNodeID))
-        lastLayerNum = dividedPath[-1][0][0]
-        # dividedPath[-1].append((len(dividedPath)-1, endNodeID))
-        dividedPath[-1].append((lastLayerNum, endNodeID))
         self.logger.debug(
-            "add start and end node to dividedPath:{0}".format(
-                dividedPath))
+            "add start node ID {0} to dividedPath:{1}".format(
+                startNodeID, dividedPath))
         return dividedPath
 
-    def _addEndNodeID2Path(self, dividedPath, endNodeID):
+    def _addEndNodeID2DividedPath(self, dividedPath, endNodeID):
         lastLayerNum = dividedPath[-1][0][0]
         # dividedPath[-1].append((len(dividedPath)-1, endNodeID))
         dividedPath[-1].append((lastLayerNum, endNodeID))
@@ -95,6 +117,12 @@ class PathServerFiller(object):
             "add end node ID {0} to dividedPath:{1}".format(
                 endNodeID, dividedPath))
         return dividedPath
+
+    def _getFirstNodeID4DividedPath(self, dividedPath):
+        return dividedPath[0][0][1]
+
+    def _getLastNodeID4DividedPath(self, dividedPath):
+        return dividedPath[-1][-1][1]
 
     def _selectNFVI4EachStage(self, dividedPath, request,
                                 abandonElementIDList=None):
@@ -108,17 +136,23 @@ class PathServerFiller(object):
         startIndex = c+1 - dividedPathLength
         # for index in range(startIndex, c):
         for index in range(len(dividedPath)-1):
-            layerNum = dividedPath[index][0][0]
-            vnfType = sfc.vNFTypeSequence[layerNum]
-            switchID = dividedPath[index][-1][1]
-            self.logger.debug("switchID:{0}".format(switchID))
-            servers = self._dib.getConnectedNFVIs(switchID,
-                self.zoneName)
-            servers = self._delAbandonedServer(servers)
-            # self.logger.warning("servers:{0}".format(servers))
-            server = self._selectServer4ServerList(servers,
-                vnfType, trafficDemand)
-            serverList.append(server)
+            pDT = sfc.vnfSequence[index].preferredDeviceType
+            if pDT == PREFERRED_DEVICE_TYPE_SERVER:
+                layerNum = dividedPath[index][0][0]
+                vnfType = sfc.vNFTypeSequence[layerNum]
+                switchID = dividedPath[index][-1][1]
+                self.logger.debug("switchID:{0}".format(switchID))
+                servers = self._dib.getConnectedNFVIs(switchID,
+                    self.zoneName)
+                servers = self._delAbandonedServer(servers)
+                # self.logger.warning("servers:{0}".format(servers))
+                server = self._selectServer4ServerList(servers,
+                    vnfType, trafficDemand)
+                serverList.append(server)
+            elif pDT == PREFERRED_DEVICE_TYPE_P4:
+                serverList.append(None)
+            else:
+                raise ValueError("Unknown preferred device type {0}".format(pDT))
         return serverList
 
     def _delAbandonedServer(self, servers):
@@ -162,8 +196,13 @@ class PathServerFiller(object):
         for index in range(len(serverList)):
             currentIndex = index
             nextIndex = index + 1
-            serverID = serverList[currentIndex].getServerID()
-            dividedPath[currentIndex].append((currentIndex+startVNFStageNum,serverID))
-            dividedPath[nextIndex].insert(0, (nextIndex+startVNFStageNum, serverID))
+            if serverList[currentIndex] != None:
+                serverID = serverList[currentIndex].getServerID()
+                dividedPath[currentIndex].append((currentIndex+startVNFStageNum, serverID))
+                dividedPath[nextIndex].insert(0, (nextIndex+startVNFStageNum, serverID))
+            else:
+                if len(dividedPath[currentIndex]) == 1:
+                    stageNode = dividedPath[currentIndex][0]
+                    dividedPath[currentIndex].append(stageNode)
         self.logger.debug("new dividedPath:{0}".format(dividedPath))
         return dividedPath

@@ -11,6 +11,7 @@ from sam.base.switch import Switch
 from sam.base.server import Server
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, PREFERRED_DEVICE_TYPE_SERVER
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 
 WEIGHT_TYPE_CONST = "WEIGHT_TYPE_CONST"
@@ -21,10 +22,11 @@ WEIGHT_TYPE_0100_UNIFORAM_MODEL = "WEIGHT_TYPE_0100_UNIFORAM_MODEL"
 
 
 class MultiLayerGraph(object):
-    def __init__(self):
+    def __init__(self, enablePreferredDeviceSelection=False):
         logConfigur = LoggerConfigurator(__name__, './log',
             'MultiLayerGraph.log', level='debug')
         self.logger = logConfigur.getLogger()
+        self.enablePreferredDeviceSelection = enablePreferredDeviceSelection
 
     def loadInstance4dibAndRequest(self, dib, request, weightType,
                                     connectingLinkWeightType=WEIGHT_TYPE_CONST):
@@ -214,12 +216,30 @@ class MultiLayerGraph(object):
 
     def _getSupportVNFSwitchesOfLayer(self, layerNum):
         switches = []
-        vnfType = self.sfc.vNFTypeSequence[layerNum]
-        for switchID,switchInfoDict in self._dib.getSwitchesByZone(self.zoneName).items():
-            switch = switchInfoDict['switch']
-            if vnfType in switch.supportVNF:
-                switches.append(switch)
+        if self.enablePreferredDeviceSelection:
+            vnfType = self.sfc.vNFTypeSequence[layerNum]
+            for switchID,switchInfoDict in self._dib.getSwitchesByZone(self.zoneName).items():
+                switch = switchInfoDict['switch']
+                pDT = self._getPreferredDeviceTypeOfIdxVNF(self.sfc, layerNum)
+                if pDT == PREFERRED_DEVICE_TYPE_P4:
+                    if vnfType in switch.supportNF:
+                        switches.append(switch)
+                elif pDT == PREFERRED_DEVICE_TYPE_SERVER:
+                    if vnfType in switch.supportVNF:
+                        switches.append(switch)
+                else:
+                    pass
+        else:
+            vnfType = self.sfc.vNFTypeSequence[layerNum]
+            for switchID,switchInfoDict in self._dib.getSwitchesByZone(self.zoneName).items():
+                switch = switchInfoDict['switch']
+                if vnfType in switch.supportVNF:
+                    switches.append(switch)
         return switches
+
+    def _getPreferredDeviceTypeOfIdxVNF(self, sfc, idx):
+        pDT = sfc.vnfSequence[idx].preferredDeviceType
+        return pDT
 
     def _getExpectedServerResource(self, layerNum):
         vnfType = self.sfc.vNFTypeSequence[layerNum]

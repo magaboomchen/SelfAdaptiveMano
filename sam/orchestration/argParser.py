@@ -25,6 +25,8 @@ class ArgParser(ArgParserBase):
             help="max pod idx")
         self.parser.add_argument('-topoType', metavar='topoType',
             type=str, default=None, help="topology type")
+        self.parser.add_argument('-zoneName', metavar='zoneName',
+            type=str, default=None, help="zone name")
         self.parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
                             help='Show this help message and exit. Example usage: python orchestrator.py')
         self.args = self.parser.parse_args()

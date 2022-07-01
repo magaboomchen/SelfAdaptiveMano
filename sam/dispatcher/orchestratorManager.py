@@ -4,24 +4,18 @@
 import uuid
 import time
 import math
-import copy
-import base64
-import cPickle
 import numpy as np
 
 import psutil
 
-from sam.base.messageAgent import MessageAgent, SAMMessage, DISPATCHER_QUEUE, MEDIATOR_QUEUE, \
-    MSG_TYPE_DISPATCHER_CMD, MSG_TYPE_REQUEST, SIMULATOR_ZONE
-from sam.base.command import Command, CMD_TYPE_ADD_SFCI, CMD_TYPE_PUT_ORCHESTRATION_STATE, \
+from sam.base.messageAgent import MessageAgent, SAMMessage, MSG_TYPE_DISPATCHER_CMD
+from sam.base.command import Command, CMD_TYPE_PUT_ORCHESTRATION_STATE, \
     CMD_TYPE_TURN_ORCHESTRATION_ON, CMD_TYPE_KILL_ORCHESTRATION
 from sam.base.pickleIO import PickleIO
-from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
-    REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_DEL_SFC
+from sam.orchestration import orchestrator
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.dispatcher.config import TIME_BUDGET
-from sam.orchestration import orchestrator
+from sam.dispatcher.config import CONSTANT_ORCHESTRATOR_NUM, TIME_BUDGET
 from sam.orchestration.oConfig import BATCH_SIZE, MAX_SFC_LENGTH
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.base.exceptionProcessor import ExceptionProcessor
@@ -41,6 +35,7 @@ class OrchestratorManager(object):
 
         self.parallelMode = parallelMode
         self.timeBudget = TIME_BUDGET
+        self.constantOrchestratorNum = CONSTANT_ORCHESTRATOR_NUM
 
         logConfigur = LoggerConfigurator(__name__, './log',
             'orchManager_{0}.log'.format(self.zoneName), level='debug')
@@ -107,10 +102,10 @@ class OrchestratorManager(object):
     def computeOrchInfoList(self):
         if self.topoType == "fat-tree":
             maxPodNumPerOrchstratorInstance = self._computeOrchestratorInstanceMaxPodNum(BATCH_SIZE)
-            maxOrchNum = self._computeOrchestratorInstanceMaxOrchNum(BATCH_SIZE)
-            self.logger.info("maxPodNumPerOrchstratorInstance is {0}, maxOrchNum is {1}".format(maxPodNumPerOrchstratorInstance, maxOrchNum))
+            minOrchNum = self._computeOrchestratorInstanceMaxOrchNum(BATCH_SIZE)
+            self.logger.info("maxPodNumPerOrchstratorInstance is {0}, minOrchNum is {1}".format(maxPodNumPerOrchstratorInstance, minOrchNum))
             # init X orchestrator instances
-            oInfoList = self._computeOrchInstanceInfoList(maxPodNumPerOrchstratorInstance, maxOrchNum)
+            oInfoList = self._computeOrchInstanceInfoList(maxPodNumPerOrchstratorInstance, minOrchNum)
             self.logger.info(oInfoList)
         elif self.topoType == "testbed_sw1":
             oInfoList = [
@@ -125,11 +120,11 @@ class OrchestratorManager(object):
 
         return oInfoList
 
-    def _computeOrchInstanceInfoList(self, maxPodNumPerOrchstratorInstance, maxOrchNum):
+    def _computeOrchInstanceInfoList(self, maxPodNumPerOrchstratorInstance, minOrchNum):
         self.logger.warning("maxPodNumPerOrchstratorInstance:{0}".format(maxPodNumPerOrchstratorInstance))
 
-        self.logger.warning("maxOrchNum:{0}".format(maxOrchNum))
-        oPodNumList = self.splitInteger(self.podNum, maxOrchNum)
+        self.logger.warning("minOrchNum:{0}".format(minOrchNum))
+        oPodNumList = self.splitInteger(self.podNum, minOrchNum)
 
         self.logger.warning("orch pod number distribution: {0}".format(oPodNumList))
 
@@ -222,8 +217,6 @@ class OrchestratorManager(object):
             return self.podNum
         if self.podNum == 4:
             return self.podNum
-        # load regressor
-        regr = self.loadRegressor()
         # predict orchestration instances number
         self.logger.info("podNum is {0}".format(self.podNum))
         if self.topoType == "fat-tree":
@@ -232,11 +225,7 @@ class OrchestratorManager(object):
             self.logger.info("switchNum is {0}, torSwitchNum is {1}, serverNum is {2}".format(switchNum, torSwitchNum, serverNum))
         else:
             raise ValueError("Unknown topo type {0}".format(self.topoType))
-        self.maxSFCLength = MAX_SFC_LENGTH
-        X_real = [[switchNum * self.maxSFCLength * msgCnt]]
-        X_real = np.array(X_real)
-        Y_real = max(regr.predict(X_real)[0], 1)
-        minOrchestratorNum = math.ceil(max(math.pow( Y_real/self.timeBudget, 1/2.0 ), 1))
+        minOrchestratorNum = self.__computeMinOrchestratorNum(switchNum, msgCnt)
         self.logger.warning("minOrchestratorNum:{0}".format(minOrchestratorNum))
         maxPodNumPerOrchstratorInstance = math.floor(self.podNum / minOrchestratorNum)
         return max(int(maxPodNumPerOrchstratorInstance),1)
@@ -246,21 +235,29 @@ class OrchestratorManager(object):
             return 1
         if self.podNum == 4:
             return 1
-        # load regressor
-        regr = self.loadRegressor()
         # predict orchestration instances number
         if self.topoType == "fat-tree":
             switchNum, torSwitchNum, serverNum = self._getFatTreeNodesNumber(self.podNum)
             serverNum = self._dib.getServersNumByZone(self.zoneName)
         else:
             raise ValueError("Unknown topo type {0}".format(self.topoType))
-        self.maxSFCLength = MAX_SFC_LENGTH
-        X_real = [[switchNum * self.maxSFCLength * msgCnt]]
-        X_real = np.array(X_real)
-        Y_real = max(regr.predict(X_real)[0], 1)
-        minOrchestratorNum = math.ceil( max(math.pow( Y_real/self.timeBudget, 1/2.0 ), 1) )
-
+        minOrchestratorNum = self.__computeMinOrchestratorNum(switchNum, msgCnt)
         return int(minOrchestratorNum)
+
+    def __computeMinOrchestratorNum(self, switchNum, msgCnt):
+        if self.constantOrchestratorNum == -1:
+            # load regressor
+            regr = self.loadRegressor()
+            # load 
+            self.maxSFCLength = MAX_SFC_LENGTH
+            X_real = [[switchNum * self.maxSFCLength * msgCnt]]
+            X_real = np.array(X_real)
+            Y_real = max(regr.predict(X_real)[0], 1)
+            minOrchestratorNum = math.ceil( max(math.pow( Y_real/self.timeBudget, 1/2.0 ), 1) )
+        else:
+            minOrchestratorNum = self.constantOrchestratorNum
+
+        return minOrchestratorNum
 
     def loadRegressor(self):
         regressorFilePath = self.getRegressorFilePath()
@@ -304,8 +301,8 @@ class OrchestratorManager(object):
         tasksetCmd = " "
         orchestratorFilePath = self.__getOrchestratorFilePath()
         self.logger.info(orchestratorFilePath)
-        args = "-name {0} -p {1} -minPIdx {2} -maxPIdx {3} -topoType {4} -turnOff".format(oInfoDict["name"], self.podNum,
-                                            oInfoDict["minPodIdx"] , oInfoDict["maxPodIdx"], self.topoType)
+        args = "-name {0} -p {1} -minPIdx {2} -maxPIdx {3} -topoType {4} -zoneName {5} -turnOff".format(oInfoDict["name"], self.podNum,
+                                            oInfoDict["minPodIdx"] , oInfoDict["maxPodIdx"], self.topoType, self.zoneName)
         commandLine = "{0} {1}".format(orchestratorFilePath, args)
         self.sP.runPythonScript(commandLine, cmdPrefix=tasksetCmd)
         time.sleep(0.0000001)

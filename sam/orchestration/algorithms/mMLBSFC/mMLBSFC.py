@@ -398,7 +398,7 @@ class MMLBSFC(MMLPSFC):
 
         # add ingress and egress
         egID = self._getEgressID(request)
-        dividedPath = self._addEndNodeID2Path(dividedPath, egID)
+        dividedPath = self._addEndNodeID2DividedPath(dividedPath, egID)
         self.logger.debug("after add endNode's dividedPath: {0}".format(
             dividedPath))
 

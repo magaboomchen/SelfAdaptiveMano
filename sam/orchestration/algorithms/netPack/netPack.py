@@ -8,79 +8,64 @@ import random
 import networkx as nx
 from networkx.exception import NetworkXNoPath, NodeNotFound, NetworkXError
 
-from sam.base.server import SERVER_TYPE_NFVI, Server
+from sam.base.server import SERVER_TYPE_NFVI
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NETPACK
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import MappingAlgorithmBase
 from sam.orchestration.algorithms.base.pathServerFiller import PathServerFiller
-from sam.orchestration.oConfig import TXXB_TEST
+from sam.orchestration.oConfig import ENABLE_INGRESS_EGRESS_GENERATION
 
 
 class NetPack(MappingAlgorithmBase, PathServerFiller):
-    def __init__(self, dib, topoType="fat-tree", singlePath=True):
+    def __init__(self, dib, topoType="fat-tree", singlePath=True,
+                    argsDict=None):
         # self._dib = copy.deepcopy(dib)
         self._dib = dib
         self.topoType = topoType
         self.singlePath = singlePath
         self.pM = PerformanceModel()
 
-        self.podNum = None
-        self.minPodIdx = None
-        self.maxPodIdx = None
+        self.podNum = argsDict["podNum"]
+        self.minPodIdx = argsDict["minPodIdx"]
+        self.maxPodIdx = argsDict["maxPodIdx"]
+        self.zoneName = argsDict["zoneName"]
 
         logConfigur = LoggerConfigurator(__name__,
             './log', 'NetPack.log', level='info')
         self.logger = logConfigur.getLogger()
 
-    # def updateServerSets(self, podNum, minPodIdx, maxPodIdx):
-    #     self.podNum = podNum
-    #     self.minPodIdx = minPodIdx
-    #     self.maxPodIdx = maxPodIdx
-    #     self.serverSets = self.getAllServerSets()
-
-    def mapSFCI(self, requestList, podNum, minPodIdx, maxPodIdx):
-        # self.logger.debug("self._dib server: {0}".format(self._dib))
-
-        self.logger.info("NetPack mapSFCI")
         initStartTime = time.time()
-        self._init(requestList, podNum, minPodIdx, maxPodIdx)
+        self._init(self.podNum, self.minPodIdx, self.maxPodIdx)
         initEndTime = time.time()
         self.logger.warning("init time is {0}".format(initEndTime - initStartTime))
-        self._mapAllPrimaryPaths()
-        return {"forwardingPathSetsDict": self.forwardingPathSetsDict,
-                "requestOrchestrationInfo": self.requestOrchestrationInfo,
-                "totalComputationTime":self.totalComputationTime}
 
-    def _init(self, requestList, podNum, minPodIdx, maxPodIdx):
-        self.requestList = requestList
-        self.zoneName = self.requestList[0].attributes['zone']
-        self.requestList = requestList
-        if podNum != self.podNum \
-            or minPodIdx != self.minPodIdx \
-                or maxPodIdx != self.maxPodIdx:
-            self.podNum = podNum
-            self.minPodIdx = minPodIdx
-            self.maxPodIdx = maxPodIdx
-            self.logger.warning("update serverSets!")
-            self.serverSets = self.getAllServerSets()
+    def _init(self, podNum, minPodIdx, maxPodIdx):
+        self.podNum = podNum
+        self.minPodIdx = minPodIdx
+        self.maxPodIdx = maxPodIdx
+        self.logger.warning("update serverSets!")
+        self.serverSets = self.getAllServerSets()
 
         self.max_attempts = 1
         if podNum == None:
             raise ValueError("NetPack needs pod number! It can only be used in DCN.")
         if  minPodIdx == None or maxPodIdx == None:
             raise ValueError("NetPack needs minPodIdx or maxPodIdx.")
-        if TXXB_TEST:
-            self._genRequestIngAndEg()
-        else:
-            self._updateRequestIngSwitchID()
 
-        # switches = self._dib.getSwitchesByZone(self.zoneName)
-        # self.logger.debug("switch number: {0}".format(len(switches)))
-        # for switchID in switches:
-        #    self.logger.debug("switchID:{0}".format(switchID))
-        # exit(1)
+    def mapSFCI(self, requestList):
+        self.requestList = requestList
+        zoneName = self.requestList[0].attributes['zone']
+        assert self.zoneName == zoneName
+
+        # self.logger.debug("self._dib server: {0}".format(self._dib))
+
+        self.logger.info("NetPack mapSFCI")
+        self._mapAllPrimaryPaths()
+        return {"forwardingPathSetsDict": self.forwardingPathSetsDict,
+                "requestOrchestrationInfo": self.requestOrchestrationInfo,
+                "totalComputationTime":self.totalComputationTime}
 
     def pruneNormalServer(self, serverSets):
         prunedServerSet = {}
@@ -99,27 +84,12 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         # self.logger.debug("self.requestIngSwitchID:{0}, self.requestEgSwitchID:{1}".format(
         #     self.requestIngSwitchID, self.requestEgSwitchID))
 
-    def _updateRequestIngSwitchID(self):
-        self.requestIngSwitchID = {}
-        self.requestEgSwitchID = {}
-        for rIndex in range(len(self.requestList)):
-            # assign ing/eg switch in random style
-            # ingSwitchID = random.randint(self.minPodIdx, self.maxPodIdx-1)
-            # egSwitchID = random.randint(self.minPodIdx, self.maxPodIdx-1)
-            request = self.requestList[rIndex]
-            sfc = request.attributes['sfc']
-            ingress = sfc.directions[0]['ingress']
-            if type(ingress) == Server:
-                raise ValueError("Ingress is not a switch!")
-            ingSwitchID = ingress.switchID
-            egress = sfc.directions[0]['egress']
-            if type(egress) == Server:
-                raise ValueError("Egress is not a switch!")
-            egSwitchID = egress.switchID
-            self.requestIngSwitchID[rIndex] = ingSwitchID
-            self.requestEgSwitchID[rIndex] = egSwitchID
-
     def _mapAllPrimaryPaths(self):
+        if ENABLE_INGRESS_EGRESS_GENERATION:
+            self._genRequestIngAndEg()
+        else:
+            self._updateRequestIngEgSwitchID()
+
         self.forwardingPathSetsDict = {}
         self.primaryPathDict = {}
         # construct serversets

@@ -11,6 +11,7 @@ from sam.orchestration.algorithms.base.multiLayerGraph import MultiLayerGraph, \
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import MappingAlgorithmBase
 from sam.orchestration.algorithms.base.pathServerFiller import PathServerFiller
+from sam.orchestration.oConfig import ENABLE_INGRESS_EGRESS_GENERATION, ENABLE_PREFERRED_DEVICE_SELECTION
 
 
 class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
@@ -18,6 +19,7 @@ class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
         self._dib = copy.deepcopy(dib)
         self._initDib = copy.deepcopy(dib)
         self.requestList = requestList
+        self.enablePreferredDeviceSelection = ENABLE_PREFERRED_DEVICE_SELECTION
 
         logConfigur = LoggerConfigurator(__name__,
             './log', 'MMLPSFC.log', level='debug')
@@ -31,7 +33,10 @@ class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
 
     def _init(self):
         self.zoneName = self.requestList[0].attributes['zone']
-        self._genRequestIngAndEg()
+        if ENABLE_INGRESS_EGRESS_GENERATION:
+            self._genRequestIngAndEg()
+        else:
+            self._updateRequestIngEgSwitchID()
 
     def _mapAllPrimaryPaths(self):
         self.forwardingPathSetsDict = {}
@@ -44,7 +49,7 @@ class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
             capacityAwareFlag = True
             while True:
                 try:
-                    mlg = MultiLayerGraph()
+                    mlg = MultiLayerGraph(self.enablePreferredDeviceSelection)
                     mlg.loadInstance4dibAndRequest(self._dib, 
                         self.request, WEIGHT_TYPE_DELAY_MODEL)
                     mlg.trans2MLG(capacityAwareFlag)
@@ -119,12 +124,14 @@ class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
         pM = PerformanceModel()
         for segIndex in range(len(path)-1):
             segPath = path[segIndex]
-            (layerNum, serverID) = segPath[-1]
-            # if not self._isServerID(serverID):
-            if not self._dib.isServerID(serverID):
-                raise ValueError("Invalid serverID: {0}".format(serverID))
-            vnfType = vnfSeq[segIndex]
-            vnfLatency = pM.getLatencyOfVNF(vnfType, trafficDemand)
+            (layerNum, nodeID) = segPath[-1]
+            if self._dib.isServerID(nodeID):
+                vnfType = vnfSeq[segIndex]
+                vnfLatency = pM.getLatencyOfVNF(vnfType, trafficDemand)
+            elif self._dib.isSwitchID(nodeID):
+                vnfLatency = pM.getSwitchLatency()
+            else:
+                raise ValueError("Unknown node type of nodeID {0}".format(nodeID))
             e2eLatency = e2eLatency + vnfLatency
 
         return e2eLatency

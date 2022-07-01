@@ -23,14 +23,14 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.server import Server
 from sam.base.switch import Switch
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
-from sam.orchestration.oConfig import BATCH_SIZE, BATCH_TIMEOUT, ENABLE_OIB, RE_INIT_TABLE
+from sam.orchestration.oConfig import BATCH_SIZE, BATCH_TIMEOUT, DEFAULT_MAPPING_TYPE, ENABLE_OIB, RE_INIT_TABLE
 from sam.orchestration.oSFCAdder import OSFCAdder
 from sam.orchestration.oSFCDeleter import OSFCDeleter
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 
 class Orchestrator(object):
-    def __init__(self, orchestrationName=None, podNum=None, minPodIdx=None, maxPodIdx=None, topoType="fat-tree"):
+    def __init__(self, orchestrationName=None, podNum=None, minPodIdx=None, maxPodIdx=None, topoType="fat-tree", zoneName=None):
         # time.sleep(15)   # wait for other basic module boot
 
         logConfigur = LoggerConfigurator(__name__, './log',
@@ -38,23 +38,27 @@ class Orchestrator(object):
         self.logger = logConfigur.getLogger()
 
         self.topoType = topoType
+        self.zoneName = zoneName
 
         self.podNum = podNum
         self.minPodIdx = minPodIdx
         self.maxPodIdx = maxPodIdx
 
         self._dib = DCNInfoBaseMaintainer()
-        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123", RE_INIT_TABLE)
+        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent",
+                                            "123", RE_INIT_TABLE)
         self._cm = CommandMaintainer()
 
-        self._osa = OSFCAdder(self._dib, self.logger, podNum, minPodIdx, maxPodIdx, self.topoType)
+        self._osa = OSFCAdder(self._dib, self.logger, podNum, minPodIdx,
+                                maxPodIdx, self.topoType, self.zoneName)
         self._osd = OSFCDeleter(self._dib, self._oib, self.logger)
 
         self._messageAgent = MessageAgent(self.logger)
         if orchestrationName == None:
             self.orchInstanceQueueName = ORCHESTRATOR_QUEUE
         else:
-            self.orchInstanceQueueName = ORCHESTRATOR_QUEUE + "_{0}".format(orchestrationName)
+            self.orchInstanceQueueName = ORCHESTRATOR_QUEUE \
+                                            + "_{0}".format(orchestrationName)
         self._messageAgent.startRecvMsg(self.orchInstanceQueueName)
 
         self._requestBatchQueue = Queue.Queue()
@@ -116,7 +120,8 @@ class Orchestrator(object):
                 else:
                     self._requestBatchQueue.put(request)
                     self.logger.debug("put req into requestBatchQueue")
-                    if self._requestBatchQueue.qsize() >= self._batchSize and self.runningState == True:
+                    if (self._requestBatchQueue.qsize() >= self._batchSize \
+                                            and self.runningState == True):
                         self.processAllAddSFCIRequests()
                         # self.requestCnt += self._requestBatchQueue.qsize()
                         # self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
@@ -293,6 +298,8 @@ class Orchestrator(object):
                 self.logger.info("Get dib from dispatcher!")
                 newDib = self._pruneDib(cmd.attributes["dib"])
                 self._dib.updateByNewDib(newDib)
+                if DEFAULT_MAPPING_TYPE == "MAPPING_TYPE_NETPACK":
+                    self._osa.initNetPack()
                 # self._osa.nPInstance.updateServerSets(self.podNum, self.minPodIdx, self.maxPodIdx)
             elif cmd.cmdType == CMD_TYPE_GET_ORCHESTRATION_STATE:
                 raise ValueError("Unimplemented cmd type handler CMD_TYPE_GET_ORCHESTRATION_STATE")
@@ -315,91 +322,48 @@ class Orchestrator(object):
 
     def _pruneDib(self, dib):
         # For fast orchestration, we need lower down topology scale
-        zoneNameList = dib.getAllZone()
-        self.logger.info("zoneNameList: {0}".format(zoneNameList))
-        self._prepareSwitchIdxInfo()
-        for zoneName in zoneNameList:
-            # prune links and save servers to delete in a list
-            delServerCandidateDict = {}
-            delSwitchCandidateDict = {}
-            links = dib.getLinksByZone(zoneName)
-            for linkID in links.keys():
-                srcID = linkID[0]
-                dstID = linkID[1]
-                link = links[linkID]['link']
-                for idx, nodeID in enumerate(linkID):
-                    if dib.isServerID(nodeID):
-                        switchID = linkID[1-idx]
-                        if dib.isSwitchID(switchID):
-                            if not self.isSwitchInSubTopologyZone(switchID):
-                                serverID = nodeID
-                                delServerCandidateDict[serverID] = 1
-                                delSwitchCandidateDict[switchID] = 1
-                                # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
-                                dib.delLink(link, zoneName)
-                            break
-                    elif dib.isSwitchID(nodeID):
-                        if not self.isSwitchInSubTopologyZone(nodeID):
+        # zoneNameList = dib.getAllZone()
+        # self.logger.info("zoneNameList: {0}".format(zoneNameList))
+        self._prepareSubZoneSwitchesIdxInfo()
+        # for zoneName in zoneNameList:
+        # prune links and save servers to delete in a list
+
+        delServerCandidateDict = {}
+        delSwitchCandidateDict = {}
+        links = dib.getLinksByZone(self.zoneName)
+        for linkID in links.keys():
+            srcID = linkID[0]
+            dstID = linkID[1]
+            link = links[linkID]['link']
+            for idx, nodeID in enumerate(linkID):
+                if dib.isServerID(nodeID):
+                    switchID = linkID[1-idx]
+                    if dib.isSwitchID(switchID):
+                        if not self.isSwitchInSubTopologyZone(switchID):
+                            serverID = nodeID
+                            delServerCandidateDict[serverID] = 1
+                            delSwitchCandidateDict[switchID] = 1
                             # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
-                            delSwitchCandidateDict[nodeID] = 1
-                            dib.delLink(link, zoneName)
-                            break
+                            dib.delLink(link, self.zoneName)
+                        break
+                elif dib.isSwitchID(nodeID):
+                    if not self.isSwitchInSubTopologyZone(nodeID):
+                        # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
+                        delSwitchCandidateDict[nodeID] = 1
+                        dib.delLink(link, self.zoneName)
+                        break
 
-            # prune servers
-            for serverID in delServerCandidateDict.keys():
-                dib.delServer(serverID, zoneName)
+        # prune servers
+        for serverID in delServerCandidateDict.keys():
+            dib.delServer(serverID, self.zoneName)
 
-            # prune switches
-            for switchID in delSwitchCandidateDict.keys():
-                dib.delSwitch(switchID, zoneName)
+        # prune switches
+        for switchID in delSwitchCandidateDict.keys():
+            dib.delSwitch(switchID, self.zoneName)
 
         return dib
 
-    # def _pruneDib(self, dib):
-    #     # For fast orchestration, we need lower down topology scale
-    #     zoneNameList = dib.getAllZone()
-    #     self.logger.info("zoneNameList: {0}".format(zoneNameList))
-    #     self._prepareSwitchIdxInfo()
-    #     for zoneName in zoneNameList:
-    #         # prune links
-    #         links = dib.getLinksByZone(zoneName)
-    #         for linkID in links.keys():
-    #             srcID = linkID[0]
-    #             dstID = linkID[1]
-    #             link = links[linkID]['link']
-    #             for nodeID in linkID:
-    #                 if dib.isServerID(nodeID):
-    #                     switch = dib.getConnectedSwitch(nodeID, zoneName)
-    #                     switchID = switch.switchID
-    #                     if not self.isSwitchInSubTopologyZone(switchID):
-    #                         # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
-    #                         dib.delLink(link, zoneName)
-    #                         break
-    #                 elif dib.isSwitchID(nodeID):
-    #                     if not self.isSwitchInSubTopologyZone(nodeID):
-    #                         # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
-    #                         dib.delLink(link, zoneName)
-    #                         break
-
-    #         # prune servers
-    #         servers = dib.getServersByZone(zoneName)
-    #         for serverID in servers.keys():
-    #             switch = dib.getConnectedSwitch(serverID, zoneName)
-    #             switchID = switch.switchID
-    #             if not self.isSwitchInSubTopologyZone(switchID):
-    #                 # self.logger.warning("deServer: {0}".format(serverID))
-    #                 dib.delServer(serverID, zoneName)
-
-    #         # prune switches
-    #         switches = dib.getSwitchesByZone(zoneName)
-    #         for switchID in switches.keys():
-    #             if not self.isSwitchInSubTopologyZone(switchID):
-    #                 # self.logger.warning("deSwitch: {0}".format(switchID))
-    #                 dib.delSwitch(switchID, zoneName)
-
-    #     return dib
-
-    def _prepareSwitchIdxInfo(self):
+    def _prepareSubZoneSwitchesIdxInfo(self):
         if self.topoType == "fat-tree":
             coreSwitchNum = math.pow(self.podNum/2, 2)
             aggSwitchNum = self.podNum * self.podNum / 2
@@ -432,7 +396,6 @@ class Orchestrator(object):
             raise ValueError("Unimplementation topo type")
 
 
-
 if __name__=="__main__":
     argParser = ArgParser()
     name = argParser.getArgs()['name']   # example: 0-35
@@ -441,8 +404,9 @@ if __name__=="__main__":
     maxPodIdx = argParser.getArgs()['maxPIdx']   # example: 35
     turnOff = argParser.getArgs()['turnOff']
     topoType = argParser.getArgs()['topoType']
+    zoneName = argParser.getArgs()['zoneName']
 
-    ot = Orchestrator(name, podNum, minPodIdx, maxPodIdx, topoType)
+    ot = Orchestrator(name, podNum, minPodIdx, maxPodIdx, topoType, zoneName)
     if turnOff:
         ot.setRunningState(False)
     ot.startOrchestrator()

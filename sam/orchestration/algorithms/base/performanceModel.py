@@ -4,6 +4,7 @@
 import math
 
 SPEED_OF_LIGHT = 3.0 * pow(10, 8)
+P4_LATENCY = 0.001 * 0.001
 
 
 class PerformanceModel(object):
@@ -60,9 +61,11 @@ class PerformanceModel(object):
             self.alpha = 0.001/4
             self.beta = 100
         else:
-            raise ValueError(
-                "Link latency model: unsupport bandwidth {0}".format(
-                    bandwidth))
+            self.alpha = 0.1 / bandwidth
+            self.beta = 1.2 / bandwidth
+            # raise ValueError(
+            #     "Link latency model: unsupport bandwidth {0}".format(
+            #         bandwidth))
 
         if util < 1:
             return min(self.alpha/(1-util), self.beta) + pl # unit: ms
@@ -176,3 +179,6 @@ class PerformanceModel(object):
         reservedRes = math.ceil(trafficDemand * resConRatio)
         latency = consumedRes / reservedRes * maxLatency
         return latency
+
+    def getSwitchLatency(self):
+        return P4_LATENCY

@@ -3,6 +3,7 @@
 
 import copy
 
+from sam.base.server import Server
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 
@@ -171,6 +172,26 @@ class MappingAlgorithmBase(object):
             self.requestEgSwitchID[rIndex] = egSwitchID
         # self.logger.debug("self.requestIngSwitchID:{0}".format(
         #     self.requestIngSwitchID))
+
+    def _updateRequestIngEgSwitchID(self):
+        self.requestIngSwitchID = {}
+        self.requestEgSwitchID = {}
+        for rIndex in range(len(self.requestList)):
+            # assign ing/eg switch in random style
+            # ingSwitchID = random.randint(self.minPodIdx, self.maxPodIdx-1)
+            # egSwitchID = random.randint(self.minPodIdx, self.maxPodIdx-1)
+            request = self.requestList[rIndex]
+            sfc = request.attributes['sfc']
+            ingress = sfc.directions[0]['ingress']
+            if type(ingress) == Server:
+                raise ValueError("Ingress is not a switch!")
+            ingSwitchID = ingress.switchID
+            egress = sfc.directions[0]['egress']
+            if type(egress) == Server:
+                raise ValueError("Egress is not a switch!")
+            egSwitchID = egress.switchID
+            self.requestIngSwitchID[rIndex] = ingSwitchID
+            self.requestEgSwitchID[rIndex] = egSwitchID
 
     def _updateResource4NFVCGDPInitPath(self, path):
         self._allocateSwitchResource(path)

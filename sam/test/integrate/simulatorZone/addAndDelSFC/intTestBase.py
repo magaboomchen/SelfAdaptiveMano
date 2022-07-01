@@ -13,8 +13,7 @@ from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, \
                                         ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
 from sam.base.sfc import APP_TYPE_BEST_EFFORT, APP_TYPE_HIGH_AVA, \
                         APP_TYPE_LARGE_BANDWIDTH, APP_TYPE_LARGE_CONNECTION, \
-                        APP_TYPE_LOW_LATENCY, APP_TYPE_NORTHSOUTH_WEBSITE, \
-                        SFC, SFCI
+                        APP_TYPE_LOW_LATENCY, SFC, SFCI
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.slo import SLO
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, PREFERRED_DEVICE_TYPE_SERVER, \
