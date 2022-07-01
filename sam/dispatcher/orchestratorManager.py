@@ -57,7 +57,7 @@ class OrchestratorManager(object):
         return len(self.orchestratorDict)
 
     def _selectOrchInRoundRobin(self):
-        candidateOrchList = self.orchestratorDict.keys()
+        candidateOrchList = sorted(self.orchestratorDict.keys())
         orchName = candidateOrchList[self.roundRobinCounter%len(candidateOrchList)]
         self.roundRobinCounter = (self.roundRobinCounter + 1)%self.getOrchInstanceNum()
         return orchName

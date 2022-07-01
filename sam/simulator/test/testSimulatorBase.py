@@ -8,6 +8,7 @@ from sam.base.slo import SLO
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNF, VNFI, VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
+from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, SWITCH_TYPE_NPOP, Switch
 from sam.base.path import MAPPING_TYPE_MMLPSFC, MAPPING_TYPE_NETPACK, ForwardingPathSet, MAPPING_TYPE_INTERFERENCE
 from sam.base.messageAgent import SIMULATOR_ZONE
 from sam.test.testBase import APP1_REAL_IP, TestBase, WEBSITE_REAL_IP, CLASSIFIER_DATAPATH_IP
@@ -19,11 +20,14 @@ CLASSIFIER_DATAPATH_MAC = "00:1b:21:c0:8f:ae"   # ignore this
 CLASSIFIER_CONTROL_IP = "192.168.0.194" # ignore this
 CLASSIFIER_SERVERID = 10001
 
-SFF1_DATAPATH_IP = "2.2.96.5"
+SFF1_DATAPATH_IP = "2.2.96.3"
 SFF1_DATAPATH_MAC = "b8:ca:3a:65:f7:fa" # ignore this
 SFF1_CONTROLNIC_IP = "192.168.8.17" # ignore this
 SFF1_CONTROLNIC_MAC = "b8:ca:3a:65:f7:f8"   # ignore this
-SFF1_SERVERID = 10005
+SFF1_SERVERID = 11281
+
+SWITCH_SFF1_SWITCHID = 768
+SWITCH_SFF1_LANIP = "2.2.96.0"
 
 
 class TestSimulatorBase(TestBase):
@@ -31,18 +35,21 @@ class TestSimulatorBase(TestBase):
     sfciCounter = 0
     logging.getLogger("pika").setLevel(logging.WARNING)
 
-    def genClassifier(self, datapathIfIP):
-        classifier = Server("ens3", datapathIfIP, SERVER_TYPE_CLASSIFIER)
-        classifier.setServerID(CLASSIFIER_SERVERID)
-        classifier._serverDatapathNICIP = CLASSIFIER_DATAPATH_IP
-        classifier._ifSet["ens3"] = {}
-        classifier._ifSet["ens3"]["IP"] = CLASSIFIER_CONTROL_IP
-        classifier._serverDatapathNICMAC = CLASSIFIER_DATAPATH_MAC
+    def genClassifier(self, datapathIfIP=None, serverBasedClassifier=True):
+        if serverBasedClassifier:
+            classifier = Server("ens3", datapathIfIP, SERVER_TYPE_CLASSIFIER)
+            classifier.setServerID(CLASSIFIER_SERVERID)
+            classifier._serverDatapathNICIP = CLASSIFIER_DATAPATH_IP
+            classifier._ifSet["ens3"] = {}
+            classifier._ifSet["ens3"]["IP"] = CLASSIFIER_CONTROL_IP
+            classifier._serverDatapathNICMAC = CLASSIFIER_DATAPATH_MAC
+        else:
+            classifier = Switch(0, SWITCH_TYPE_DCNGATEWAY, "2.2.0.0", programmable=True)
         return classifier
 
-    def genUniDirectionSFC(self, classifier):
+    def genUniDirectionSFC(self, classifier, sfcLength=1):
         sfcUUID = uuid.uuid1()
-        vNFTypeSequence = [VNF_TYPE_FORWARD]
+        vNFTypeSequence = [VNF_TYPE_FORWARD] * sfcLength
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
@@ -61,18 +68,18 @@ class TestSimulatorBase(TestBase):
             backupInstanceNumber, applicationType, directions,
             {'zone': SIMULATOR_ZONE}, slo=slo)
 
-    def genUniDirection10BackupSFCI(self, mappedVNFISeq=True):
+    def genUniDirection10BackupServerNFVISFCI(self, mappedVNFISeq=True, sfcLength=1, serverBasedClassifier=True):
         if mappedVNFISeq:
-            vnfiSequence = self.gen10BackupVNFISequence()
+            vnfiSequence = self.gen10BackupServerVNFISequence(sfcLength)
         else:
             vnfiSequence = None
         return SFCI(self.assignSFCIID(), vnfiSequence, None,
-            self.genUniDirection10BackupForwardingPathSet())
+            self.genUniDirection10BackupServerBasedForwardingPathSet(sfcLength, serverBasedClassifier))
 
-    def gen10BackupVNFISequence(self, SFCLength=1):
+    def gen10BackupServerVNFISequence(self, sfcLength=1):
         # hard-code function
         vnfiSequence = []
-        for index in range(SFCLength):
+        for index in range(sfcLength):
             vnfiSequence.append([])
             for iN in range(1):
                 server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
@@ -85,37 +92,130 @@ class TestSimulatorBase(TestBase):
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
-    def genUniDirection10BackupForwardingPathSet(self):
+    def genUniDirection10BackupServerBasedForwardingPathSet(self, sfciLength=1, serverBasedClassifier=False):
         # please ref /sam/base/path.py
         # This function generate a sfc forwarding path for sfc "ingress->L2Forwarding->egress"
         # The primary forwarding path has two stage, the first stage is "ingress->L2Forwarding",
         # the second stage is "L2Forwarding->egress".
         # Each stage is a list of layeredNodeIDTuple which format is (stageIndex, nodeID)
-        # primaryForwardingPath = {
-        #                             1:[
-        #                                 [(0,10001),(0,0),(0,256),(0,768),(0,11281)], # (stageIndex, nodeID)
-        #                                 [(1,11281),(1,768),(1,256),(1,0),(1,10001)]
-        #                             ]
-        #                         }
+        if sfciLength == 1:
+            if serverBasedClassifier:
+                d1FP = [
+                        [(0,CLASSIFIER_SERVERID),(0,0),(0,256),(0,768),(0,SFF1_SERVERID)], # (stageIndex, nodeID)
+                        [(1,SFF1_SERVERID),(1,768),(1,256),(1,0),(1,CLASSIFIER_SERVERID)]
+                    ]
+            else:
+                d1FP = [
+                        [(0,0),(0,256),(0,768),(0,SFF1_SERVERID)], # (stageIndex, nodeID)
+                        [(1,SFF1_SERVERID),(1,768),(1,256),(1,0)]
+                    ]
+        elif sfciLength == 2:
+            if serverBasedClassifier:
+                d1FP = [
+                        [(0,CLASSIFIER_SERVERID),(0, 0), (0, 256), (0, 768), (0, SFF1_SERVERID)],
+                        [(1, SFF1_SERVERID), (1, SFF1_SERVERID)],
+                        [(2, SFF1_SERVERID), (2, 768), (2, 256), (2, 0),(2,CLASSIFIER_SERVERID)]
+                    ]
+            else:
+                d1FP = [
+                        [(0, 0), (0, 256), (0, 768), (0, SFF1_SERVERID)],
+                        [(1, SFF1_SERVERID), (1, SFF1_SERVERID)],
+                        [(2, SFF1_SERVERID), (2, 768), (2, 256), (2, 0)]
+                    ]
+        elif sfciLength == 3:
+            if serverBasedClassifier:
+                d1FP = [
+                        [(0,CLASSIFIER_SERVERID),(0, 0), (0, 256), (0, 768), (0, SFF1_SERVERID)],
+                        [(1, SFF1_SERVERID), (1, SFF1_SERVERID)],
+                        [(2, SFF1_SERVERID), (2, SFF1_SERVERID)],
+                        [(3, SFF1_SERVERID), (3, 768), (3, 256), (3, 0),(3,CLASSIFIER_SERVERID)]
+                    ]
+            else:
+                d1FP = [
+                        [(0, 0), (0, 256), (0, 768), (0, SFF1_SERVERID)],
+                        [(1, SFF1_SERVERID), (1, SFF1_SERVERID)],
+                        [(2, SFF1_SERVERID), (2, SFF1_SERVERID)],
+                        [(3, SFF1_SERVERID), (3, 768), (3, 256), (3, 0)]
+                    ]
+        else:
+            raise ValueError("Unimplement sfci length!")
+        primaryForwardingPath = {1:d1FP}   
+        mappingType = MAPPING_TYPE_MMLPSFC # This is your mapping algorithm type
+        backupForwardingPath = {}   # you don't need to care about backupForwardingPath
+        return ForwardingPathSet(primaryForwardingPath, mappingType,
+                                    backupForwardingPath)
 
-        primaryForwardingPath = {
-                                    1:[
-                                        [(0, 0), (0, 256), (0, 768), (0, 10005)],
-                                        [(1, 10005), (1, 10005)],
-                                        [(2, 10005), (2, 768), (2, 256), (2, 0)]
-                                    ]
-                                }
-        mappingType = MAPPING_TYPE_NETPACK # This is your mapping algorithm type
+    def genUniDirection10BackupP4NFVISFCI(self, mappedVNFISeq=True, sfcLength=1, serverBasedClassifier=True):
+        if mappedVNFISeq:
+            vnfiSequence = self.gen10BackupP4VNFISequence(sfcLength)
+        else:
+            vnfiSequence = None
+        return SFCI(self.assignSFCIID(), vnfiSequence, None,
+            self.genUniDirection10BackupP4BasedForwardingPathSet(sfcLength, serverBasedClassifier))
 
-        # primaryForwardingPath = {
-        #                             1:[
-        #                                 [(0, 18), (0, 321), (0, 832)],
-        #                                 [(1, 832), (1, 832)],
-        #                                 [(2, 832), (2, 323), (2, 61)]
-        #                             ]
-        #                         }
-        # mappingType = MAPPING_TYPE_MMLPSFC # This is your mapping algorithm type
+    def gen10BackupP4VNFISequence(self, sfcLength=1):
+        # hard-code function
+        vnfiSequence = []
+        for index in range(sfcLength):
+            vnfiSequence.append([])
+            for iN in range(1):
+                switch = Switch(SWITCH_SFF1_SWITCHID, SWITCH_TYPE_NPOP, 
+                                    SWITCH_SFF1_LANIP, programmable=True)
+                vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
+                    vnfiID=uuid.uuid1(), node=switch)
+                vnfiSequence[index].append(vnfi)
+        return vnfiSequence
 
+    def genUniDirection10BackupP4BasedForwardingPathSet(self, sfciLength=1,
+                                                serverBasedClassifier=False):
+        # please ref /sam/base/path.py
+        # This function generate a sfc forwarding path for sfc "ingress->L2Forwarding->egress"
+        # The primary forwarding path has two stage, the first stage is "ingress->L2Forwarding",
+        # the second stage is "L2Forwarding->egress".
+        # Each stage is a list of layeredNodeIDTuple which format is (stageIndex, nodeID)
+        if sfciLength == 1:
+            if serverBasedClassifier:
+                d1FP = [
+                        [(0,CLASSIFIER_SERVERID),(0,0),(0,256),(0,SWITCH_SFF1_SWITCHID)], # (stageIndex, nodeID)
+                        [(1,SWITCH_SFF1_SWITCHID),(1,256),(1,0),(1,CLASSIFIER_SERVERID)]
+                    ]
+            else:
+                d1FP = [
+                        [(0,0),(0,256),(0,SWITCH_SFF1_SWITCHID)], # (stageIndex, nodeID)
+                        [(1,SWITCH_SFF1_SWITCHID),(1,256),(1,0)]
+                    ]
+        elif sfciLength == 2:
+            if serverBasedClassifier:
+                d1FP = [
+                        [(0,CLASSIFIER_SERVERID),(0, 0), (0, 256), (0, SWITCH_SFF1_SWITCHID)],
+                        [(1, SWITCH_SFF1_SWITCHID), (1, SWITCH_SFF1_SWITCHID)],
+                        [(2, SWITCH_SFF1_SWITCHID), (2, 256), (2, 0),(2,CLASSIFIER_SERVERID)]
+                    ]
+            else:
+                d1FP = [
+                        [(0, 0), (0, 256), (0, SWITCH_SFF1_SWITCHID)],
+                        [(1, SWITCH_SFF1_SWITCHID), (1, SWITCH_SFF1_SWITCHID)],
+                        [(2, SWITCH_SFF1_SWITCHID), (2, 256), (2, 0)]
+                    ]
+        elif sfciLength == 3:
+            if serverBasedClassifier:
+                d1FP = [
+                        [(0,CLASSIFIER_SERVERID),(0, 0), (0, 256), (0, SWITCH_SFF1_SWITCHID)],
+                        [(1, SWITCH_SFF1_SWITCHID), (1, SWITCH_SFF1_SWITCHID)],
+                        [(2, SWITCH_SFF1_SWITCHID), (2, SWITCH_SFF1_SWITCHID)],
+                        [(3, SWITCH_SFF1_SWITCHID), (3, 256), (3, 0),(3,CLASSIFIER_SERVERID)]
+                    ]
+            else:
+                d1FP = [
+                        [(0, 0), (0, 256), (0, SWITCH_SFF1_SWITCHID)],
+                        [(1, SWITCH_SFF1_SWITCHID), (1, SWITCH_SFF1_SWITCHID)],
+                        [(2, SWITCH_SFF1_SWITCHID), (2, SWITCH_SFF1_SWITCHID)],
+                        [(3, SWITCH_SFF1_SWITCHID), (3, 256), (3, 0)]
+                    ]
+        else:
+            raise ValueError("Unimplement sfci length!")
+        primaryForwardingPath = {1:d1FP}   
+        mappingType = MAPPING_TYPE_MMLPSFC # This is your mapping algorithm type
         backupForwardingPath = {}   # you don't need to care about backupForwardingPath
         return ForwardingPathSet(primaryForwardingPath, mappingType,
                                     backupForwardingPath)

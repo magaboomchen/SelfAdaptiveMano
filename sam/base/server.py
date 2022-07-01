@@ -154,6 +154,9 @@ class Server(object):
     def getVNFSupport(self):
         return self._supportVNFSet
 
+    def isSupportVNF(self, vnfType):
+        return vnfType in self._supportVNFSet
+
     def printCpuUtil(self):
         for x in range(10):
             logging.info(psutil.cpu_percent(interval=1, percpu=True))

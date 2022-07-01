@@ -4,7 +4,7 @@
 import copy
 
 from sam.base.switch import Switch
-from sam.base.server import Server
+from sam.base.server import SERVER_TYPE_NFVI, Server
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, PREFERRED_DEVICE_TYPE_SERVER
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 
@@ -126,7 +126,10 @@ class PathServerFiller(object):
 
     def _selectNFVI4EachStage(self, dividedPath, request,
                                 abandonElementIDList=None):
-        self.abandonElementIDList = abandonElementIDList
+        if abandonElementIDList == None:
+            self.abandonElementIDList = []
+        else:
+            self.abandonElementIDList = abandonElementIDList
         sfc = request.attributes['sfc']
         trafficDemand = sfc.getSFCTrafficDemand()
         c = sfc.getSFCLength()
@@ -166,7 +169,9 @@ class PathServerFiller(object):
     def _selectServer4ServerList(self, serverList, vnfType, trafficDemand):
         # First-fit algorithm
         for server in serverList:
-            if self._hasEnoughResource(server, vnfType, trafficDemand):
+            if self._hasEnoughResource(server, vnfType, trafficDemand) \
+                            and server.getServerType() == SERVER_TYPE_NFVI \
+                            and server.isSupportVNF(vnfType):
                 return server
         else:
             self.logger.debug("serverList:{0}".format(serverList))

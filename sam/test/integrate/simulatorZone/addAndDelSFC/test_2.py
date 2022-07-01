@@ -74,17 +74,19 @@ class TestAddSFCClass(IntTestBaseClass):
 
         # exercise
         for idx, sfci in enumerate(self.sfciList):
+            sfc = self.getSFCFromDB(self.sfcList[idx].sfcUUID)
             rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
                 attributes={
-                    "sfc": self.getSFCFromDB(self.sfcList[idx].sfcUUID),
+                    "sfc": sfc,
                     "sfci": sfci,
                     "zone": SIMULATOR_ZONE
                 })
+            logging.info("sfc is {0}".format(sfc))
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        logging.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
-        raw_input() # type: ignore
+            logging.info("Please check orchestrator if recv a command reply?"\
+                            "Then press andy key to continue!")
+            raw_input() # type: ignore
 
         # exercise
         for idx, sfci in enumerate(self.sfciList):

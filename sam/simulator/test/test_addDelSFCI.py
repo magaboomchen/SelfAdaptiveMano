@@ -48,14 +48,29 @@ class TestAddSFCIClass(TestSimulatorBase):
         self.killAllModule()
         self.mediator = MediatorStub()
 
+        self.sfcList = []
+        self.sfciList = []
+        self.serverBasedClassifier = False
+
+
+
+
+
+
     @pytest.fixture(scope="function")
     def setup_addOneSFCIWithVNFIOnAServer(self):
         self.common_setup()
 
         # you can overwrite following function to test different sfc/sfci
-        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genUniDirectionSFC(classifier)
-        self.sfci = self.genUniDirection10BackupSFCI()
+        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP,
+                            serverBasedClassifier=self.serverBasedClassifier)
+        for sfcLength in [1,2,3]:
+            sfc = self.genUniDirectionSFC(classifier, sfcLength=sfcLength)
+            self.sfcList.append(sfc)
+            sfci = self.genUniDirection10BackupServerNFVISFCI(
+                                sfcLength=sfcLength,
+                    serverBasedClassifier=self.serverBasedClassifier)
+            self.sfciList.append(sfci)
 
         self.sP.runPythonScript(simulator.__file__)
         sleep(1)
@@ -66,27 +81,81 @@ class TestAddSFCIClass(TestSimulatorBase):
         self.killAllModule()
 
     # @pytest.mark.skip(reason='Skip temporarily')
-    def test_addOneSFCIWithVNFIOnAServer(self, setup_addOneSFCIWithVNFIOnAServer):
-        # exercise
-        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
-        self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, self.addSFCICmd)
+    def test_addOneSFCIWithVNFIOnAServer(self,
+                                        setup_addOneSFCIWithVNFIOnAServer):
+        for idx in [0,1,2]:
+            logging.info("test idx {0}".format(idx))
+            # exercise
+            self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfcList[idx],
+                                                        self.sfciList[idx])
+            self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
+                                                    self.addSFCICmd)
 
-        # verify
-        self.verifyAddSFCICmdRply()
+            # verify
+            self.verifyAddSFCICmdRply()
 
     def verifyAddSFCICmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
+
+
+
+
+
+    @pytest.fixture(scope="function")
+    def setup_addOneSFCIWithP4VNFIOnASwitch(self):
+        self.common_setup()
+
+        # you can overwrite following function to test different sfc/sfci
+        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP,
+                            serverBasedClassifier=self.serverBasedClassifier)
+        for sfcLength in [1,2,3]:
+            sfc = self.genUniDirectionSFC(classifier, sfcLength=sfcLength)
+            self.sfcList.append(sfc)
+            sfci = self.genUniDirection10BackupP4NFVISFCI(sfcLength=sfcLength,
+                                serverBasedClassifier=self.serverBasedClassifier)
+            self.sfciList.append(sfci)
+
+        self.sP.runPythonScript(simulator.__file__)
+        sleep(1)
+        yield
+        self.sP.killPythonScript(simulator.__file__)
+        # teardown
+        self.clearQueue()
+        self.killAllModule()
+
+    # @pytest.mark.skip(reason='Skip temporarily')
+    def test_addOneSFCIWithP4VNFIOnASwitch(self, 
+                                        setup_addOneSFCIWithP4VNFIOnASwitch):
+        for idx in [0,1,2]:
+            logging.info("test idx {0}".format(idx))
+            # exercise
+            self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfcList[idx],
+                                                        self.sfciList[idx])
+            self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
+                                                self.addSFCICmd)
+
+            # verify
+            self.verifyAddSFCICmdRply()
+
+
+
+
+
+
     @pytest.fixture(scope="function")
     def setup_addThenDelOneSFCIWithVNFIOnAServer(self):
         self.common_setup()
 
         # you can overwrite following function to test different sfc/sfci
-        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
+        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP,
+                                serverBasedClassifier=self.serverBasedClassifier)
         self.sfc = self.genUniDirectionSFC(classifier)
-        self.sfci = self.genUniDirection10BackupSFCI()
+        self.sfci = self.genUniDirection10BackupServerNFVISFCI(
+                    serverBasedClassifier=self.serverBasedClassifier)
+
         self.sP.runPythonScript(simulator.__file__)
         sleep(1)
 

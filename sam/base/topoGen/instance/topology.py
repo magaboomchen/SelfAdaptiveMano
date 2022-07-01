@@ -99,6 +99,7 @@ class Topology(object):
             self.addClassifier4LogicalTwoTier()
             self.addNFVIs4LogicalTwoTier()
         elif topoType == "fat-tree":
+            self.addClassifier()
             self.addNFVIs4FatTree(serverNum, nfviNum)
             self._postProcessTopology4FatTree(podNum, serverNum)
         elif topoType == "testbed_sw1":
@@ -308,6 +309,7 @@ class Topology(object):
                         server.addVNFSupport(vnfType)
                 else:
                     server = Server("eno1", dpIP, SERVER_TYPE_NORMAL)
+                self.logger.info("serverType: {0}".format(server.getServerType()))
                 # one NIC per server
                 server.setControlNICIP(dpIP)
                 # two NIC per server
