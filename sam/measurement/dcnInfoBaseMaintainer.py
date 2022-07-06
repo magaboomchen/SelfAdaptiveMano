@@ -100,7 +100,7 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
             abandonServerIDList = []
         for serverID,serverInfoDict in self._servers[zoneName].items():
             server = serverInfoDict['server']
-            active = serverInfoDict['active']
+            active = serverInfoDict['Active']
             if (self.isServerConnectSwitch(switchID, serverID, zoneName) 
                     and server.getServerType() == SERVER_TYPE_NFVI
                     and serverID not in abandonServerIDList):

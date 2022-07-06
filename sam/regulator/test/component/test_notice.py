@@ -15,11 +15,14 @@ import logging
 
 import pytest
 
-from sam.base.slo import SLO
 from sam.base.compatibility import screenInput
-from sam.base.shellProcessor import ShellProcessor
+from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, REGULATOR_QUEUE, SIMULATOR_ZONE, TURBONET_ZONE
+from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
+from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
 from sam.base.server import SERVER_TYPE_NFVI, Server
-from sam.base.sfc import APP_TYPE_LARGE_BANDWIDTH, SFC, SFCI
+from sam.base.sfc import APP_TYPE_LARGE_BANDWIDTH, SFC, SFCI, STATE_ACTIVE
+from sam.base.shellProcessor import ShellProcessor
+from sam.base.slo import SLO
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, Switch
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
@@ -28,7 +31,7 @@ from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.base.messageAgent import DISPATCHER_QUEUE, REGULATOR_QUEUE, \
-                                MSG_TYPE_SFF_REGULATOR_CMD, SIMULATOR_ZONE
+                                    SIMULATOR_ZONE
 from sam.simulator.test.testSimulatorBase import SFF1_CONTROLNIC_IP, \
     SFF1_CONTROLNIC_MAC, SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC, SFF1_SERVERID
 from sam.test.Testbed.triangleTopo.testbedFRR import SFF2_DATAPATH_IP
@@ -64,7 +67,8 @@ class TestNoticeClass(TestBase):
         self.sfci = self.genUniDirection10BackupSFCI()
 
         self.storeSFC2DB(self.sfc)
-        self.storeSFCI2DB(self.sfci, self.sfc.sfcUUID)
+        self.storeSFCI2DB(self.sfci, self.sfc.sfcUUID, self.sfc.attributes["zone"])
+        self.updateSFCIState2DB(self.sfci, STATE_ACTIVE)
 
         yield
 
@@ -143,10 +147,10 @@ class TestNoticeClass(TestBase):
                                             True)
         self._oib._addSFC2DB(sfc)
 
-    def storeSFCI2DB(self, sfci, sfcUUID):
+    def storeSFCI2DB(self, sfci, sfcUUID, zoneName):
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             True)
-        self._oib._addSFCI2DB(sfci, sfcUUID)
+        self._oib._addSFCI2DB(sfci, sfcUUID, zoneName)
 
     def delSFC4DB(self, sfc):
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
@@ -158,38 +162,47 @@ class TestNoticeClass(TestBase):
                                             False)
         self._oib._pruneSFCI4DB(sfci.sfciID)
 
+    def updateSFCIState2DB(self, sfci, sfciState=STATE_ACTIVE):
+        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
+                                            False)
+        self._oib._updateSFCIState(sfci.sfciID, sfciState)
+
     def genAbnormalServerHandleCommand(self):
-        attr = {
-            "detection":{
-                "failure":{
-                    "switchIDList":[],
-                    "serverIDList":[],
-                    "linkIDList":[]
-                },
-                "abnormal":{
-                    "switchIDList":[],
-                    "serverIDList":[SFF1_SERVERID],
-                    "linkIDList":[]
-                }
+        detectionDict = {
+            "failure":{
+                "switchIDList":[],
+                "serverIDList":[],
+                "linkIDList":[]
+            },
+            "abnormal":{
+                "switchIDList":[],
+                "serverIDList":[SFF1_SERVERID],
+                "linkIDList":[]
             }
+        }
+        allZoneDetectionDict={TURBONET_ZONE: detectionDict,  SIMULATOR_ZONE: detectionDict}
+        attr = {
+            "allZoneDetectionDict": allZoneDetectionDict
         }
         cmd = Command(CMD_TYPE_HANDLE_FAILURE_ABNORMAL, uuid.uuid1(), attributes=attr)
         return cmd
 
     def genFailureSwitchHandleCommand(self):
-        attr = {
-            "detection":{
-                "failure":{
-                    "switchIDList":[256],
-                    "serverIDList":[],
-                    "linkIDList":[]
-                },
-                "abnormal":{
-                    "switchIDList":[],
-                    "serverIDList":[],
-                    "linkIDList":[]
-                }
+        detectionDict = {
+            "failure":{
+                "switchIDList":[256],
+                "serverIDList":[],
+                "linkIDList":[]
+            },
+            "abnormal":{
+                "switchIDList":[],
+                "serverIDList":[],
+                "linkIDList":[]
             }
+        }
+        allZoneDetectionDict={TURBONET_ZONE: detectionDict,  SIMULATOR_ZONE: detectionDict}
+        attr = {
+            "allZoneDetectionDict": allZoneDetectionDict
         }
         cmd = Command(CMD_TYPE_HANDLE_FAILURE_ABNORMAL, uuid.uuid1(), attributes=attr)
         return cmd
@@ -202,7 +215,7 @@ class TestNoticeClass(TestBase):
         # exercise
         # send command
         cmd = self.genAbnormalServerHandleCommand()
-        self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_SFF_REGULATOR_CMD, cmd)
+        self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
 
         # check dispatcherStub
         req = self.recvRequest(DISPATCHER_QUEUE)
@@ -221,7 +234,7 @@ class TestNoticeClass(TestBase):
         # exercise
         # send command
         cmd = self.genFailureSwitchHandleCommand()
-        self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_SFF_REGULATOR_CMD, cmd)
+        self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
 
         # check dispatcherStub
         req = self.recvRequest(DISPATCHER_QUEUE)

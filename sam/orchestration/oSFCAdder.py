@@ -355,7 +355,7 @@ class OSFCAdder(object):
                                         "podNum": self.podNum,
                                         "minPodIdx": self.minPodIdx,
                                         "maxPodIdx": self.maxPodIdx,
-                                        "zoneName": self.zoneName
+                                        "zone": self.zoneName
                                     })
         self.isNetPackInit = True
 

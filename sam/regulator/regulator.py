@@ -17,7 +17,7 @@ from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
 from sam.base.pickleIO import PickleIO
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REQUEST, \
+from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, MSG_TYPE_REQUEST, \
                                 REGULATOR_QUEUE, MessageAgent, SAMMessage
 from sam.base.request import REQUEST_STATE_FAILED, REQUEST_STATE_IN_PROCESSING, \
                                 REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
@@ -106,14 +106,18 @@ class Regulator(object):
             cmdID = cmd.cmdID
             if cmd.cmdType == CMD_TYPE_HANDLE_FAILURE_ABNORMAL:
                 self.logger.info("Get CMD_TYPE_HANDLE_FAILURE_ABNORMAL!")
-                infSFCIAndSFCUUIDTupleList = self._getInfluencedSFCIAndSFCList(cmd.attributes["detection"])
-                self.logger.debug("infSFCIAndSFCUUIDTupleList is {0}".format(infSFCIAndSFCUUIDTupleList))
-                for sfci, sfcUUID in infSFCIAndSFCUUIDTupleList:
-                    sfc = self._oib.getSFC4DB(sfcUUID)
-                    req = self._genDelSFCIRequest(sfci)
-                    self._sendRequest2Dispatcher(req)
-                    req = self._genAddSFCIRequest(sfc, sfci)
-                    self._sendRequest2Dispatcher(req)
+                allZoneDetectionDict = cmd.attributes["allZoneDetectionDict"]
+                for zoneName, detectionDict in allZoneDetectionDict.items():
+                    infSFCIAndSFCUUIDTupleList = self._getInfluencedSFCIAndSFCList(
+                                                                zoneName, detectionDict)
+                    self.logger.debug("infSFCIAndSFCUUIDTupleList is {0}".format(infSFCIAndSFCUUIDTupleList))
+                    for sfci, sfcUUID in infSFCIAndSFCUUIDTupleList:
+                        self._sendCmd2Dispatcher(cmd)
+                        sfc = self._oib.getSFC4DB(sfcUUID)
+                        req = self._genDelSFCIRequest(sfci)
+                        self._sendRequest2Dispatcher(req)
+                        req = self._genAddSFCIRequest(sfc, sfci)
+                        self._sendRequest2Dispatcher(req)
             else:
                 pass
         except Exception as ex:
@@ -122,32 +126,42 @@ class Regulator(object):
         finally:
             pass
 
-    def _getInfluencedSFCIAndSFCList(self, detectionDict):
+    def _sendCmd2Dispatcher(self, cmd):
+        queueName = DISPATCHER_QUEUE
+        msg = SAMMessage(MSG_TYPE_REGULATOR_CMD, cmd)
+        self._messageAgent.sendMsg(queueName, msg)
+
+    def _getInfluencedSFCIAndSFCList(self, zoneName, detectionDict):
         infSFCIAndSFCUUIDTupleList = []
         sfciTupleList = self.getAllSFCIsFromDB()
         for sfciTuple in sfciTupleList:
             self.logger.info("sfciTuple is {0}".format(sfciTuple))
-            # (SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME)
-            sfcUUID = sfciTuple[1]
-            state = sfciTuple[3]
-            if not (state == STATE_ACTIVE):
-                continue
-            sfci = sfciTuple[4]
-            for directionID in [DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET]:
-                fPathList = []
-                if directionID in sfci.forwardingPathSet.primaryForwardingPath:
-                    fPathList.append(sfci.forwardingPathSet.primaryForwardingPath[directionID])
-                if directionID in sfci.forwardingPathSet.backupForwardingPath:
-                    fPathList.append(sfci.forwardingPathSet.backupForwardingPath[directionID])
-                for forwardingPath in fPathList:
-                    for segPath in forwardingPath:
-                        for stage, nodeID in segPath:
-                            if self.isNodeIDInDetectionDict(nodeID, detectionDict):
-                                infSFCIAndSFCUUIDTupleList.append((sfci, sfcUUID))
-                        for stage, nodeID in segPath[:-2]:
-                            linkID = (nodeID, segPath[stage+1])
-                            if self.isLinkIDInDetectionDict(linkID, detectionDict):
-                                infSFCIAndSFCUUIDTupleList.append((sfci, sfcUUID))
+            sfciZoneName = sfciTuple[6]
+            if zoneName == sfciZoneName:
+                self.logger.info("Filter influenced sfci.")
+                # (SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME, ZONE_NAME)
+                sfcUUID = sfciTuple[1]
+                state = sfciTuple[3]
+                if not (state == STATE_ACTIVE):
+                    continue
+                sfci = sfciTuple[4]
+                for directionID in [DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET]:
+                    fPathList = []
+                    if directionID in sfci.forwardingPathSet.primaryForwardingPath:
+                        fPathList.append(sfci.forwardingPathSet.primaryForwardingPath[directionID])
+                    if directionID in sfci.forwardingPathSet.backupForwardingPath:
+                        fPathList.append(sfci.forwardingPathSet.backupForwardingPath[directionID])
+                    for forwardingPath in fPathList:
+                        for segPath in forwardingPath:
+                            for stage, nodeID in segPath:
+                                if self.isNodeIDInDetectionDict(nodeID, detectionDict):
+                                    infSFCIAndSFCUUIDTupleList.append((sfci, sfcUUID))
+                            for stage, nodeID in segPath[:-2]:
+                                linkID = (nodeID, segPath[stage+1])
+                                if self.isLinkIDInDetectionDict(linkID, detectionDict):
+                                    infSFCIAndSFCUUIDTupleList.append((sfci, sfcUUID))
+            else:
+                self.logger.debug("zoneName is {0}, sfciZoneName is {1}".format(zoneName, sfciZoneName))
         return infSFCIAndSFCUUIDTupleList
 
     def isNodeIDInDetectionDict(self, nodeID, detectionDict):

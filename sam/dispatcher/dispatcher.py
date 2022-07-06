@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL
 from sam.base.messageAgent import MessageAgent, SAMMessage, \
                                     DISPATCHER_QUEUE, MSG_TYPE_REQUEST
 from sam.base.pickleIO import PickleIO
@@ -141,8 +142,24 @@ class Dispatcher(object):
         raise ValueError("Unimplementation _commandReplyHandler")
 
     def _commandHandler(self, cmd):
-        raise ValueError("Unimplementation _commandHandler")
-
+        try:
+            self.logger.info("Get a command reply")
+            cmdID = cmd.cmdID
+            if cmd.cmdType == CMD_TYPE_HANDLE_FAILURE_ABNORMAL:
+                self.logger.info("Get CMD_TYPE_HANDLE_FAILURE_ABNORMAL!")
+                allZoneDetectionDict = cmd.attributes["allZoneDetectionDict"]
+                for zoneName, detectionDict in allZoneDetectionDict.items():
+                    oM = self.oMDict[zoneName]
+                    orchestratorDict = self.oMDict[zoneName].getOrchestratorDict()
+                    for orchName, orchInfoDict in orchestratorDict.items():
+                        oM.updateEquipmentState2Orchestrator(orchName, detectionDict)
+            else:
+                pass
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex, 
+                "Regualtor command handler")
+        finally:
+            pass
 
 if __name__ == "__main__":
     argParser = ArgParser()

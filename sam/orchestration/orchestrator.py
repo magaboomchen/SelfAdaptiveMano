@@ -3,6 +3,7 @@
 
 import sys
 
+from sam.base.sfc import STATE_INACTIVE
 if sys.version > '3':
     import queue as Queue
 else:
@@ -14,7 +15,7 @@ from sam.base.messageAgent import SAMMessage, MessageAgent, \
     MEDIATOR_QUEUE, ORCHESTRATOR_QUEUE, MSG_TYPE_ORCHESTRATOR_CMD
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_DEL_SFCI, \
     REQUEST_TYPE_DEL_SFC, REQUEST_STATE_FAILED
-from sam.base.command import CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
+from sam.base.command import CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, CommandMaintainer, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
     CMD_TYPE_PUT_ORCHESTRATION_STATE, CMD_TYPE_GET_ORCHESTRATION_STATE, CMD_TYPE_TURN_ORCHESTRATION_ON, \
     CMD_TYPE_TURN_ORCHESTRATION_OFF, CMD_TYPE_KILL_ORCHESTRATION, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI
 from sam.base.commandMaintainer import CommandMaintainer
@@ -314,6 +315,10 @@ class Orchestrator(object):
             elif cmd.cmdType == CMD_TYPE_KILL_ORCHESTRATION:
                 self.logger.info("kill orchestrator")
                 self.recvKillCommand = True
+            elif cmd.cmdType == CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE:
+                self.logger.info("update equipment state")
+                detectionDict = cmd.attributes["detectionDict"]
+                self._updateEquipmentState(detectionDict)
             else:
                 pass
         except Exception as ex:
@@ -396,6 +401,23 @@ class Orchestrator(object):
             return True
         else:
             raise ValueError("Unimplementation topo type")
+
+    def _updateEquipmentState(self, detectionDict):
+        for caseType, equipmentDict in detectionDict.items():
+            switchIDList = equipmentDict["switchIDList"]
+            for switchID in switchIDList:
+                if self._dib.hasSwitch(switchID, self.zoneName):
+                    self._dib.updateSwitchState(switchID, self.zoneName, active = STATE_INACTIVE)
+
+            serverIDList = equipmentDict["serverIDList"]
+            for serverID in serverIDList:
+                if self._dib.hasServer(serverID, self.zoneName):
+                    self._dib.updateServerState(serverID, self.zoneName, active = STATE_INACTIVE)
+
+            linkIDList = equipmentDict["linkIDList"]
+            for linkID in linkIDList:
+                if self._dib.hasLink(linkID[0], linkID[1], self.zoneName):
+                    self._dib.updateLinkState(linkID, self.zoneName, active = STATE_INACTIVE)
 
 
 if __name__=="__main__":

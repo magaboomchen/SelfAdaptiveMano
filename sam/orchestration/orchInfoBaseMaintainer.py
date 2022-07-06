@@ -162,12 +162,13 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                 STATE TEXT NOT NULL,
                 PICKLE BLOB,
                 ORCHESTRATION_TIME FLOAT,
+                ZONE_NAME VARCHAR(100) NOT NULL,
                 submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY ( ID )
                 """
                 )
 
-    def addSFCI(self, sfci, sfcUUID, state=STATE_IN_PROCESSING, orchTime=-1):
+    def addSFCI(self, sfci, sfcUUID, zoneName, state=STATE_IN_PROCESSING, orchTime=-1):
         if not self.hasSFCI(sfci.sfciID):
             fields = " SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME "
             dataTuple = (
@@ -194,7 +195,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             self.dbA.delete("SFCI", " SFCIID = '{0}'".format(sfciID))
 
     def getAllSFCI(self):
-        fields = " SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME "
+        fields = " SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME, ZONE_NAME "
         results = self.dbA.query("SFCI", fields)
         sfciTupleList = []
         for sfciTuple in results:
@@ -226,8 +227,9 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         self._addRequest2DB(request, cmd)
 
         sfc = cmd.attributes['sfc']
+        zoneName = sfc.attributes["zone"]
         sfci = cmd.attributes['sfci']
-        self._addSFCI2DB(sfci, sfc.sfcUUID)
+        self._addSFCI2DB(sfci, sfc.sfcUUID, zoneName)
 
     def delSFCIRequestHandler(self, request, cmd):
         request.requestState = REQUEST_STATE_IN_PROCESSING

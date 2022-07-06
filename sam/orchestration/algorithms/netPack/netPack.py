@@ -30,7 +30,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         self.podNum = argsDict["podNum"]
         self.minPodIdx = argsDict["minPodIdx"]
         self.maxPodIdx = argsDict["maxPodIdx"]
-        self.zoneName = argsDict["zoneName"]
+        self.zoneName = argsDict["zone"]
 
         logConfigur = LoggerConfigurator(__name__,
             './log', 'NetPack.log', level='info')

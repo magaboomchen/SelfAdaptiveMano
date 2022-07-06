@@ -12,7 +12,7 @@ from sam.base.xibMaintainer import XInfoBaseMaintainer
 class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self):
         super(SwitchInfoBaseMaintainer, self).__init__()
-        self._switches = {} # [zoneName][switchID] = {'switch':switch, 'active':True/False, 'status':none}
+        self._switches = {} # [zoneName][switchID] = {'switch':switch, 'Active':True/False, 'Status':none}
         self._switchesReservedResources = {}
         self._gatewaySwitchIDDict = {}
         self.isSwitchInfoInDB = False
@@ -69,7 +69,7 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
                     )
         else:
             switchID = switch.switchID
-            self._switches[zoneName][switchID] = {'switch':switch, 'active':True/False, 'status':None}
+            self._switches[zoneName][switchID] = {'switch':switch, 'Active':True/False, 'Status':None}
 
     def delSwitch(self, switchID, zoneName):
         if self.isSwitchInfoInDB:
@@ -99,6 +99,9 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def updateSwitchesByZone(self, switches, zoneName):
         self._switches[zoneName] = switches
+
+    def updateSwitchState(self, switchID, zoneName, state):
+        self._switches[zoneName][switchID]['Active'] = state
 
     def getSwitchesInAllZone(self):
         return self._switches

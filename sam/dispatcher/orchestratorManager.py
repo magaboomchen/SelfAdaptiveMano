@@ -9,7 +9,7 @@ import numpy as np
 import psutil
 
 from sam.base.messageAgent import MessageAgent, SAMMessage, MSG_TYPE_DISPATCHER_CMD
-from sam.base.command import Command, CMD_TYPE_PUT_ORCHESTRATION_STATE, \
+from sam.base.command import CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, Command, CMD_TYPE_PUT_ORCHESTRATION_STATE, \
     CMD_TYPE_TURN_ORCHESTRATION_ON, CMD_TYPE_KILL_ORCHESTRATION
 from sam.base.pickleIO import PickleIO
 from sam.orchestration import orchestrator
@@ -86,6 +86,12 @@ class OrchestratorManager(object):
         # self.logger.info("dib: {0}".format(self._dib))
         cmd = Command(CMD_TYPE_PUT_ORCHESTRATION_STATE, uuid.uuid1(),
                         attributes={"dib":self._dib})
+        queueName = "ORCHESTRATOR_QUEUE_{0}".format(orchestratorName)
+        self.sendCmd(cmd, queueName)
+
+    def updateEquipmentState2Orchestrator(self, orchestratorName, detectionDict):
+        cmd = Command(CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, uuid.uuid1(),
+                        attributes={"detectionDict":detectionDict})
         queueName = "ORCHESTRATOR_QUEUE_{0}".format(orchestratorName)
         self.sendCmd(cmd, queueName)
 
