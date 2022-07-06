@@ -3,6 +3,8 @@
 
 import random
 
+from numpy import TooHardError
+
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 
@@ -101,8 +103,15 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
     def getSwitchesInAllZone(self):
         return self._switches
 
-    def getSwitchesByZone(self, zoneName):
-        return self._switches[zoneName]
+    def getSwitchesByZone(self, zoneName, pruneInactiveSwitches=False):
+        if pruneInactiveSwitches:
+            switches = {}
+            for switchID, switchInfoDict in self._switches[zoneName].items():
+                if switchInfoDict['Active']:
+                    switches[switchID] = switchInfoDict
+            return switches
+        else:
+            return self._switches[zoneName]
 
     def getSpecificTypeOfSwitchByZone(self, zoneName, switchType):
         switchList = []

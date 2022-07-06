@@ -216,7 +216,8 @@ class MultiLayerGraph(object):
         switches = []
         if self.enablePreferredDeviceSelection:
             vnfType = self.sfc.vNFTypeSequence[layerNum]
-            for switchID,switchInfoDict in self._dib.getSwitchesByZone(self.zoneName).items():
+            for switchID,switchInfoDict in self._dib.getSwitchesByZone(self.zoneName, 
+                                                    pruneInactiveSwitches=True).items():
                 switch = switchInfoDict['switch']
                 pDT = self._getPreferredDeviceTypeOfIdxVNF(self.sfc, layerNum)
                 if pDT == PREFERRED_DEVICE_TYPE_P4:
@@ -229,7 +230,8 @@ class MultiLayerGraph(object):
                     pass
         else:
             vnfType = self.sfc.vNFTypeSequence[layerNum]
-            for switchID,switchInfoDict in self._dib.getSwitchesByZone(self.zoneName).items():
+            for switchID,switchInfoDict in self._dib.getSwitchesByZone(self.zoneName,
+                                                    pruneInactiveSwitches=True).items():
                 switch = switchInfoDict['switch']
                 if vnfType in switch.supportVNF:
                     switches.append(switch)

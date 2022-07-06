@@ -98,8 +98,15 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
     def getServersInAllZone(self):
         return self._servers
 
-    def getServersByZone(self, zoneName):
-        return self._servers[zoneName]
+    def getServersByZone(self, zoneName, pruneInactiveServers=False):
+        if pruneInactiveServers:
+            servers = {}
+            for serverID, serverInfoDict in self._servers[zoneName].items():
+                if serverInfoDict['Active']:
+                    servers[serverID] = serverInfoDict
+            return servers
+        else:
+            return self._servers[zoneName]
 
     def getServer(self, serverID, zoneName):
         return self._servers[zoneName][serverID]['server']

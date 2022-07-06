@@ -94,14 +94,18 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
                 servers.append(server)
         return servers
 
-    def getConnectedNFVIs(self, switchID, zoneName, abandonServerIDList=[]):
+    def getConnectedNFVIs(self, switchID, zoneName, abandonServerIDList=None, pruneInactiveServers=False):
         servers = []
+        if abandonServerIDList==None:
+            abandonServerIDList = []
         for serverID,serverInfoDict in self._servers[zoneName].items():
             server = serverInfoDict['server']
+            active = serverInfoDict['active']
             if (self.isServerConnectSwitch(switchID, serverID, zoneName) 
                     and server.getServerType() == SERVER_TYPE_NFVI
                     and serverID not in abandonServerIDList):
-                servers.append(server)
+                if not(pruneInactiveServers and not active):
+                    servers.append(server)
         return servers
 
     def getServersReservedResources(self, serverList, zoneName):
@@ -140,10 +144,13 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
         return (coresSum, memorySum, bandwidthSum)
 
     def hasEnoughNPoPServersResources(self, nodeID,
-            expectedCores, expectedMemory, expectedBandwidth, zoneName, abandonServerIDList=[]):
+            expectedCores, expectedMemory, expectedBandwidth, zoneName, abandonServerIDList=None):
+        if abandonServerIDList == None:
+            abandonServerIDList = []
         # cores and memory resources
         switch = self.getSwitch(nodeID, zoneName)
-        servers = self.getConnectedNFVIs(nodeID, zoneName, abandonServerIDList)
+        servers = self.getConnectedNFVIs(nodeID, zoneName, abandonServerIDList,
+                                            pruneInactiveServers=True)
         (coresSum, memorySum, bandwidthSum) = self.getServersReservedResources(
             servers, zoneName)
         (coreCapacity, memoryCapacity, bandwidthCapacity) = self.getServersResourcesCapacity(

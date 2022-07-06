@@ -92,8 +92,15 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
     def getLinksInAllZone(self):
         return self._links
 
-    def getLinksByZone(self, zoneName):
-        return self._links[zoneName]
+    def getLinksByZone(self, zoneName, pruneInactiveLinks=False):
+        if pruneInactiveLinks:
+            links = {}
+            for linkID, linkInfoDict in self._links[zoneName].items():
+                if linkInfoDict['Active']:
+                    links[linkID] = linkInfoDict
+            return links
+        else:
+            return self._links[zoneName]
 
     def getLink(self, srcID, dstID, zoneName):
         return self._links[zoneName][(srcID, dstID)]['link']
