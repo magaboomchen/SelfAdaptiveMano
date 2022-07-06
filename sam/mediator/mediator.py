@@ -12,7 +12,8 @@ from sam.base.messageAgent import MessageAgent, SAMMessage, SIMULATOR_ZONE, \
     SERVER_MANAGER_QUEUE, MSG_TYPE_SERVER_MANAGER_CMD, ORCHESTRATOR_QUEUE, \
     MEASURER_QUEUE, MSG_TYPE_MEDIATOR_CMD_REPLY
 from sam.base.switch import SWITCH_TYPE_NPOP
-from sam.base.command import CommandMaintainer, CommandReply, CMD_TYPE_ADD_SFC, \
+from sam.base.commandMaintainer import CommandMaintainer
+from sam.base.command import CommandReply, CMD_TYPE_ADD_SFC, \
     CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_DEL_SFC, CMD_TYPE_GET_SERVER_SET, \
     CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_GET_SFCI_STATE, CMD_STATE_PROCESSING, \
     CMD_STATE_WAITING, CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL

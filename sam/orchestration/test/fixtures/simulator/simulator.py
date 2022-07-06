@@ -7,9 +7,10 @@ import logging
 
 from sam.base.messageAgent import MessageAgent, SAMMessage, \
     MEDIATOR_QUEUE, SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD_REPLY
-from sam.base.command import CommandReply, CommandMaintainer, CMD_TYPE_ADD_SFC, \
+from sam.base.command import CommandReply, CMD_TYPE_ADD_SFC, \
     CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_DEL_SFC, CMD_TYPE_GET_SERVER_SET, \
     CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_GET_SFCI_STATE, CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
+from sam.base.commandMaintainer import CommandMaintainer
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.orchestration.test.fixtures.simulator.cliThread import CLIThread

@@ -8,8 +8,9 @@ import time
 from Queue import Queue
 
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import SIMULATOR_PORT
-from sam.base.command import CommandMaintainer, CMD_STATE_FAIL, \
+from sam.base.command import CMD_STATE_FAIL, \
     CMD_STATE_SUCCESSFUL, CommandReply
+from sam.base.commandMaintainer import CommandMaintainer
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import MessageAgent, SIMULATOR_QUEUE, SAMMessage, MSG_TYPE_SIMULATOR_CMD_REPLY, \

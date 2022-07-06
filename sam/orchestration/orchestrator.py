@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import sys
+
 if sys.version > '3':
     import queue as Queue
 else:
@@ -13,9 +14,10 @@ from sam.base.messageAgent import SAMMessage, MessageAgent, \
     MEDIATOR_QUEUE, ORCHESTRATOR_QUEUE, MSG_TYPE_ORCHESTRATOR_CMD
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_DEL_SFCI, \
     REQUEST_TYPE_DEL_SFC, REQUEST_STATE_FAILED
-from sam.base.command import CommandMaintainer, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
+from sam.base.command import CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
     CMD_TYPE_PUT_ORCHESTRATION_STATE, CMD_TYPE_GET_ORCHESTRATION_STATE, CMD_TYPE_TURN_ORCHESTRATION_ON, \
     CMD_TYPE_TURN_ORCHESTRATION_OFF, CMD_TYPE_KILL_ORCHESTRATION, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI
+from sam.base.commandMaintainer import CommandMaintainer
 from sam.orchestration.argParser import ArgParser
 from sam.base.request import REQUEST_TYPE_ADD_SFCI
 from sam.base.loggerConfigurator import LoggerConfigurator
