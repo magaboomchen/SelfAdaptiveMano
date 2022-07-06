@@ -65,10 +65,10 @@ def remove_sfci(sfc, sfci, sib):
             serverID = path[-1][1]
             assert serverID in sib.vnfis.keys()
             for i in range(len(sib.vnfis[serverID])):
-                vnfi = sib.vnfis[i]
+                vnfi = sib.vnfis[serverID][i]
                 if vnfi['sfciID'] == sfciID and vnfi['stage'] == stage and vnfi['vnfi'].vnfType == vnfiSequence[stage][
                     0].vnfType:
-                    sib.vnfis.pop(i)
+                    sib.vnfis[serverID].pop(i)
                     break
             else:
                 raise ValueError('no vnfi to remove on server %d vnfType %d', serverID, vnfiSequence[stage][0].vnfType)
@@ -80,7 +80,7 @@ def remove_sfci(sfc, sfci, sib):
             pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
         for stage, path in enumerate(pathlist):
             for hop, (_, switchID) in enumerate(path):
-                if switchID in sib.switches:  # switchID is a switch, not server
+                if switchID in sib.switches and hop < len(path) - 1:  # switchID is a switch, not server
                     switchInfo = sib.switches[switchID]
                     switch = switchInfo['switch']
                     if switch.tcamUsage <= 0:
@@ -92,8 +92,11 @@ def remove_sfci(sfc, sfci, sib):
                     dstID = path[hop + 1][1]
                     if (srcID, dstID) in sib.serverLinks:
                         linkInfo = sib.serverLinks[(srcID, dstID)]
-                    else:
+                    elif (srcID, dstID) in sib.links:
                         linkInfo = sib.links[(srcID, dstID)]
+                    else:
+                        assert srcID == dstID
+                        continue
                     linkInfo['Status']['usedBy'].remove((sfciID, dirID, stage, hop))
     # purge information
     for traffics in sib.sfcis[sfciID]['traffics'].values():
@@ -154,6 +157,10 @@ def add_sfci_handler(cmd, sib):
             pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
         else:
             raise ValueError('unknown dirID')
+        loopbacks = []
+        for i, path in enumerate(pathlist):
+            if len(path) == 2 and path[0][1] == path[1][1]:
+                loopbacks.append(i)
         assert len(pathlist) == len(vnfiSequence) + 1
         ingress = direction['ingress']
         if isinstance(ingress, Server):
@@ -184,13 +191,16 @@ def add_sfci_handler(cmd, sib):
                 nodeID = node.switchID
             assert pathlist[i][-1][1] == nodeID
             assert pathlist[i + 1][0][1] == nodeID
-            assert pathlist[i][-2][1] == pathlist[i + 1][1][1]
+            # assert pathlist[i][-2][1] == pathlist[i + 1][1][1]
             if isinstance(node, Server):
-                assert (pathlist[i][-2][1], pathlist[i][-1][1]) in sib.serverLinks
-                assert (pathlist[i + 1][0][1], pathlist[i + 1][1][1]) in sib.serverLinks
+                assert pathlist[i][-2][1] == pathlist[i][-1][1] or (
+                    pathlist[i][-2][1], pathlist[i][-1][1]) in sib.serverLinks
+                assert pathlist[i + 1][0][1] == pathlist[i + 1][1][1] or (
+                    pathlist[i + 1][0][1], pathlist[i + 1][1][1]) in sib.serverLinks
             elif isinstance(node, Switch):
-                assert (pathlist[i][-2][1], pathlist[i][-1][1]) in sib.links
-                assert (pathlist[i + 1][0][1], pathlist[i + 1][1][1]) in sib.links
+                assert pathlist[i][-2][1] == pathlist[i][-1][1] or (pathlist[i][-2][1], pathlist[i][-1][1]) in sib.links
+                assert pathlist[i + 1][0][1] == pathlist[i + 1][1][1] or (
+                pathlist[i + 1][0][1], pathlist[i + 1][1][1]) in sib.links
         for path in pathlist:
             for _, switchID in path[1:-1]:
                 assert switchID in sib.switches
@@ -221,7 +231,7 @@ def add_sfci_handler(cmd, sib):
             pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
         for stage, path in enumerate(pathlist):
             for hop, (_, switchID) in enumerate(path):
-                if switchID in sib.switches:  # switchID is a switch, not server
+                if switchID in sib.switches and hop < len(path) - 1:  # switchID is a switch, not server
                     switchInfo = sib.switches[switchID]
                     switch = switchInfo['switch']
                     if switch.tcamUsage >= switch.tcamSize:
@@ -233,8 +243,11 @@ def add_sfci_handler(cmd, sib):
                     dstID = path[hop + 1][1]
                     if (srcID, dstID) in sib.serverLinks:
                         linkInfo = sib.serverLinks[(srcID, dstID)]
-                    else:
+                    elif (srcID, dstID) in sib.links:
                         linkInfo = sib.links[(srcID, dstID)]
+                    else:
+                        assert srcID == dstID
+                        continue
                     linkInfo['Status']['usedBy'].add((sfciID, dirID, stage, hop))
     # store information
     sib.sfcs[sfcUUID] = {'sfc': sfc}
