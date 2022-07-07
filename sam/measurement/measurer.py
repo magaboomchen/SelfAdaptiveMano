@@ -1,11 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import sys
 import time
 import uuid
 import ctypes
 import inspect
 import threading
+from packaging import version
 
 from sam.base.messageAgent import SIMULATOR_ZONE, SAMMessage, MessageAgent, MEASURER_QUEUE, \
     DCN_INFO_RECIEVER_QUEUE, MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD, MEDIATOR_QUEUE
@@ -59,9 +61,14 @@ class Measurer(object):
     def __del__(self):
         self.logger.info("Delete Measurer.")
         self.logger.debug(self._threadSet)
-        for thread in self._threadSet.itervalues():
+        for key, thread in self._threadSet.items():
             self.logger.debug("check thread is alive?")
-            if thread.isAlive():
+            if version.parse(sys.version.split(' ')[0]) \
+                                    >= version.parse('3.9'):
+                threadLiveness = thread.is_alive()
+            else:
+                threadLiveness = thread.isAlive()
+            if threadLiveness:
                 self.logger.info("Kill thread: %d" %thread.ident)
                 self._async_raise(thread.ident, KeyboardInterrupt)
                 thread.join()

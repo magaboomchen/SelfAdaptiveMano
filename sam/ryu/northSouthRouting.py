@@ -53,10 +53,10 @@ class NorthSouthRouting(BaseApp):
 
         # using networkx
         G = nx.DiGraph()
-        for switch in self._cacheSwitches.iterkeys():
+        for switch in self._cacheSwitches.keys():
             self.logger.debug("Graph add switch: %d" %switch)
             G.add_node(switch)
-        for link in self._cacheLinks.iterkeys():
+        for link in self._cacheLinks.keys():
             self.logger.debug("Graph add link: (%d,%d)" %(link[0], link[1]) )
             G.add_edge(link[0],link[1],weight=1)
 
@@ -75,7 +75,7 @@ class NorthSouthRouting(BaseApp):
         self.logger.info("start converting")
         spt = {}    # {dpid:nexthop}
         targetDPID = None
-        for keys in stsPath.iterkeys():
+        for keys in stsPath.keys():
             path = stsPath[keys]
             self.logger.debug(path)
             # self.logger.debug(type(path))
@@ -127,7 +127,7 @@ class NorthSouthRouting(BaseApp):
     def _updateDefaultDCNGateway(self):
         self.logger.debug("_updateDefaultDCNGateway")
         self._dcnGateways = []
-        for dpid in self._cacheSwitches.iterkeys():
+        for dpid in self._cacheSwitches.keys():
             self.logger.debug("dpid: {0}".format(dpid))
             if self._isDCNGateway(dpid):
                 self._dcnGateways.append(dpid)
@@ -168,7 +168,7 @@ class NorthSouthRouting(BaseApp):
     def _genASwitchNorthSouthRIB(self,spt,targetDpid):
         self.logger.info("_genASwitchNorthSouthRIB")
         net = self._getLANNet(targetDpid)
-        for srcDpid in spt.iterkeys():
+        for srcDpid in spt.keys():
             dstDpid = spt[srcDpid]
             self.logger.debug("srcDpid:%d -> dstDpid:%d" %(srcDpid,dstDpid))
             datapath = self._cacheSwitches[srcDpid].dp
@@ -302,19 +302,19 @@ class NorthSouthRouting(BaseApp):
         northSouthRIBTmp = copy.copy(self._northSouthRIB)
         self.logger.debug("_updateAllSwitchNorthSouthRIB")
 
-        for dpid in northSouthRIBTmp.iterkeys():
+        for dpid in northSouthRIBTmp.keys():
             if not self._cacheNorthSouthRIB.has_key(dpid):
                 self.logger.debug("old table set has this dpid && new table set dosen't hast this dpid")
                 del self._northSouthRIB[dpid]
 
-        for dpid in self._cacheNorthSouthRIB.iterkeys():
+        for dpid in self._cacheNorthSouthRIB.keys():
             datapath = self._cacheSwitches[dpid].dp
             ofproto = datapath.ofproto
             parser = datapath.ofproto_parser
             if not self._northSouthRIB.has_key(dpid):
                 self.logger.debug("old table set dosen't has this dpid && new tables set has this dpid")
                 self._northSouthRIB[dpid] = copy.deepcopy(self._cacheNorthSouthRIB[dpid])
-                for matchFieldsJson in self._cacheNorthSouthRIB[dpid].iterkeys():
+                for matchFieldsJson in self._cacheNorthSouthRIB[dpid].keys():
                     inst = self._cacheNorthSouthRIB[dpid][matchFieldsJson]
                     self.logger.debug("_updateAllSwitchNorthSouthRIB: Add_flow to dpid:%d" %(dpid) )
                     self.logger.debug("matchFieldsJson:")
@@ -325,7 +325,7 @@ class NorthSouthRouting(BaseApp):
                     )
             else:
                 self.logger.debug("old table set has this dpid && new tables set has this dpid")
-                for matchFieldsJson in self._cacheNorthSouthRIB[dpid].iterkeys():
+                for matchFieldsJson in self._cacheNorthSouthRIB[dpid].keys():
                     if self._northSouthRIB[dpid].has_key(matchFieldsJson):
                         self.logger.debug("new entry is in old rib")
                         matchFields = self._orderJson2dict(matchFieldsJson)
@@ -344,7 +344,7 @@ class NorthSouthRouting(BaseApp):
                     inst = self._cacheNorthSouthRIB[dpid][matchFieldsJson]
 
                 northSouthRIBofADpidTmp = copy.copy(self._northSouthRIB[dpid])
-                for matchFieldsJson in northSouthRIBofADpidTmp.iterkeys():
+                for matchFieldsJson in northSouthRIBofADpidTmp.keys():
                     if not self._cacheNorthSouthRIB[dpid].has_key(matchFieldsJson):
                         self.logger.debug("old entry doesn't existed in new rib")
                         del self._northSouthRIB[dpid][matchFieldsJson]

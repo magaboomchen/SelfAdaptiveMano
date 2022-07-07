@@ -69,13 +69,18 @@ class LoggerConfigurator(object):
         return self.logger
 
     def _appendLoggerNameSuffix(self):
-        suffix = ''.join(random.sample(['z','y','x','w','v','u','t','s','r','q','p','o','n','m','l','k','j','i','h','g','f','e','d','c','b','a'], 5))
+        suffix = self._getRandomString(5)
         self.loggerName = self.loggerName + "_" + suffix
 
     def _appendFileNameSuffix(self):
-        suffix = ''.join(random.sample(['z','y','x','w','v','u','t','s','r','q','p','o','n','m','l','k','j','i','h','g','f','e','d','c','b','a'], 5))
+        suffix = self._getRandomString(5)
         self.filename = self.filename + "._" + suffix
 
+    def _getRandomString(self, strLength):
+        return ''.join(random.sample(['z','y','x','w','v','u','t','s','r', \
+                                        'q','p','o','n','m','l','k','j','i', \
+                                        'h','g','f','e','d','c','b','a'],
+                                        strLength))
 
 if __name__ == '__main__':
     logConfigur = LoggerConfigurator('logger', './log', 'all.log', level='debug')

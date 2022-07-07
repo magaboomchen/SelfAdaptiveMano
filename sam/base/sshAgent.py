@@ -1,9 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import sys
+if sys.version > '3':
+    import io
+    from io import StringIO
+else:
+    import StringIO
 import paramiko
 import logging
-import StringIO
 
 
 class SSHAgent(object):

@@ -1,9 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import sys
 import ctypes
 import inspect
 import logging
+from packaging import version
 
 from sam.base.messageAgent import MessageAgent, SAMMessage, \
     MEDIATOR_QUEUE, SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD_REPLY
@@ -122,9 +124,14 @@ class Simulator(object):
 
     def __del__(self):
         self.logger.info("Delete Simulator.")
-        for thread in self._threadList.itervalues():
+        for key, thread in self._threadList.items():
             self.logger.debug("check thread is alive?")
-            if thread.isAlive():
+            if version.parse(sys.version.split(' ')[0]) \
+                                    >= version.parse('3.9'):
+                threadLiveness = thread.is_alive()
+            else:
+                threadLiveness = thread.isAlive()
+            if threadLiveness:
                 self.logger.info("Kill thread: %d" %thread.ident)
                 self._async_raise(thread.ident, KeyboardInterrupt)
                 thread.join()

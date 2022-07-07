@@ -63,10 +63,10 @@ class WestEastRouting(BaseApp):
 
         # using networkx
         G = nx.DiGraph()
-        for switch in self._cacheSwitches.iterkeys():
+        for switch in self._cacheSwitches.keys():
             self.logger.debug("Graph add switch: %d" %switch)
             G.add_node(switch)
-        for link in self._cacheLinks.iterkeys():
+        for link in self._cacheLinks.keys():
             self.logger.debug("Graph add link: (%d,%d)" %(link[0], link[1]) )
             G.add_edge(link[0],link[1],weight=1)
 
@@ -85,7 +85,7 @@ class WestEastRouting(BaseApp):
         self.logger.info("start converting")
         spt = {}    # {dpid:nexthop}
         targetDPID = None
-        for keys in stsPath.iterkeys():
+        for keys in stsPath.keys():
             path = stsPath[keys]
             self.logger.debug("path:{0}".format(path))
             # self.logger.debug("typeOfPath:{0}".format(type(path)))
@@ -107,7 +107,7 @@ class WestEastRouting(BaseApp):
     def _genATargeSwitchWestEastRIB(self,spt,targetDpid):
         self.logger.debug("_genATargeSwitchWestEastRIB")
         net = self._getLANNet(targetDpid)
-        for srcDpid in spt.iterkeys():
+        for srcDpid in spt.keys():
             dstDpid = spt[srcDpid]
             self.logger.debug("srcDpid:%d -> dstDpid:%d" %(srcDpid,dstDpid))
             datapath = self._cacheSwitches[srcDpid].dp
@@ -139,17 +139,17 @@ class WestEastRouting(BaseApp):
         westEastRIBTmp = copy.copy(self._westEastRIB)
         self.logger.debug("_updateAllSwitchWestEastRIB")
 
-        for dpid in westEastRIBTmp.iterkeys():
+        for dpid in westEastRIBTmp.keys():
             if not self._cacheWestEastRIB.has_key(dpid):
                 self.logger.debug("old table set has this dpid && new table set dosen't hast this dpid")
                 del self._westEastRIB[dpid]
  
-        for dpid in self._cacheWestEastRIB.iterkeys():
+        for dpid in self._cacheWestEastRIB.keys():
             datapath = self._cacheSwitches[dpid].dp
             if not self._westEastRIB.has_key(dpid):
                 self.logger.debug("old table set dosen't has this dpid && new tables set has this dpid")
                 self._westEastRIB[dpid] = copy.deepcopy(self._cacheWestEastRIB[dpid])
-                for matchFieldsJson in self._cacheWestEastRIB[dpid].iterkeys():
+                for matchFieldsJson in self._cacheWestEastRIB[dpid].keys():
                     inst = self._cacheWestEastRIB[dpid][matchFieldsJson]
                     self.logger.debug("_updateAllSwitchWestEastRIB: Add_flow to dpid:%d" %(dpid) )
                     self.logger.debug("matchFieldsJson:", matchFieldsJson)
@@ -159,7 +159,7 @@ class WestEastRouting(BaseApp):
                     )
             else:
                 self.logger.debug("old table set has this dpid && new tables set has this dpid")
-                for matchFieldsJson in self._cacheWestEastRIB[dpid].iterkeys():
+                for matchFieldsJson in self._cacheWestEastRIB[dpid].keys():
                     if self._westEastRIB[dpid].has_key(matchFieldsJson):
                         self.logger.debug("new entry is in old rib")
                         matchFields = self._orderJson2dict(matchFieldsJson)
@@ -176,7 +176,7 @@ class WestEastRouting(BaseApp):
                     inst = self._cacheWestEastRIB[dpid][matchFieldsJson]
 
                 westEastRIBofADpidTmp = copy.copy(self._westEastRIB[dpid])
-                for matchFieldsJson in westEastRIBofADpidTmp.iterkeys():
+                for matchFieldsJson in westEastRIBofADpidTmp.keys():
                     if not self._cacheWestEastRIB[dpid].has_key(matchFieldsJson):
                         self.logger.debug("old entry doesn't existed in new rib")
                         del self._westEastRIB[dpid][matchFieldsJson]
@@ -213,7 +213,7 @@ class WestEastRouting(BaseApp):
         self._cacheHosts = copy.copy(self.topoCollector.hosts)
 
         self._cacheWestEastRIB = {}
-        for dpid in self.topoCollector.switches.iterkeys():
+        for dpid in self.topoCollector.switches.keys():
             self.logger.debug("Update Single Target Shortest Path start.")
             stsPath = self._STSP(dpid)
             if stsPath == None:

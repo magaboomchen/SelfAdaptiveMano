@@ -11,7 +11,7 @@ from sam.base.databaseAgent import DatabaseAgent
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 MANUAL_TEST = True
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class TestDatabaseAgentClass(object):
@@ -32,6 +32,7 @@ class TestDatabaseAgentClass(object):
         cls.testObject = {'key':1}
 
         if cls.dbA.hasTable("Orchestrator", "Request"):
+            cls.dbA.dropTable("Orchestrator")
             cls.dbA.dropTable("Request")
 
     @classmethod
@@ -70,19 +71,20 @@ class TestDatabaseAgentClass(object):
     def test_insert(self):
         self.dbA.insert("Request", 
             " AGE, SEX, FIRST_NAME, LAST_NAME, INCOME, REQUEST_UUID, PICKLE ",
-            " 20, 'M', 'Mac', 'Mohan', 2000, '{0}', '{1}'".format(
-                self.REQUEST_UUID, self._encodeObject2Pickle(self.testObject))
+            (20, 'M', 'Mac', 'Mohan', 2000, self.REQUEST_UUID,
+                    self._encodeObject2Pickle(self.testObject))
             )
         results = self.dbA.query("Request", "*")
-        assert results[0][:-1] == ('1L', 'Mac', 'Mohan', '20L', 'M', 2000.0,
-            str(self.REQUEST_UUID), 'gAJ9cQBVA2tleXEBSwFzLg==' )
+        assert results[0][:-2] == (1, 'Mac', 'Mohan', 20, 'M', 2000.0,
+            str(self.REQUEST_UUID) )
         assert self._decodePickle2Object(results[0][7]) == self.testObject
 
     def test_update(self):
         self.dbA.update("Request", "AGE = 10", " SEX = 'M'")
         results = self.dbA.query("Request", "*")
-        assert results[0][:-1] == ('1L', 'Mac', 'Mohan', '10L', 'M', 2000.0,
-            str(self.REQUEST_UUID), 'gAJ9cQBVA2tleXEBSwFzLg==')
+        assert results[0][:-2] == (1, 'Mac', 'Mohan', 10, 'M', 2000.0,
+            str(self.REQUEST_UUID))
+        assert self._decodePickle2Object(results[0][7]) == self.testObject
         assert type(uuid.UUID(results[0][6])) == type(uuid.uuid1())
 
     def test_delete(self):

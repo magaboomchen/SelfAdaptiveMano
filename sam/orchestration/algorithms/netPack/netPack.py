@@ -299,7 +299,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         G = nx.DiGraph()
         edgeList = []
         linksInfoDict = self._dib.getLinksByZone(self.zoneName)
-        for linkInfoDict in linksInfoDict.itervalues():
+        for key, linkInfoDict in linksInfoDict.items():
             link = linkInfoDict['link']
             if (self._dib.isServerID(link.srcID) 
                     or self._dib.isServerID(link.dstID)):

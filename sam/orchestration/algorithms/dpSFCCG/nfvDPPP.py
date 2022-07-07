@@ -14,6 +14,7 @@ from sam.base.mkdirs import mkdirs
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import MappingAlgorithmBase
+from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 
 
 class NFVDPPricingProblem(MappingAlgorithmBase):

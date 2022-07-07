@@ -289,7 +289,7 @@ class UFRR(FRR):
             stageCount):
         primaryPathID = self._getPathID(direction["ID"])
         backupPaths = self._getBackupPaths(sfci,primaryPathID)
-        for key in backupPaths.iterkeys():
+        for key in backupPaths.keys():
             (repairSwitchID, failureNodeID, newPathID) \
                 = self._getRepairSwitchIDAndFailureNodeIDAndNewPathIDFromKey(key)
             if repairSwitchID == currentDpid and failureNodeID == nextDpid:

@@ -3,28 +3,18 @@
 
 import uuid
 import time
-import math
 import copy
 import base64
-import cPickle
-import numpy as np
+if sys.version > '3':
+    import _pickle as cPickle
+else:
+    import cPickle
 
-import psutil
-
-from sam.base.messageAgent import MessageAgent, SAMMessage, DISPATCHER_QUEUE, MEDIATOR_QUEUE, \
-    MSG_TYPE_DISPATCHER_CMD, MSG_TYPE_REQUEST, SIMULATOR_ZONE
-from sam.base.command import Command, CMD_TYPE_ADD_SFCI, CMD_TYPE_PUT_ORCHESTRATION_STATE, \
-    CMD_TYPE_TURN_ORCHESTRATION_ON, CMD_TYPE_KILL_ORCHESTRATION
-from sam.base.pickleIO import PickleIO
-from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
-    REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_DEL_SFC
-from sam.base.shellProcessor import ShellProcessor
-from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.orchestration import orchestrator
+from sam.base.messageAgent import MessageAgent, SAMMessage, MEDIATOR_QUEUE, \
+    MSG_TYPE_REQUEST, SIMULATOR_ZONE
+from sam.base.command import CMD_TYPE_ADD_SFCI
 from sam.dispatcher.argParser import ArgParser
 from sam.dispatcher.dispatcher import Dispatcher
-from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
-from sam.base.exceptionProcessor import ExceptionProcessor
 
 
 class DispatcherComponentTester(Dispatcher):

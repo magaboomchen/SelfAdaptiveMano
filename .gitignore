@@ -67,6 +67,7 @@ sam/base/rabbitMQConf.json
 results/
 results*/
 .idea
+.vscode/
 
 # Backup Files
 *~

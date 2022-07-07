@@ -55,14 +55,16 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
                 self.dbA.insert("Switch",
                     " ZONE_NAME, SWITCH_ID, SWITCH_TYPE, PROGRAMMABLE_FLAG," \
                     " TOTAL_TCAM, TCAM_USAGE, PICKLE ",
-                    " '{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}' ".format(zoneName,
-                                    switch.switchID,
-                                    switch.switchType,
-                                    int(bool(switch.programmable)),
-                                    switch.tcamSize,
-                                    switch.tcamUsage,
-                                    self.pIO.obj2Pickle(switch)
-                    ))
+                        (
+                            zoneName,
+                            switch.switchID,
+                            switch.switchType,
+                            int(bool(switch.programmable)),
+                            switch.tcamSize,
+                            switch.tcamUsage,
+                            self.pIO.obj2Pickle(switch)
+                        )
+                    )
         else:
             switchID = switch.switchID
             self._switches[zoneName][switchID] = {'switch':switch, 'active':True/False, 'status':None}
@@ -181,7 +183,7 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
     #     dcnGateway = None
     #     switchesInfoDict = self.getSwitchesByZone(self.zoneName)
     #     # self.logger.warning(switchesInfoDict)
-    #     for switchInfoDict in switchesInfoDict.itervalues():
+    #     for key, switchInfoDict in switchesInfoDict.items():
     #         switch = switchInfoDict['switch']
     #         # self.logger.debug(switch)
     #         if switch.switchType == SWITCH_TYPE_DCNGATEWAY:

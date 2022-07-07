@@ -1,13 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import sys
 import time
 import uuid
 import ctypes
 import inspect
 import threading
-
 import datetime
+from packaging import version
 
 from sam.base.command import Command, CommandReply, CMD_STATE_SUCCESSFUL, \
     CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE
@@ -66,12 +67,12 @@ class SeverManager(object):
             serverControlNICMac, server.getServerType()
         ))
         threadLock.acquire()
-        if serverControlNICMac in self.serverIDMappingTable.iterkeys():
+        if serverControlNICMac in self.serverIDMappingTable.keys():
             serverID = self.serverIDMappingTable[serverControlNICMac]
         else:
             serverID = self._assignServerID()
             self.serverIDMappingTable[serverControlNICMac] = serverID
-        # if serverControlNICMac in self.serverSet.iterkeys():
+        # if serverControlNICMac in self.serverSet.keys():
         #     serverID = self.serverSet[serverControlNICMac]["server"].getServerID()
         # else:
         #     serverID = self._assignServerID()
@@ -110,7 +111,7 @@ class SeverManager(object):
     def _printServerSet(self):
         self.logger.debug("printServerSet:")
         threadLock.acquire()
-        for serverKey in self.serverSet.iterkeys():
+        for serverKey in self.serverSet.keys():
             self.logger.debug(self.serverSet[serverKey])
             self.logger.debug("----------------------\n")
         self.logger.debug("==============================\n")
@@ -135,7 +136,12 @@ class SeverManager(object):
         # first, delete self._messageAgent or self._timeoutCleanerThread
         # is hard to killed. Still need to address this problem
         thread = self._timeoutCleanerThread
-        if thread.isAlive():
+        if version.parse(sys.version.split(' ')[0]) \
+                                >= version.parse('3.9'):
+            threadLiveness = thread.is_alive()
+        else:
+            threadLiveness = thread.isAlive()
+        if threadLiveness:
             self.logger.warning("Kill thread: %d" %thread.ident)
             self._async_raise(thread.ident, KeyboardInterrupt)
             thread.join()
@@ -164,7 +170,7 @@ class TimeoutCleaner(threading.Thread):
             self.logger.debug("timeoutcleanr run once.")
             threadLock.acquire()
             currentTime = datetime.datetime.now()
-            for serverKey in self.serverSet.iterkeys():
+            for serverKey in self.serverSet.keys():
                 if (self._getTimeDiff(self.serverSet[serverKey]["timestamp"],
                             currentTime) > SERVER_TIMEOUT
                         and self.serverSet[serverKey]["Active"] == True):

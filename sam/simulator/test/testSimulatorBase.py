@@ -6,7 +6,7 @@ import logging
 
 from sam.base.slo import SLO
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
-from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNF, VNFI, VNF_TYPE_FORWARD
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNF, VNFI, VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, SWITCH_TYPE_NPOP, Switch
 from sam.base.path import MAPPING_TYPE_MMLPSFC, MAPPING_TYPE_NETPACK, ForwardingPathSet, MAPPING_TYPE_INTERFERENCE
@@ -50,6 +50,8 @@ class TestSimulatorBase(TestBase):
     def genUniDirectionSFC(self, classifier, sfcLength=1):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_FORWARD] * sfcLength
+        vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_FORWARD,
+                        None, PREFERRED_DEVICE_TYPE_SERVER)] * sfcLength
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
@@ -66,7 +68,7 @@ class TestSimulatorBase(TestBase):
         slo = SLO(latencyBound=35, throughput=0.1)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
-            {'zone': SIMULATOR_ZONE}, slo=slo)
+            {'zone': SIMULATOR_ZONE}, slo=slo, vnfSequence=vnfSequence)
 
     def genUniDirection10BackupServerNFVISFCI(self, mappedVNFISeq=True, sfcLength=1, serverBasedClassifier=True):
         if mappedVNFISeq:

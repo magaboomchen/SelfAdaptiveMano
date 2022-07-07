@@ -62,11 +62,14 @@ Use case 3 - elastic orchestrator(regulator):
 
 """
 
+from packaging import version
 import sys
-if sys.version > '3':
+if sys.version >= '3':
     import queue as Queue
+    import _pickle as cPickle
 else:
     import Queue
+    import cPickle
 import time
 import uuid
 import json
@@ -79,7 +82,6 @@ import base64
 
 import pika
 import grpc
-import cPickle
 from concurrent import futures
 
 from sam.base.command import Command, CommandReply
@@ -99,6 +101,7 @@ TURBONET_ZONE = "TURBONET_ZONE"
 SIMULATOR_ZONE = "SIMULATOR_ZONE"
 PROJECT3_ZONE = "PROJECT3_ZONE"
 PICA8_ZONE = "PICA8_ZONE"
+DEFAULT_ZONE = "DEFAULT_ZONE"
 
 # formal queue type
 REQUEST_PROCESSOR_QUEUE = "REQUEST_PROCESSOR_QUEUE"
@@ -117,6 +120,7 @@ NETWORK_CONTROLLER_QUEUE = "NETWORK_CONTROLLER_QUEUE"
 MININET_TESTER_QUEUE = "MININET_TESTER_QUEUE"
 SIMULATOR_QUEUE = "SIMULATOR_QUEUE"
 REGULATOR_QUEUE = "REGULATOR_QUEUE"
+TEST_QUEUE = "TEST_QUEUE"
 
 # general use case
 MSG_TYPE_STRING = "MSG_TYPE_STRING"
@@ -187,9 +191,12 @@ class MessageAgent(object):
         if logger != None:
             self.logger = logger
         else:
-            logConfigur = LoggerConfigurator(__name__, './log',
-                'messageAgent.log', level='info')
-            self.logger = logConfigur.getLogger()
+            # Can't run file logger when call __del__() methods
+            # self.logConfigur = LoggerConfigurator(__name__, './log',
+            #     'messageAgent.log', level='info')
+            self.logConfigur = LoggerConfigurator(__name__, None,
+                None, level='info')
+            self.logger = self.logConfigur.getLogger()
         self.logger.info("Init MessaageAgent.")
         self.readRabbitMQConf()
         self.msgQueues = {}
@@ -373,7 +380,7 @@ class MessageAgent(object):
         self.listenPort = listenPort
         srcQueueName = "{0}:{1}".format(listenIP, listenPort)
         if srcQueueName in self.msgQueues:
-            self.logger.warning("Already listening on recv queue.")
+            self.logger.warning("Already listening on recv socket.")
         else:
             self.msgQueues[srcQueueName] = Queue.Queue()
             server = grpc.server(
@@ -401,10 +408,16 @@ class MessageAgent(object):
         return cPickle.loads(base64.b64decode(message))
 
     def __del__(self):
+        # Can't run file logger when call __del__() methods
         self.logger.info("Delete MessageAgent.")
-        for thread in self._threadSet.itervalues():
+        for srcQueueName, thread in self._threadSet.items():
             self.logger.debug("check thread is alive?")
-            if thread.isAlive():
+            if version.parse(sys.version.split(' ')[0]) \
+                                    >= version.parse('3.9'):
+                threadLiveness = thread.is_alive()
+            else:
+                threadLiveness = thread.isAlive()
+            if threadLiveness:
                 self.logger.info("Kill thread: %d" %thread.ident)
                 self._async_raise(thread.ident, KeyboardInterrupt)
                 thread.join()
@@ -412,11 +425,19 @@ class MessageAgent(object):
         self.logger.info("Disconnect from RabbiMQServer.")
         self._disConnectRabbiMQServer()
 
+        self.logger.info("close gRPC channel")
         if self.gRPCChannel != None:
             self.gRPCChannel.close()
-        
-        for server in self.gRPCServersList:
-            server.stop(0)
+
+        if sys.version > '3':
+            self.logger.warning("Bugs: Unimplement gRPC server " \
+                "stop function because of the unlimited wait time.")
+            # for server in self.gRPCServersList:
+            #     server.stop(None)
+        else:
+            self.logger.info("stop gRPC servers")
+            for server in self.gRPCServersList:
+                server.wait_for_termination()
 
     def _async_raise(self, tid, exctype):
         """raises the exception, performs cleanup if needed"""

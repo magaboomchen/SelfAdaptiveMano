@@ -84,7 +84,7 @@ class MultiLayerGraph(object):
         expectedTCAM = self._getExpectedTCAM(stage)
 
         linksInfoDict = self._dib.getLinksByZone(self.zoneName)
-        for linkInfoDict in linksInfoDict.itervalues():
+        for key, linkInfoDict in linksInfoDict.items():
             link = linkInfoDict['link']
             srcLayerNodeID = self._genLayerNodeID(link.srcID, stage)
             dstLayerNodeID = self._genLayerNodeID(link.dstID, stage)

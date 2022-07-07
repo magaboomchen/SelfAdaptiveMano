@@ -49,6 +49,7 @@ class DPDKConfigurator(object):
 
     def insertIGB_UIO(self):
         out_bytes = subprocess.check_output(['lsmod'], shell=True)
+        out_bytes = str(out_bytes)
         if out_bytes.find('igb_uio') == -1:
             out_bytes = subprocess.check_output(['sudo modprobe uio'], shell=True)
             out_bytes = subprocess.check_output(
@@ -64,6 +65,7 @@ class DPDKConfigurator(object):
             ['sudo python $RTE_SDK/usertools/dpdk-devbind.py --status-dev net | grep ' + self._NICPCIAddress],
              shell=True
             )
+        out_bytes = str(out_bytes)
         if out_bytes.find('drv=')  == -1:
             return UNBIND
         else:

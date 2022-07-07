@@ -119,7 +119,7 @@ class RoutingMorphic(object):
         for i in range(bitsLength):
             mask = mask + (0x1 << i)
 
-        return self._sc.int2Bytes(mask, bitsLength/8)
+        return self._sc.int2Bytes(mask, int(bitsLength/8))
 
     def encodeIdentifierForSFC(self, sfciID, vnfID):
         # sfci.sfciID, vnf.vnfID

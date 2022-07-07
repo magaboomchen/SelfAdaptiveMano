@@ -360,7 +360,7 @@ class Mediator(object):
                 # debug
                 cmdInfo = self._cm._commandsInfo[parentCmdID]
                 self.logger.debug("A command failed. Here are details:")
-                for childCmdID in cmdInfo['childCmdID'].itervalues():
+                for key, childCmdID in cmdInfo['childCmdID'].items():
                     if self._cm.getCmdState(childCmdID) == CMD_STATE_FAIL:
                         self.logger.debug("childCmdID: {0}".format(childCmdID))
                 # workflow
@@ -387,8 +387,8 @@ class Mediator(object):
         for cmdRply in cCmdRplyList:
             if self._messageAgent.isCommandReply(cmdRply):
                 attr = cmdRply.attributes
-                for key in attr.iterkeys():
-                    if not key in attributes.iterkeys():
+                for key in attr.keys():
+                    if not key in attributes.keys():
                         attributes[key] = attr[key]
                     else:
                         self._MergeDict(attr[key],attributes[key])

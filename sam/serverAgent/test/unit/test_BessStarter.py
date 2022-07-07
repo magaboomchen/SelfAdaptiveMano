@@ -28,6 +28,7 @@ class TestBessStarterClass(object):
         self.bs.startBESSD()
 
         out_bytes = subprocess.check_output(["ps -ef | grep bessd"],shell=True)
+        out_bytes = str(out_bytes)
         assert out_bytes.count("bessd") == 3
 
     def test_isBessdRun(self):

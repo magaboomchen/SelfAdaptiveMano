@@ -1,9 +1,17 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import MySQLdb
-# import pymysql
-# pymysql.install_as_MySQLdb()
+DATABASE_TYPE_PYMYSQL = "DATABASE_TYPE_PYMYSQL"
+DATABASE_TYPE_MYSQLDB = "DATABASE_TYPE_MYSQLDB"
+
+import sys
+if sys.version > '3':
+    dbType = DATABASE_TYPE_PYMYSQL
+    import pymysql
+    pymysql.install_as_MySQLdb()
+else:
+    dbType = DATABASE_TYPE_MYSQLDB
+    import MySQLdb
 
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
@@ -25,8 +33,12 @@ class DatabaseAgent(object):
         return self.db != None
 
     def connectDB(self, db):
-        self.db = MySQLdb.connect(host = self.host, user = self.user,
-            passwd = self.passwd, db = db)
+        if sys.version > '3':
+            self.db = pymysql.connect(host=self.host, user=self.user,
+                                        password=self.passwd, database=db)
+        else:
+            self.db = MySQLdb.connect(host = self.host, user = self.user,
+                                        passwd = self.passwd, db = db)
         self.cursor = self.db.cursor()
 
     def createTable(self, tableName, fields, engine=None, charset=None):
@@ -59,12 +71,16 @@ class DatabaseAgent(object):
         sql = "DROP TABLE IF EXISTS {0}".format(tableName)
         self.cursor.execute(sql)
 
-    def insert(self, tableName, fields, values):
-        sql = """INSERT INTO {0}({1}) VALUES ({2})""".format(
-            tableName, fields, values)
-        self.logger.debug("insert, sql={0}".format(sql))
+    def insert(self, tableName, fields, insertDataTuple):
         try:
-            self.cursor.execute(sql)
+            valuesNum = len(insertDataTuple)
+            sqlInsertQuery = """ INSERT INTO {0}
+                    ({1}) VALUES ({2})""".format(tableName, fields, 
+                                            '%s,'*(valuesNum-1)+'%s')
+            self.logger.debug("insert, sqlInsertQuery={0} " \
+                                "insertDataTuple={1}".format(
+                                    sqlInsertQuery, insertDataTuple))
+            result = self.cursor.execute(sqlInsertQuery, insertDataTuple)
             self.db.commit()
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex)

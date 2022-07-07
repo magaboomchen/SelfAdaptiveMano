@@ -128,7 +128,7 @@ class L2(BaseApp):
         match = parser.OFPMatch(eth_dst=peerPortMac)
 
     def getLocalPortByPeerPort(self, currentDpid, nextDpid):
-        for portID in self._peerPortTable[currentDpid].iterkeys():
+        for portID in self._peerPortTable[currentDpid].keys():
             peerPort = self._peerPortTable[currentDpid][portID]
             if peerPort.dpid == nextDpid:
                 return portID

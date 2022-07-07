@@ -7,7 +7,7 @@ from sam.base.command import CMD_STATE_FAIL, CMD_STATE_SUCCESSFUL, CommandReply
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.link import Link
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.messageAgent import SAMMessage, MessageAgent, \
+from sam.base.messageAgent import DEFAULT_ZONE, SAMMessage, MessageAgent, \
     MSG_TYPE_SIMULATOR_CMD_REPLY, SIMULATOR_QUEUE
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import SIMULATOR_IP, SIMULATOR_PORT
 from sam.base.server import SERVER_TYPE_NORMAL, Server
@@ -73,7 +73,7 @@ class SimulatorStub(object):
 
         return {'switches':switchList,
                 'links':linkList,
-                'zone':""
+                'zone':DEFAULT_ZONE
                 }
 
     def genServerAttr(self):

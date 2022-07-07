@@ -21,6 +21,7 @@ from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.orchestration.algorithms.base.multiLayerGraph import MultiLayerGraph, \
     WEIGHT_TYPE_PROPAGATION_DELAY_MODEL, WEIGHT_TYPE_01_UNIFORAM_MODEL
+from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import OPRandomizedRoundingAlgorithm
 
 INITIAL_PATH_PER_REQUEST_NUM = 2
@@ -219,7 +220,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
     def _initPathLinkVar(self, sdc, pathIndex):
         (ingSwitchID, egSwitchID, vnfSeqStr) = sdc
         linksInfoDict = self._dib.getLinksByZone(self.zoneName)
-        for linkInfoDict in linksInfoDict.itervalues():
+        for key, linkInfoDict in linksInfoDict.items():
             link = linkInfoDict['link']
             srcID = link.srcID
             dstID = link.dstID
@@ -343,7 +344,7 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
     def _initAVar(self, sdc, pathIndex):
         (ingSwitchID, egSwitchID, vnfSeqStr) = sdc
         linksInfoDict = self._dib.getLinksByZone(self.zoneName)
-        for linkInfoDict in linksInfoDict.itervalues():
+        for key, linkInfoDict in linksInfoDict.items():
             link = linkInfoDict['link']
             srcID = link.srcID
             dstID = link.dstID

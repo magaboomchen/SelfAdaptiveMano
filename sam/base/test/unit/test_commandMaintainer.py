@@ -105,7 +105,7 @@ class TestCommandMaintainerClass(object):
 
     def test_delChildCmd4Cmd(self,setup_addCmdandcCmd):
         self.cm.delChildCmd4Cmd(self.cmdID,MSG_TYPE_CLASSIFIER_CONTROLLER_CMD)
-        childCmdKey = self.cm._commandsInfo[self.cmdID]['childCmdID'].iterkeys()
+        childCmdKey = self.cm._commandsInfo[self.cmdID]['childCmdID'].keys()
         assert not MSG_TYPE_CLASSIFIER_CONTROLLER_CMD in childCmdKey
 
     def test_getCmdState(self,setup_addCmdandcCmd):

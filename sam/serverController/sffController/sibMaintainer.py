@@ -25,11 +25,11 @@ class SIBMS(object):
         return self._sibms[serverID]
 
     def delSibm(self,serverID):
-        if serverID in self._sibms.iterkeys():
+        if serverID in self._sibms.keys():
             del self._sibms[serverID]
 
     def show(self):
-        for key in self._sibms.iterkeys():
+        for key in self._sibms.keys():
             self.logger.info("{0}'s sibm:".format(key))
             self._sibms[key].show()
 

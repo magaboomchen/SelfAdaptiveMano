@@ -32,6 +32,7 @@ class TestDPDKConfiguratorClass(object):
     def test_insertIGB_UIO(self):
         self.dc.insertIGB_UIO()
         out_bytes = subprocess.check_output(['lsmod'],shell=True)
+        out_bytes = str(out_bytes)
         assert out_bytes.find('igb_uio') != -1
 
     def test_bindNIC(self):

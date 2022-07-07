@@ -27,7 +27,7 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def addZone(self, zoneName):
         if not self.hasZone(zoneName):
-            self.dbA.insert("Zone", " ZONE_NAME ", "'{0}'".format(zoneName))
+            self.dbA.insert("Zone", " ZONE_NAME ", (zoneName))
 
     def hasZone(self, zoneName):
         results = self.dbA.query("Zone", " ZONE_NAME ",
@@ -66,10 +66,9 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
     def addUser(self, user):
         if not self.hasUser(user.userID):
             self.dbA.insert("User", " USER_NAME, USER_UUID, USER_TYPE, PICKLE ",
-                                "'{0}', '{1}', '{2}', '{3}'".format(user.userName,
-                                                    user.userID,
-                                                    user.userType,
-                                                    self.pIO.obj2Pickle(user)))
+                                (user.userName, user.userID, user.userType,
+                                                self.pIO.obj2Pickle(user))
+                            )
 
     def hasUser(self, userUUID):
         results = self.dbA.query("User", " USER_UUID ",
@@ -107,8 +106,8 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
         routingMorphicName = routingMorphic.getMorphicName()
         if not self.hasRoutingMorphic(routingMorphicName):
             self.dbA.insert("RoutingMorphic", " ROUTING_MORPHIC_NAME, PICKLE ",
-                            "'{0}', '{1}'".format(routingMorphicName,
-                                    self.pIO.obj2Pickle(routingMorphic)))
+                                (routingMorphicName,
+                                        self.pIO.obj2Pickle(routingMorphic)))
 
     def hasRoutingMorphic(self, routingMorphicName):
         results = self.dbA.query("RoutingMorphic", " ROUTING_MORPHIC_NAME ",

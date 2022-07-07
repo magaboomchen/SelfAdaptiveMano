@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import sys
 import socket
 import struct
 
@@ -38,11 +39,14 @@ class SocketConverter(object):
         num = (0xFFFFFFFF00000000 >> ipPrefix) & 0XFFFFFFFF
         return self.int2ip(int(num))
 
-    def bytes2Int(self,bYtes):
+    def bytes2Int(self, bYtes):
         result = 0
-        for b in list(bYtes):
-            b = ord(b)
-            result = result * 256 + int(b)
+        if sys.version >= '3':
+            result = int.from_bytes(bYtes, "big")
+        else:
+            for b in list(bYtes):
+                b = ord(b)
+                result = result * 256 + int(b)
         return result
 
     def int2Bytes(self, value, bytesLength):

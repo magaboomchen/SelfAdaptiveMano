@@ -2,6 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 import sys
+
+from sam.base.messageAgent import DEFAULT_ZONE
 if sys.version > '3':
     import queue as Queue
 else:
@@ -27,8 +29,6 @@ from sam.orchestration.oSFCDeleter import OSFCDeleter
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
-
-DEFAULT_ZONE = ""
 
 MODE_UFRR = 0
 MODE_NOTVIA_REMAPPING = 1
@@ -68,7 +68,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         cls._dib = DCNInfoBaseMaintainer()
         cls._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
 
-        cls.oA = OSFCAdder(cls._dib, cls.logger)
+        cls.oA = OSFCAdder(cls._dib, cls.logger, zoneName=DEFAULT_ZONE)
         cls.oA._dib.updateServersInAllZone(cls.servers)
         cls.oA._dib.updateSwitchesInAllZone(cls.switches)
         cls.oA._dib.updateLinksInAllZone(cls.links)
@@ -133,7 +133,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         for server in serversDictList[DEFAULT_ZONE]:
             cls.servers[DEFAULT_ZONE][server.getServerID()] = {
                 'Active': True,
-                'timestamp': datetime.datetime(2020, 10, 27, 0, 2, 39, 408596),
+                'timestamp': datetime(2020, 10, 27, 0, 2, 39, 408596),
                 'server': server}
         cls.logger.debug("serverDict:{0}".format(cls.servers))
 
@@ -148,7 +148,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         # verify
         assert sfc.sfcUUID == self.sfc.sfcUUID
 
-    @pytest.mark.skip(reason='Temporarly')
+    @pytest.mark.skip(reason='Deprecated function')
     def test_genAddSFCICmd(self):
         # exercise
         cmd = self.oA.genAddSFCICmd(self.addSFCIRequest)
@@ -163,7 +163,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         assert primaryForwardingPath == {1: [[10001, 1, 2, 10003], [10003, 2, 1, 10001]]}
         assert backupForwardingPath == {1: {(1, 2, 2): [[1, 3, 10005], [10005, 3, 1, 10001]], (2, 10003, 3): [[2, 10004], [10004, 2, 1, 10001]]}}
 
-    @pytest.mark.skip(reason='Temporarly')
+    @pytest.mark.skip(reason='TODO: add SFCI to DB first')
     def test_genDelSFCICmd(self):
         # exercise
         cmd = self.oD.genDelSFCICmd(self.delSFCIRequest)
@@ -175,7 +175,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         assert sfc.sfcUUID == self.sfc.sfcUUID
         assert sfci.sfciID == self.sfci.sfciID
 
-    @pytest.mark.skip(reason='Temporarly')
+    @pytest.mark.skip(reason='TODO: add SFC to DB first')
     def test_genDelSFCCmd(self):
         # exercise
         cmd = self.oD.genDelSFCCmd(self.delSFCRequest)
@@ -185,7 +185,7 @@ class TestOSFCAdderDeleterClass(TestBase):
         # verify
         assert sfc.sfcUUID == self.sfc.sfcUUID
 
-    @pytest.mark.skip(reason='Temporarly')
+    # @pytest.mark.skip(reason='Temporarly')
     def test_genABatchOfRequestAndAddSFCICmdsReuseVNFI(self):
         # exercise
         self._requestBatchQueue = Queue.Queue()
@@ -261,7 +261,7 @@ class TestOSFCAdderDeleterClass(TestBase):
             assert primaryForwardingPath != None
             assert backupForwardingPath != None
 
-    # @pytest.mark.skip(reason='Temporarly')
+    @pytest.mark.skip(reason='Temporarly')
     def test_genABatchOfRequestAndAddSFCICmdsDPSFC(self):
         # exercise
         self._requestBatchQueue = Queue.Queue()

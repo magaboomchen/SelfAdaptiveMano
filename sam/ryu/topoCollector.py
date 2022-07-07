@@ -39,15 +39,15 @@ class TopoCollector(BaseApp):
         self.logger.warning("Please use'ryu-manager --observe-links topoCollector.py'")
 
     def _printSwitches(self):
-        for switch in self.switches.itervalues():
+        for key, switch in self.switches.items():
             self.logger.info("switch:{0}".format(switch))
 
     def _printLinks(self):
-        for link in self.links.itervalues():
+        for key, link in self.links.items():
             self.logger.info("link:{0}".format(link))
 
     def _printHosts(self):
-        for host in self.hosts.itervalues():
+        for key, host in self.hosts.items():
             self.logger.info("host:{0}".format(host))
 
     def _sendEvent(self, ev):

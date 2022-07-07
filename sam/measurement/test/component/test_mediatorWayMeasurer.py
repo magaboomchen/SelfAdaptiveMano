@@ -10,7 +10,7 @@ from sam.base.server import Server, SERVER_TYPE_NORMAL
 from sam.base.request import Request, REQUEST_STATE_SUCCESSFUL, \
     REQUEST_TYPE_GET_DCN_INFO
 from sam.base.link import Link
-from sam.base.messageAgent import MEDIATOR_QUEUE, MEASURER_QUEUE, \
+from sam.base.messageAgent import DEFAULT_ZONE, MEDIATOR_QUEUE, MEASURER_QUEUE, \
     MSG_TYPE_MEDIATOR_CMD_REPLY, ORCHESTRATOR_QUEUE, DCN_INFO_RECIEVER_QUEUE
 from sam.base.command import CommandReply, CMD_TYPE_GET_TOPOLOGY, CMD_STATE_SUCCESSFUL
 from sam.base.shellProcessor import ShellProcessor
@@ -61,7 +61,7 @@ class TestMeasurerClass(TestBase):
 
         return {'switches':switchList,
                 'links':linkList,
-                'zone':""
+                'zone':DEFAULT_ZONE
                 }
 
     def genServerAttr(self):

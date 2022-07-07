@@ -281,8 +281,8 @@ class NotViaNATAndPSFC(FRR):
                         stageCount):
         primaryPathID = self._getPathID(direction["ID"])
         backupPaths = self._getBackupPaths(sfci, primaryPathID)
-        self.logger.warning("backupPaths.iterkeys(): {0}".format(backupPaths.iterkeys()))
-        for key in backupPaths.iterkeys():
+        self.logger.warning("backupPaths.keys(): {0}".format(backupPaths.keys()))
+        for key in backupPaths.keys():
             self.logger.warning("key: {0}".format(key))
             if self._isPSFCBackupPath(key):
                 continue

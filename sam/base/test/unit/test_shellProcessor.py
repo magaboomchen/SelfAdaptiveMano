@@ -18,16 +18,16 @@ class TestShellProcessorClass(object):
         """ setup any state tied to the execution of the given method in a
         class.  setup_method is invoked for every test method of a class.
         """
-        self.sp = ShellProcessor()
+        self.sP = ShellProcessor()
 
     def teardown_method(self, method):
         """ teardown any state that was previously setup with a setup_method
         call.
         """
-        self.sp = None
+        self.sP = None
 
     def test_isProcessRun(self):
-        assert self.sp.isProcessRun("bioset") == True
+        assert self.sP.isProcessRun("bioset") == True
 
     @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
     def test_runProcess(self):
@@ -39,23 +39,25 @@ class TestShellProcessorClass(object):
     
     def test_runPythonScript(self):
         filePath = tmpScript.__file__
-        self.sp.runPythonScript(filePath)
+        self.sP.runPythonScript(filePath)
         out_bytes = subprocess.check_output(
             ["ps -ef | grep tmpScript.py"], shell=True)
+        out_bytes = str(out_bytes)
         assert out_bytes.count("tmpScript") >= 3
 
     def test_isPythonScriptRun(self):
         filePath = tmpScript.__file__
         subprocess.Popen(
             ["python " + filePath], shell=True)
-        assert self.sp.isPythonScriptRun("tmpScript.py") == True
+        assert self.sP.isPythonScriptRun("tmpScript.py") == True
 
     def test_killPythonScript(self):
         filePath = tmpScript.__file__
-        self.sp.runPythonScript(filePath)
-        self.sp.killPythonScript("tmpScript.py")
+        self.sP.runPythonScript(filePath)
+        self.sP.killPythonScript("tmpScript.py")
         out_bytes = subprocess.check_output(
             ["ps -ef | grep tmpScript.py"], shell=True)
+        out_bytes = str(out_bytes)
         assert out_bytes.count("tmpScript.py") == 2
 
     def test_getPythonScriptProcessPid(self):

@@ -1,45 +1,33 @@
 # Installation
-## python library
+## apt
 ```
-sudo python -m pip install psutil
-sudo python -m pip install pika
-sudo python -m pip install netifaces
-sudo python -m pip install getmac
-sudo python -m pip install pytest
-sudo python -m pip install MySQL-python
-sudo python -m pip install networkx
-sudo python -m pip install numpy
-sudo python -m pip install pandas
-sudo python -m pip install -i https://pypi.gurobi.com gurobipy
-sudo python -m pip install ryu
-sudo python -m pip uninstall tinyrpc
-sudo python -m pip install tinyrpc==0.8
-sudo python -m pip install eventlet==0.30.2
-sudo python -m pip install ruamel.yaml==0.15.52
-sudo python -m pip install matplotlib
-sudo python -m pip install scapy
-sudo python -m pip install grpcio
-sudo python -m pip install grpcio-tools
-sudo python -m pip install docker
-sudo python -m pip install paramiko
-sudo python -m pip install sklearn
+sudo apt-get install python-tk python-eventlet python-routes \
+                     python-webob python-paramiko
 ```
 
+## python2
 ```
-sudo python -m pip install paramiko enum34 psutil pika netifaces getmac pytest networkx numpy pandas gurobipy tinyrpc==0.8 ruamel.yaml==0.15.52 matplotlib scapy grpcio grpcio-tools docker sklearn ryu 
-```
-or
-```
-pip3 install enum34 psutil pika netifaces getmac pytest networkx numpy pandas gurobipy tinyrpc==0.8 ruamel matplotlib scapy grpcio grpcio-tools docker
-```
-
-```
-sudo apt-get install python-tk
-sudo apt-get install python-eventlet python-routes python-webob python-paramiko
+pip uninstall tinyrpc enum
+pip install -i https://pypi.gurobi.com gurobipy
+pip install paramiko enum34 psutil pika netifaces \
+                    getmac pytest networkx numpy pandas \
+                    tinyrpc==0.8 ruamel.yaml==0.15.52 matplotlib \
+                    eventlet==0.30.2 scapy grpcio grpcio-tools \
+                    docker sklearn ryu MySQL-python cPickle \
 ```
 
-## Ansible-playbook
-delete python module enum and install enum34
+## python3
+```
+pip3 uninstall tinyrpc enum
+pip3 install enum34 psutil pika netifaces \
+                getmac pytest networkx numpy pandas \
+                gurobipy tinyrpc==0.8 matplotlib \
+                scapy grpcio grpcio-tools docker \
+                sklearn ryu paramiko ruamel.yaml==0.16.0 \
+                eventlet==0.30.2 cPickle PyMySQL
+```
+
+## [Deprecated]Ansible-playbook
 ```
 sudo apt-get install -y software-properties-common
 sudo apt-add-repository -y ppa:ansible/ansible
@@ -49,16 +37,18 @@ ansible-playbook -i localhost, -c local ./install.yml
 ```
 
 ## SAM python environment
-### Auto (Recommendation)
+### Method1: Auto (Recommendation)
 ```
-python environmentSetter.py
+python sam/base/environmentSetter.py
 ```
 
-### Manual
+### Method2: Manual
 ```
+ABSOLUTE_PATH_TO_THIS_PROJECT=pwd
 cd /usr/local/lib/python2.7/dist-packages
-sudo vim selfAdaptiveMano.pth
-(write) PATH_TO_THIS_PROJECT
+sudo cat > selfAdaptiveMano.pth << EOF
+${ABSOLUTE_PATH_TO_THIS_PROJECT}
+EOF
 ```
 
 ## RabbitMQ
@@ -79,6 +69,20 @@ sudo apt-get install rabbitmq-server
 systemctl start rabbitmq-server.service
 ```
 
+### generate rabbitMQ client conf
+```
+python sam/base/rabbitMQSetter.py
+```
+
+## [DON'T_EXECUTE_THIS]MessageAgent gRPC protos compile
+We have compile the protos files, you don't need compile them again.
+If there is something wrong with gRPC protos, you could regenerate them as follows:
+```
+python -m grpc_tools.protoc -I./base/messageAgentAuxillary/protos --python_out=./base/messageAgentAuxillary  --grpc_python_out=./base/messageAgentAuxillary    ./base/messageAgentAuxillary/protos/messageAgent.proto
+```
+Then, you need change "import messageAgent_pb2 as messageAgent__pb2" to "import sam.base.messageAgentAuxillary.messageAgent_pb2 as messageAgent__pb2".
+And many other gRPC generated code has path problem, you should fix them.
+
 ## Mysql database
 ### Install python mysql
 #### Ubuntu 16.04
@@ -87,6 +91,7 @@ sudo apt-get install libmysqlclient-dev
 sudo python -m pip install MySQL-python
 sudo service mysql start
 ```
+
 #### Ubuntu 18.04
 ```
 sudo apt-get install build-essential python-dev libmysqlclient-dev
@@ -131,7 +136,7 @@ export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
 export RTE_TARGET=x86_64-native-linuxapp-gcc
 ```
 
-## RYU App
+## RYU App (Only need for management and controller server)
 ### Set ryu app environment variable "path"
 ```
 RYU_APP_PATH=/usr/local/lib/python2.7/dist-packages/ryu/app

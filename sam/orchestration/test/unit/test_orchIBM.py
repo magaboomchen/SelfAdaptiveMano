@@ -4,12 +4,11 @@
 import uuid
 import logging
 
-from sam.base.sfc import SFCI
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_UFRR
 from sam.base.command import Command, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
     CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI
 from sam.base.request import REQUEST_STATE_SUCCESSFUL, REQUEST_STATE_INITIAL
-from sam.base.sfc import STATE_IN_PROCESSING, STATE_INACTIVE, STATE_DELETED
+from sam.base.sfc import SFCI, STATE_IN_PROCESSING, STATE_INACTIVE, STATE_DELETED
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP

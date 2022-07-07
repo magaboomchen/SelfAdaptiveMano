@@ -24,6 +24,7 @@ class SystemChecker(object):
     def checkRTE_SDK(self):
         # check whether $RTE_SDK is available
         out_bytes = subprocess.check_output(['echo $RTE_SDK'], shell=True)
+        out_bytes = str(out_bytes)
         if len(out_bytes) == 1:
             self.logger.error("Path environment $RTE_SDK is not defined, please define it as the path of dpdk directory.")
             exit(1)

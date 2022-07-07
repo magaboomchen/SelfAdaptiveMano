@@ -49,13 +49,15 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
                 self.dbA.insert("Link",
                     " ZONE_NAME, SRC_SWITCH_ID, DST_SWITCH_ID, TOTAL_BANDWIDTH," \
                     " BANDWIDTH_UTILIZATION, PICKLE ",
-                    "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}' ".format(zoneName,
-                                    link.srcID,
-                                    link.dstID,
-                                    link.bandwidth,
-                                    link.utilization,
-                                    self.pIO.obj2Pickle(link)
-                    ))
+                        (
+                            zoneName,
+                            link.srcID,
+                            link.dstID,
+                            link.bandwidth,
+                            link.utilization,
+                            self.pIO.obj2Pickle(link)
+                        )
+                    )
         else:
             linkID = link.linkID
             self._links[zoneName][linkID] = {'link':link, 'active':True/False, 'status':None}

@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import sys
 import logging
 import subprocess
 
@@ -117,25 +118,29 @@ class Server(object):
         else:
             return self._serverDatapathNICIP
 
-    def _getHwAddrInDPDK(self):
-        command = "echo -ne \'\n\' | sudo $RTE_SDK/build/app/testpmd | grep \"Port 0: \""
-        res = subprocess.Popen(command, shell=True,
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
-        result = res.stdout.readlines()
-        outputText = str(result)
-        if outputText.find("Port 0: ") == -1:
-            raise ValueError("get data path nic mac address error, maybe run out of hugepages?")
-
-        for reg in result:
-            if reg.count(":") == 6:
-                final = reg.split(' ')[2][0:17]
-                break
-            elif reg.find("Link Down") != -1:
-                print("link down")
-                # raise ValueError("datapath nic link down!")
-        else:
-            raise ValueError("get data path nic mac address error, unknown reason.")
-        return final
+    def _getHwAddrInDPDK(self, retryNum=2):
+        while retryNum > 0:
+            command = "echo -ne \'\n\' | sudo $RTE_SDK/build/app/testpmd | grep \"Port 0: \""
+            res = subprocess.Popen(command, shell=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+            results = res.stdout.readlines()
+            for result in results:
+                result = str(result)
+                outputText = result
+                if outputText.find("Port 0: ") == -1:
+                    raise ValueError("get data path nic mac address error, maybe run out of hugepages?")
+                if result.count(":") == 6:
+                    final = result.split(' ')[2][0:17]
+                    return final
+                elif result.find("Link Down") != -1:
+                    print("link down")
+                    final = None
+                    return final
+                    # raise ValueError("datapath nic link down!")
+                else:
+                    pass
+            retryNum = retryNum - 1
+        raise ValueError("get data path nic mac address error, unknown reason.")
 
     def _getHwAddrInKernel(self, ifName):
         ethMac = get_mac_address(interface=ifName)
@@ -229,18 +234,21 @@ class Server(object):
         self._updateHugepagesFree()
         self._updateHugepagesSize()
 
-    def __isSMP(self):
+    def _isSMP(self):
         rv = subprocess.check_output("lscpu | grep -i 'Socket(s)'", shell=True)
         rv = str(rv)
         rv = int(rv.split(":")[1].strip("\\n'"))
         return rv == 1
 
     def _updateMemAccessMode(self):
-        if self.__isSMP():
+        if self._isSMP():
             self._memoryAccessMode = "SMP"
             return None
         rv = subprocess.check_output("lscpu | grep -i numa | grep 'NUMA node(s):'", shell=True)
-        rv = int(rv.strip("\n").split(":")[1])
+        rv = str(rv)
+        rv = rv.strip("'")
+        rv = rv.strip("\\n")
+        rv = int(rv.split(":")[1])
         if rv <= 1:
             self._memoryAccessMode = "SMP"
         else:
@@ -249,18 +257,22 @@ class Server(object):
     def _updateSocketNum(self):
         rv = subprocess.check_output(' lscpu | grep Socket ', shell=True)
         rv = str(rv)
-        rv = int(rv.split(":")[1].strip("\\n'"))
+        rv = rv.split(":")[1].strip("\\n'")
         self._socketNum = int(rv)
 
     def _getSMPCoresNum(self):
         rv = subprocess.check_output(" lscpu | grep 'CPU(s):' ", shell=True)
         rv = str(rv)
-        rv = int(rv.split(":")[1].strip("\\n'"))
+        if sys.version > '3':
+            rv = rv.split("\\n")[0]
+        else:
+            rv = rv.split("\n")[0]
+        rv = int(rv.split(":")[1])
         return rv
 
     def _updateCoreSocketDistribution(self):
         self._coreSocketDistribution = []
-        if self.__isSMP():
+        if self._isSMP():
             self._coreSocketDistribution = [list(range(self._getSMPCoresNum()))]
             return None
         for nodeIndex in range(self._socketNum):
@@ -273,25 +285,31 @@ class Server(object):
             self._coreSocketDistribution.append(coreNum)
 
     def _updateNUMANum(self):
-        if self.__isSMP():
+        if self._isSMP():
             self._numaNum = 1
             return None
         rv = subprocess.check_output(" lscpu | grep 'NUMA node(s)' ", shell=True)
         rv = str(rv)
-        rv = rv.strip("\n").split(":")[1]
+        rv = rv.strip("\\n'")
+        rv = rv.split(":")[1]
         self._numaNum = int(rv)
 
     def _updateCoreNUMADistribution(self):
         self._coreNUMADistribution = []
-        if self.__isSMP():
-            self._coreNUMADistribution = [list(range(self._getSMPCoresNum()))]
+        if self._isSMP():
+            self._coreNUMADistribution = []
+            for idx in range(self._getSMPCoresNum()):
+                self._coreNUMADistribution.append(idx+1)
             return None
         for nodeIndex in range(self._socketNum):
             regexp = "'NUMA node{0} CPU(s):'".format(nodeIndex)
             cmd = "lscpu | grep -i numa | grep {0}".format(regexp)
             rv = subprocess.check_output([cmd], shell=True)
             rv = str(rv)
-            rv = rv.strip("\n").split(":")[1]
+            if sys.version > '3':
+                rv = rv.strip("\\n'").split(":")[1]
+            else:
+                rv = rv.strip("\n").split(":")[1]
             if rv.find(",") != -1:
                 rv = rv.split(",")
                 rv = map(lambda x: int(x), rv)
@@ -301,6 +319,7 @@ class Server(object):
                 rv = range(rv[0], rv[1] + 1)
             else:
                 raise ValueError("Can't parse NUMA Core")
+            rv = list(rv)
             self._coreNUMADistribution.append(rv)
 
     def _updateCpuUtil(self):
@@ -308,19 +327,22 @@ class Server(object):
 
     def _updateHugepagesTotal(self):
         self._hugepagesTotal = []
-        if self.__isSMP():
+        if self._isSMP():
             return None
         for nodeIndex in range(self._socketNum):
             regexp = "'Node {0} HugePages_Total:'".format(nodeIndex)
             cmd = "cat /sys/devices/system/node/node*/meminfo | fgrep Huge | grep {0}".format(regexp)
             rv = subprocess.check_output([cmd], shell=True)
             rv = str(rv)
-            rv = int(rv.strip("\n").split(":")[1])
+            if sys.version > '3':
+                rv = int(rv.strip("\\n'").split(":")[1])
+            else:
+                rv = int(rv.strip("\n").split(":")[1])
             self._hugepagesTotal.append(rv)
 
     def _updateHugepagesFree(self):
         self._hugepagesFree = []
-        if self.__isSMP():
+        if self._isSMP():
             rv = subprocess.check_output(" grep Huge /proc/meminfo | grep 'HugePages_Free:' ", shell=True)
             rv = str(rv)
             rv = int(rv.split(":")[1].strip("\\n'"))
@@ -331,7 +353,10 @@ class Server(object):
             cmd = "cat /sys/devices/system/node/node*/meminfo | fgrep Huge | grep {0}".format(regexp)
             rv = subprocess.check_output([cmd], shell=True)
             rv = str(rv)
-            rv = int(rv.strip("\n").split(":")[1])
+            if sys.version > '3':
+                rv = int(rv.strip("\\n'").split(":")[1])
+            else:
+                rv = int(rv.strip("\n").split(":")[1])
             self._hugepagesFree.append(rv)
 
     def _updateHugepagesSize(self):

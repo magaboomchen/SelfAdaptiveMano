@@ -62,7 +62,7 @@ class PathComputer(object):
         e = []
 
         linksInfoDict = self._dib.getLinksByZone(self.zoneName)
-        for linkInfoDict in linksInfoDict.itervalues():
+        for key, linkInfoDict in linksInfoDict.items():
             link = linkInfoDict['link']
             s = self._genNodeID(link.srcID, stage)
             d = self._genNodeID(link.dstID, stage)
@@ -124,7 +124,7 @@ class PathComputer(object):
     def _findSwitchByServer(self, server):
         serverIP = server.getDatapathNICIP()
         switchesInfoDict = self._dib.getSwitchesByZone(self.zoneName)
-        for switchInfoDict in switchesInfoDict.itervalues():
+        for key, switchInfoDict in switchesInfoDict.items():
             switch = switchInfoDict['switch']
             lanNet = switch.lanNet
             if self._sc.isLANIP(serverIP, lanNet):

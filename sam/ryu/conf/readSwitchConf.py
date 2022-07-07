@@ -15,5 +15,5 @@ if __name__ == "__main__":
     with open("./switch.yaml") as f:
         content = yaml.load(f)
         # ls(content)
-        for item in content.itervalues():
+        for key, item in content.items():
             print(item)

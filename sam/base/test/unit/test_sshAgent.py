@@ -17,7 +17,7 @@ class TestSSHAgentClass(object):
         class.  setup_method is invoked for every test method of a class.
         """
         self.sshA = SSHAgent()
-        self.sshA.connectSSH("t1", "123", "192.168.122.134", remoteSSHPort=22)
+        self.sshA.connectSSH("t1", "123", "127.0.0.1", remoteSSHPort=22)
 
     def teardown_method(self, method):
         """ teardown any state that was previously setup with a setup_method

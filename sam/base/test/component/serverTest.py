@@ -19,8 +19,12 @@ class ServerTester(object):
 
         server.printIfSet()
 
+        server.updateControlNICMAC()
+
         controlNICMac = server.getControlNICMac()
         logging.info(controlNICMac)
+
+        server.updateDataPathNICMAC()
 
         datapathNICMac = server.getDatapathNICMac()
         logging.info(datapathNICMac)

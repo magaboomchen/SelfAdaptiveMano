@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import sam.base.messageAgentAuxillary.messageAgent_pb2 as messageAgent__pb2
+from base.messageAgentAuxillary.protos import messageAgent_pb2 as base_dot_messageAgentAuxillary_dot_protos_dot_messageAgent__pb2
 
 
 class MessageStorageStub(object):
@@ -16,8 +16,8 @@ class MessageStorageStub(object):
         """
         self.Store = channel.unary_unary(
                 '/MessageStorage/Store',
-                request_serializer=messageAgent__pb2.Pickle.SerializeToString,
-                response_deserializer=messageAgent__pb2.Status.FromString,
+                request_serializer=base_dot_messageAgentAuxillary_dot_protos_dot_messageAgent__pb2.Pickle.SerializeToString,
+                response_deserializer=base_dot_messageAgentAuxillary_dot_protos_dot_messageAgent__pb2.Status.FromString,
                 )
 
 
@@ -35,8 +35,8 @@ def add_MessageStorageServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Store': grpc.unary_unary_rpc_method_handler(
                     servicer.Store,
-                    request_deserializer=messageAgent__pb2.Pickle.FromString,
-                    response_serializer=messageAgent__pb2.Status.SerializeToString,
+                    request_deserializer=base_dot_messageAgentAuxillary_dot_protos_dot_messageAgent__pb2.Pickle.FromString,
+                    response_serializer=base_dot_messageAgentAuxillary_dot_protos_dot_messageAgent__pb2.Status.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -60,7 +60,7 @@ class MessageStorage(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/MessageStorage/Store',
-            messageAgent__pb2.Pickle.SerializeToString,
-            messageAgent__pb2.Status.FromString,
+            base_dot_messageAgentAuxillary_dot_protos_dot_messageAgent__pb2.Pickle.SerializeToString,
+            base_dot_messageAgentAuxillary_dot_protos_dot_messageAgent__pb2.Status.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

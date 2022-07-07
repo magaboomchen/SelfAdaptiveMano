@@ -44,14 +44,14 @@ class MMLBSFC(MMLPSFC):
             # node protection: switch and server
             self.scenarioList = []
             switchesInfoDict = self._initDib.getSwitchesByZone(self.zoneName)
-            for switchInfoDict in switchesInfoDict.itervalues():
+            for key, switchInfoDict in switchesInfoDict.items():
                 switch = switchInfoDict['switch']
                 fS = FailureScenario()
                 fS.addElement(switch)
                 self.scenarioList.append(fS)
 
             serversInfoDict = self._initDib.getServersByZone(self.zoneName)
-            for serverInfoDict in serversInfoDict.itervalues():
+            for key, serverInfoDict in serversInfoDict.items():
                 server = serverInfoDict['server']
                 fS = FailureScenario()
                 fS.addElement(server)
@@ -61,7 +61,7 @@ class MMLBSFC(MMLPSFC):
             # link protection: link
             self.scenarioList = []
             linksInfoDict = self._initDib.getLinksByZone(self.zoneName)
-            for linkInfoDict in linksInfoDict.itervalues():
+            for key, linkInfoDict in linksInfoDict.items():
                 link = linkInfoDict['link']
                 fS = FailureScenario()
                 fS.addElement(link)

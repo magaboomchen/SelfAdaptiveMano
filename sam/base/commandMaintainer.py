@@ -32,7 +32,7 @@ class CommandMaintainer(XInfoBaseMaintainer):
             return False
 
     def delCmdwithChildCmd(self, cmdID):
-        for childCmdID in self._commandsInfo[cmdID]['childCmdID'].itervalues():
+        for key, childCmdID in self._commandsInfo[cmdID]['childCmdID'].items():
             del self._commandsInfo[childCmdID]
         del self._commandsInfo[cmdID]
 
@@ -83,7 +83,7 @@ class CommandMaintainer(XInfoBaseMaintainer):
     def getChildCMdRplyList(self,parentCmdID):
         childCmdRplyList = []
         cmdInfo = self._commandsInfo[parentCmdID]
-        for childCmdID in cmdInfo['childCmdID'].itervalues():
+        for key, childCmdID in cmdInfo['childCmdID'].items():
             childCmdRply = self._commandsInfo[childCmdID]['cmdReply']
             childCmdRplyList.append(childCmdRply)
         return childCmdRplyList
@@ -91,7 +91,7 @@ class CommandMaintainer(XInfoBaseMaintainer):
     def isParentCmdSuccessful(self,cmdID):
         # if all child cmd is successful, then send cmdRply
         cmdInfo = self._commandsInfo[cmdID]
-        for childCmdID in cmdInfo['childCmdID'].itervalues():
+        for key, childCmdID in cmdInfo['childCmdID'].items():
             if self.getCmdState(childCmdID) != CMD_STATE_SUCCESSFUL:
                 return False
         return True
@@ -99,7 +99,7 @@ class CommandMaintainer(XInfoBaseMaintainer):
     def isParentCmdFailed(self,cmdID):
         # if at least one child cmd is failed, then parent cmd failed
         cmdInfo = self._commandsInfo[cmdID]
-        for childCmdID in cmdInfo['childCmdID'].itervalues():
+        for key, childCmdID in cmdInfo['childCmdID'].items():
             if self.getCmdState(childCmdID) == CMD_STATE_FAIL:
                 return True
         return False
@@ -107,7 +107,7 @@ class CommandMaintainer(XInfoBaseMaintainer):
     def isOnlyOneChildCmdFailed(self,cmdID):
         cmdInfo = self._commandsInfo[cmdID]
         count = 0
-        for childCmdID in cmdInfo['childCmdID'].itervalues():
+        for key, childCmdID in cmdInfo['childCmdID'].items():
             if self.getCmdState(childCmdID) == CMD_STATE_FAIL:
                 count = count + 1
         if count == 1:
@@ -117,7 +117,7 @@ class CommandMaintainer(XInfoBaseMaintainer):
 
     def isAllChildCmdDetermined(self,cmdID):
         cmdInfo = self._commandsInfo[cmdID]
-        for childCmdID in cmdInfo['childCmdID'].itervalues():
+        for key, childCmdID in cmdInfo['childCmdID'].items():
             if self.getCmdState(childCmdID) == CMD_STATE_WAITING or \
                 self.getCmdState(childCmdID) == CMD_STATE_PROCESSING:
                 return False
@@ -125,7 +125,7 @@ class CommandMaintainer(XInfoBaseMaintainer):
 
     def isParentCmdWaiting(self,cmdID):
         cmdInfo = self._commandsInfo[cmdID]
-        for childCmdID in cmdInfo['childCmdID'].itervalues():
+        for key, childCmdID in cmdInfo['childCmdID'].items():
             if self.getCmdState(childCmdID) == CMD_STATE_WAITING:
                 return True
         return False

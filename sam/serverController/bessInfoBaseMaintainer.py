@@ -18,11 +18,11 @@ class BessInfoBaseMaintainer(XInfoBaseMaintainer):
         # key <- sfcUUID or SFCIID
 
     def delModule(self,name):
-        if name in self._modules.iterkeys():
+        if name in self._modules.keys():
             del self._modules[name]
 
     def getModule(self,name):
-        if name in self._modules.iterkeys():
+        if name in self._modules.keys():
             return self._modules[name]
         else:
             return None
@@ -30,7 +30,7 @@ class BessInfoBaseMaintainer(XInfoBaseMaintainer):
     def getModuleOGateNumList(self,moduleName):
         ogates = self._modules[moduleName]['ogates']
         oGatesList = []
-        for ogate in ogates.itervalues():
+        for key, ogate in ogates.items():
             oGatesList.append(ogate)
         return oGatesList
 

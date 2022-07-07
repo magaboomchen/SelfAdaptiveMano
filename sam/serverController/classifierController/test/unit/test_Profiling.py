@@ -13,7 +13,7 @@ from sam.base.sfc import SFC, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.vnf import VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER
 from sam.base.command import CMD_STATE_SUCCESSFUL
-from sam.base.messageAgent import SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
+from sam.base.messageAgent import DEFAULT_ZONE, SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
     MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, MEDIATOR_QUEUE
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.command import CMD_STATE_SUCCESSFUL
@@ -100,7 +100,7 @@ class TestSFCIAdderClass(TestBase):
         }
         directions = [direction1,direction2]
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions, {'zone':""})
+            backupInstanceNumber, applicationType, directions, {'zone':DEFAULT_ZONE})
 
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_addSFCI(self, setup_addSFCI):

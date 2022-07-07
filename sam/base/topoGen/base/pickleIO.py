@@ -1,7 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import cPickle
+import sys
+if sys.version > '3':
+    import _pickle as cPickle
+else:
+    import cPickle
 
 
 class PickleIO(object):

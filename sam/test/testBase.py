@@ -6,7 +6,7 @@ import random
 import logging
 
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
-from sam.base.vnf import VNFI, VNF_TYPE_FORWARD, VNF_TYPE_MAX
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, VNF_TYPE_FORWARD, VNF_TYPE_MAX
 from sam.base.slo import SLO
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI, \
     SERVER_TYPE_TESTER
@@ -14,7 +14,7 @@ from sam.base.path import ForwardingPathSet, MAPPING_TYPE_UFRR, MAPPING_TYPE_E2E
 from sam.base.switch import Switch
 from sam.base.request import Request, REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
     REQUEST_STATE_INITIAL, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI
-from sam.base.messageAgent import SAMMessage, MessageAgent, MSG_TYPE_REQUEST, \
+from sam.base.messageAgent import DEFAULT_ZONE, SAMMessage, MessageAgent, MSG_TYPE_REQUEST, \
     REQUEST_PROCESSOR_QUEUE
 from sam.base.routingMorphic import RoutingMorphic
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
@@ -170,6 +170,8 @@ class TestBase(object):
     def genUniDirectionSFC(self, classifier):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_FORWARD]
+        vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_FORWARD,
+                            None, PREFERRED_DEVICE_TYPE_SERVER)]
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
@@ -186,11 +188,13 @@ class TestBase(object):
         slo = SLO(latencyBound=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
-            {'zone':""}, slo=slo)
+            {'zone':DEFAULT_ZONE}, slo=slo, vnfSequence=vnfSequence)
 
     def genBiDirectionSFC(self, classifier, vnfTypeSeq=[VNF_TYPE_FORWARD]):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = vnfTypeSeq
+        vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_FORWARD,
+                        None, PREFERRED_DEVICE_TYPE_SERVER)] * len(vnfTypeSeq)
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
@@ -217,9 +221,9 @@ class TestBase(object):
         routingMorphic.from_dict(ipv4MorphicDictTemplate)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions=directions,
-            attributes={'zone':""},
-            # routingMorphic=MORPHIC_IPV4
-            routingMorphic=routingMorphic
+            attributes={'zone':DEFAULT_ZONE},
+            routingMorphic=routingMorphic,
+            vnfSequence=vnfSequence
             )
 
     def genUniDirection10BackupSFCI(self):
@@ -566,27 +570,29 @@ class TestBase(object):
     def genAddSFCRequest(self, sfc):
         sfc.backupInstanceNumber = 3
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFC,
-            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc,
-                'zone':"", 'mappingType':MAPPING_TYPE_E2EP})
+            REQUEST_PROCESSOR_QUEUE, requestState=REQUEST_STATE_INITIAL,
+                attributes={'sfc':sfc,
+                    'zone':DEFAULT_ZONE, 'mappingType':MAPPING_TYPE_E2EP})
         return request
 
     def genAddSFCIRequest(self, sfc, sfci):
         sfc.backupInstanceNumber = 3
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
-            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc,
-                'sfci':sfci, 'zone':"", 'mappingType':MAPPING_TYPE_E2EP})
+            REQUEST_PROCESSOR_QUEUE, requestState=REQUEST_STATE_INITIAL,
+                attributes={'sfc':sfc,
+                    'sfci':sfci, 'zone':DEFAULT_ZONE, 'mappingType':MAPPING_TYPE_E2EP})
         return request
 
     def genDelSFCRequest(self, sfc):
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFC,
-            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc,
-                'zone':""})
+            REQUEST_PROCESSOR_QUEUE, requestState=REQUEST_STATE_INITIAL,
+                attributes={'sfc':sfc, 'zone':DEFAULT_ZONE})
         return request
 
     def genDelSFCIRequest(self, sfc, sfci):
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,
-            REQUEST_PROCESSOR_QUEUE, REQUEST_STATE_INITIAL, {'sfc':sfc,
-                'sfci':sfci, 'zone':""})
+            REQUEST_PROCESSOR_QUEUE, requestState=REQUEST_STATE_INITIAL,
+                attributes={'sfc':sfc, 'sfci':sfci, 'zone':DEFAULT_ZONE})
         return request
 
     def _genSFCIID(self):

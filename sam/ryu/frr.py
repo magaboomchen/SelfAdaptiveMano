@@ -195,7 +195,7 @@ class FRR(BaseApp):
                             sfci, direction, stageCount):
         primaryPathID = self._getPathID(direction["ID"])
         backupPaths = self._getBackupPaths(sfci,primaryPathID)
-        for key in backupPaths.iterkeys():
+        for key in backupPaths.keys():
             if self._isThisBackupPathProtectsNextHop(key, currentDpid,
                     nextDpid, stageCount):
                 return backupPaths[key][0][1][1]

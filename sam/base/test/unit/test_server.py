@@ -68,21 +68,51 @@ class TestServerClass(object):
         assert result == "18:66:da:86:4c:15"
 
     @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
-    def test_updateCpuCount(self):
-        self.server._updateCpuCount()
-        assert self.server._CPUNum == 12
+    def test_updateSocketNum(self):
+        self.server._updateSocketNum()
+        assert self.server._socketNum == 2
 
+    @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
+    def test_updateCoreSocketDistribution(self):
+        self.server._updateSocketNum()
+        self.server._updateCoreSocketDistribution()
+        assert self.server._coreSocketDistribution == [12, 12]
+
+    @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
+    def test_updateNUMANum(self):
+        self.server._updateNUMANum()
+        assert self.server._numaNum == 2
+
+    # @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
+    def test_getSMPCoresNum(self):
+        rv = self.server._getSMPCoresNum()
+        assert rv == 12
+
+    @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
+    def test_updateCoreNUMADistribution(self):
+        self.server._updateSocketNum()
+        self.server._updateCoreNUMADistribution()
+        assert self.server._coreNUMADistribution == [12,12]
+
+    @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
     def test_updateCpuUtil(self):
         self.server._updateCpuUtil()
-        assert self.server._CPUUtil >= 0.0 and self.server._CPUUtil <= 100.0
+        assert self.server._coreUtilization[0] >= 0.0 and self.server._coreUtilization[0] <= 100.0
+
+    @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
+    def test_isSMP(self):
+        rv = self.server._isSMP()
+        assert rv
 
     @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
     def test_updateHugepagesTotal(self):
+        self.server._updateSocketNum()
         self.server._updateHugepagesTotal()
         assert self.server._hugepagesTotal == 0
 
     @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
     def test_updateHugepagesFree(self):
+        self.server._updateSocketNum()
         self.server._updateHugepagesFree()
         assert self.server._hugepagesFree == 0
 
@@ -90,3 +120,9 @@ class TestServerClass(object):
     def test_updateHugepagesSize(self):
         self.server._updateHugepagesSize()
         assert self.server._hugepageSize == 2048
+
+    # @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
+    def test_updateMemAccessMode(self):
+        self.server._updateMemAccessMode()
+        assert self.server._memoryAccessMode == "NUMA"
+

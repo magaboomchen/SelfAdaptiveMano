@@ -52,15 +52,17 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
                 self.dbA.insert("Server",
                     " ZONE_NAME, SERVER_ID, SERVER_TYPE, IP_ADDRESS, TOTAL_CPU_CORE, " \
                     " TOTAL_MEMORY, TOTAL_NIC_BANDWIDTH, PICKLE ",
-                    "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}' ".format(zoneName,
-                                    server.getServerID(),
-                                    server.getServerType(),
-                                    server.getControlNICIP(),
-                                    server.getMaxCores(),
-                                    server.getMaxMemory(),
-                                    server.getNICBandwidth(),
-                                    self.pIO.obj2Pickle(server)
-                    ))
+                        (   
+                            zoneName,
+                            server.getServerID(),
+                            server.getServerType(),
+                            server.getControlNICIP(),
+                            server.getMaxCores(),
+                            server.getMaxMemory(),
+                            server.getNICBandwidth(),
+                            self.pIO.obj2Pickle(server)
+                        )
+                    )
         else:
             serverID = server.getServerID()
             self._servers[zoneName][serverID] = {'server':server, 'Active':True/False, 'timestamp':None, 'status':None}
