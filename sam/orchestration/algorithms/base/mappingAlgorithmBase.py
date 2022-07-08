@@ -3,6 +3,7 @@
 
 import copy
 
+from sam.base.switch import Switch
 from sam.base.server import Server
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
@@ -184,12 +185,24 @@ class MappingAlgorithmBase(object):
             sfc = request.attributes['sfc']
             ingress = sfc.directions[0]['ingress']
             if type(ingress) == Server:
-                raise ValueError("Ingress is not a switch!")
-            ingSwitchID = ingress.switchID
+                # Ingress is a server
+                ingSwitch = self._dib.getConnectedSwitch(ingress.getServerID(),
+                    self.zoneName)
+                ingSwitchID = ingSwitch.switchID
+            elif type(ingress) == Switch:
+                ingSwitchID = ingress.switchID
+            else:
+                raise ValueError("Unknown ingress type {0}".format(type(ingress)))
             egress = sfc.directions[0]['egress']
             if type(egress) == Server:
-                raise ValueError("Egress is not a switch!")
-            egSwitchID = egress.switchID
+                # Egress is a server
+                egSwitch = self._dib.getConnectedSwitch(egress.getServerID(),
+                    self.zoneName)
+                egSwitchID = egSwitch.switchID
+            elif type(egress) == Switch:
+                egSwitchID = egress.switchID
+            else:
+                raise ValueError("Unknown egress type {0}".format(type(egress)))
             self.requestIngSwitchID[rIndex] = ingSwitchID
             self.requestEgSwitchID[rIndex] = egSwitchID
 

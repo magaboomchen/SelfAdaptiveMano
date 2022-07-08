@@ -1,4 +1,4 @@
-# Pre-requiste
+# Pre-requisite
 Only support python2.7, python3.6.9+, python3.9+
 
 # Installation
