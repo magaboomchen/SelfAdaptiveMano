@@ -29,14 +29,14 @@ class VNFIMaintainer(object):
         self._vnfiSet[sfciID] = {}
 
     def hasSFCI(self, sfciID):
-        return self._vnfiSet.has_key(sfciID)
+        return sfciID in self._vnfiSet
 
     def addVNFI(self, sfciID, vnfi):
         self._vnfiSet[sfciID][vnfi.vnfiID] = VNFIDeployStatus(vnfi, VNFI_STATE_PROCESSING)
 
     def hasVNFI(self, vnfi):
         for sfciID, vnfiDict in self._vnfiSet.items():
-            if vnfiDict.has_key(vnfi.vnfiID):
+            if vnfi.vnfiID in vnfiDict:
                 return True
         else:
             return False

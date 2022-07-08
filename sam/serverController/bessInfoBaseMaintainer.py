@@ -43,7 +43,7 @@ class BessInfoBaseMaintainer(XInfoBaseMaintainer):
         return ogates[key]
 
     def hasModuleOGate(self, moduleName, key):
-        return self._modules[moduleName]['ogates'].has_key(key)
+        return key in self._modules[moduleName]['ogates']
 
     def delModuleOGate(self,moduleName,key):
         ogates = self._modules[moduleName]['ogates']

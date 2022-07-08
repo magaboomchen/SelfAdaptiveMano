@@ -5,6 +5,7 @@ import time
 import logging
 import uuid
 
+from sam.base.compatibility import screenInput
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import SIMULATOR_ZONE
 from sam.base.rateLimiter import RateLimiterConfig
@@ -44,7 +45,7 @@ class IntTestBaseClass(TestBase):
         time.sleep(3)
         logging.info("Please start dispatcher, mediator and simulator!"\
                         " Then press Any key to continue!")
-        raw_input() # type: ignore
+        screenInput()
 
     def common_teardown(self):
         self.clearQueue()

@@ -201,7 +201,7 @@ class OrchestratorManager(object):
 
     def _getOrchestratorNameBySFC(self, sfc):
         for orchName, oInfo in self.orchestratorDict.items():
-            if oInfo["sfcDict"].has_key(sfc.sfcUUID):
+            if sfc.sfcUUID in oInfo["sfcDict"]:
                 return orchName
         else:
             raise ValueError("Can't find orchestrator instance.")

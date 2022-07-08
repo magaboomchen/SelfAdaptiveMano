@@ -5,10 +5,11 @@ import uuid
 import logging
 
 import pytest
-from scapy.all import Raw, sendp, sniff
-from scapy.layers.l2 import Ether, ARP
-from scapy.layers.inet import IP, TCP
+from scapy.all import sniff
+from scapy.layers.l2 import ARP
+from scapy.layers.inet import IP
 
+from sam.base.compatibility import screenInput
 from sam.base.sfc import SFC, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.vnf import VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER
@@ -115,7 +116,7 @@ class TestSFCIAdderClass(TestBase):
         self.verifyOutSFCDomainTraffic()
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
-        raw_input()  # type: ignore
+        screenInput()
 
     def verifyArpResponder(self):
         self._sendArpRequest(requestIP=CLASSIFIER_DATAPATH_IP)

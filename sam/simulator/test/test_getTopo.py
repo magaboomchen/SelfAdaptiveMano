@@ -21,7 +21,7 @@ from time import sleep
 import pytest
 
 from sam.base.command import CMD_STATE_SUCCESSFUL
-from sam.base.messageAgent import MSG_TYPE_SIMULATOR_CMD
+from sam.base.messageAgent import MSG_TYPE_SIMULATOR_CMD, SIMULATOR_ZONE
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT, SIMULATOR_PORT
@@ -84,9 +84,10 @@ class TestGetTopologyClass(TestSimulatorBase):
         # cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         cmdRply = self.recvCmdRplyByRPC("localhost", TEST_PORT)
         assert cmdRply.cmdID == self.getTopoCmd.cmdID
-        assert cmdRply.attributes.has_key("switches")
-        assert cmdRply.attributes.has_key("links")
+        assert "switches" in cmdRply.attributes
+        assert "links" in cmdRply.attributes
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == SIMULATOR_ZONE
         # self.logger.info("{0}".format(cmdRply.attributes.keys()))
         # self.logger.info("{0}".format(cmdRply.attributes["switches"]))
         # self.logger.info("{0}".format(cmdRply.attributes["links"]))

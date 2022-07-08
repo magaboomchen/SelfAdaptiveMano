@@ -17,6 +17,7 @@ from scapy.layers.l2 import Ether, ARP
 from scapy.layers.inet import IP, TCP
 
 from sam.base import server
+from sam.base.compatibility import screenInput
 from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
 from sam.base.vnf import VNFI, VNF_TYPE_VPN
@@ -140,7 +141,7 @@ class TestVNFAddVPN(TestBase):
         # self.verifyDirection1Traffic()
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
-        raw_input()  # type: ignore
+        screenInput()
 
     def verifyDirection0Traffic(self):
         self._sendDirection0Traffic2SFF()

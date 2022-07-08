@@ -1,3 +1,6 @@
+# Pre-requiste
+Only support python2.7, python3.6.9+, python3.9+
+
 # Installation
 ## apt
 ```
@@ -24,7 +27,7 @@ pip3 install enum34 psutil pika netifaces \
                 gurobipy tinyrpc==0.8 matplotlib \
                 scapy grpcio grpcio-tools docker \
                 sklearn ryu paramiko ruamel.yaml==0.16.0 \
-                eventlet==0.30.2 cPickle PyMySQL
+                eventlet==0.30.2 PyMySQL
 ```
 
 ## [Deprecated]Ansible-playbook

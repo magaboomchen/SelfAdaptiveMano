@@ -5,16 +5,22 @@ import logging
 import os
 import threading
 import time
-from Queue import Queue
+import sys
+if sys.version >= '3':
+    import queue as Queue
+else:
+    import Queue
 
+from sam.base.compatibility import screenInput
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import SIMULATOR_PORT
 from sam.base.command import CMD_STATE_FAIL, \
     CMD_STATE_SUCCESSFUL, CommandReply
 from sam.base.commandMaintainer import CommandMaintainer
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.messageAgent import MessageAgent, SIMULATOR_QUEUE, SAMMessage, MSG_TYPE_SIMULATOR_CMD_REPLY, \
-    MEDIATOR_QUEUE
+from sam.base.messageAgent import SIMULATOR_ZONE, MessageAgent, \
+        SIMULATOR_QUEUE, SAMMessage, MSG_TYPE_SIMULATOR_CMD_REPLY, \
+        MEDIATOR_QUEUE
 from sam.simulator.command_handler import command_handler
 from sam.simulator.op_handler import op_handler
 from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintainer
@@ -50,7 +56,7 @@ class Simulator(object):
         try:
             while True:
                 time.sleep(0.2)
-                self.op_input.put(raw_input('> '))
+                self.op_input.put(screenInput('> '))
                 self.op_input.join()
         except EOFError:
             pass
@@ -90,7 +96,8 @@ class Simulator(object):
                     self.logger.debug("Command's source is {0}".format(source))
                     if self._messageAgent.isCommand(body):
                         rplyMsg = self._command_handler(body)
-                        self._messageAgent.sendMsgByRPC(source["srcIP"], source["srcPort"], rplyMsg)
+                        self._messageAgent.sendMsgByRPC(source["srcIP"],
+                                                source["srcPort"], rplyMsg)
                     else:
                         raise ValueError("Unknown massage body")
         except Exception as ex:
@@ -107,7 +114,9 @@ class Simulator(object):
             ExceptionProcessor(self.logger).logException(ex, "simulator")
             self._cm.changeCmdState(cmd.cmdID, CMD_STATE_FAIL)
         finally:
-            cmdRply = CommandReply(cmd.cmdID, self._cm.getCmdState(cmd.cmdID), dict(attributes, source='simulator'))
+            cmdRply = CommandReply(cmd.cmdID, self._cm.getCmdState(cmd.cmdID),
+                            dict(attributes, source='simulator',
+                                            zone=SIMULATOR_ZONE))
             rplyMsg = SAMMessage(MSG_TYPE_SIMULATOR_CMD_REPLY, cmdRply)
         return rplyMsg
 
@@ -126,7 +135,7 @@ class Simulator(object):
 
 
 if __name__ == "__main__":
-    op_input = Queue()
+    op_input = Queue.Queue()
     op_input.put('reset')
     self_location = os.path.dirname(os.path.abspath(__file__))
     try:

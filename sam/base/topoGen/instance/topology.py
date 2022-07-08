@@ -6,12 +6,13 @@ read gml and generate topology
 or read customized topology and generate topology
 '''
 
-import pickle
 import datetime
 
 from typing import List
 
 from sam.base.link import Link
+from sam.base.mkdirs import mkdirs
+from sam.base.pickleIO import PickleIO
 from sam.base.switch import Switch, SWITCH_TYPE_DCNGATEWAY, \
     SWITCH_TYPE_NPOP, SWITCH_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_NFVI, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NORMAL
@@ -19,7 +20,6 @@ from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.topoGen.base.common import SFC_REQUEST_NUM, VNF_NUM, SERVER_NUM
-from sam.base.topoGen.base.mkdirs import mkdirs
 from sam.base.topoGen.base.dhcpServer import DHCPServer
 
 SERVER_NUMA_CPU_DISTRIBUTION = [range(0, 24, 2), range(1, 25, 2)]
@@ -496,8 +496,6 @@ class Topology(object):
         return len(self.servers) + SERVERID_OFFSET
 
     def saveTopologyPickle(self, filePath):
-        df = open(filePath, 'wb')
-
         topologyDict = {
             "nodeNum": self.nodeNum,
             "linkNum": self.linkNum,
@@ -515,8 +513,8 @@ class Topology(object):
             "torPaths": self.torPaths,
         }
 
-        pickle.dump(topologyDict, df)
-        df.close()
+        pIO = PickleIO()
+        pIO.writePickleFile(filePath, topologyDict)
 
     def genTopoNameDict(self):
         self.topoNameDict = {}
@@ -584,7 +582,7 @@ class Topology(object):
             self.topoNameDict["SwitchL3"].append(topoName)
 
     def _postProcessTopology4FatTree(self, podNum, serverNum):
-        coreNum = (podNum / 2) ** 2
+        coreNum = int((podNum / 2) ** 2)
         aggNum = coreNum * 2
         torNum = aggNum
 
@@ -635,18 +633,18 @@ class Topology(object):
 
         self.torPaths = [[[] for _ in range(torNum)] for _ in range(torNum)]
         for pod in range(podNum):
-            for tor in range(coreNum + aggNum + pod * podNum / 2, coreNum + aggNum + (pod + 1) * podNum / 2, 2):
-                for agg in range(coreNum + pod * podNum / 2, coreNum + (pod + 1) * podNum / 2):
+            for tor in range(int(coreNum + aggNum + pod * podNum / 2), int(coreNum + aggNum + (pod + 1) * podNum / 2), 2):
+                for agg in range(int(coreNum + pod * podNum / 2), int(coreNum + (pod + 1) * podNum / 2)):
                     self.torPaths[tor - coreNum - aggNum][tor - coreNum - aggNum + 1].append(
                         list2links([tor, agg, tor + 1]))
                     self.torPaths[tor - coreNum - aggNum + 1][tor - coreNum - aggNum].append(
                         list2links([tor + 1, agg, tor]))
             if pod % 2 == 1:
                 continue
-            for tor in range(coreNum + aggNum + pod * podNum / 2, coreNum + aggNum + (pod + 1) * podNum / 2):
-                for agg in range(coreNum + pod * podNum / 2, coreNum + (pod + 1) * podNum / 2):
-                    core = (tor - coreNum - aggNum) % (podNum / 2) + (agg - coreNum) % (podNum / 2) * (podNum / 2)
-                    self.torPaths[tor - coreNum - aggNum][tor - coreNum - aggNum + podNum / 2] \
-                        .append(list2links([tor, agg, core, agg + podNum / 2, tor + podNum / 2]))
-                    self.torPaths[tor - coreNum - aggNum + podNum / 2][tor - coreNum - aggNum] \
-                        .append(list2links([tor + podNum / 2, agg + podNum / 2, core, agg, tor]))
+            for tor in range(int(coreNum + aggNum + pod * podNum / 2), int(coreNum + aggNum + (pod + 1) * podNum / 2)):
+                for agg in range(int(coreNum + pod * podNum / 2), int(coreNum + (pod + 1) * podNum / 2)):
+                    core = int((tor - coreNum - aggNum) % (podNum / 2) + (agg - coreNum) % (podNum / 2) * (podNum / 2))
+                    self.torPaths[tor - coreNum - aggNum][tor - coreNum - aggNum + int(podNum / 2)] \
+                        .append(list2links([tor, agg, core, agg + int(podNum / 2), tor + int(podNum / 2)]))
+                    self.torPaths[tor - coreNum - aggNum + int(podNum / 2)][tor - coreNum - aggNum] \
+                        .append(list2links([tor + int(podNum / 2), agg + int(podNum / 2), core, agg, tor]))

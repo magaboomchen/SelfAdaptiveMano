@@ -16,6 +16,7 @@ import logging
 
 import pytest
 
+from sam.base.compatibility import screenInput
 from sam.base.messageAgent import DISPATCHER_QUEUE, SIMULATOR_ZONE
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
                         REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
@@ -70,7 +71,7 @@ class TestAddSFCClass(IntTestBaseClass):
 
         logging.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
-        raw_input() # type: ignore
+        screenInput()
 
         # exercise
         for idx, sfci in enumerate(self.sfciList):
@@ -84,7 +85,7 @@ class TestAddSFCClass(IntTestBaseClass):
 
         logging.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
-        raw_input() # type: ignore
+        screenInput()
 
         # exercise
         for idx, sfci in enumerate(self.sfciList):
@@ -98,7 +99,7 @@ class TestAddSFCClass(IntTestBaseClass):
 
         logging.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
-        raw_input() # type: ignore
+        screenInput()
 
         # exercise
         for idx, sfc in enumerate(self.sfcList):
@@ -111,4 +112,4 @@ class TestAddSFCClass(IntTestBaseClass):
 
         logging.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
-        raw_input() # type: ignore
+        screenInput()

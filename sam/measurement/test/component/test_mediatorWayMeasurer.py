@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from multiprocessing.sharedctypes import Value
+import time
 import uuid
 import pytest
 import logging
@@ -25,13 +27,19 @@ class TestMeasurerClass(TestBase):
     def setup_collectDCNInfo(self):
         # setup
         self.sP = ShellProcessor()
+        # self.cleanLog()
         self.clearQueue()
+        # self.killAllModule()
+
+        time.sleep(3)
 
         self.runMeasurer()
 
         yield
         # teardown
         self.killMeasurer()
+        self.clearQueue()
+        self.killAllModule()
 
     @pytest.mark.skip(reason='Temporarly')
     def test_collectTopology(self, setup_collectDCNInfo):
@@ -98,6 +106,8 @@ class TestMeasurerClass(TestBase):
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_requestHandler(self, setup_handleRequest):
+        raise Value("Deprecated methods, please use directWayMeasurer.py")
+
         logging.info("test_requestHanler")
         # exercise
         request = self.genGetDCNInfoRequest(ORCHESTRATOR_QUEUE)

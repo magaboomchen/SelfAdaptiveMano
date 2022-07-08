@@ -237,8 +237,7 @@ class OSFCAdder(object):
             request = copy.deepcopy(requestBatchQueue.get())
             # self.logger.debug(request)
             # self.logger.debug("*****************")
-            # raw_input()  # type: ignore
-            if request.attributes.has_key('mappingType'):
+            if 'mappingType' in request.attributes:
                 mappingType = request.attributes['mappingType']
             else:
                 mappingType = DEFAULT_MAPPING_TYPE
@@ -247,7 +246,6 @@ class OSFCAdder(object):
                 requestDict[mappingType] = []
             requestDict[mappingType].append(request)
             # self.logger.debug(requestDict[mappingType])
-            # raw_input()  # type: ignore
         return requestDict
 
     def _updateRequestDictIngAndEg(self, requestDict):

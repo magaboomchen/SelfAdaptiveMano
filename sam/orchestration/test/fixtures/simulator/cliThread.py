@@ -4,6 +4,7 @@
 import logging
 import threading
 
+from sam.base.compatibility import screenInput
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 
@@ -23,7 +24,7 @@ class CLIThread(threading.Thread):
         self.logger.info("start CLI.")
         while True:
             self.logger.info("Please input data")
-            raw_input()  # type: ignore
+            screenInput()
 
     # TODO：开始实验
     # 生成实验参数，启动实验，保存中间结果，分析结果，保存结果

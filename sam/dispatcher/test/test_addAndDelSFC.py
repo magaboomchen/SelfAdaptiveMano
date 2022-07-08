@@ -19,6 +19,7 @@ import uuid
 
 import pytest
 
+from sam.base.compatibility import screenInput
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REQUEST, SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
     MEDIATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.command import CMD_STATE_PROCESSING, CMD_STATE_SUCCESSFUL, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI
@@ -51,7 +52,7 @@ class TestAddSFCClass(TestSimulatorBase):
         time.sleep(3)
         self.mediator = MediatorStub()
         logging.info("Please start dispatcher! Then press Any key to continue!")
-        raw_input() # type: ignore
+        screenInput()
 
     @pytest.fixture(scope="function")
     def setup_addOneSFC(self):

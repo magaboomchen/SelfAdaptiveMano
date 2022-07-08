@@ -332,7 +332,7 @@ class Mediator(object):
         cmd = self._cm.getCmd(cmdID)
         self.logger.debug("cmdRply attributes: {0}".format(
             cmdRply.attributes.keys()))
-        if cmdRply.attributes.has_key('source'):
+        if 'source' in cmdRply.attributes:
             self.logger.debug(
                 "get cmd reply, cmdID:{0}, cmdType:{1}, source:{2}.".format(
                     cmdID, cmd.cmdType, cmdRply.attributes['source']))

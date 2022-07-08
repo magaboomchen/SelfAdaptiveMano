@@ -22,7 +22,7 @@ import pytest
 
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
-    MEDIATOR_QUEUE
+    MEDIATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import MediatorStub
@@ -74,7 +74,8 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.getSFCIStatusCmd.cmdID
-        assert cmdRply.attributes.has_key("sfciStatus")
+        assert "sfciStatus" in cmdRply.attributes
         assert type(cmdRply.attributes["sfciStatus"]) == dict
         assert len(cmdRply.attributes["sfciStatus"]) >= 0
         assert cmdRply.cmdStatus == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == SIMULATOR_ZONE

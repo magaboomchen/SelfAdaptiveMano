@@ -29,7 +29,7 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
                 = self.maxGroupIDDict["picaSwitch1"] + 1
             return self.maxGroupIDDict["picaSwitch1"]
         elif CURRENT_ENV == MININET_ENV:
-            if not self.groupIDSets.has_key(dpid):
+            if not (dpid in self.groupIDSets):
                 self.groupIDSets[dpid] = [0]
                 return 0
             else:
@@ -73,9 +73,9 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
             raise ValueError("Unknown envirnoment {0}".format(CURRENT_ENV))
 
     def addSFCFlowTableEntry(self, sfcUUID, dpid, tableID, matchFields):
-        if not self.sfcRIB.has_key(sfcUUID):
+        if not (sfcUUID in self.sfcRIB):
             self.sfcRIB[sfcUUID] = {}
-        if not self.sfcRIB[sfcUUID].has_key(dpid):
+        if not (dpid in self.sfcRIB[sfcUUID]):
             self.sfcRIB[sfcUUID][dpid] = []
         self.sfcRIB[sfcUUID][dpid].append(
             {"tableID":tableID, "matchFields":matchFields})
@@ -87,9 +87,9 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
         return self.sfcRIB[sfcUUID]
 
     def hasSFCFlowTable(self, sfcUUID, dpid, matchFields):
-        if not self.sfcRIB.has_key(sfcUUID):
+        if not (sfcUUID in self.sfcRIB):
             return False
-        if not self.sfcRIB[sfcUUID].has_key(dpid):
+        if not (dpid in self.sfcRIB[sfcUUID]):
             return False
         for entry in self.sfcRIB[sfcUUID][dpid]:
             if entry["matchFields"] == matchFields:
@@ -142,9 +142,9 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
 
     def addSFCIFlowTableEntry(self, sfciID, dpid, tableID, matchFields,
             groupID=None, actions=None, priority=0):
-        if not self.sfciRIB.has_key(sfciID):
+        if not (sfciID in self.sfciRIB):
             self.sfciRIB[sfciID] = {}
-        if not self.sfciRIB[sfciID].has_key(dpid):
+        if not (dpid in self.sfciRIB[sfciID]):
             self.sfciRIB[sfciID][dpid] = []
         # if groupID == None:
         #     self.sfciRIB[sfciID][dpid].append(
@@ -174,9 +174,9 @@ class RIBMaintainerBase(XInfoBaseMaintainer):
             return None
 
     def hasSFCIFlowTable(self, sfciID, dpid, matchFields):
-        if not self.sfciRIB.has_key(sfciID):
+        if not (sfciID in self.sfciRIB):
             return False
-        if not self.sfciRIB[sfciID].has_key(dpid):
+        if not (dpid in self.sfciRIB[sfciID]):
             return False
         # self.printSFCIFlowTable(sfciID, dpid)
         for entry in self.sfciRIB[sfciID][dpid]:

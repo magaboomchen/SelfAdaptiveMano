@@ -23,11 +23,11 @@ class E2EProtectionIBMaintainer(RIBMaintainerBase):
                                 dpid, tableID,
                                 matchFields, actions=None, inst=None,
                                 priority=LOWER_BACKUP_ENTRY_PRIORITY):
-        if not self.sfciRIB.has_key(sfciID):
+        if not (sfciID in self.sfciRIB):
             self.sfciRIB[sfciID] = {}
-        if not self.sfciRIB[sfciID].has_key(pathID):
+        if not (pathID in self.sfciRIB[sfciID]):
             self.sfciRIB[sfciID][pathID] = {}
-        if not self.sfciRIB[sfciID][pathID].has_key(dpid):
+        if not (dpid in self.sfciRIB[sfciID][pathID]):
             self.sfciRIB[sfciID][pathID][dpid] = []
         newEntry = {
                 "tableID":tableID,
@@ -38,11 +38,11 @@ class E2EProtectionIBMaintainer(RIBMaintainerBase):
         self.logger.debug("add sfci to e2ep flow table:{0}".format(newEntry))
 
     def hasSFCIFlowTable(self, sfciID, pathID, dpid, matchFields):
-        if not self.sfciRIB.has_key(sfciID):
+        if not (sfciID in self.sfciRIB):
             return False
-        if not self.sfciRIB[sfciID].has_key(pathID):
+        if not (pathID in self.sfciRIB[sfciID]):
             return False
-        if not self.sfciRIB[sfciID][pathID].has_key(dpid):
+        if not (dpid in self.sfciRIB[sfciID][pathID]):
             return False
         # self.printSFCIFlowTable(sfciID, dpid)
         for entry in self.sfciRIB[sfciID][pathID][dpid]:
@@ -56,7 +56,7 @@ class E2EProtectionIBMaintainer(RIBMaintainerBase):
 
     def addSFCI(self, sfci):
         sfciID = sfci.sfciID
-        if not self.sfciRIB.has_key(sfciID):
+        if not (sfciID in self.sfciRIB):
             self.sfciDict[sfciID] = {}
         self.sfciDict[sfciID] = sfci
 

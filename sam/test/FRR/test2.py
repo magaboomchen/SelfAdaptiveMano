@@ -22,6 +22,7 @@ from mininet.link import TCLink
 from mininet.util import irange, quietRun, pmonitor
 from functools import partial
 
+from sam.base.compatibility import screenInput
 from sam.base.messageAgent import SAMMessage, MessageAgent, MSG_TYPE_TESTER_CMD, MININET_TESTER_QUEUE
 from sam.base.command import Command, CMD_TYPE_TESTER_REMAP_SFCI
 
@@ -214,7 +215,7 @@ class ManoTester(object):
                 "quit: to quit"
                 )
             print("Please input the mode number:")
-            self.mode = raw_input()  # type: ignore
+            self.mode = screenInput()
             if self.mode == "0" or self.mode == "1":
                 self.testHandler()
             elif self.mode == "2":
@@ -255,14 +256,14 @@ class ManoTester(object):
                     '&' )
 
     def addOurputFiles(self, host, fileName):
-        if not self.outfiles.has_key(host):
+        if not (host in self.outfiles):
             self.outfiles[host] = {}
-        if not self.outfiles[host].has_key(fileName):
+        if not (fileName in self.outfiles[host]):
             self.outfiles[host][fileName] = self.filePath\
                 + fileName + '_{0}.out'.format(host.name)
-        if not self.errfiles.has_key(host):
+        if not (host in self.errfiles):
             self.errfiles[host] = {}
-        if not self.errfiles[host].has_key(fileName):
+        if not (fileName in self.errfiles[host]):
             self.errfiles[host][fileName] = self.filePath + fileName\
                 + '_{0}.err'.format(host.name)
 

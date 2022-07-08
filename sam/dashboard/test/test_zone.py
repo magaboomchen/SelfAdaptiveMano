@@ -11,15 +11,9 @@ use Dashboard;
 select * from Zone;
 '''
 
-import sys
-if sys.version < '3':
-    try:
-        input = raw_input
-    except NameError:
-        pass
 import pytest
 
-from sam.dashboard.dashboardInfoBaseMaintainer import *
+from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
 from sam.dashboard.test.dashboardTestBase import DashboardTestBase
 
 

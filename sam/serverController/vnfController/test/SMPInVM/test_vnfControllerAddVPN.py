@@ -52,7 +52,6 @@ class TestVNFAddVPN(TestBase):
     @pytest.fixture(scope="function")
     def setup_addVPN(self):
         logging.debug("{0}".format(base.__file__))
-        # raw_input()  # type: ignore
         # setup
         self.resetRabbitMQConf(
             base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.json",

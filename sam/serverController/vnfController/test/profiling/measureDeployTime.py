@@ -123,7 +123,7 @@ class TestVNFSFCIAdderClass(TestBase):
     def recvAllCmdReplys(self):
         while len(self.waitingCmdDict) > 0:
             cmdRply = self.mediatorRecvCmdRply()
-            if self.waitingCmdDict.has_key(cmdRply.cmdID) \
+            if cmdRply.cmdID in self.waitingCmdDict \
                 and cmdRply.cmdState == CMD_STATE_SUCCESSFUL:
                 del self.waitingCmdDict[cmdRply.cmdID]
             else:

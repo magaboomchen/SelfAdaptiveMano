@@ -6,6 +6,7 @@ import logging
 
 import pytest
 
+from sam.base.compatibility import screenInput
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NOTVIA_PSFC
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.command import CMD_STATE_SUCCESSFUL
@@ -73,7 +74,7 @@ class TestPSFCClass(TestFRR):
     def test_addUniSFCI(self, setup_addUniSFCI):
         logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
-        raw_input()  # type: ignore
+        screenInput()
 
         self._deploySFC()
         self._deploySFCI()
@@ -82,16 +83,16 @@ class TestPSFCClass(TestFRR):
             "server software failure\n"
             "After the test, "
             "Press any key to quit!")
-        raw_input()  # type: ignore
+        screenInput()
         self.sendHandleServerSoftwareFailureCmd()
 
         logging.info("Please input '6',"
             "then input 'stop s2' to stop switch s2\n"
             "After the test, Press any key to quit!")
-        raw_input()  # type: ignore
+        screenInput()
 
         logging.info("Press any key to quit!")
-        raw_input()  # type: ignore
+        screenInput()
 
     def _deploySFC(self):
         # exercise: mapping SFC
@@ -120,4 +121,4 @@ class TestPSFCClass(TestFRR):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
         logging.info("Press any key to quit!")
-        raw_input()  # type: ignore
+        screenInput()

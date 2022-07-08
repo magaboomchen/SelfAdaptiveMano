@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import site
 import os
+import site
 import subprocess
 
 

@@ -11,18 +11,10 @@ use Measurer;
 select * from Switch;
 '''
 
-import sys
-if sys.version < '3':
-    try:
-        input = raw_input
-    except NameError:
-        pass
-import uuid
-
 import pytest
 
-from sam.base.switch import *
-from sam.base.messageAgent import *
+from sam.base.switch import Switch, SWITCH_TYPE_FORWARD
+from sam.base.messageAgent import SIMULATOR_ZONE
 from sam.dashboard.test.dashboardTestBase import DashboardTestBase
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 

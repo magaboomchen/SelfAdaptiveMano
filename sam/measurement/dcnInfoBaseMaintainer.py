@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.server import *
-from sam.base.link import *
+from sam.base.link import Link
 from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.server import SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.measurement.serverInfoBaseMaintainer import ServerInfoBaseMaintainer
 from sam.measurement.switchInfoBaseMaintainer import SwitchInfoBaseMaintainer
 from sam.measurement.linkInfoBaseMaintainer import LinkInfoBaseMaintainer
@@ -110,9 +110,9 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
         bandwidthSum = 0
         for server in serverList:
             serverID = server.getServerID()
-            if not self._serversReservedResources.has_key(zoneName):
+            if not (zoneName in self._serversReservedResources):
                 self._serversReservedResources[zoneName] = {}
-            if not self._serversReservedResources.has_key(serverID):
+            if not (serverID in self._serversReservedResources):
                 self.reserveServerResources(serverID, 0, 0, 0, zoneName)
             (cores, memory, bandwidth) = self.getServerReservedResources(
                 serverID, zoneName)
@@ -127,9 +127,9 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
         bandwidthSum = 0
         for server in serverList:
             serverID = server.getServerID()
-            if not self._serversReservedResources.has_key(zoneName):
+            if not (zoneName in self._serversReservedResources):
                 self._serversReservedResources[zoneName] = {}
-            if not self._serversReservedResources.has_key(serverID):
+            if not (serverID in self._serversReservedResources):
                 self.reserveServerResources(serverID, 0, 0, 0, zoneName)
             cores = server.getMaxCores()
             memory = server.getMaxMemory()

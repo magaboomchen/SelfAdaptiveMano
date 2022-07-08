@@ -15,6 +15,7 @@ import pytest
 from sam.base.slo import SLO
 from sam.base.sfc import SFCI
 from sam.base.vnf import VNF_TYPE_MAX
+from sam.base.compatibility import screenInput
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_UFRR, MAPPING_TYPE_E2EP
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI, \
@@ -205,7 +206,7 @@ class TestOSFCAdderDeleterClass(TestBase):
             backupForwardingPath = forwardingPathSet.backupForwardingPath
             self.logger.info("forwardingPathSet:{0}".format(
                 forwardingPathSet))
-            raw_input()  # type: ignore
+            screenInput()
             # each time will print (vnfiID, serverID) information
             # if program reuse vnfi, you will find that the same (vnfiID, serverID) twice
 

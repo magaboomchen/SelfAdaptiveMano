@@ -63,7 +63,6 @@ class NFVDPPricingProblem(MappingAlgorithmBase):
         #     if capacity < 1:
         #         self.logger.debug("nfvDPPP, link:{0}, capacity:{1}".format(
         #             link, capacity))
-        #         raw_input()  # type: ignore
 
         # self.logger.debug("phsicalLink:{0}, self.linkCapacity:{1}".format(
         #     self.physicalLink, self.linkCapacity))

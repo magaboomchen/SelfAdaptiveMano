@@ -124,9 +124,9 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
         return self._switches[zoneName][switchID]['switch']
 
     def reserveSwitchResource(self, switchID, reservedTcamUsage, zoneName):
-        if not self._switchesReservedResources.has_key(zoneName):
+        if not (zoneName in self._switchesReservedResources):
             self._switchesReservedResources[zoneName] = {}
-        if not self._switchesReservedResources[zoneName].has_key(switchID):
+        if not (switchID in self._switchesReservedResources[zoneName]):
             self._switchesReservedResources[zoneName][switchID] = {}
             self._switchesReservedResources[zoneName][switchID]["tcamUsage"] = reservedTcamUsage
         else:
@@ -135,9 +135,9 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
                 + reservedTcamUsage
 
     def releaseSwitchResource(self, switchID, releaseTcamUsage, zoneName):
-        if not self._switchesReservedResources.has_key(zoneName):
+        if not (zoneName in self._switchesReservedResources):
             self._switchesReservedResources[zoneName] = {}
-        if not self._switchesReservedResources[zoneName].has_key(switchID):
+        if not (switchID in self._switchesReservedResources[zoneName]):
             raise ValueError("Unknown switchID:{0}".format(switchID))
         else:
             tcamUsage = self._switchesReservedResources[zoneName][switchID]["tcamUsage"]
@@ -145,9 +145,9 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
                 - releaseTcamUsage
 
     def getSwitchReservedResource(self, switchID, zoneName):
-        if not self._switchesReservedResources.has_key(zoneName):
+        if not (zoneName in self._switchesReservedResources):
             self._switchesReservedResources[zoneName] = {}
-        if not self._switchesReservedResources[zoneName].has_key(switchID):
+        if not (switchID in self._switchesReservedResources[zoneName]):
             # raise ValueError("Unknown switchID:{0}".format(switchID))
             self.reserveSwitchResource(switchID, 0, zoneName)
         return self._switchesReservedResources[zoneName][switchID]["tcamUsage"]

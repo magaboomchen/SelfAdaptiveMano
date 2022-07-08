@@ -11,19 +11,13 @@ use Measurer;
 select * from Server;
 '''
 
-import sys
 import time
-if sys.version < '3':
-    try:
-        input = raw_input
-    except NameError:
-        pass
 import uuid
 
 import pytest
 
-from sam.base.server import *
-from sam.base.messageAgent import *
+from sam.base.server import Server, SERVER_TYPE_NORMAL
+from sam.base.messageAgent import MessageAgent, SIMULATOR_ZONE
 from sam.dashboard.test.dashboardTestBase import DashboardTestBase
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 

@@ -423,7 +423,6 @@ class MMLBSFC(MMLPSFC):
             # self.logger.debug("firstHalfPath:{0}, backupPath:{1}".format(
             #     firstHalfPath, backupPath
             # ))
-            # raw_input()  # type: ignore
             if self._isRequestAffectedByFailure(rIndex):
                 uFPSDict[rIndex] = self._mergePath2UFP(backupPath,
                     uFPSDict[rIndex])

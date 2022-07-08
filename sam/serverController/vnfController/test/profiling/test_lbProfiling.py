@@ -15,6 +15,7 @@ import pytest
 
 from sam.base import server
 from sam.base.vnf import VNFI, VNF_TYPE_LB
+from sam.base.compatibility import screenInput
 from sam.base.server import Server, SERVER_TYPE_NORMAL
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.command import CMD_STATE_SUCCESSFUL
@@ -122,7 +123,7 @@ class TestVNFAddLB(TestBase):
         self.verifyCmdRply()
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
-        raw_input()  # type: ignore
+        screenInput()
 
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)

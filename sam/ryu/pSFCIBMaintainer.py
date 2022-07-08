@@ -21,11 +21,11 @@ class PSFCIBMaintainer(RIBMaintainerBase):
     def addSFCIPSFCFlowTableEntry(self, sfciID, backupPathKey, dpid, tableID,
                                 matchFields, actions=None, inst=None,
                                 priority=LOWER_BACKUP_ENTRY_PRIORITY):
-        if not self.sfciRIB.has_key(sfciID):
+        if not (sfciID in self.sfciRIB):
             self.sfciRIB[sfciID] = {}
-        if not self.sfciRIB[sfciID].has_key(backupPathKey):
+        if not (backupPathKey in self.sfciRIB[sfciID]):
             self.sfciRIB[sfciID][backupPathKey] = {}
-        if not self.sfciRIB[sfciID][backupPathKey].has_key(dpid):
+        if not (dpid in self.sfciRIB[sfciID][backupPathKey]):
             self.sfciRIB[sfciID][backupPathKey][dpid] = []
         self.sfciRIB[sfciID][backupPathKey][dpid].append(
             {
@@ -40,7 +40,7 @@ class PSFCIBMaintainer(RIBMaintainerBase):
 
     def addSFCI(self, sfci):
         sfciID = sfci.sfciID
-        if not self.sfciRIB.has_key(sfciID):
+        if not (sfciID in self.sfciRIB):
             self.sfciDict[sfciID] = {}
         self.sfciDict[sfciID] = sfci
 

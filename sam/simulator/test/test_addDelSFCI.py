@@ -19,7 +19,7 @@ from time import sleep
 import pytest
 
 from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
-    MEDIATOR_QUEUE
+    MEDIATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -98,6 +98,7 @@ class TestAddSFCIClass(TestSimulatorBase):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == SIMULATOR_ZONE
 
 
 
@@ -182,4 +183,5 @@ class TestAddSFCIClass(TestSimulatorBase):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.delSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == SIMULATOR_ZONE
 

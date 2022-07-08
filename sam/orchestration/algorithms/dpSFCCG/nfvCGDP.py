@@ -368,7 +368,6 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
             #     self.logger.debug("capacity:{0}".format(
             #         self.links[(srcNodeID, dstNodeID)]
             #     ))
-            #     raw_input()  # type: ignore
 
         self.physicalLink , self.linkCapacity = gp.multidict(self.links)
 
@@ -376,7 +375,6 @@ class NFVCGDedicatedProtection(OPRandomizedRoundingAlgorithm):
         #     if capacity < 1:
         #         self.logger.debug("nfvCGDP, link:{0}, capacity:{1}".format(
         #             link, capacity))
-        #         raw_input()  # type: ignore
 
         # self.logger.debug("phsicalLink:{0}, self.linkCapacity:{1}".format(
         #     self.physicalLink, self.linkCapacity))

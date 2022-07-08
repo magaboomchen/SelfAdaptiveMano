@@ -52,8 +52,8 @@ class WestEastRouting(BaseApp):
         self.logger = logConfigur.getLogger()
 
     def getMacByIp(self,dpid,ipAddress):
-        if self._switchesLANArpTable.has_key(dpid) and \
-            self._switchesLANArpTable[dpid].has_key(ipAddress):
+        if dpid in self._switchesLANArpTable and \
+                ipAddress in self._switchesLANArpTable[dpid]:
             return self._switchesLANArpTable[dpid][ipAddress]
         else:
             return None
@@ -95,7 +95,7 @@ class WestEastRouting(BaseApp):
             for index in range(len(path)-1):
                 dstDpid = path[index]
                 srcDpid = path[index+1]
-                if not spt.has_key(srcDpid):
+                if not (srcDpid in spt):
                     spt[srcDpid] = dstDpid
                 else:
                     self.logger.debug("Detect equal multi path, ignore it.")
@@ -131,7 +131,7 @@ class WestEastRouting(BaseApp):
                 # parser.OFPInstructionGotoTable(table_id=L2_TABLE)
             ]
 
-            if not self._cacheWestEastRIB.has_key(srcDpid):
+            if not (srcDpid in self._cacheWestEastRIB):
                 self._cacheWestEastRIB[srcDpid] = {}
             self._cacheWestEastRIB[srcDpid][self._dict2OrderJson(matchFields)] = inst
 
@@ -140,13 +140,13 @@ class WestEastRouting(BaseApp):
         self.logger.debug("_updateAllSwitchWestEastRIB")
 
         for dpid in westEastRIBTmp.keys():
-            if not self._cacheWestEastRIB.has_key(dpid):
+            if not (dpid in self._cacheWestEastRIB):
                 self.logger.debug("old table set has this dpid && new table set dosen't hast this dpid")
                 del self._westEastRIB[dpid]
  
         for dpid in self._cacheWestEastRIB.keys():
             datapath = self._cacheSwitches[dpid].dp
-            if not self._westEastRIB.has_key(dpid):
+            if not (dpid in self._westEastRIB):
                 self.logger.debug("old table set dosen't has this dpid && new tables set has this dpid")
                 self._westEastRIB[dpid] = copy.deepcopy(self._cacheWestEastRIB[dpid])
                 for matchFieldsJson in self._cacheWestEastRIB[dpid].keys():
@@ -160,7 +160,7 @@ class WestEastRouting(BaseApp):
             else:
                 self.logger.debug("old table set has this dpid && new tables set has this dpid")
                 for matchFieldsJson in self._cacheWestEastRIB[dpid].keys():
-                    if self._westEastRIB[dpid].has_key(matchFieldsJson):
+                    if matchFieldsJson in self._westEastRIB[dpid]:
                         self.logger.debug("new entry is in old rib")
                         matchFields = self._orderJson2dict(matchFieldsJson)
                         match = ofproto_v1_4_parser.OFPMatch(
@@ -177,7 +177,7 @@ class WestEastRouting(BaseApp):
 
                 westEastRIBofADpidTmp = copy.copy(self._westEastRIB[dpid])
                 for matchFieldsJson in westEastRIBofADpidTmp.keys():
-                    if not self._cacheWestEastRIB[dpid].has_key(matchFieldsJson):
+                    if not (matchFieldsJson in self._cacheWestEastRIB[dpid]):
                         self.logger.debug("old entry doesn't existed in new rib")
                         del self._westEastRIB[dpid][matchFieldsJson]
                         self.logger.debug("_updateAllSwitchWestEastRIB: del_flow from dpid:%d" %(dpid) )
@@ -282,7 +282,7 @@ class WestEastRouting(BaseApp):
                     srcIP = arpHeader.src_ip
 
                     # Self-learning bridge
-                    if not self._switchesLANArpTable[dpid].has_key(srcIP):
+                    if not (srcIP in self._switchesLANArpTable[dpid]):
                         self._switchesLANArpTable[dpid][srcIP] = mac
 
                         ofproto = datapath.ofproto

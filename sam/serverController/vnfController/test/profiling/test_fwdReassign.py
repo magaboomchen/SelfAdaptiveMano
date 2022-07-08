@@ -17,6 +17,7 @@ import logging
 
 import pytest
 
+from sam.base.compatibility import screenInput
 from sam.base.vnf import VNFI, VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_NORMAL
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
@@ -115,7 +116,7 @@ class TestVNFSFCIAdderClass(TestBase):
         # verifiy
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
-        raw_input()  # type: ignore
+        screenInput()
 
     def addSFCI1(self):
         self.addSFCI1Cmd = self.mediator.genCMDAddSFCI(self.sfc1, self.sfci1)

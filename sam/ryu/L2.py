@@ -56,8 +56,8 @@ class L2(BaseApp):
             return None
 
     def getSwitchLocalPortByMac(self,dpid,mac):
-        if (self._switchesLANMacTable.has_key(dpid)
-                and self._switchesLANMacTable[dpid].has_key(mac)):
+        if (dpid in self._switchesLANMacTable
+                and mac in self._switchesLANMacTable[dpid]):
             return self._switchesLANMacTable[dpid][mac]
         else:
             return None
@@ -69,8 +69,8 @@ class L2(BaseApp):
             return None
 
     def _addLocalPort(self, datapath, port):
-        if self._localPortTable.has_key(datapath.id):
-            if self._localPortTable[datapath.id].has_key(port.port_no):
+        if datapath.id in self._localPortTable:
+            if port.port_no in self._localPortTable[datapath.id]:
                 return 
         else:
             self._localPortTable[datapath.id] = {}
@@ -81,8 +81,8 @@ class L2(BaseApp):
         parser = datapath.ofproto_parser
 
     def _delLocalPort(self, datapath, port):
-        if self._localPortTable.has_key(datapath.id):
-            if not self._localPortTable[datapath.id].has_key(port.port_no):
+        if datapath.id in self._localPortTable:
+            if not (port.port_no in self._localPortTable[datapath.id]):
                 return 
         else:
             return 
@@ -96,8 +96,8 @@ class L2(BaseApp):
         localPort = link.src
         peerPort = link.dst
 
-        if self._peerPortTable.has_key(datapath.id):
-            if self._peerPortTable[datapath.id].has_key(localPort.port_no):
+        if datapath.id in self._peerPortTable:
+            if localPort.port_no in self._peerPortTable[datapath.id]:
                 return 
         else:
             self._peerPortTable[datapath.id] = {}
@@ -115,8 +115,8 @@ class L2(BaseApp):
         localPort = link.src
         peerPort = link.dst
 
-        if self._peerPortTable.has_key(datapath.id):
-            if not self._peerPortTable[datapath.id].has_key(localPort.port_no):
+        if datapath.id in self._peerPortTable:
+            if not (localPort.port_no in self._peerPortTable[datapath.id]):
                 return 
         else:
             return 
@@ -291,7 +291,7 @@ class L2(BaseApp):
                 self.logger.debug("This arp is from local LAN")
 
                 # Self-learning bridge
-                if not self._switchesLANMacTable[dpid].has_key(arpHeader.src_mac):
+                if not (arpHeader.src_mac in self._switchesLANMacTable[dpid]):
                     self._switchesLANMacTable[dpid][arpHeader.src_mac] = in_port
                     match = parser.OFPMatch(eth_dst=arpHeader.src_mac)
                     actions = [parser.OFPActionOutput(in_port)]

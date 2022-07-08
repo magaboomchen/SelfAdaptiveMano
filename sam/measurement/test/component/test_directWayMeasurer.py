@@ -5,6 +5,7 @@ import time
 import uuid
 import pytest
 import logging
+from sam.base.compatibility import screenInput
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.orchestration.oDcnInfoRetriever import ODCNInfoRetriever
@@ -26,25 +27,24 @@ class TestMeasurerClass(TestBase):
 
         self.sS = SimulatorStub()
         self.runMeasurer()
+        logging.info("Please start measurer. " \
+            "and then press any key to continue.")
+        screenInput("Type here: ")
 
         yield
         # teardown
-        self.killMeasurer()
+        logging.info("Teardown")
+        self.killAllModule()
 
-    @pytest.mark.skip(reason='Temporarly')
+    # @pytest.mark.skip(reason='Temporarly')
     def test_collectTopology(self, setup_collectDCNInfo):
         # exercise
         self.sS.recvCmdFromMeasurer()
         # verify
         logging.info("Please check measurer's log, " \
             "and then press any key to continue.")
-        raw_input() # type: ignore
+        screenInput("Type here: ")
         assert 1 == 1
-
-    def runMeasurer(self):
-        filePath = measurer.__file__
-        logging.info(filePath)
-        self.sP.runPythonScript(filePath)
 
     def killMeasurer(self):
         self.sP.killPythonScript("/measurement/measurer.py")
@@ -65,9 +65,8 @@ class TestMeasurerClass(TestBase):
         logging.info(dib)
         logging.info("Please check dib output, " \
             "and then press any key to continue.")
-        raw_input() # type: ignore
+        screenInput("Type here: ")
         assert 1 == 1
-
 
     def genGetDCNInfoRequest(self):
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_GET_DCN_INFO)

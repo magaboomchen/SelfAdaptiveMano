@@ -11,12 +11,6 @@ use Dashboard;
 select * from User;
 '''
 
-import sys
-if sys.version < '3':
-    try:
-        input = raw_input
-    except NameError:
-        pass
 import uuid
 
 import pytest

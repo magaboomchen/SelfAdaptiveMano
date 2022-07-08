@@ -11,17 +11,11 @@ use Dashboard;
 select * from Request;
 '''
 
-import sys
-if sys.version < '3':
-    try:
-        input = raw_input
-    except NameError:
-        pass
 import uuid
 import pytest
 
-from sam.base.request import *
-from sam.base.messageAgent import *
+from sam.base.request import Request, REQUEST_TYPE_ADD_SFC
+from sam.base.messageAgent import REQUEST_PROCESSOR_QUEUE
 from sam.dashboard.test.dashboardTestBase import DashboardTestBase
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 

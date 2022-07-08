@@ -15,7 +15,7 @@ class SIBMS(object):
         self.logger = logger
 
     def hasSibm(self, serverID):
-        return self._sibms.has_key(serverID)
+        return serverID in self._sibms
 
     def addSibm(self,serverID):
         self._sibms[serverID] = SIBMaintainer()
@@ -97,22 +97,22 @@ class SIBMaintainer(BessInfoBaseMaintainer):
         self.logger.info("links:{0}".format(self._links))
 
     def hasVNFI(self, vnfiID):
-        return self._vnfiDict.has_key(vnfiID)
+        return vnfiID in self._vnfiDict
 
     def hasReassignedVNFI(self, vnfiID):
-        if self._vnfiDict.has_key(vnfiID):
+        if vnfiID in self._vnfiDict:
             return len(self._vnfiDict[vnfiID]) not in [0,1]
         else:
             return False
 
     def addVNFI(self, vnfi):
-        if self._vnfiDict.has_key(vnfi.vnfiID):
+        if vnfi.vnfiID in self._vnfiDict:
             self._vnfiDict[vnfi.vnfiID].append(vnfi)
         else:
             self._vnfiDict[vnfi.vnfiID] = [vnfi]
 
     def delVNFI(self, vnfiID):
-        if self._vnfiDict.has_key(vnfiID):
+        if vnfiID in self._vnfiDict:
             self._vnfiDict[vnfiID].pop()
             if self._vnfiDict[vnfiID] == []:
                 self._vnfiDict.pop(vnfiID, None)

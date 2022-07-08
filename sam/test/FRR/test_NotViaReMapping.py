@@ -12,6 +12,7 @@ import logging
 import pytest
 
 from sam.base.sfc import SFCI
+from sam.base.compatibility import screenInput
 from sam.base.messageAgent import NETWORK_CONTROLLER_QUEUE, \
     MSG_TYPE_NETWORK_CONTROLLER_CMD, MININET_TESTER_QUEUE, MEDIATOR_QUEUE
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NOTVIA
@@ -109,7 +110,7 @@ class TestNotViaAndReMappingClass(TestFRR):
     def test_addUniSFCI(self, setup_addUniSFCI):
         logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
-        raw_input()  # type: ignore
+        screenInput()
         # exercise: mapping SFCI
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(NETWORK_CONTROLLER_QUEUE,
@@ -155,4 +156,4 @@ class TestNotViaAndReMappingClass(TestFRR):
             logging.info("cmdType:{0}".format(cmd.cmdType))
 
         logging.info("Press any key to quit!")
-        raw_input()  # type: ignore
+        screenInput()

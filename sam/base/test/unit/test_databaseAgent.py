@@ -4,9 +4,7 @@
 import uuid
 import logging
 
-import pickle
-import base64
-
+from sam.base.pickleIO import PickleIO
 from sam.base.databaseAgent import DatabaseAgent
 from sam.base.loggerConfigurator import LoggerConfigurator
 
@@ -23,6 +21,8 @@ class TestDatabaseAgentClass(object):
         logConfigur = LoggerConfigurator(__name__, './log',
             'testDBAgent.log', level='debug')
         cls.logger = logConfigur.getLogger()
+
+        cls.pIO = PickleIO()
 
         cls.dbA = DatabaseAgent(host = "localhost",
             user = "dbAgent", passwd = "123")
@@ -97,7 +97,7 @@ class TestDatabaseAgentClass(object):
         assert self.dbA.hasTable("Orchestrator", "Request") == False
 
     def _encodeObject2Pickle(self, pObject):
-        return base64.b64encode(pickle.dumps(pObject,-1))
+        return self.pIO.obj2Pickle(pObject)
 
     def _decodePickle2Object(self, pickledStr):
-        return pickle.loads(base64.b64decode(pickledStr))
+        return self.pIO.pickle2Obj(pickledStr)

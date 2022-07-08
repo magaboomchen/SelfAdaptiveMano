@@ -35,22 +35,6 @@ class UFRRIBMaintainer(RIBMaintainerBase):
             'UFRRIBMaintainer.log', level='debug')
         self.logger = logConfigur.getLogger()
 
-    # duplicated function in ribMaintainer
-    # def assignGroupID(self, dpid):
-        # if not self.groupIDSets.has_key(dpid):
-        #     self.groupIDSets[dpid] = [0]
-        #     return 0
-        # else:
-        #     groupID = self.genAvailableMiniNum4List(self.groupIDSets[dpid])
-        #     self.groupIDSets[dpid].append(groupID)
-        #     return groupID
-
-    # def countSwitchGroupTable(self, dpid):
-    #     count = 0
-    #     if dpid in self.groupIDSets.keys():
-    #         count = count + len(self.groupIDSets[dpid])
-    #     return count
-
     def addSFCIUFRRFlowTableEntry(self, dpid, 
                                     sfciID, vnfID, pathID,
                                     actions, priority=0):
@@ -69,13 +53,13 @@ class UFRRIBMaintainer(RIBMaintainerBase):
         else:
             raise ValueError("Unknown encoding format")
 
-        if not self.switchesUFRRTable.has_key(dpid):
+        if not (dpid in self.switchesUFRRTable):
             self.switchesUFRRTable[dpid] = {}
-        if not self.switchesUFRRTable[dpid].has_key(firstKey):
+        if not (firstKey in self.switchesUFRRTable[dpid]):
             self.switchesUFRRTable[dpid][firstKey] = {}
-        if not self.switchesUFRRTable[dpid][firstKey].has_key(secondKey):
+        if not (secondKey in self.switchesUFRRTable[dpid][firstKey]):
             self.switchesUFRRTable[dpid][firstKey][secondKey] = {}
-        if not self.switchesUFRRTable[dpid][firstKey][secondKey].has_key(thirdKey):
+        if not (thirdKey in self.switchesUFRRTable[dpid][firstKey][secondKey]):
             self.switchesUFRRTable[dpid][firstKey][secondKey][thirdKey] = {}
 
         self.switchesUFRRTable[dpid][firstKey][secondKey][thirdKey] \
@@ -128,7 +112,6 @@ class UFRRIBMaintainer(RIBMaintainerBase):
         # self.logger.debug("counterDict:{0}\n".format(
         #         json.dumps(counterDict, indent=4, default=str)
         #     ))
-        # raw_input()  # type: ignore
         if counterDict == {}:
             return None
         else:
@@ -161,7 +144,6 @@ class UFRRIBMaintainer(RIBMaintainerBase):
                     switchFirstKeyTable[secondKey].pop(thirdKey)
             # self._logUFRRTable(switchFirstKeyTable)
             # self.logger.debug("secondKey:{0}".format(secondKey))
-            # raw_input()  # type: ignore
             if switchFirstKeyTable[secondKey] == {}:
                 del switchFirstKeyTable[secondKey]
         if outputNodeID != None:
@@ -170,12 +152,10 @@ class UFRRIBMaintainer(RIBMaintainerBase):
                                             "output nodeID": outputNodeID},
                                             "priority": 16}
         # self._logUFRRTable(switchFirstKeyTable)
-        # raw_input()  # type: ignore
 
     def compressSecondStage(self, inputSwitchFirstKeyTable):
         switchFirstKeyTable = copy.deepcopy(inputSwitchFirstKeyTable)
         # self.logger.debug("inputSwitchFirstKeyTable:{0}".format(inputSwitchFirstKeyTable))
-        # raw_input()  # type: ignore
 
         # self.logger.debug("compressSecondStage")
         # self.logger.debug("switchFirstKeyTable:{0}\n".format(
@@ -191,7 +171,6 @@ class UFRRIBMaintainer(RIBMaintainerBase):
         # self.logger.debug("switchFirstKeyTable:{0}".format(
         #         json.dumps(switchFirstKeyTable, indent=4, default=str)
         #     ))
-        # raw_input()  # type: ignore
         return switchFirstKeyTable
 
     def _findSecondKeyTableTheMostFrequentOutput(self, switchSecondKeyTable):
@@ -202,7 +181,6 @@ class UFRRIBMaintainer(RIBMaintainerBase):
                 continue
             # self.logger.debug(thirdKey)
             # self.logger.debug(switchThirdKeyTableSubEntry)
-            # raw_input()  # type: ignore
             actions = switchThirdKeyTableSubEntry["actions"]
             if "output nodeID" in actions.keys():
                 outputNodeID = actions["output nodeID"]
@@ -227,7 +205,6 @@ class UFRRIBMaintainer(RIBMaintainerBase):
         if switchSecondKeyTable == {}:
             del switchSecondKeyTable
         # self.logger.debug(switchFirstKeyTable)
-        # raw_input()  # type: ignore
 
     def countSwitchCompressedFlowTable(self, dpid):
         count = 0
@@ -266,7 +243,6 @@ class UFRRIBMaintainer(RIBMaintainerBase):
         # {'priority': 32, 'actions': {'output port': 24}}
         subEntry = self.switchesUFRRTable[dpid][firstKey][secondKey][thirdKey]
         # self.logger.debug(subEntry)
-        # raw_input()  # type: ignore
         comSubEntry = self._getComSubEntry(dpid, firstKey, secondKey, thirdKey)
         self._compareSubEntry(subEntry, comSubEntry)
 

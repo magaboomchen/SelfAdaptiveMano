@@ -29,7 +29,7 @@ class NotViaMPLSIBMaintainer(RIBMaintainerBase):
         return newMPLSLabel + OVS_MPLSLabel_OFFSET
 
     def getMPLSLabel(self, sfciID, pathID):
-        if self.labelAndSFCIMapping.has_key((sfciID,pathID)):
+        if (sfciID,pathID) in self.labelAndSFCIMapping:
             return self.labelAndSFCIMapping[(sfciID,pathID)] + OVS_MPLSLabel_OFFSET
         return None
 

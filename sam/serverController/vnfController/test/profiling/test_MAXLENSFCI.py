@@ -6,8 +6,9 @@ import logging
 
 import pytest
 
-from sam.base.vnf import VNF_TYPE_FW, VNFI, VNF_TYPE_FORWARD
+from sam.base.compatibility import screenInput
 from sam.base.server import Server, SERVER_TYPE_NORMAL
+from sam.base.vnf import VNF_TYPE_FW, VNFI, VNF_TYPE_FORWARD
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.acl import ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP, \
     ACL_ACTION_DENY
@@ -159,7 +160,7 @@ class TestVNFSFCIAdderClass(TestBase):
         # verifiy
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
-        raw_input()  # type: ignore
+        screenInput()
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")

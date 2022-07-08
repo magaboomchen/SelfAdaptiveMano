@@ -59,7 +59,7 @@ class FRR(BaseApp):
             dpid = self._getSwitchByClassifier(direction['ingress'])
             datapath = self.dpset.get(int(str(dpid), 0))
             source = direction['source']
-            if source.has_key("IPv4"):
+            if "IPv4" in source:
                 ipv4Address = source["IPv4"]
                 if ipv4Address in [None, "*", "0.0.0.0"]:
                     inPortIndex = DCNGATEWAY_INBOUND_PORT
@@ -443,7 +443,7 @@ class FRR(BaseApp):
                 match = parser.OFPMatch(**matchFields)
                 tableID = entry["tableID"]
                 self._del_flow(datapath, match, table_id=tableID, priority=2)
-                if entry.has_key("groupID"):
+                if "groupID" in entry:
                     groupID = entry["groupID"]
                     self._delSFCIGroupTable(datapath, groupID)
                     self.ibm.delGroupID(dpid, groupID)

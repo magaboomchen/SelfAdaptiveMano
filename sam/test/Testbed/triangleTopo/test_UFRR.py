@@ -11,6 +11,7 @@ import logging
 import pytest
 
 from sam import base
+from sam.base.compatibility import screenInput
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.messageAgent import MessageAgent
 from sam.test.testBase import CLASSIFIER_DATAPATH_IP
@@ -65,7 +66,7 @@ class TestUFRRClass(TestbedFRR):
     def test_UFRRAddUniSFCI(self, setup_addUniSFCI):
         logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
-        raw_input()  # type: ignore
+        screenInput() 
 
         self.addSFC2NetworkController()
         self.addSFCI2NetworkController()
@@ -74,11 +75,11 @@ class TestUFRRClass(TestbedFRR):
             "server software failure\n"
             "After the test, "
             "Press any key to quit!")
-        raw_input()  # type: ignore
+        screenInput() 
         self.sendHandleServerSoftwareFailureCmd()
         # TODO: kill serverAgent to test server failure protection
 
         logging.info("Please input mode 0 into mininet\n"
             "After the test, "
             "Press any key to quit!")
-        raw_input()  # type: ignore
+        screenInput() 

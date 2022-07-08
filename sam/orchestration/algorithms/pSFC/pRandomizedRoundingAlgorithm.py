@@ -49,7 +49,6 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
             bp = self.requestPartialPathBp[pIndex]
             # print(bp)
             # print(type(bp))
-            # raw_input()  # type: ignore
             self._dibDict[bp] = copy.deepcopy(self._initDib)
 
     def randomizedRoundingAlgorithm(self):
@@ -100,7 +99,6 @@ class PRandomizedRoundingAlgorithm(OPRandomizedRoundingAlgorithm):
         path.append((maxVnfLayerNum+1, tp))
 
         self.logger.debug("none joint link candidate path:{0}".format(path))
-        # raw_input()  # type: ignore
 
         return path
 

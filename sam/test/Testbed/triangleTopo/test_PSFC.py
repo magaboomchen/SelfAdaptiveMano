@@ -6,6 +6,7 @@ import logging
 import pytest
 
 from sam import base
+from sam.base.compatibility import screenInput
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NOTVIA_PSFC
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.messageAgent import MessageAgent
@@ -75,7 +76,7 @@ class TestPSFCClass(TestbedFRR):
     def test_addUniSFCI(self, setup_addUniSFCI):
         logging.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
-        raw_input()  # type: ignore
+        screenInput() 
 
         self.addSFC2NetworkController()
         self.addSFCI2NetworkController()
@@ -84,10 +85,10 @@ class TestPSFCClass(TestbedFRR):
             "server software failure\n"
             "After the test, "
             "Press any key to continue!")
-        self.testName = raw_input()  # type: ignore
+        self.testName = screenInput() 
         if self.testName == "ssf":
             self.sendHandleServerSoftwareFailureCmd()
 
         logging.info("Please input 'ovs-vsctl del-br br1' to disable switch s2. "
             "After the test, Press any key to quit!")
-        raw_input()  # type: ignore
+        screenInput() 

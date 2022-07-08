@@ -5,6 +5,7 @@ import logging
 
 import pytest
 
+from sam.base.compatibility import screenInput
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.messageAgent import SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
@@ -55,7 +56,7 @@ class TestSFCIDeleterClass(TestBase):
         self.verifyDelSFCICmdRply()
 
         self.logger.info("press any key to send del sfc cmd.")
-        raw_input()  # type: ignore
+        screenInput()
         self.logger.info("send cmd")
 
         # exercise

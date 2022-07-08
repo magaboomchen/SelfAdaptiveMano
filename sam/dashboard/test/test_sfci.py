@@ -11,18 +11,11 @@ use Dashboard;
 select * from SFCI;
 '''
 
-import sys
-if sys.version < '3':
-    try:
-        input = raw_input   # type: ignore
-    except NameError:
-        pass
 import uuid
 import pytest
 
-from sam.base.sfc import *
-from sam.base.vnf import *
-from sam.base.messageAgent import *
+from sam.base.sfc import SFCI
+from sam.base.vnf import VNFI, VNF_TYPE_FW
 from sam.dashboard.test.dashboardTestBase import DashboardTestBase
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 

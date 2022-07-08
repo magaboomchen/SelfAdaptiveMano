@@ -77,15 +77,14 @@ import socket
 import ctypes
 import inspect
 import threading
-
-import base64
+from concurrent import futures
 
 import pika
 import grpc
-from concurrent import futures
 
-from sam.base.command import Command, CommandReply
+from sam.base.pickleIO import PickleIO
 from sam.base.request import Request, Reply
+from sam.base.command import Command, CommandReply
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MAX_MESSAGE_LENGTH, \
@@ -206,6 +205,7 @@ class MessageAgent(object):
         self.listenPort = None
         self.gRPCChannel = None
         self.gRPCServersList = []
+        self.pIO = PickleIO()
 
     def readRabbitMQConf(self):
         filePath = __file__.split("/messageAgent.py")[0] + '/rabbitMQConf.json'
@@ -339,6 +339,7 @@ class MessageAgent(object):
     def sendMsgByRPC(self, dstIP, dstPort, message):
         if self.listenIP == None or self.listenPort == None:
             raise ValueError("Unset listen IP and port.")
+        self.logger.info("gRPC listen dstIP {0}, dstPort {1}".format(dstIP, dstPort))
         self.gRPCChannel = grpc.insecure_channel(
             '{0}:{1}'.format(dstIP, dstPort),
             options=[
@@ -349,19 +350,29 @@ class MessageAgent(object):
 
         stub = messageAgent_pb2_grpc.MessageStorageStub(channel=self.gRPCChannel)
 
+        cnt = 5
         while True:
-            source = {"comType":"RPC",
-                "srcIP": self.listenIP,
-                "srcPort": self.listenPort
-            }
-            message.setSource(source)
-            pickles = self._encodeMessage(message)
-            req = messageAgent_pb2.Pickle(picklebytes=pickles)
-            response = stub.Store(req)
+            try:
+                source = {"comType":"RPC",
+                    "srcIP": self.listenIP,
+                    "srcPort": self.listenPort
+                }
+                message.setSource(source)
+                pickles = self._encodeMessage(message)
+                pickles = bytes(pickles)
+                req = messageAgent_pb2.Pickle(picklebytes=pickles)
+                response = stub.Store(req)
 
-            self.logger.info("response is {0}".format(response))
-            if response.booly:
-                break
+                self.logger.info("response is {0}".format(response))
+                if response.booly:
+                    break
+            except Exception as ex:
+                if cnt%5==0:
+                    ExceptionProcessor(self.logger).logException(ex,
+                        "messageAgent")
+            finally:
+                time.sleep(1)
+                cnt = cnt + 1
 
         self.gRPCChannel.close()
 
@@ -402,10 +413,10 @@ class MessageAgent(object):
         return msg
 
     def _encodeMessage(self, message):
-        return base64.b64encode(cPickle.dumps(message,-1))
+        return self.pIO.obj2Pickle(message)
 
     def _decodeMessage(self, message):
-        return cPickle.loads(base64.b64decode(message))
+        return self.pIO.pickle2Obj(message)
 
     def __del__(self):
         # Can't run file logger when call __del__() methods

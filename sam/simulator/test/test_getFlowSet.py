@@ -20,7 +20,7 @@ import pytest
 
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
-    MEDIATOR_QUEUE
+    MEDIATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import MediatorStub
@@ -74,7 +74,8 @@ class TestGetFlowSetClass(TestSimulatorBase):
         # self.logger.info("{0}".format(cmdRply.attributes.keys()))
         # self.logger.info("{0}".format(cmdRply.attributes["flows"]))
         assert cmdRply.cmdID == self.getFlowSetCmd.cmdID
-        assert cmdRply.attributes.has_key("flows")
+        assert "flows" in cmdRply.attributes
         assert type(cmdRply.attributes["flows"]) == dict
         assert len(cmdRply.attributes["flows"]) >= 0
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == SIMULATOR_ZONE

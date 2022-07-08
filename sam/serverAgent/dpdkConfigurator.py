@@ -40,7 +40,7 @@ class DPDKConfigurator(object):
 
     def mount1GBHugepages(self):
         command = "sudo mkdir -p /mnt/huge_1GB " \
-                    + "&& sudo mount -t hugetlbfs -o pagesize=1G none /mnt/huge " \
+                    + "&& sudo mount -t hugetlbfs -o pagesize=1G none /mnt/huge_1GB " \
                     + "&& sudo mount -t hugetlbfs nodev /mnt/huge_1GB"
         out_bytes = subprocess.check_output(
             [command],

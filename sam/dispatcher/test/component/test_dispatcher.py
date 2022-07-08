@@ -4,12 +4,8 @@
 import uuid
 import time
 import copy
-import base64
-if sys.version > '3':
-    import _pickle as cPickle
-else:
-    import cPickle
 
+from sam.base.pickleIO import PickleIO
 from sam.base.messageAgent import MessageAgent, SAMMessage, MEDIATOR_QUEUE, \
     MSG_TYPE_REQUEST, SIMULATOR_ZONE
 from sam.base.command import CMD_TYPE_ADD_SFCI
@@ -20,6 +16,8 @@ from sam.dispatcher.dispatcher import Dispatcher
 class DispatcherComponentTester(Dispatcher):
     def __init__(self, podNum, parallelMode=True, baseSFCNum=100, topoType="fat-tree"):
         super(DispatcherComponentTester, self).__init__(podNum, parallelMode, topoType)
+
+        self.pIO = PickleIO()
 
         self.mediatorQueueName = MEDIATOR_QUEUE
         self._mediatorStubMsgAgent = MessageAgent(self.logger)
@@ -115,7 +113,7 @@ class DispatcherComponentTester(Dispatcher):
             self._messageAgent.msgQueues[self.dispatcherQueueName].put(encodedMsg)
 
     def __encodeMessage(self,message):
-        return base64.b64encode(cPickle.dumps(message,-1))
+        return self.pIO.obj2Pickle(message)
 
     def __dispatchInitialAddSFCIRequestToOrch(self):
         cnt = 0

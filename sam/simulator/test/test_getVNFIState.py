@@ -21,7 +21,7 @@ import pytest
 
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
-    MEDIATOR_QUEUE
+    MEDIATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import MediatorStub
@@ -73,7 +73,8 @@ class TestGetVNFIStateClass(TestSimulatorBase):
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.getVNFIStateCmd.cmdID
-        assert cmdRply.attributes.has_key("vnfiState")
+        assert "vnfiState" in cmdRply.attributes
         assert type(cmdRply.attributes["vnfiState"]) == dict
         assert len(cmdRply.attributes["vnfiState"]) >= 0
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == SIMULATOR_ZONE

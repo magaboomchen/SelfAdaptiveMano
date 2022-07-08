@@ -99,10 +99,10 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
         return self._links[zoneName][(srcID, dstID)]['link']
 
     def reserveLinkResource(self, srcID, dstID, reservedBandwidth, zoneName):
-        if not self._linksReservedResources.has_key(zoneName):
+        if not (zoneName in self._linksReservedResources):
             self._linksReservedResources[zoneName] = {}
         linkKey = (srcID, dstID)
-        if not self._linksReservedResources[zoneName].has_key(linkKey):
+        if not (linkKey in self._linksReservedResources[zoneName]):
             self._linksReservedResources[zoneName][linkKey] = {}
             self._linksReservedResources[zoneName][linkKey]["bandwidth"] = reservedBandwidth
         else:
@@ -111,10 +111,10 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
                 + reservedBandwidth
 
     def releaseLinkResource(self, srcID, dstID, releaseBandwidth, zoneName):
-        if not self._linksReservedResources.has_key(zoneName):
+        if not (zoneName in self._linksReservedResources):
             self._linksReservedResources[zoneName] = {}
         linkKey = (srcID, dstID)
-        if not self._linksReservedResources[zoneName].has_key(linkKey):
+        if not (linkKey in self._linksReservedResources[zoneName]):
             raise ValueError("Unknown linkKey:{0}".format(linkKey))
         else:
             bandwidth = self._linksReservedResources[zoneName][linkKey]["bandwidth"]
@@ -122,10 +122,10 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
                 - releaseBandwidth
 
     def getLinkReservedResource(self, srcID, dstID, zoneName):
-        if not self._linksReservedResources.has_key(zoneName):
+        if not (zoneName in self._linksReservedResources):
             self._linksReservedResources[zoneName] = {}
         linkKey = (srcID, dstID)
-        if not self._linksReservedResources[zoneName].has_key(linkKey):
+        if not (linkKey in self._linksReservedResources[zoneName]):
             # raise ValueError("Unknown linkKey:{0}".format(linkKey))
             self.reserveLinkResource(srcID, dstID, 0, zoneName)
         return self._linksReservedResources[zoneName][linkKey]["bandwidth"]

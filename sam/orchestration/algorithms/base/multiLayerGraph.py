@@ -124,7 +124,6 @@ class MultiLayerGraph(object):
             # nx.draw(G, with_labels=True)
             # plt.savefig("./temp.png")
             # plt.show()
-            # raw_input()  # type: ignore
 
         return G
 
@@ -206,7 +205,6 @@ class MultiLayerGraph(object):
                         self.zoneName, self.abandonNodeIDList):
                 weight = self.getLinkWeight(link, isConnectingLink=True)
                 # self.logger.debug("weight:{0}".format(weight))
-                # raw_input()  # type: ignore
                 mLG.add_edge(srcLayerNodeID, dstLayerNodeID, weight=weight)
             else:
                 self.logger.warning(
@@ -289,7 +287,6 @@ class MultiLayerGraph(object):
     def deLoop(self, path):
         pathTmp = copy.deepcopy(path)
         # self.logger.debug("path:{0}".format(path))
-        # raw_input()  # type: ignore
         while self.hasLoop(pathTmp):
             deDuplicateFlag = False
             for index in range(len(pathTmp)):

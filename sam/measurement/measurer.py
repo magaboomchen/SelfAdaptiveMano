@@ -9,16 +9,17 @@ import inspect
 import threading
 from packaging import version
 
-from sam.base.messageAgent import SIMULATOR_ZONE, SAMMessage, MessageAgent, MEASURER_QUEUE, \
-    DCN_INFO_RECIEVER_QUEUE, MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD, MEDIATOR_QUEUE
+from sam.base.messageAgent import SIMULATOR_ZONE, SAMMessage, MessageAgent, \
+    MEASURER_QUEUE, MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD, MEDIATOR_QUEUE
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
-    MEASURER_PORT, P4_CONTROLLER_IP, P4_CONTROLLER_PORT, SFF_CONTROLLER_IP, SFF_CONTROLLER_PORT, SIMULATOR_IP, SIMULATOR_PORT, NETWORK_CONTROLLER_IP, \
+    MEASURER_PORT, P4_CONTROLLER_IP, P4_CONTROLLER_PORT, SFF_CONTROLLER_IP, \
+    SFF_CONTROLLER_PORT, SIMULATOR_IP, SIMULATOR_PORT, NETWORK_CONTROLLER_IP, \
     NETWORK_CONTROLLER_PORT, SERVER_MANAGER_IP, SERVER_MANAGER_PORT, \
-    CLASSIFIER_CONTROLLER_IP, CLASSIFIER_CONTROLLER_PORT, \
     VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
 from sam.base.command import Command, CMD_TYPE_GET_TOPOLOGY, \
     CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_SFCI_STATE, CMD_TYPE_GET_VNFI_STATE
-from sam.base.request import Reply, REQUEST_STATE_SUCCESSFUL, REQUEST_TYPE_GET_DCN_INFO
+from sam.base.request import Reply, REQUEST_STATE_SUCCESSFUL, \
+                                REQUEST_TYPE_GET_DCN_INFO
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
@@ -136,7 +137,7 @@ class Measurer(object):
 
     def _commandReplyHandler(self, cmdRply):
         self.logger.info("Get a command reply")
-        self.logger.debug(cmdRply)
+        # self.logger.debug(cmdRply)
         zoneName = cmdRply.attributes['zone']
         for key,value in cmdRply.attributes.items():
             if key == 'switches':
@@ -154,7 +155,7 @@ class Measurer(object):
                 pass
             else:
                 self.logger.warning("Unknown attributes:{0}".format(key))
-        self.logger.debug("dib:{0}".format(self._dib))
+        # self.logger.debug("dib:{0}".format(self._dib))
 
 
 class MeasurerCommandSender(threading.Thread):
@@ -176,8 +177,8 @@ class MeasurerCommandSender(threading.Thread):
                     self.logger.debug("zoneName: {0}".format(zoneName))
                     self.sendGetTopoCmd(zoneName)
                     self.sendGetServersCmd(zoneName)
-                    self.sendGetSFCIStatusCmd(zoneName)
-                    self.sendGetVNFIStateCmd(zoneName)
+                    # self.sendGetSFCIStatusCmd(zoneName)
+                    # self.sendGetVNFIStateCmd(zoneName)
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex)
             finally:
@@ -187,7 +188,6 @@ class MeasurerCommandSender(threading.Thread):
         getTopoCmd = Command(CMD_TYPE_GET_TOPOLOGY, uuid.uuid1(),
             {"zone":zoneName})
         msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getTopoCmd)
-        # self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
         if zoneName == SIMULATOR_ZONE:
             self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
         else:
@@ -198,7 +198,6 @@ class MeasurerCommandSender(threading.Thread):
         getServersCmd = Command(CMD_TYPE_GET_SERVER_SET, uuid.uuid1(),
             {"zone":zoneName})
         msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getServersCmd)
-        # self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
         if zoneName == SIMULATOR_ZONE:
             self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, \
                                             msg)

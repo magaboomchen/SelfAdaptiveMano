@@ -11,12 +11,6 @@ use Dashboard;
 select * from RoutingMorphic;
 '''
 
-import sys
-if sys.version < '3':
-    try:
-        input = raw_input
-    except NameError:
-        pass
 import pytest
 
 from sam.base.routingMorphic import RoutingMorphic

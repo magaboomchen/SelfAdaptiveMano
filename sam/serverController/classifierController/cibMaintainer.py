@@ -13,7 +13,7 @@ class CIBMS(object):
         self._cibms = {} # {serverID:CIBMaintainer}
 
     def hasCibm(self, serverID):
-        return self._cibms.has_key(serverID)
+        return serverID in self._cibms
 
     def addCibm(self,serverID):
         self._cibms[serverID] = CIBMaintainer()
@@ -44,7 +44,7 @@ class CIBMaintainer(BessInfoBaseMaintainer):
         return self._sfcSet[(sfcUUID,directionID)] == []
 
     def hasSFCDirection(self,sfcUUID,direction):
-        return self._sfcSet.has_key((sfcUUID,direction))
+        return (sfcUUID,direction) in self._sfcSet
 
     def assignHashLBOGatesList(self,serverID,sfcUUID,direction,sfciID):
         hashLBName = self.getHashLBName(sfcUUID,direction)

@@ -17,7 +17,7 @@ class DHCPServer(XInfoBaseMaintainer):
         self._assignedIPPool = {}    # [switchID] = []
 
     def assignIP(self, switchID):
-        if not self._assignedIPPool.has_key(switchID):
+        if not (switchID in self._assignedIPPool):
             self.logger.debug("New switchID:{0}".format(switchID))
             self._assignedIPPool[switchID] = []
 
@@ -43,7 +43,7 @@ class DHCPServer(XInfoBaseMaintainer):
             raise ValueError("can't assign ip address")
 
     def assignClassifierIP(self, switchID):
-        if not self._assignedIPPool.has_key(switchID):
+        if not (switchID in self._assignedIPPool):
             self.logger.debug("New switchID:{0}".format(switchID))
             self._assignedIPPool[switchID] = []
 

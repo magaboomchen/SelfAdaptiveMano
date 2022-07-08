@@ -114,9 +114,9 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def reserveServerResources(self, serverID, reservedCores, reservedMemory,
             reservedBandwidth, zoneName):
-        if not self._serversReservedResources.has_key(zoneName):
+        if not (zoneName in self._serversReservedResources):
             self._serversReservedResources[zoneName] = {}
-        if not self._serversReservedResources[zoneName].has_key(serverID):
+        if not (serverID in self._serversReservedResources[zoneName]):
             self._serversReservedResources[zoneName][serverID] = {}
             self._serversReservedResources[zoneName][serverID]["cores"] = reservedCores
             self._serversReservedResources[zoneName][serverID]["memory"] = reservedMemory
@@ -134,9 +134,9 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def releaseServerResources(self, serverID, releaseCores, releaseMemory,
             releaseBandwidth, zoneName):
-        if not self._serversReservedResources.has_key(zoneName):
+        if not (zoneName in self._serversReservedResources):
             self._serversReservedResources[zoneName] = {}
-        if not self._serversReservedResources.has_key(serverID):
+        if not (serverID in self._serversReservedResources):
             raise ValueError("Unknown serverID:{0}".format(serverID))
         else:
             cores = self._serversReservedResources[zoneName][serverID]["cores"]
@@ -150,9 +150,9 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
                 - releaseBandwidth
 
     def getServerReservedResources(self, serverID, zoneName):
-        if not self._serversReservedResources.has_key(zoneName):
+        if not (zoneName in self._serversReservedResources):
             self._serversReservedResources[zoneName] = {}
-        if not self._serversReservedResources.has_key(serverID):
+        if not (serverID in self._serversReservedResources):
             # raise ValueError("Unknown serverID:{0}".format(serverID))
             self.reserveServerResources(serverID, 0, 0, 0, zoneName)
         cores = self._serversReservedResources[zoneName][serverID]["cores"]

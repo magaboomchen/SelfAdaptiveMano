@@ -11,18 +11,10 @@ use Measurer;
 select * from Link;
 '''
 
-import sys
-if sys.version < '3':
-    try:
-        input = raw_input
-    except NameError:
-        pass
-import uuid
-
 import pytest
 
-from sam.base.link import *
-from sam.base.messageAgent import *
+from sam.base.link import Link
+from sam.base.messageAgent import MessageAgent, SIMULATOR_ZONE
 from sam.dashboard.test.dashboardTestBase import DashboardTestBase
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 

@@ -8,6 +8,7 @@ import logging
 import pytest
 
 from sam.base.vnf import VNFI, VNF_TYPE_FW
+from sam.base.compatibility import screenInput
 from sam.base.acl import ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP
 from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
@@ -118,7 +119,7 @@ class TestVNFSFCIAdderClass(TestBase):
         # verifiy
         logging.info("please start performance profiling" \
             "after profiling, press any key to quit.")
-        raw_input()  # type: ignore
+        screenInput()
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")

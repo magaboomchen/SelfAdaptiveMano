@@ -87,4 +87,5 @@ class ShellProcessor(object):
                             ["sudo kill " + str(pid)], shell=True)
     
     def runShellCommand(self,shellCmd):
-        return subprocess.check_output([shellCmd], shell=True)
+        res = subprocess.check_output([shellCmd], shell=True)
+        return str(res)
