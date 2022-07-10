@@ -18,7 +18,6 @@ from sam.base.messageAgent import DEFAULT_ZONE, SAMMessage, MessageAgent, MSG_TY
     REQUEST_PROCESSOR_QUEUE
 from sam.base.routingMorphic import RoutingMorphic
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
-from sam.base.test.fixtures.ipv6MorphicDict import ipv6MorphicDictTemplate
 from sam.toolkit.cleanAllLogFile import cleanAllLogFile
 from sam.toolkit.clearAllSAMQueue import clearAllSAMQueue
 from sam.toolkit.killAllSAMPythonScripts import killAllSAMPythonScripts

@@ -24,9 +24,11 @@ from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
     MEDIATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.vnf import VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.simulator.test.testSimulatorBase import TestSimulatorBase
 from sam.simulator import simulator
+from sam.test.testBase import CLASSIFIER_DATAPATH_IP
 
 MANUAL_TEST = True
 
@@ -40,14 +42,15 @@ class TestGetVNFIStateClass(TestSimulatorBase):
         self.logger.setLevel(logging.DEBUG)
 
         # setup
-        # self.resetRabbitMQConf(
-        #     base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.json",
-        #     "192.168.8.19", "mq", "123456")
         self.sP = ShellProcessor()
         self.cleanLog()
         self.clearQueue()
         self.killAllModule()
         self.mediator = MediatorStub()
+
+        self.sfcList = []
+        self.sfciList = []
+        self.serverBasedClassifier = False
 
     @pytest.fixture(scope="function")
     def setup_getVNFIState(self):
@@ -63,18 +66,63 @@ class TestGetVNFIStateClass(TestSimulatorBase):
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_getVNFIState(self, setup_getVNFIState):
         # exercise
+        self.addSFCI2Simulator()
+
         self.getVNFIStateCmd = self.mediator.genCMDGetVNFIState()
         self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
                         self.getVNFIStateCmd)
 
         # verify
-        self.verifyCmdRply()
+        self.verifyGetVNFIStateCmdRply()
 
-    def verifyCmdRply(self):
+    def addSFCI2Simulator(self):
+        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP,
+                            serverBasedClassifier=self.serverBasedClassifier)
+        for sfcLength in [1,2,3]:
+            sfc = self.genUniDirectionSFC(classifier, sfcLength=sfcLength)
+            self.sfcList.append(sfc)
+            sfci = self.genUniDirection10BackupServerNFVISFCI(
+                                sfcLength=sfcLength,
+                    serverBasedClassifier=self.serverBasedClassifier)
+            self.sfciList.append(sfci)
+
+        for idx in [0,1,2]:
+            logging.info("test idx {0}".format(idx))
+            # exercise
+            self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfcList[idx],
+                                                        self.sfciList[idx])
+            self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
+                                                    self.addSFCICmd)
+
+            # verify
+            self.verifyAddSFCICmdRply()
+
+    def verifyAddSFCICmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-        assert cmdRply.cmdID == self.getVNFIStateCmd.cmdID
-        assert "vnfiState" in cmdRply.attributes
-        assert type(cmdRply.attributes["vnfiState"]) == dict
-        assert len(cmdRply.attributes["vnfiState"]) >= 0
+        assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
         assert cmdRply.attributes['zone'] == SIMULATOR_ZONE
+
+    def verifyGetVNFIStateCmdRply(self):
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.getVNFIStateCmd.cmdID
+        assert "vnfisStateDict" in cmdRply.attributes
+        assert type(cmdRply.attributes["vnfisStateDict"]) == dict
+        assert len(cmdRply.attributes["vnfisStateDict"]) >= 0
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == SIMULATOR_ZONE
+        vnfisStateDict = cmdRply.attributes["vnfisStateDict"]
+        for vnfiID,contentDict in vnfisStateDict.items():
+            assert "vnfType" in contentDict
+            vnfType = contentDict["vnfType"]
+            if vnfType == VNF_TYPE_FW:
+                assert "FWRulesNum" in contentDict
+                assert contentDict["FWRulesNum"] == 2
+            elif vnfType == VNF_TYPE_MONITOR:
+                assert "FlowStatisticsDict" in contentDict
+                assert type(contentDict["FlowStatisticsDict"]) == dict
+            elif vnfType == VNF_TYPE_RATELIMITER:
+                assert "rateLimitition" in contentDict
+                contentDict["rateLimitition"] == 1
+            else:
+                raise ValueError("Unknown vnf type {0}".format(vnfType))

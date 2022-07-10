@@ -3,15 +3,19 @@
 
 import uuid
 import logging
+from sam.base.rateLimiter import RateLimiterConfig
 
 from sam.base.slo import SLO
+from sam.base.routingMorphic import RoutingMorphic
+from sam.base.messageAgent import SIMULATOR_ZONE
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
-from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNF, VNFI, VNF_TYPE_FORWARD
+from sam.base.path import MAPPING_TYPE_MMLPSFC, ForwardingPathSet
+from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI,  \
+                            VNF_TYPE_RATELIMITER, VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, SWITCH_TYPE_NPOP, Switch
-from sam.base.path import MAPPING_TYPE_MMLPSFC, MAPPING_TYPE_NETPACK, ForwardingPathSet, MAPPING_TYPE_INTERFERENCE
-from sam.base.messageAgent import SIMULATOR_ZONE
-from sam.test.testBase import APP1_REAL_IP, TestBase, WEBSITE_REAL_IP, CLASSIFIER_DATAPATH_IP
+from sam.test.testBase import TestBase, WEBSITE_REAL_IP, CLASSIFIER_DATAPATH_IP
 
 MANUAL_TEST = True
 
@@ -44,17 +48,21 @@ class TestSimulatorBase(TestBase):
             classifier._ifSet["ens3"]["IP"] = CLASSIFIER_CONTROL_IP
             classifier._serverDatapathNICMAC = CLASSIFIER_DATAPATH_MAC
         else:
-            classifier = Switch(0, SWITCH_TYPE_DCNGATEWAY, "2.2.0.0", programmable=True)
+            classifier = Switch(0, SWITCH_TYPE_DCNGATEWAY, "2.2.0.0",
+                                                    programmable=True)
         return classifier
 
     def genUniDirectionSFC(self, classifier, sfcLength=1):
         sfcUUID = uuid.uuid1()
-        vNFTypeSequence = [VNF_TYPE_FORWARD] * sfcLength
-        vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_FORWARD,
-                        None, PREFERRED_DEVICE_TYPE_SERVER)] * sfcLength
+        vNFTypeSequence = [VNF_TYPE_RATELIMITER] * sfcLength
+        vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_RATELIMITER,
+                            RateLimiterConfig(maxMbps=100),
+                            PREFERRED_DEVICE_TYPE_SERVER)] * sfcLength
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(srv6MorphicDictTemplate)
         direction1 = {
             'ID': 0,
             'source': {'node': None, 'IPv4':"*"},
@@ -68,15 +76,19 @@ class TestSimulatorBase(TestBase):
         slo = SLO(latencyBound=35, throughput=0.1)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
-            {'zone': SIMULATOR_ZONE}, slo=slo, vnfSequence=vnfSequence)
+            {'zone': SIMULATOR_ZONE}, slo=slo, routingMorphic=routingMorphic,
+            vnfSequence=vnfSequence)
 
-    def genUniDirection10BackupServerNFVISFCI(self, mappedVNFISeq=True, sfcLength=1, serverBasedClassifier=True):
+    def genUniDirection10BackupServerNFVISFCI(self, mappedVNFISeq=True,
+                                            sfcLength=1,
+                                            serverBasedClassifier=True):
         if mappedVNFISeq:
             vnfiSequence = self.gen10BackupServerVNFISequence(sfcLength)
         else:
             vnfiSequence = None
         return SFCI(self.assignSFCIID(), vnfiSequence, None,
-            self.genUniDirection10BackupServerBasedForwardingPathSet(sfcLength, serverBasedClassifier))
+            self.genUniDirection10BackupServerBasedForwardingPathSet(sfcLength, 
+                                                        serverBasedClassifier))
 
     def gen10BackupServerVNFISequence(self, sfcLength=1):
         # hard-code function
@@ -94,7 +106,8 @@ class TestSimulatorBase(TestBase):
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
-    def genUniDirection10BackupServerBasedForwardingPathSet(self, sfciLength=1, serverBasedClassifier=False):
+    def genUniDirection10BackupServerBasedForwardingPathSet(self, sfciLength=1, 
+                                                    serverBasedClassifier=False):
         # please ref /sam/base/path.py
         # This function generate a sfc forwarding path for sfc "ingress->L2Forwarding->egress"
         # The primary forwarding path has two stage, the first stage is "ingress->L2Forwarding",

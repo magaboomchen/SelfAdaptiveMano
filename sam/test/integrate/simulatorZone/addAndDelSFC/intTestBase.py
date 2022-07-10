@@ -10,15 +10,19 @@ from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import SIMULATOR_ZONE
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.acl import ACL_ACTION_ALLOW, ACL_PROTO_UDP, ACLTuple
-from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, \
-                                        ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
+from sam.base.routingMorphic import RoutingMorphic, IPV4_ROUTE_PROTOCOL, \
+            IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
+from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
+from sam.base.test.fixtures.ipv6MorphicDict import ipv6MorphicDictTemplate
+from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
+from sam.base.test.fixtures.roceV1MorphicDict import roceV1MorphicDictTemplate
 from sam.base.sfc import APP_TYPE_BEST_EFFORT, APP_TYPE_HIGH_AVA, \
                         APP_TYPE_LARGE_BANDWIDTH, APP_TYPE_LARGE_CONNECTION, \
                         APP_TYPE_LOW_LATENCY, SFC, SFCI
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.slo import SLO
-from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, PREFERRED_DEVICE_TYPE_SERVER, \
-                            VNF, VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, VNF, VNF_TYPE_FW, \
+        PREFERRED_DEVICE_TYPE_SERVER, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.test.testBase import APP1_REAL_IP, APP2_REAL_IP, APP3_REAL_IP, \
                                 APP4_REAL_IP, APP5_REAL_IP, TestBase
@@ -73,7 +77,8 @@ class IntTestBaseClass(TestBase):
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_LARGE_BANDWIDTH
-        routingMorphic = SRV6_ROUTE_PROTOCOL
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(srv6MorphicDictTemplate)
         direction1 = {
             'ID': 0,
             'source': {'node': None, 'IPv4':"*"},
@@ -100,7 +105,8 @@ class IntTestBaseClass(TestBase):
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_HIGH_AVA
-        routingMorphic = IPV4_ROUTE_PROTOCOL
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(ipv4MorphicDictTemplate)
         direction1 = {
             'ID': 0,
             'source': {'node': None, 'IPv4':"*"},
@@ -126,7 +132,8 @@ class IntTestBaseClass(TestBase):
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_LOW_LATENCY
-        routingMorphic = ROCEV1_ROUTE_PROTOCOL
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(roceV1MorphicDictTemplate)
         direction1 = {
             'ID': 0,
             'source': {'node': None, 'IPv4':"*"},
@@ -155,7 +162,8 @@ class IntTestBaseClass(TestBase):
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_LARGE_CONNECTION
-        routingMorphic = IPV6_ROUTE_PROTOCOL
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(ipv6MorphicDictTemplate)
         direction1 = {
             'ID': 0,
             'source': {'node': None, 'IPv4':"*"},
@@ -182,7 +190,8 @@ class IntTestBaseClass(TestBase):
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_BEST_EFFORT
-        routingMorphic = IPV4_ROUTE_PROTOCOL
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(ipv4MorphicDictTemplate)
         direction1 = {
             'ID': 0,
             'source': {'node': None, 'IPv4':"*"},
@@ -205,6 +214,10 @@ class IntTestBaseClass(TestBase):
         if routingMorphic == IPV4_ROUTE_PROTOCOL:
             dstAddr="3.3.3.3"
         elif routingMorphic == IPV6_ROUTE_PROTOCOL:
+            dstAddr="2026:0000::"
+        elif routingMorphic == SRV6_ROUTE_PROTOCOL:
+            dstAddr="2026:0000::"
+        elif routingMorphic == ROCEV1_ROUTE_PROTOCOL:
             dstAddr="2026:0000::"
         else:
             dstAddr="3.3.3.3"

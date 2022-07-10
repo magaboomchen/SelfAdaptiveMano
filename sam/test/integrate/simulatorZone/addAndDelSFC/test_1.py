@@ -17,7 +17,8 @@ import pytest
 
 from sam.base.compatibility import screenInput
 from sam.base.messageAgent import DISPATCHER_QUEUE, SIMULATOR_ZONE
-from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
+from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
+                        REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
 from sam.test.integrate.simulatorZone.addAndDelSFC.intTestBase import IntTestBaseClass
 
 MANUAL_TEST = True
@@ -57,7 +58,6 @@ class TestAddSFCClass(IntTestBaseClass):
         rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
             attributes={
                 "sfc": sfcInDB,
-                # "sfc": self.sfc,
                 "sfci": self.sfci,
                 "zone": SIMULATOR_ZONE
             })
@@ -71,7 +71,6 @@ class TestAddSFCClass(IntTestBaseClass):
         rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,
             attributes={
                 "sfc": self.getSFCFromDB(self.sfc.sfcUUID),
-                # "sfc": self.sfc,
                 "sfci": self.sfci,
                 "zone": SIMULATOR_ZONE
             })

@@ -16,7 +16,7 @@ pip install paramiko enum34 psutil pika netifaces \
                     getmac pytest networkx numpy pandas \
                     tinyrpc==0.8 ruamel.yaml==0.15.52 matplotlib \
                     eventlet==0.30.2 scapy grpcio grpcio-tools \
-                    docker sklearn ryu MySQL-python cPickle \
+                    docker sklearn ryu MySQL-python \
 ```
 
 ## python3
@@ -54,12 +54,6 @@ ${ABSOLUTE_PATH_TO_THIS_PROJECT}
 EOF
 ```
 
-### MessageAgent gRPC
-```
-cd ~/Projects/SelfAdaptiveMano/sam/base/messageAgentAuxillary
-protoc -I=./protos --python_out=./ ./protos/messageAgent.proto
-```
-
 ## RabbitMQ
 ### install erlang 20.3.8.26-1 (please make sure the version number)
 ```
@@ -76,6 +70,15 @@ wget -Ohttps://dl.bintray.com/rabbitmq/Keys/rabbitmq-release-signing-key.asc | s
 sudo apt-get update
 sudo apt-get install rabbitmq-server
 systemctl start rabbitmq-server.service
+```
+
+### configure the rabbitMQ server
+```
+rabbitmqctl add_user mq 123456
+rabbitmqctl set_user_tags mq administrator
+rabbitmqctl set_permissions -p "/" mq ".*" ".*" ".*"
+rabbitmqctl list_permissions -p /
+cat /etc/rabbitmq/rabbitmq.config
 ```
 
 ### generate rabbitMQ client conf

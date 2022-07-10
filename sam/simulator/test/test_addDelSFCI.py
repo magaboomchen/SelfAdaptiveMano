@@ -39,9 +39,6 @@ class TestAddSFCIClass(TestSimulatorBase):
         self.logger.setLevel(logging.DEBUG)
 
         # setup
-        # self.resetRabbitMQConf(
-        #     base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.json",
-        #     "192.168.8.19", "mq", "123456")
         self.sP = ShellProcessor()
         self.cleanLog()
         self.clearQueue()
