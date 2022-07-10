@@ -110,7 +110,7 @@ def link_handler(cmd_list, sib):
 def traffic_handler(cmd_list, sib):
     # type: (list, SimulatorInfoBaseMaintainer) -> None
     opt, arg = getopt(cmd_list[1:], '', ('trafficPattern=', 'value=', 'min=', 'max=', 'pktSize='))
-    traffic_id = cmd_list[0]
+    traffic_id = int(cmd_list[0])
     opt = dict(opt)
     # traffic <trafficID> --trafficPattern constant --value <value in Mbps>:
     if not arg and '--trafficPattern' in opt and opt['--trafficPattern'] == 'constant' and '--value' in opt:
@@ -135,7 +135,7 @@ def add_handler(cmd_list, sib):
     obj_type = cmd_list[0]
     if obj_type != 'traffic':
         raise ValueError
-    traffic_id = cmd_list[1]
+    traffic_id = int(cmd_list[1])
     sfci_id = int(cmd_list[2])
     dir_id = int(cmd_list[3])
     opt, arg = getopt(cmd_list[4:], '', ('trafficRate=',))

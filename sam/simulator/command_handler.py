@@ -9,7 +9,7 @@ from sam.base.path import DIRECTION2_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.sfc import SFC, SFCI
 from sam.base.switch import Switch, SWITCH_TYPE_DCNGATEWAY
-from sam.base.vnf import VNFI
+from sam.base.vnf import VNFI, VNF_TYPE_RATELIMITER
 from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintainer
 
 handlers = {}
@@ -200,7 +200,7 @@ def add_sfci_handler(cmd, sib):
             elif isinstance(node, Switch):
                 assert pathlist[i][-2][1] == pathlist[i][-1][1] or (pathlist[i][-2][1], pathlist[i][-1][1]) in sib.links
                 assert pathlist[i + 1][0][1] == pathlist[i + 1][1][1] or (
-                pathlist[i + 1][0][1], pathlist[i + 1][1][1]) in sib.links
+                    pathlist[i + 1][0][1], pathlist[i + 1][1][1]) in sib.links
         for path in pathlist:
             for _, switchID in path[1:-1]:
                 assert switchID in sib.switches
@@ -227,7 +227,7 @@ def add_sfci_handler(cmd, sib):
         dirID = direction['ID']
         if dirID == 0:
             pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
-        elif dirID == 1:
+        else:
             pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
         for stage, path in enumerate(pathlist):
             for hop, (_, switchID) in enumerate(path):
@@ -253,6 +253,22 @@ def add_sfci_handler(cmd, sib):
     sib.sfcs[sfcUUID] = {'sfc': sfc}
     sib.sfcis[sfciID] = {'sfc': sfc, 'sfci': sfci,
                          'traffics': {direction['ID']: set() for direction in directions}}
+
+    for direction in directions:
+        dirID = direction['ID']
+        if len(sib.flows) == 0:
+            trafficID = 0
+        else:
+            trafficID = max(sib.flows.keys()) + 1
+        bw = sfc.slo.throughput * 1024.0
+        for vnfis in sfci.vnfiSequence:
+            for vnfi in vnfis:
+                if vnfi.vnfType == VNF_TYPE_RATELIMITER:
+                    bw = min(bw, vnfi.config.maxMbps)
+        sib.flows[trafficID] = {'bw': (lambda: float(bw * random.random())), 'pkt_size': 500,
+                                'sfciID': sfciID, 'dirID': dirID}
+        sib.sfcis[sfciID]['traffics'][dirID].add(trafficID)
+
     return {}
 
 
