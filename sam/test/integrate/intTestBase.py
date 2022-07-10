@@ -66,7 +66,7 @@ class IntTestBaseClass(TestBase):
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             True)
 
-    def genLargeBandwidthSFC(self, classifier):
+    def genLargeBandwidthSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_MONITOR,
@@ -93,10 +93,10 @@ class IntTestBaseClass(TestBase):
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
-            {'zone': SIMULATOR_ZONE}, slo=slo, routingMorphic=routingMorphic,
+            {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
             vnfSequence=vnfSequence)
 
-    def genHighAvaSFC(self, classifier):
+    def genHighAvaSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_FW]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_FW,
@@ -121,10 +121,10 @@ class IntTestBaseClass(TestBase):
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
-            {'zone': SIMULATOR_ZONE}, slo=slo, routingMorphic=routingMorphic,
+            {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
             vnfSequence=vnfSequence)
 
-    def genLowLatencySFC(self, classifier):
+    def genLowLatencySFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_MONITOR]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_MONITOR,
@@ -148,10 +148,10 @@ class IntTestBaseClass(TestBase):
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
-            {'zone': SIMULATOR_ZONE}, slo=slo, routingMorphic=routingMorphic,
+            {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
             vnfSequence=vnfSequence)
 
-    def genLargeConnectionSFC(self, classifier):
+    def genLargeConnectionSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_MONITOR, VNF_TYPE_FW]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_MONITOR,
@@ -178,10 +178,10 @@ class IntTestBaseClass(TestBase):
                     connections=10000)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
-            {'zone': SIMULATOR_ZONE}, slo=slo, routingMorphic=routingMorphic,
+            {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
             vnfSequence=vnfSequence)
 
-    def genBestEffortSFC(self, classifier):
+    def genBestEffortSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_RATELIMITER]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_RATELIMITER,
@@ -206,7 +206,7 @@ class IntTestBaseClass(TestBase):
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
-            {'zone': SIMULATOR_ZONE}, slo=slo, routingMorphic=routingMorphic,
+            {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
             vnfSequence=vnfSequence)
 
     def genFWConfigExample(self, routingMorphic):

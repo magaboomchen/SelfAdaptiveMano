@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 '''
-This is an example for writing unit test for simulator (test _getTopologyHandler)
+This is the component test for simulator (test _getTopologyHandler)
 The work flow:
     * Mediator sends ‘GET_TOPOLOGY command’ to simulator;
     * Simulator processes the command and then send back a command reply to the mediator;
@@ -26,6 +26,7 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT, SIMULATOR_PORT
 from sam.test.fixtures.mediatorStub import MediatorStub
+from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.simulator.test.testSimulatorBase import TestSimulatorBase
 from sam.simulator import simulator
 
@@ -45,7 +46,7 @@ class TestGetTopologyClass(TestSimulatorBase):
         self.cleanLog()
         self.clearQueue()
         self.killAllModule()
-        self.mediator = MediatorStub()
+        self.measurer = MeasurementStub()
 
     @pytest.fixture(scope="function")
     def setup_getTopology(self):
@@ -62,12 +63,9 @@ class TestGetTopologyClass(TestSimulatorBase):
     def test_getTopology(self, setup_getTopology):
         # exercise
         self.startMsgAgentRPCReciever("localhost", TEST_PORT)
-        self.getTopoCmd = self.mediator.genCMDGetTopology()
-        sleep(50)
+        self.getTopoCmd = self.measurer.genCMDGetTopology()
+        sleep(5)
         t1 = time.time()
-        # self.sendCmd(SIMULATOR_QUEUE,
-        #                 MSG_TYPE_SIMULATOR_CMD,
-        #                 self.getTopoCmd)
         self.sendCmdByRPC("localhost", SIMULATOR_PORT,
                         MSG_TYPE_SIMULATOR_CMD,
                         self.getTopoCmd)
@@ -78,7 +76,6 @@ class TestGetTopologyClass(TestSimulatorBase):
         self.logger.info("Get topology time is {0}".format(t2-t1))
 
     def verifyCmdRply(self):
-        # cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         cmdRply = self.recvCmdRplyByRPC("localhost", TEST_PORT)
         assert cmdRply.cmdID == self.getTopoCmd.cmdID
         assert "switches" in cmdRply.attributes

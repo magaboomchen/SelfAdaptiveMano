@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 '''
-This is an example for writing unit test for simulator (test _getSFCIStatusHandler)
+This is the component test for simulator (test _getSFCIStatusHandler)
 The work flow:
     * Mediator sends ‘GET_SFCI_Status command’ to simulator;
     * Simulator processes the command and then send back a command reply to the mediator;
@@ -23,10 +23,12 @@ import pytest
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
     MEDIATOR_QUEUE, SIMULATOR_ZONE
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import SIMULATOR_PORT, TEST_PORT
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.vnf import VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER
 from sam.test.fixtures.mediatorStub import MediatorStub
+from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.simulator.test.testSimulatorBase import TestSimulatorBase
 from sam.simulator import simulator
 from sam.test.testBase import CLASSIFIER_DATAPATH_IP
@@ -48,6 +50,7 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
         self.clearQueue()
         self.killAllModule()
         self.mediator = MediatorStub()
+        self.measurer = MeasurementStub()
 
         self.sfcList = []
         self.sfciList = []
@@ -68,9 +71,11 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
     def test_getSFCIStatus(self, setup_getSFCIStatus):
         # exercise
         self.addSFCI2Simulator()
+        self.startMsgAgentRPCReciever("localhost", TEST_PORT)
 
-        self.getSFCIStatusCmd = self.mediator.genCMDGetSFCIStatus()
-        self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
+        self.getSFCIStatusCmd = self.measurer.genCMDGetSFCIStatus()
+        self.sendCmdByRPC("localhost", SIMULATOR_PORT,
+                        MSG_TYPE_SIMULATOR_CMD,
                         self.getSFCIStatusCmd)
 
         # verify
@@ -105,7 +110,7 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
         assert cmdRply.attributes['zone'] == SIMULATOR_ZONE
 
     def verifyGetSFCIStatusCmdRply(self):
-        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        cmdRply = self.recvCmdRplyByRPC("localhost", TEST_PORT)
         assert cmdRply.cmdID == self.getSFCIStatusCmd.cmdID
         assert "sfcisDict" in cmdRply.attributes
         assert type(cmdRply.attributes["sfcisDict"]) == dict

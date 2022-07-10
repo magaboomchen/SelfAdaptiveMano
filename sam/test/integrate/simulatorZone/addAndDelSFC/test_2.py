@@ -20,7 +20,7 @@ from sam.base.compatibility import screenInput
 from sam.base.messageAgent import DISPATCHER_QUEUE, SIMULATOR_ZONE
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
                         REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
-from sam.test.integrate.simulatorZone.addAndDelSFC.intTestBase import IntTestBaseClass
+from sam.test.integrate.intTestBase import IntTestBaseClass
 
 MANUAL_TEST = True
 

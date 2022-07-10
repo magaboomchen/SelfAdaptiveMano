@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 '''
-This is an example for writing unit test for simulator (test _addSFCIHandler)
+This is the component test for simulator (test _addSFCIHandler)
 The work flow:
     * Mediator sends ‘ADD_SFCI command’ to simulator;
     * Simulator processes the command and then send back a command reply to the mediator;
@@ -83,6 +83,14 @@ class TestAddSFCIClass(TestSimulatorBase):
         for idx in [0,1,2]:
             logging.info("test idx {0}".format(idx))
             # exercise
+            self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfcList[idx])
+            self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
+                                                    self.addSFCCmd)
+
+            # verify
+            self.verifyAddSFCCmdRply()
+
+            # exercise
             self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfcList[idx],
                                                         self.sfciList[idx])
             self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
@@ -90,6 +98,12 @@ class TestAddSFCIClass(TestSimulatorBase):
 
             # verify
             self.verifyAddSFCICmdRply()
+
+    def verifyAddSFCCmdRply(self):
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.addSFCCmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == SIMULATOR_ZONE
 
     def verifyAddSFCICmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
@@ -130,6 +144,14 @@ class TestAddSFCIClass(TestSimulatorBase):
         for idx in [0,1,2]:
             logging.info("test idx {0}".format(idx))
             # exercise
+            self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfcList[idx])
+            self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
+                                                    self.addSFCCmd)
+
+            # verify
+            self.verifyAddSFCCmdRply()
+
+            # exercise
             self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfcList[idx],
                                                         self.sfciList[idx])
             self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
@@ -169,6 +191,14 @@ class TestAddSFCIClass(TestSimulatorBase):
 
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_addThenDelOneSFCIWithVNFIOnAServer(self, setup_addThenDelOneSFCIWithVNFIOnAServer):
+        # exercise
+        self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfc)
+        self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
+                                                self.addSFCCmd)
+
+        # verify
+        self.verifyAddSFCCmdRply()
+
         # exercise
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD , self.delSFCICmd)

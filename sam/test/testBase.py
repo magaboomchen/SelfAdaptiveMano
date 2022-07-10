@@ -29,6 +29,8 @@ from sam.orchestration import orchestrator
 from sam.mediator import mediator
 from sam.measurement import measurer
 
+DCN_GATEWAY_IP = "2.2.0.0"
+
 OUTTER_CLIENT_IP = "1.1.1.1"
 WEBSITE_REAL_IP = "3.3.3.3"
 APP1_REAL_IP = "4.4.4.4"

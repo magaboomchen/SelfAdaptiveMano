@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 '''
-This is an example for writing unit test for simulator (test _getServerSetHandler)
+This is the component test for simulator (test _getServerSetHandler)
 The work flow:
     * Mediator sends ‘GET_SERVER_SET command’ to simulator;
     * Simulator processes the command and then send back a command reply to the mediator;
@@ -25,6 +25,7 @@ from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT, SIMULATOR_
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import MediatorStub
+from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.simulator.test.testSimulatorBase import TestSimulatorBase
 from sam.simulator import simulator
 
@@ -44,7 +45,7 @@ class TestGetServerSetClass(TestSimulatorBase):
         self.cleanLog()
         self.clearQueue()
         self.killAllModule()
-        self.mediator = MediatorStub()
+        self.measurer = MeasurementStub()
 
     @pytest.fixture(scope="function")
     def setup_getServerSet(self):
@@ -61,11 +62,9 @@ class TestGetServerSetClass(TestSimulatorBase):
     def test_getServerSet(self, setup_getServerSet):
         # exercise
         self.startMsgAgentRPCReciever("localhost", TEST_PORT)
-        self.getServerSetCmd = self.mediator.genCMDGetServerSet()
-        sleep(60)
+        self.getServerSetCmd = self.measurer.genCMDGetServerSet()
+        sleep(5)
         t1 = time.time()
-        # self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
-        #                 self.getServerSetCmd)
         self.sendCmdByRPC("localhost", SIMULATOR_PORT,
                         MSG_TYPE_SIMULATOR_CMD,
                         self.getServerSetCmd)
@@ -76,7 +75,6 @@ class TestGetServerSetClass(TestSimulatorBase):
         self.logger.info("Get server set time is {0}".format(t2-t1))
 
     def verifyCmdRply(self):
-        # cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         cmdRply = self.recvCmdRplyByRPC("localhost", TEST_PORT)
         assert cmdRply.cmdID == self.getServerSetCmd.cmdID
         assert "servers" in cmdRply.attributes

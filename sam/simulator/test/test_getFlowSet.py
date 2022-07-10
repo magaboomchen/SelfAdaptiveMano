@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 '''
-This is an example for writing unit test for simulator (test _getFlowSetHandler)
+This is the component test for simulator (test _getFlowSetHandler)
 The work flow:
     * Mediator sends ‘GET_FLOW_SET command’ to simulator;
     * Simulator processes the command and then send back a command reply to the mediator;
@@ -21,9 +21,11 @@ import pytest
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
     MEDIATOR_QUEUE, SIMULATOR_ZONE
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, MEASURER_PORT, SIMULATOR_IP, SIMULATOR_PORT, TEST_PORT
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import MediatorStub
+from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.simulator.test.testSimulatorBase import TestSimulatorBase
 from sam.simulator import simulator
 
@@ -43,7 +45,7 @@ class TestGetFlowSetClass(TestSimulatorBase):
         self.cleanLog()
         self.clearQueue()
         self.killAllModule()
-        self.mediator = MediatorStub()
+        self.measurer = MeasurementStub()
 
     @pytest.fixture(scope="function")
     def setup_getFlowSet(self):
@@ -59,15 +61,17 @@ class TestGetFlowSetClass(TestSimulatorBase):
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_getFlowSet(self, setup_getFlowSet):
         # exercise
-        self.getFlowSetCmd = self.mediator.genCMDGetFlowSet()
-        self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
-                        self.getFlowSetCmd)
+        self.getFlowSetCmd = self.measurer.genCMDGetFlowSet()
+        self.startMsgAgentRPCReciever("localhost", TEST_PORT)
+        self.sendCmdByRPC(SIMULATOR_IP, SIMULATOR_PORT, 
+                            MSG_TYPE_SIMULATOR_CMD,
+                            self.getFlowSetCmd)
 
         # verify
         self.verifyCmdRply()
 
     def verifyCmdRply(self):
-        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        cmdRply = self.recvCmdRplyByRPC("localhost", TEST_PORT)
         # self.logger.info("{0}".format(cmdRply.attributes.keys()))
         # self.logger.info("{0}".format(cmdRply.attributes["flows"]))
         assert cmdRply.cmdID == self.getFlowSetCmd.cmdID

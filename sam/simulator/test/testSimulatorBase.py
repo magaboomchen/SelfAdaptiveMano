@@ -15,7 +15,7 @@ from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI,  \
                             VNF_TYPE_RATELIMITER, VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, SWITCH_TYPE_NPOP, Switch
-from sam.test.testBase import TestBase, WEBSITE_REAL_IP, CLASSIFIER_DATAPATH_IP
+from sam.test.testBase import DCN_GATEWAY_IP, TestBase, WEBSITE_REAL_IP, CLASSIFIER_DATAPATH_IP
 
 MANUAL_TEST = True
 
@@ -48,7 +48,7 @@ class TestSimulatorBase(TestBase):
             classifier._ifSet["ens3"]["IP"] = CLASSIFIER_CONTROL_IP
             classifier._serverDatapathNICMAC = CLASSIFIER_DATAPATH_MAC
         else:
-            classifier = Switch(0, SWITCH_TYPE_DCNGATEWAY, "2.2.0.0",
+            classifier = Switch(0, SWITCH_TYPE_DCNGATEWAY, DCN_GATEWAY_IP,
                                                     programmable=True)
         return classifier
 
