@@ -8,12 +8,14 @@ class Link(object):
     def __init__(self, srcID, dstID, 
             bandwidth=LINK_DEFAULT_BANDWIDTH,
             linkLength=1, 
-            utilization=0):
+            utilization=0,
+            queueLatency=0):
         self.srcID = srcID  # link的起始端点交换机的switchID
         self.dstID = dstID  # link的终止端点交换机的switchID
         self.linkLength = linkLength    # unit: meter
-        self.bandwidth = bandwidth
+        self.bandwidth = bandwidth      # 物理带宽
         self.utilization = utilization  # 链路带宽利用率
+        self.queueLatency = queueLatency    # 排队时延
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)
