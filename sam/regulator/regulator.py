@@ -108,12 +108,12 @@ class Regulator(object):
                 self.logger.info("Get CMD_TYPE_HANDLE_FAILURE_ABNORMAL!")
                 allZoneDetectionDict = cmd.attributes["allZoneDetectionDict"]
                 for zoneName, detectionDict in allZoneDetectionDict.items():
-                    infSFCIAndSFCUUIDTupleList = self._getInfluencedSFCIAndSFCList(
+                    infSFCIAndSFCTupleList = self._getInfluencedSFCIAndSFCList(
                                                                 zoneName, detectionDict)
-                    self.logger.debug("infSFCIAndSFCUUIDTupleList is {0}".format(infSFCIAndSFCUUIDTupleList))
-                    for sfci, sfcUUID in infSFCIAndSFCUUIDTupleList:
+                    self.logger.debug("infSFCIAndSFCTupleList is {0}".format(infSFCIAndSFCTupleList))
+                    infSFCIAndSFCTupleList = self._sortInfSFCIAndSFCTupleList(infSFCIAndSFCTupleList)
+                    for sfci, sfc in infSFCIAndSFCTupleList:
                         self._sendCmd2Dispatcher(cmd)
-                        sfc = self._oib.getSFC4DB(sfcUUID)
                         req = self._genDelSFCIRequest(sfci)
                         self._sendRequest2Dispatcher(req)
                         req = self._genAddSFCIRequest(sfc, sfci)
@@ -132,7 +132,7 @@ class Regulator(object):
         self._messageAgent.sendMsg(queueName, msg)
 
     def _getInfluencedSFCIAndSFCList(self, zoneName, detectionDict):
-        infSFCIAndSFCUUIDTupleList = []
+        infSFCIAndSFCTupleList = []
         sfciTupleList = self.getAllSFCIsFromDB()
         for sfciTuple in sfciTupleList:
             self.logger.info("sfciTuple is {0}".format(sfciTuple))
@@ -141,6 +141,7 @@ class Regulator(object):
                 self.logger.info("Filter influenced sfci.")
                 # (SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME, ZONE_NAME)
                 sfcUUID = sfciTuple[1]
+                sfc = self._oib.getSFC4DB(sfcUUID)
                 state = sfciTuple[3]
                 if not (state == STATE_ACTIVE):
                     continue
@@ -155,14 +156,14 @@ class Regulator(object):
                         for segPath in forwardingPath:
                             for stage, nodeID in segPath:
                                 if self.isNodeIDInDetectionDict(nodeID, detectionDict):
-                                    infSFCIAndSFCUUIDTupleList.append((sfci, sfcUUID))
+                                    infSFCIAndSFCTupleList.append((sfci, sfc))
                             for stage, nodeID in segPath[:-2]:
                                 linkID = (nodeID, segPath[stage+1])
                                 if self.isLinkIDInDetectionDict(linkID, detectionDict):
-                                    infSFCIAndSFCUUIDTupleList.append((sfci, sfcUUID))
+                                    infSFCIAndSFCTupleList.append((sfci, sfc))
             else:
                 self.logger.debug("zoneName is {0}, sfciZoneName is {1}".format(zoneName, sfciZoneName))
-        return infSFCIAndSFCUUIDTupleList
+        return infSFCIAndSFCTupleList
 
     def isNodeIDInDetectionDict(self, nodeID, detectionDict):
         keyList = ["failure", "abnormal"]
@@ -184,6 +185,10 @@ class Regulator(object):
                 if reversedLinkID in idList:
                     return True
         return False
+
+    def _sortInfSFCIAndSFCTupleList(self, infSFCIAndSFCTupleList):
+        infSFCIAndSFCTupleList.sort(reverse=True, key=lambda x:x[1].slo.availability)
+        return infSFCIAndSFCTupleList
 
     def _genDelSFCIRequest(self, sfci):
         req = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFCI, 

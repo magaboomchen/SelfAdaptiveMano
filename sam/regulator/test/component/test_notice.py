@@ -49,6 +49,8 @@ class TestNoticeClass(TestBase):
                                             level='debug')
         self.logger = logConfigur.getLogger()
         self.logger.setLevel(logging.DEBUG)
+        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
+                                            True)
 
         # setup
         self.sP = ShellProcessor()
@@ -69,7 +71,6 @@ class TestNoticeClass(TestBase):
         self.storeSFC2DB(self.sfc)
         self.storeSFCI2DB(self.sfci, self.sfc.sfcUUID, self.sfc.attributes["zone"])
         self.updateSFCIState2DB(self.sfci, STATE_ACTIVE)
-
         yield
 
         # teardown
@@ -143,28 +144,18 @@ class TestNoticeClass(TestBase):
                                     backupForwardingPath)
 
     def storeSFC2DB(self, sfc):
-        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
-                                            True)
         self._oib.addSFC2DB(sfc)
 
     def storeSFCI2DB(self, sfci, sfcUUID, zoneName):
-        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
-                                            True)
         self._oib.addSFCI2DB(sfci, sfcUUID, zoneName)
 
     def delSFC4DB(self, sfc):
-        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
-                                            False)
         self._oib.pruneSFC4DB(sfc.sfcUUID)
 
     def delSFCI4DB(self, sfci):
-        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
-                                            False)
         self._oib.pruneSFCI4DB(sfci.sfciID)
 
     def updateSFCIState2DB(self, sfci, sfciState=STATE_ACTIVE):
-        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
-                                            False)
         self._oib.updateSFCIState(sfci.sfciID, sfciState)
 
     def genAbnormalServerHandleCommand(self):

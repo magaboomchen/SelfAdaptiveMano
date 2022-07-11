@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import time
 import logging
 
 from sam.base.sfc import STATE_IN_PROCESSING, STATE_ACTIVE, \
@@ -217,7 +218,13 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         sfc = cmd.attributes['sfc']
         zoneName = sfc.attributes["zone"]
         sfci = cmd.attributes['sfci']
-        self.addSFCI2DB(sfci, sfc.sfcUUID, zoneName)
+        if self.hasSFCI(sfci):
+            sfciState = self._getSFCIState(sfci.sfciID)
+            while sfciState != STATE_DELETED:
+                time.sleep(0.5)
+            self.addSFCI2DB(sfci, sfc.sfcUUID, zoneName)
+        else:
+            self.addSFCI2DB(sfci, sfc.sfcUUID, zoneName)
 
     def delSFCIRequestHandler(self, request, cmd):
         request.requestState = REQUEST_STATE_IN_PROCESSING
