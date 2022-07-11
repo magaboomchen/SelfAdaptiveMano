@@ -9,6 +9,7 @@ import inspect
 import threading
 from packaging import version
 
+from sam.measurement.mConfig import SIMULATOR_ZONE_ONLY
 from sam.base.messageAgent import SIMULATOR_ZONE, SAMMessage, MessageAgent, \
     MEASURER_QUEUE, MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD, MEDIATOR_QUEUE
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
@@ -171,14 +172,15 @@ class MeasurerCommandSender(threading.Thread):
         while True:
             try:
                 zoneNameList = self._dashib.getAllZone()
-                # zoneNameList = [SIMULATOR_ZONE]
+                if SIMULATOR_ZONE_ONLY:
+                    zoneNameList = [SIMULATOR_ZONE]
                 self.logger.debug("zoneNameList is {0}".format(zoneNameList))
                 for zoneName in zoneNameList:
                     self.logger.debug("zoneName: {0}".format(zoneName))
                     self.sendGetTopoCmd(zoneName)
                     self.sendGetServersCmd(zoneName)
-                    self.sendGetSFCIStatusCmd(zoneName)
-                    self.sendGetVNFIStateCmd(zoneName)
+                    # self.sendGetSFCIStatusCmd(zoneName)
+                    # self.sendGetVNFIStateCmd(zoneName)
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex)
             finally:

@@ -2,8 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import logging
-import pickle
-import base64
 
 from sam.base.sfc import STATE_IN_PROCESSING, STATE_ACTIVE, \
     STATE_DELETED, STATE_INACTIVE
@@ -118,17 +116,6 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                 """
                 )
 
-    def addSFC(self, sfc, sfciIDList=None, state=STATE_IN_PROCESSING):
-        if not self.hasSFC(sfc.sfcUUID):
-            fields = " ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE, PICKLE "
-            dataTuple = (
-                            sfc.attributes["zone"],
-                            sfc.sfcUUID,
-                            self.pIO.obj2Pickle(sfciIDList), state,
-                            self.pIO.obj2Pickle(sfc)
-                        )
-            self.dbA.insert("SFC", fields, dataTuple)
-
     def hasSFC(self, sfcUUID):
         results = self.dbA.query("SFC", " SFC_UUID ",
                                     " SFC_UUID = '{0}'".format(sfcUUID))
@@ -168,16 +155,17 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                 """
                 )
 
-    def addSFCI(self, sfci, sfcUUID, zoneName, state=STATE_IN_PROCESSING, orchTime=-1):
+    def addSFCI2DB(self, sfci, sfcUUID, zoneName, state=STATE_IN_PROCESSING, orchTime=-1):
         if not self.hasSFCI(sfci.sfciID):
-            fields = " SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME "
+            fields = " SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME, ZONE_NAME "
             dataTuple = (
                             sfci.sfciID,
                             sfcUUID,
                             self.pIO.obj2Pickle(sfci.vnfiSequence),
                             state,
                             self.pIO.obj2Pickle(sfci),
-                            orchTime
+                            orchTime,
+                            zoneName
                         )
             logging.info("{0} -> {1}".format(fields, dataTuple))
             self.dbA.insert("SFCI", fields, dataTuple)
@@ -220,7 +208,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         self._addRequest2DB(request, cmd)
 
         sfc = cmd.attributes['sfc']
-        self._addSFC2DB(sfc)
+        self.addSFC2DB(sfc)
 
     def addSFCIRequestHandler(self, request, cmd):
         request.requestState = REQUEST_STATE_IN_PROCESSING
@@ -229,7 +217,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         sfc = cmd.attributes['sfc']
         zoneName = sfc.attributes["zone"]
         sfci = cmd.attributes['sfci']
-        self._addSFCI2DB(sfci, sfc.sfcUUID, zoneName)
+        self.addSFCI2DB(sfci, sfc.sfcUUID, zoneName)
 
     def delSFCIRequestHandler(self, request, cmd):
         request.requestState = REQUEST_STATE_IN_PROCESSING
@@ -237,7 +225,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
         sfci = cmd.attributes['sfci']
         sfciID = sfci.sfciID
-        self._updateSFCIState(sfciID, STATE_IN_PROCESSING)
+        self.updateSFCIState(sfciID, STATE_IN_PROCESSING)
 
     def delSFCRequestHandler(self, request, cmd):
         request.requestState = REQUEST_STATE_IN_PROCESSING
@@ -259,11 +247,11 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             self._updateSFCState(sfcUUID, sfcState)
         elif request.requestType == REQUEST_TYPE_ADD_SFCI:
             sfciID = request.attributes['sfci'].sfciID
-            self._updateSFCIState(sfciID, sfciState)
+            self.updateSFCIState(sfciID, sfciState)
             self._addSFCI2SFCInDB(sfcUUID, sfciID)
         elif request.requestType == REQUEST_TYPE_DEL_SFCI:
             sfciID = request.attributes['sfci'].sfciID
-            self._updateSFCIState(sfciID, sfciState)
+            self.updateSFCIState(sfciID, sfciState)
             self._delSFCI4SFCInDB(sfcUUID, sfciID)
         else:
             raise ValueError("Unknown request type ")
@@ -341,10 +329,18 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             " REQUEST_UUID = '{0}' ".format(request.requestID)
             )
 
-    def _addSFC2DB(self, sfc):
-        self.addSFC(sfc)
+    def addSFC2DB(self, sfc, sfciIDList=None, state=STATE_IN_PROCESSING):
+        if not self.hasSFC(sfc.sfcUUID):
+            fields = " ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE, PICKLE "
+            dataTuple = (
+                            sfc.attributes["zone"],
+                            sfc.sfcUUID,
+                            self.pIO.obj2Pickle(sfciIDList), state,
+                            self.pIO.obj2Pickle(sfc)
+                        )
+            self.dbA.insert("SFC", fields, dataTuple)
 
-    def _pruneSFC4DB(self, sfcUUID):
+    def pruneSFC4DB(self, sfcUUID):
         self.dbA.delete("SFC", " SFC_UUID = '{0}' ".format(sfcUUID))
 
     def getSFC4DB(self, sfcUUID):
@@ -385,9 +381,6 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         self.dbA.update("SFC", " SFCIID_LIST = '{0}' ".format(sfciIDList),
             " SFC_UUID = '{0}' ".format(sfcUUID))
 
-    def _addSFCI2DB(self, sfci, sfcUUID):
-        self.addSFCI(sfci, sfcUUID)
-
     def getSFCI4DB(self, sfciID):
         results = self.dbA.query("SFCI", " PICKLE ", " SFCIID = '{0}' ".format(sfciID))
         if results != ():
@@ -396,7 +389,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             sfci = None
         return sfci
 
-    def _updateSFCIState(self, sfciID, state):
+    def updateSFCIState(self, sfciID, state):
         self.dbA.update("SFCI", " STATE = '{0}' ".format(state),
             " SFCIID = '{0}'".format(sfciID))
 
@@ -409,7 +402,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             state = None
         return state
 
-    def _pruneSFCI4DB(self, sfciID):
+    def pruneSFCI4DB(self, sfciID):
         self.dbA.delete("SFCI", " SFCIID = '{0}' ".format(sfciID))
 
     def __str__(self):

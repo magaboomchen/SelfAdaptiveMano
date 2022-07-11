@@ -417,6 +417,7 @@ class OSFCAdder(object):
         vSeq = []
         for stage in range(sfcLength):
             vnfType = sfc.vNFTypeSequence[stage]
+            config = sfc.vnfSequence[stage].config
             vnfiList = []
             nodeList = self._getNodeListOfStage4FPSet(forwardingPathSet, stage)
             for node in nodeList:
@@ -426,7 +427,7 @@ class OSFCAdder(object):
                     vnfiID = self._via._assignVNFIID(vnfType, node.switchID)
                 else:
                     raise ValueError("Unknown node type {0}".format(type(node)))
-                vnfi = VNFI(vnfType, vnfType, vnfiID, None, node)
+                vnfi = VNFI(vnfType, vnfType, vnfiID, config, node)
                 vnfi.maxCPUNum = pM.getExpectedServerResource(vnfType, tD)[0]
                 vnfiList.append(vnfi)
             vSeq.append(vnfiList)

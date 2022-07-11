@@ -136,13 +136,13 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
 
     def updateServerResource(self):
         serverProcesses = {}
-        for serverID, vnfis in self.vnfis:
+        for serverID, vnfis in self.vnfis.items():
             serverProcesses[serverID] = [{'cpu': vnfi['cpu'](), 'mem': vnfi['mem']} for vnfi in vnfis]
 
-        for serverID, process in self.bgProcesses:
+        for serverID, process in self.bgProcesses.items():
             serverProcesses.setdefault(serverID, []).append({'cpu': process['cpu'](), 'mem': process['mem']()})
 
-        for serverID, processes in serverProcesses:
+        for serverID, processes in serverProcesses.items():
             server = self.servers[serverID]['server']  # type: Server
             cpu = reduce(lambda x, y: x + y, [process['cpu'] for process in processes])
             distribution = server.getCoreNUMADistribution()

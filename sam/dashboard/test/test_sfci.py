@@ -41,7 +41,7 @@ class TestSFCIClass(DashboardTestBase):
 
     def addSFCIs(self, addSFCISFCIList):
         for idx,sfci in enumerate(addSFCISFCIList):
-            self.oib.addSFCI(sfci, uuid.uuid1())
+            self.oib.addSFCI2DB(sfci, uuid.uuid1())
 
     def delSFCIs(self, addSFCISFCIList):
         for sfci in addSFCISFCIList:

@@ -14,10 +14,12 @@ from sam.base.path import ForwardingPathSet, MAPPING_TYPE_UFRR, MAPPING_TYPE_E2E
 from sam.base.switch import Switch
 from sam.base.request import Request, REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
     REQUEST_STATE_INITIAL, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI
-from sam.base.messageAgent import DEFAULT_ZONE, SAMMessage, MessageAgent, MSG_TYPE_REQUEST, \
+from sam.base.messageAgent import DEFAULT_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, SAMMessage, MessageAgent, MSG_TYPE_REQUEST, \
     REQUEST_PROCESSOR_QUEUE
 from sam.base.routingMorphic import RoutingMorphic
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
+from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
+from sam.measurement.mConfig import SIMULATOR_ZONE_ONLY
 from sam.toolkit.cleanAllLogFile import cleanAllLogFile
 from sam.toolkit.clearAllSAMQueue import clearAllSAMQueue
 from sam.toolkit.killAllSAMPythonScripts import killAllSAMPythonScripts
@@ -611,3 +613,10 @@ class TestBase(object):
     def _genSFCIID(self):
         TestBase.sfciCounter = TestBase.sfciCounter + 1
         return TestBase.sfciCounter
+
+    def initZone(self):
+        self._dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent",
+            "123")
+        self._dashib.addZone(SIMULATOR_ZONE)
+        if not SIMULATOR_ZONE_ONLY:
+            self._dashib.addZone(TURBONET_ZONE)

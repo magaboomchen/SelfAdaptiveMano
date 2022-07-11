@@ -26,7 +26,7 @@ python ./sam/simulator/simulator.py
 ## Terminal 5 (for test2 and test3)
 '''
 cd ~/Projects/SelfAdaptiveMano/sam/measurement
-python ./sam/simulator/measurer.py
+python ./measurer.py
 '''
 
 ## Terminal 6 (for test3)

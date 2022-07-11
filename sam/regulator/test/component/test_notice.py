@@ -145,27 +145,27 @@ class TestNoticeClass(TestBase):
     def storeSFC2DB(self, sfc):
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             True)
-        self._oib._addSFC2DB(sfc)
+        self._oib.addSFC2DB(sfc)
 
     def storeSFCI2DB(self, sfci, sfcUUID, zoneName):
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             True)
-        self._oib._addSFCI2DB(sfci, sfcUUID, zoneName)
+        self._oib.addSFCI2DB(sfci, sfcUUID, zoneName)
 
     def delSFC4DB(self, sfc):
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             False)
-        self._oib._pruneSFC4DB(sfc.sfcUUID)
+        self._oib.pruneSFC4DB(sfc.sfcUUID)
 
     def delSFCI4DB(self, sfci):
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             False)
-        self._oib._pruneSFCI4DB(sfci.sfciID)
+        self._oib.pruneSFCI4DB(sfci.sfciID)
 
     def updateSFCIState2DB(self, sfci, sfciState=STATE_ACTIVE):
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             False)
-        self._oib._updateSFCIState(sfci.sfciID, sfciState)
+        self._oib.updateSFCIState(sfci.sfciID, sfciState)
 
     def genAbnormalServerHandleCommand(self):
         detectionDict = {

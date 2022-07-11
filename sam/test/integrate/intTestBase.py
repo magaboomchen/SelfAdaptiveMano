@@ -46,6 +46,7 @@ class IntTestBaseClass(TestBase):
         self.clearQueue()
         self.killAllModule()
         self.cleanSFCAndSFCIInDB()
+        self.initZone()
         time.sleep(3)
         logging.info("Please start dispatcher, mediator and simulator!"\
                         " Then press Any key to continue!")

@@ -120,7 +120,7 @@ class TestOIBMClass(TestBase):
     def test_addSFC2DB(self):
         sfc = self.oib.getSFC4DB(self.sfc.sfcUUID)
         assert sfc == None
-        self.oib._addSFC2DB(self.sfc)
+        self.oib.addSFC2DB(self.sfc)
         sfc = self.oib.getSFC4DB(self.sfc.sfcUUID)
         assert sfc.sfcUUID == self.sfc.sfcUUID
 
@@ -151,18 +151,18 @@ class TestOIBMClass(TestBase):
         assert results[0][0] == ""
 
     def test_addSFCI2DB(self):
-        self.oib._addSFCI2DB(self.sfci)
+        self.oib.addSFCI2DB(self.sfci)
         sfci = self.oib.getSFCI4DB(self.sfci.sfciID)
         assert sfci.sfciID == self.sfci.sfciID
 
     def test_updateSFCIState(self):
-        self.oib._updateSFCIState(self.sfci.sfciID, STATE_DELETED)
+        self.oib.updateSFCIState(self.sfci.sfciID, STATE_DELETED)
         assert self.oib._getSFCIState(self.sfci.sfciID) == STATE_DELETED
 
     def test_pruneSFC4DB(self):
-        self.oib._pruneSFC4DB(self.sfc.sfcUUID)
+        self.oib.pruneSFC4DB(self.sfc.sfcUUID)
         assert self.oib.getSFC4DB(self.sfc.sfcUUID) == None
 
     def test_pruneSFCI4DB(self):
-        self.oib._pruneSFCI4DB(self.sfci.sfciID)
+        self.oib.pruneSFCI4DB(self.sfci.sfciID)
         assert self.oib.getSFC4DB(self.sfci.sfciID) == None

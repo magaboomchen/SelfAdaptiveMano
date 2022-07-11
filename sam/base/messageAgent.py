@@ -371,10 +371,30 @@ class MessageAgent(object):
                 self.logger.info("response is {0}".format(response))
                 if response.booly:
                     break
-            except Exception as ex:
+            except grpc.RpcError as e:
                 if cnt%5==0:
-                    ExceptionProcessor(self.logger).logException(ex,
-                        "messageAgent")
+                    # ouch!
+                    # lets print the gRPC error message
+                    # which is "Length of `Name` cannot be more than 10 characters"
+                    # self.logger.error(e.details())
+                    # lets access the error code, which is `INVALID_ARGUMENT`
+                    # `type` of `status_code` is `grpc.StatusCode`
+                    status_code = e.code()
+                    # should print `INVALID_ARGUMENT`
+                    # self.logger.error(status_code.name)
+                    # should print `(3, 'invalid argument')`
+                    # self.logger.error(status_code.value)
+                    self.logger.error("details: {0}; " \
+                        "statusCodeName: {1}; statusCodeValue: {2}".format(
+                            e.details(), status_code.name, status_code.value
+                        ))
+                    # want to do some specific action based on the error?
+                    if grpc.StatusCode.INVALID_ARGUMENT == status_code:
+                        # do your stuff here
+                        pass
+            except Exception as ex:
+                ExceptionProcessor(self.logger).logException(ex,
+                    "messageAgent")
             finally:
                 time.sleep(1)
                 cnt = cnt + 1

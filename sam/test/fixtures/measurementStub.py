@@ -43,3 +43,9 @@ class MeasurementStub(object):
         attr = {}
         cmd = Command(CMD_TYPE_GET_FLOW_SET, cmdID, attr)
         return cmd
+
+    def genCMDGetTopology(self):
+        cmdID = uuid.uuid1()
+        attr = {}
+        cmd = Command(CMD_TYPE_GET_TOPOLOGY, cmdID, attr)
+        return cmd
