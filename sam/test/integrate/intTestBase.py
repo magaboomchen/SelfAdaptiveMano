@@ -48,6 +48,8 @@ class IntTestBaseClass(TestBase):
         self.cleanSFCAndSFCIInDB()
         self.initZone()
         time.sleep(3)
+        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
+                                            False)
         logging.info("Please start dispatcher, mediator and simulator!"\
                         " Then press Any key to continue!")
         screenInput()
@@ -55,17 +57,10 @@ class IntTestBaseClass(TestBase):
     def common_teardown(self):
         self.clearQueue()
         self.killAllModule()
-        # self.cleanSFCAndSFCIInDB()
 
     def getSFCFromDB(self, sfcUUID):
-        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
-                                            False)
         self.sfcInDB = self._oib.getSFC4DB(sfcUUID)
         return self.sfcInDB
-
-    def cleanSFCAndSFCIInDB(self):
-        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
-                                            True)
 
     def genLargeBandwidthSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
@@ -209,22 +204,6 @@ class IntTestBaseClass(TestBase):
             backupInstanceNumber, applicationType, directions,
             {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
             vnfSequence=vnfSequence)
-
-    def genFWConfigExample(self, routingMorphic):
-        fwConfigList = []
-        if routingMorphic == IPV4_ROUTE_PROTOCOL:
-            dstAddr="3.3.3.3"
-        elif routingMorphic == IPV6_ROUTE_PROTOCOL:
-            dstAddr="2026:0000::"
-        elif routingMorphic == SRV6_ROUTE_PROTOCOL:
-            dstAddr="2026:0000::"
-        elif routingMorphic == ROCEV1_ROUTE_PROTOCOL:
-            dstAddr="2026:0000::"
-        else:
-            dstAddr="3.3.3.3"
-        entry = ACLTuple(ACL_ACTION_ALLOW, ACL_PROTO_UDP, dstAddr=dstAddr)
-        fwConfigList.append(entry)
-        return fwConfigList
 
     def genSFCITemplate(self):
         vnfiSequence = None

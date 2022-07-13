@@ -47,6 +47,7 @@ class TestGetVNFIStateClass(TestSimulatorBase):
         self.sP = ShellProcessor()
         self.cleanLog()
         self.clearQueue()
+        self.cleanSFCAndSFCIInDB()
         self.killAllModule()
         self.mediator = MediatorStub()
         self.measurer = MeasurementStub()
@@ -88,7 +89,8 @@ class TestGetVNFIStateClass(TestSimulatorBase):
             self.sfcList.append(sfc)
             sfci = self.genUniDirection10BackupServerNFVISFCI(
                                 sfcLength=sfcLength,
-                    serverBasedClassifier=self.serverBasedClassifier)
+                    serverBasedClassifier=self.serverBasedClassifier,
+                    vnfType=VNF_TYPE_RATELIMITER)
             self.sfciList.append(sfci)
 
         for idx in [0,1,2]:

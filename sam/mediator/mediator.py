@@ -4,7 +4,7 @@
 import uuid
 import copy
 
-from sam.base.messageAgent import MessageAgent, SAMMessage, SIMULATOR_ZONE, \
+from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD, P4CONTROLLER_QUEUE, PUFFER_ZONE, TURBONET_ZONE, MessageAgent, SAMMessage, SIMULATOR_ZONE, \
     MEDIATOR_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, MSG_TYPE_SIMULATOR_CMD, \
     MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
     SIMULATOR_QUEUE, MSG_TYPE_NETWORK_CONTROLLER_CMD, NETWORK_CONTROLLER_QUEUE, \
@@ -55,11 +55,44 @@ class Mediator(object):
     def _commandHandler(self, cmd):
         self.logger.debug("Get a command")
         self._cm.addCmd(cmd)
-        # special case: simulator zone
-        if cmd.attributes['zone'] == SIMULATOR_ZONE:
-            self._forwardCmd2Simulator(cmd)
-            return
+        zone = cmd.attributes['zone']
+        if zone == SIMULATOR_ZONE:
+            # special case: simulator zone
+            self._processCmdInSimulatorZone(cmd)
+        elif zone == TURBONET_ZONE:
+            # special case: turbonet zone
+            self.logger.debug("Turbonet zone")
+            self._processCmdInTurbonetZone(cmd)
+        elif zone == PUFFER_ZONE:
+            # default case: PUFFER zone
+            self._processCmdInPufferZone(cmd)
+        else:
+            self.logger.error("Unknown zone {0}".format(zone))
 
+    def _processCmdInSimulatorZone(self, cmd):
+        self._forwardCmd2Simulator(cmd)
+
+    def _processCmdInTurbonetZone(self, cmd):
+        if cmd.cmdType == CMD_TYPE_ADD_SFC:
+            self._addSFC2P4Controller(cmd)
+        elif cmd.cmdType == CMD_TYPE_ADD_SFCI:
+            self._addSFCI2SFFController(cmd)
+            self._addSFCI2P4Controller(cmd)
+            # skip self._addSFCIs2Server(cmd), because we need install 
+            # entry to sff before install vnf.
+            # prepare child cmd first
+            self._prepareChildCmd(cmd, MSG_TYPE_VNF_CONTROLLER_CMD)
+        elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
+            self._delSFCI4SFFController(cmd)
+            self._delSFCI4P4Controller(cmd)
+            self._delSFCIs4Server(cmd)
+        elif cmd.cmdType == CMD_TYPE_DEL_SFC:
+            self._delSFC2P4Controller(cmd)
+        else:
+            self._cm.delCmdwithChildCmd(cmd.cmdID)
+            self.logger.error("Unkonwn command type.")
+
+    def _processCmdInPufferZone(self, cmd):
         if cmd.cmdType == CMD_TYPE_ADD_SFC:
             # TODO: refactor classifier to support server based and P4 based according to the type of ingress/egress?
             # [X] Or just integrate all type of classifier in classifierController.
@@ -159,6 +192,39 @@ class Mediator(object):
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
 
+    def _addSFC2P4Controller(self, cmd):
+        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_P4CONTROLLER_CMD)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            P4CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_P4CONTROLLER_CMD, queueName)
+        self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
+            CMD_STATE_PROCESSING)
+        self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
+            CMD_STATE_PROCESSING)
+
+    def _addSFCI2P4Controller(self, cmd):
+        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_P4CONTROLLER_CMD)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            P4CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_P4CONTROLLER_CMD, queueName)
+        self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
+            CMD_STATE_PROCESSING)
+        self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
+            CMD_STATE_PROCESSING)
+
+    def _delSFCI4P4Controller(self, cmd):
+        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_P4CONTROLLER_CMD)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            P4CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_P4CONTROLLER_CMD, queueName)
+        self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
+            CMD_STATE_PROCESSING)
+        self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
+            CMD_STATE_PROCESSING)
+
     def _addSFCI2NetworkController(self, cmd):
         cCmd = self._prepareChildCmd(cmd, MSG_TYPE_NETWORK_CONTROLLER_CMD)
         zoneName = cmd.attributes['zone']
@@ -185,12 +251,13 @@ class Mediator(object):
         cCmd = self._cm.getChildCmd(cmd.cmdID, MSG_TYPE_VNF_CONTROLLER_CMD)
         zoneName = cmd.attributes['zone']
         queueName = self._messageAgent.genQueueName(
-            VNF_CONTROLLER_QUEUE, zoneName)
+                        VNF_CONTROLLER_QUEUE, zoneName)
+        self.logger.debug("queueName is {0}".format(queueName))
         state = self._cm.getCmdState(cCmd.cmdID)
         if state == CMD_STATE_WAITING:
-            cCmd.attributes['source'] = "unkown"
+            cCmd.attributes['source'] = "unknown"
             self.logger.debug("send a cmd to vnfController.")
-            self.forwardCmd(cCmd,MSG_TYPE_VNF_CONTROLLER_CMD, queueName)
+            self.forwardCmd(cCmd, MSG_TYPE_VNF_CONTROLLER_CMD, queueName)
             self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
                 CMD_STATE_PROCESSING)
             self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -216,6 +283,17 @@ class Mediator(object):
         queueName = self._messageAgent.genQueueName(
             NETWORK_CONTROLLER_QUEUE, zoneName)
         self.forwardCmd(cCmd, MSG_TYPE_NETWORK_CONTROLLER_CMD, queueName)
+        self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
+            CMD_STATE_PROCESSING)
+        self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
+            CMD_STATE_PROCESSING)
+
+    def _delSFC2P4Controller(self, cmd):
+        cCmd = self._prepareChildCmd(cmd, MSG_TYPE_P4CONTROLLER_CMD)
+        zoneName = cmd.attributes['zone']
+        queueName = self._messageAgent.genQueueName(
+            P4CONTROLLER_QUEUE, zoneName)
+        self.forwardCmd(cCmd, MSG_TYPE_P4CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
         self._cm.transitCmdState(cCmd.cmdID, CMD_STATE_WAITING,
@@ -346,12 +424,13 @@ class Mediator(object):
 
     def _exeCmdStateAction(self, cmdID):
         parentCmdID = self._cm.getParentCmdID(cmdID)
-        dstQueueName = self._cm.getCmd(cmdID).attributes['source']
+        dstQueueName = self._cm.getCmd(parentCmdID).attributes['source']
         if self._cm.isParentCmdSuccessful(parentCmdID):
             self.logger.info("Command {0} is successful".format(parentCmdID))
             self._cm.changeCmdState(parentCmdID, CMD_STATE_SUCCESSFUL)
             cmdRply = self._genParentCmdRply(parentCmdID,
-                CMD_STATE_SUCCESSFUL)
+                                                CMD_STATE_SUCCESSFUL)
+            self.logger.debug("successful command reply to {0}".format(dstQueueName))
             self._sendParentCmdRply(cmdRply, dstQueueName)
         elif self._cm.isParentCmdFailed(parentCmdID):
             # if mediator haven't send cmd rply, send cmd rply

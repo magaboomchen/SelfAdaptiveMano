@@ -4,6 +4,7 @@
 import uuid
 import random
 import logging
+from sam.base.acl import ACL_ACTION_ALLOW, ACL_PROTO_UDP, ACLTuple
 
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, VNF_TYPE_FORWARD, VNF_TYPE_MAX
@@ -16,10 +17,11 @@ from sam.base.request import Request, REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFC
     REQUEST_STATE_INITIAL, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI
 from sam.base.messageAgent import DEFAULT_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, SAMMessage, MessageAgent, MSG_TYPE_REQUEST, \
     REQUEST_PROCESSOR_QUEUE
-from sam.base.routingMorphic import RoutingMorphic
+from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL, RoutingMorphic
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
 from sam.measurement.mConfig import SIMULATOR_ZONE_ONLY
+from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.toolkit.cleanAllLogFile import cleanAllLogFile
 from sam.toolkit.clearAllSAMQueue import clearAllSAMQueue
 from sam.toolkit.killAllSAMPythonScripts import killAllSAMPythonScripts
@@ -620,3 +622,25 @@ class TestBase(object):
         self._dashib.addZone(SIMULATOR_ZONE)
         if not SIMULATOR_ZONE_ONLY:
             self._dashib.addZone(TURBONET_ZONE)
+
+    def genFWConfigExample(self, routingMorphic):
+        fwConfigList = []
+        if routingMorphic == IPV4_ROUTE_PROTOCOL:
+            dstAddr="3.3.3.3"
+        elif routingMorphic == IPV6_ROUTE_PROTOCOL:
+            dstAddr="2026:0000::"
+        elif routingMorphic == SRV6_ROUTE_PROTOCOL:
+            dstAddr="2026:0000::"
+        elif routingMorphic == ROCEV1_ROUTE_PROTOCOL:
+            dstAddr="2026:0000::"
+        else:
+            dstAddr="3.3.3.3"
+        entry = ACLTuple(ACL_ACTION_ALLOW, ACL_PROTO_UDP, dstAddr=dstAddr)
+        fwConfigList.append(entry)
+        return fwConfigList
+
+    def cleanSFCAndSFCIInDB(self):
+        _oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
+                                            True)
+        _oib.cleanTable()                                            
+        del _oib

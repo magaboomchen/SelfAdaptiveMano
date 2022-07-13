@@ -81,16 +81,18 @@ class TestSimulatorBase(TestBase):
 
     def genUniDirection10BackupServerNFVISFCI(self, mappedVNFISeq=True,
                                             sfcLength=1,
-                                            serverBasedClassifier=True):
+                                            serverBasedClassifier=True,
+                                            vnfType=VNF_TYPE_FORWARD):
         if mappedVNFISeq:
-            vnfiSequence = self.gen10BackupServerVNFISequence(sfcLength)
+            vnfiSequence = self.gen10BackupServerVNFISequence(sfcLength,
+                                            vnfType=VNF_TYPE_FORWARD)
         else:
             vnfiSequence = None
         return SFCI(self.assignSFCIID(), vnfiSequence, None,
             self.genUniDirection10BackupServerBasedForwardingPathSet(sfcLength, 
                                                         serverBasedClassifier))
 
-    def gen10BackupServerVNFISequence(self, sfcLength=1):
+    def gen10BackupServerVNFISequence(self, sfcLength=1, vnfType=VNF_TYPE_FORWARD):
         # hard-code function
         vnfiSequence = []
         for index in range(sfcLength):
@@ -101,7 +103,7 @@ class TestSimulatorBase(TestBase):
                 server.setControlNICIP(SFF1_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
-                vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
+                vnfi = VNFI(vnfType, vnfType=vnfType,
                     vnfiID=uuid.uuid1(), node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence

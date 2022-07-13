@@ -49,6 +49,7 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
         self.cleanLog()
         self.clearQueue()
         self.killAllModule()
+        self.cleanSFCAndSFCIInDB()
         self.mediator = MediatorStub()
         self.measurer = MeasurementStub()
 
@@ -73,7 +74,7 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
         self.addSFCI2Simulator()
         self.startMsgAgentRPCReciever("localhost", TEST_PORT)
 
-        self.getSFCIStatusCmd = self.measurer.genCMDGetSFCIStatus()
+        self.getSFCIStatusCmd = self.measurer.genCMDGetSFCIState()
         self.sendCmdByRPC("localhost", SIMULATOR_PORT,
                         MSG_TYPE_SIMULATOR_CMD,
                         self.getSFCIStatusCmd)
@@ -115,7 +116,7 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
         assert "sfcisDict" in cmdRply.attributes
         assert type(cmdRply.attributes["sfcisDict"]) == dict
         assert len(cmdRply.attributes["sfcisDict"]) >= 0
-        assert cmdRply.cmdStatus == CMD_STATE_SUCCESSFUL
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
         assert cmdRply.attributes['zone'] == SIMULATOR_ZONE
         sfcisDict = cmdRply.attributes["sfcisDict"]
         for sfciID,sfci in sfcisDict.items():
@@ -130,18 +131,23 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
 
             assert len(sfci.vnfiSequence) != 0
             vnfiSequence = sfci.vnfiSequence
-            for vnfi in vnfiSequence:
-                vnfiStatus = vnfi.vnfiStatus
-                assert vnfiStatus.inputTrafficAmount > 0
-                assert vnfiStatus.inputPacketAmount > 0
-                assert vnfiStatus.outputTrafficAmount > 0
-                assert vnfiStatus.outputPacketAmount > 0
-                vnfType = vnfiStatus.vnfType
-                if vnfType == VNF_TYPE_FW:
-                    assert vnfiStatus.state <= 100
-                elif vnfType == VNF_TYPE_MONITOR:
-                    assert vnfiStatus.state <= 100
-                elif vnfType == VNF_TYPE_RATELIMITER:
-                    assert vnfiStatus.state <= 100
-                else:
-                    raise ValueError("Unknown vnf type {0}".format(vnfType))
+            for vnfis in vnfiSequence:
+                for vnfi in vnfis:
+                    vnfiStatus = vnfi.vnfiStatus
+                    assert vnfiStatus.inputTrafficAmount["Direction1"] > 0
+                    assert vnfiStatus.inputTrafficAmount["Direction2"] > 0
+                    assert vnfiStatus.inputPacketAmount["Direction1"] > 0
+                    assert vnfiStatus.inputPacketAmount["Direction2"] > 0
+                    assert vnfiStatus.outputTrafficAmount["Direction1"] > 0
+                    assert vnfiStatus.outputTrafficAmount["Direction2"] > 0
+                    assert vnfiStatus.outputPacketAmount["Direction1"] > 0
+                    assert vnfiStatus.outputPacketAmount["Direction2"] > 0
+                    vnfType = vnfi.vnfType
+                    if vnfType == VNF_TYPE_FW:
+                        assert vnfiStatus.state <= 100
+                    elif vnfType == VNF_TYPE_MONITOR:
+                        assert vnfiStatus.state <= 100
+                    elif vnfType == VNF_TYPE_RATELIMITER:
+                        assert vnfiStatus.state <= 100
+                    else:
+                        raise ValueError("Unknown vnf type {0}".format(vnfType))

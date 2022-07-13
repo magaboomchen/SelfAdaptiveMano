@@ -5,6 +5,7 @@ import logging
 
 import pytest
 
+from sam.mediator import mediator
 from sam.base.messageAgent import SERVER_MANAGER_QUEUE, \
     MEASURER_QUEUE, MSG_TYPE_MEDIATOR_CMD,  \
     SERVER_CLASSIFIER_CONTROLLER_QUEUE, SFF_CONTROLLER_QUEUE, \
@@ -50,7 +51,7 @@ class TestMediatorClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_startMediator(self):
         # setup
-        scriptsPath = "/home/smith/HaoChen/Project/SelfAdaptiveMano/sam/mediator/mediator.py"
+        scriptsPath = mediator.__file__
         self.sP.runPythonScript(scriptsPath)
         yield
         # teardown

@@ -49,3 +49,9 @@ class MeasurementStub(object):
         attr = {}
         cmd = Command(CMD_TYPE_GET_TOPOLOGY, cmdID, attr)
         return cmd
+
+    def genCMDGetSFCIStatus(self):
+        cmdID = uuid.uuid1()
+        attr = {}
+        cmd = Command(CMD_TYPE_GET_SFCI_STATE, cmdID, attr)
+        return cmd

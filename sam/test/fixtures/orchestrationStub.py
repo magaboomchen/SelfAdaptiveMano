@@ -4,7 +4,7 @@
 import uuid
 import logging
 
-from sam.base.messageAgent import MessageAgent, ORCHESTRATOR_QUEUE
+from sam.base.messageAgent import TURBONET_ZONE, MessageAgent, ORCHESTRATOR_QUEUE
 from sam.base.command import Command, CMD_TYPE_GET_SERVER_SET,\
     CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_GET_TOPOLOGY, \
         CMD_TYPE_GET_SFCI_STATE
@@ -14,10 +14,11 @@ class OrchestrationStub(object):
     def __init__(self):
         self.mA = MessageAgent()
 
-    def genCMDAddSFCI(self,sfc,sfci):
+    def genCMDAddSFCI(self,sfc,sfci,source=None,zone=TURBONET_ZONE):
         cmdID = uuid.uuid1()
-        attr = {'sfc':sfc, 'sfci':sfci, 'sfcUUID':sfc.sfcUUID}
+        attr = {'sfc':sfc, 'sfci':sfci, 'sfcUUID':sfc.sfcUUID,'zone':zone}
         cmd = Command(CMD_TYPE_ADD_SFCI, cmdID, attr)
+        cmd.attributes['source'] = source
         return cmd
 
     def genCMDDelSFCI(self,sfc,sfci):
