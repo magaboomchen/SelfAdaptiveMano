@@ -45,6 +45,12 @@ class Topology(object):
             podNum, nPoPNum, SFC_REQUEST_NUM)
         self.startGeneration(topoType, expNum, topoName, podNum, serverNum, nfviNum)
 
+    def genFatTreeTurbonetTopology(self, expNum, podNum, nPoPNum):
+        topoType = "fat-tree-turbonet"
+        topoName = "fat-tree-k={0}_V={1}_M={2}".format(
+            podNum, nPoPNum, SFC_REQUEST_NUM)
+        self.startGeneration(topoType, expNum, topoName, podNum)
+
     def genVL2Topology(self, expNum, intNum, aggNum, nPoPNum):
         topoType = "VL2"
         topoName = "VL2_int={0}_agg={1}_V={2}_M={3}".format(
@@ -87,8 +93,12 @@ class Topology(object):
                 self.startGeneration(topoType, expNum, topoName)
 
     def startGeneration(self, topoType, expNum, topoName, podNum=None, serverNum=None, nfviNum=None):
-        topoFilePath = "../topogen/topology/{0}/{1}/{2}.dat".format(
-            topoType, expNum, topoName)
+        if topoType == "fat-tree-turbonet":
+            topoFilePath = "../topogen/topology/{0}/{1}/{2}.dat".format(
+                "fat-tree", expNum, topoName)
+        else:
+            topoFilePath = "../topogen/topology/{0}/{1}/{2}.dat".format(
+                topoType, expNum, topoName)
 
         self.logger.info("topoFilePath:{0}".format(topoFilePath))
 
@@ -99,13 +109,17 @@ class Topology(object):
             self.addClassifier4LogicalTwoTier()
             self.addNFVIs4LogicalTwoTier()
         elif topoType == "fat-tree":
-            self.addClassifier()
+            self.addServerBasedClassifier2Topo()
             self.addNFVIs4FatTree(serverNum, nfviNum)
             self._postProcessTopology4FatTree(podNum, serverNum)
+        elif topoType == "fat-tree-turbonet":
+            self.addP4NFSwitch2Turbonet()
+            self.addNFVIs4FatTree(serverNum=2, nfviNum=2)
+            self.patchLinks2Turbonet()
         elif topoType == "testbed_sw1":
             self.addNFVIs4Testbed_sw1(serverNum=1)
         else:
-            self.addClassifier()
+            self.addServerBasedClassifier2Topo()
             self.addNFVIs()
 
         topologyDir = "./topology/{0}/{1}/".format(topoType,
@@ -222,6 +236,43 @@ class Topology(object):
                     'Status': None}
         self.logger.debug("nodes:{0}".format(self.switches))
 
+    def addP4NFSwitch2Turbonet(self):
+        for nodeID in [20, 21]:
+            self.nodeNum = self.nodeNum + 1
+            switch = Switch(nodeID,
+                            SWITCH_TYPE_FORWARD,
+                            self._dhcp.genLanNet(nodeID),
+                            programmable=True)
+            switch.supportNF = list(range(1,17))
+            self.switches[nodeID] = {
+                        'switch': switch,
+                        'Active': True,
+                        'Status': None}
+
+    def patchLinks2Turbonet(self):
+        linksList = [
+            (14, 10001), (10001, 14),
+            (15, 10002), (10002, 15),
+            (16, 20), (20, 16),
+            (17, 21), (21, 17)                 
+        ]
+        for link in linksList:
+            srcNodeID = link[0]
+            dstNodeID = link[1]
+            if srcNodeID > 10000 or dstNodeID > 10000:
+                self.serverLinks[(srcNodeID, dstNodeID)] = {
+                    'link': Link(srcNodeID, dstNodeID, 
+                                        bandwidth=40),
+                    'Active': True,
+                    'Status': None}
+            else:
+                self.linkNum = self.linkNum + 1
+                self.links[(srcNodeID, dstNodeID)] = {
+                    'link': Link(srcNodeID, dstNodeID, 
+                                        bandwidth=40),
+                    'Active': True,
+                    'Status': None}
+
     def _updateSwitchSupportVNF(self):
         for vnfType in self.vnfLocation.keys():
             for switchID in self.vnfLocation[vnfType]:
@@ -231,8 +282,9 @@ class Topology(object):
     def _updateSwitchSupportNF(self):
         for vnfType in self.vnfLocation.keys():
             for switchID in self.vnfLocation[vnfType]:
-                if vnfType not in self.switches[switchID]['switch'].supportNF:
-                    self.switches[switchID]['switch'].supportNF.append(vnfType)
+                if vnfType not in self.switches[switchID]['switch'].supportNF \
+                    and self.switches[switchID]['switch'].programmable:
+                        self.switches[switchID]['switch'].supportNF.append(vnfType)
 
     def _getSwitchType(self, switchID):
         if switchID == 0:
@@ -448,7 +500,7 @@ class Topology(object):
                         nodeVNFSupportDict[nodeID].append(vnfType)
         return nodeVNFSupportDict
 
-    def addClassifier(self):
+    def addServerBasedClassifier2Topo(self):
         # add classifier for each switch
         for switchID, switchDictInfo in self.switches.items():
             switch = switchDictInfo['switch']

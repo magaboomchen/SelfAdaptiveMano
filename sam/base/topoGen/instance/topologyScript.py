@@ -24,6 +24,8 @@ if __name__ == "__main__":
     tg = Topology()
     if topologyType == "fat-tree":
         tg.genFatTreeTopology(expNum, podNum, nPoPNum, serverNum, nfviNum)
+    elif topologyType == "fat-tree-turbonet":
+        tg.genFatTreeTurbonetTopology(expNum, podNum, nPoPNum)
     elif topologyType == "VL2":
         tg.genVL2Topology(expNum, intNum, aggNum, nPoPNum)
     elif topologyType == "testbed_sw1":
