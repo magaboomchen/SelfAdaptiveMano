@@ -22,7 +22,8 @@ class TestRoutingMorphicClass(DashboardTestBase):
     @pytest.fixture(scope="function")
     def setup_routingMorphicInfo(self):
         # setup
-        self.dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent", "123")
+        self.dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent", "123",
+                                                            reInitialTable=True)
         self.routingMorphicNum = 100
         self.routingMorphicList = self.genRoutingMorphicList(self.routingMorphicNum)
 

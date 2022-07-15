@@ -3,8 +3,6 @@
 
 import random
 
-from numpy import TooHardError
-
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 
@@ -12,7 +10,7 @@ from sam.base.xibMaintainer import XInfoBaseMaintainer
 class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self):
         super(SwitchInfoBaseMaintainer, self).__init__()
-        self._switches = {} # [zoneName][switchID] = {'switch':switch, 'Active':True/False, 'Status':none}
+        self._switches = {} # [zoneName][switchID] = {'switch':switch, 'Active':True, 'Status':none}
         self._switchesReservedResources = {}
         self._gatewaySwitchIDDict = {}
         self.isSwitchInfoInDB = False
@@ -68,8 +66,10 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
                         )
                     )
         else:
+            if zoneName not in self._switches:
+                self._switches[zoneName] = {}
             switchID = switch.switchID
-            self._switches[zoneName][switchID] = {'switch':switch, 'Active':True/False, 'Status':None}
+            self._switches[zoneName][switchID] = {'switch':switch, 'Active':True, 'Status':None}
 
     def delSwitch(self, switchID, zoneName):
         if self.isSwitchInfoInDB:

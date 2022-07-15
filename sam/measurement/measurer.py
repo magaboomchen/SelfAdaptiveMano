@@ -10,22 +10,21 @@ import threading
 from packaging import version
 
 from sam.measurement.mConfig import SIMULATOR_ZONE_ONLY
-from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE, SAMMessage, MessageAgent, \
-    MEASURER_QUEUE, MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD, MEDIATOR_QUEUE
+from sam.base.messageAgent import PUFFER_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, SAMMessage, MessageAgent, \
+    MEASURER_QUEUE, MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
     MEASURER_PORT, P4_CONTROLLER_IP, P4_CONTROLLER_PORT, SFF_CONTROLLER_IP, \
-    SFF_CONTROLLER_PORT, SIMULATOR_IP, SIMULATOR_PORT, NETWORK_CONTROLLER_IP, \
-    NETWORK_CONTROLLER_PORT, SERVER_MANAGER_IP, SERVER_MANAGER_PORT, \
+    SFF_CONTROLLER_PORT, SIMULATOR_IP, SIMULATOR_PORT, \
+    SERVER_MANAGER_IP, SERVER_MANAGER_PORT, \
     VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
 from sam.base.command import Command, CMD_TYPE_GET_TOPOLOGY, \
-    CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_SFCI_STATE, CMD_TYPE_GET_VNFI_STATE
+    CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_SFCI_STATE
 from sam.base.request import Reply, REQUEST_STATE_SUCCESSFUL, \
                                 REQUEST_TYPE_GET_DCN_INFO
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
-from sam.test.testBase import SFCI1_0_EGRESS_IP
 
 
 class Measurer(object):
@@ -38,7 +37,7 @@ class Measurer(object):
         self._dib.enableDataBase("localhost", "dbAgent",
             "123")
         self._dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent",
-            "123")
+            "123", reInitialTable=False)
 
         self._messageAgent = MessageAgent(self.logger)
         self.queueName = self._messageAgent.genQueueName(MEASURER_QUEUE)
@@ -128,9 +127,6 @@ class Measurer(object):
         servers = self._dib.getServersInAllZone()
         switches = self._dib.getSwitchesInAllZone()
         links = self._dib.getLinksInAllZone()
-        # vnfis = self._dib.getVnfisInAllZone()
-        # return {'switches':switches, 'links':links, 'servers':servers,
-        #     'vnfis':vnfis}
         sfcis = self._dib.getSFCIsInAllZone()
         return {'switches':switches, 'links':links, 'servers':servers,
                     'sfcis':sfcis}
@@ -140,13 +136,15 @@ class Measurer(object):
         self._messageAgent.sendMsgByRPC(dstIP, dstPort, msg)
 
     def _commandReplyHandler(self, cmdRply):
-        self.logger.info("Get a command reply")
         # self.logger.debug(cmdRply)
         zoneName = cmdRply.attributes['zone']
+        self.logger.info("Get a command reply from {0}".format(zoneName))
         if zoneName == SIMULATOR_ZONE:
             self._cmdRplyHandler4SimulatorZone(cmdRply, zoneName)
         elif zoneName == TURBONET_ZONE:
             self._cmdRplyHandler4TurbonetZone(cmdRply, zoneName)
+        elif zoneName == PUFFER_ZONE:
+            self._cmdRplyHandler4PUFFERZone(cmdRply, zoneName)
         else:
             raise ValueError("Unimplement zone {0}".format(zoneName))
 
@@ -160,7 +158,7 @@ class Measurer(object):
                 self._dib.updateServersByZone(value, zoneName)
                 self._dib.updateSwitch2ServerLinksByZone(zoneName)
             elif key == 'vnfis':
-                # TODO: This code path is deprecated.
+                # This code path is deprecated.
                 self._dib.updateVnfisByZone(value, zoneName)
             elif key == 'zone':
                 pass
@@ -174,39 +172,52 @@ class Measurer(object):
     def _cmdRplyHandler4TurbonetZone(self, cmdRply, zoneName):
         for key,value in cmdRply.attributes.items():
             if key == 'switches':
-                # TODO: wrh给出具体格式
-                pass
+                raise ValueError("We don't need measure it.")
             elif key == 'links':
-                # TODO: wrh给出具体格式
-                pass
-            elif key == 'servers':
-                self._dib.updateServersByZone(value, zoneName)
-                self._dib.updateSwitch2ServerLinksByZone(zoneName)
+                raise ValueError("We don't need measure it.")
             elif key == 'vnfis':
-                # TODO: This code path is deprecated.
-                self._dib.updateVnfisByZone(value, zoneName)
+                raise ValueError("We don't need measure it.")
             elif key == 'zone':
                 pass
             elif key == 'source':
                 pass
+            elif key == 'servers':
+                self._dib.updateServersByZone(value, zoneName)
+                # self._dib.updateSwitch2ServerLinksByZone(zoneName)
             elif key == 'sfcisDict':
-                pass
-                # TODO
-                # 请区分zone！
-                # 设计一下sfcis字典，比如self.sfcis = {'zonename': sfcis}
-                # 需要更新部分成员变量到已有的sfci字典中，包括vnfiSequence
-                # 不要更新sloRealTimeValue
-            elif key == 'vnfisStateDict':
-                pass
-                # TODO
-                # 请区分zone！
-                # 设计一下vnfis字典，比如self.vnfis = {'zonename': vnfis}
-                # 需要合并进入已有的字典中，理论上直接合并即可
-                # 同时还要更新到已有的sfci字典中！！！
-                # 之后只向上层传递sfcis！
+                self._dib.updatePartialSFCIsByZone(value, zoneName)
+                # # debug
+                # sfcis = self._dib.getSFCIsByZone(zoneName)
+                # self.logger.debug("print sfci")
+                # for sfciID, sfci in sfcis.items():
+                #     self.logger.debug("{0}, {1}, {2}, {3}".format(sfciID, sfci,
+                #                                     sfci.sloRealTimeValue.throughput,
+                #                                     sfci.sloRealTimeValue.dropRate))
             else:
                 self.logger.warning("Unknown attributes:{0}".format(key))
         # self.logger.debug("dib:{0}".format(self._dib))
+
+    def _cmdRplyHandler4PUFFERZone(self, cmdRply, zoneName):
+        raise ValueError("Haven't implement and test!")
+        for key,value in cmdRply.attributes.items():
+            if key == 'switches':
+                self._dib.updateSwitchesByZone(value, zoneName)
+            elif key == 'links':
+                self._dib.updateLinksByZone(value, zoneName)
+            elif key == 'vnfis':
+                raise ValueError("We don't need measure it.")
+            elif key == 'zone':
+                pass
+            elif key == 'source':
+                pass
+            elif key == 'servers':
+                self._dib.updateServersByZone(value, zoneName)
+                self._dib.updateSwitch2ServerLinksByZone(zoneName)
+            elif key == 'sfcisDict':
+                self._dib.updatePartialSFCIsByZone(value, zoneName)
+            else:
+                self.logger.warning("Unknown attributes:{0}".format(key))
+
 
 class MeasurerCommandSender(threading.Thread):
     def __init__(self, threadID, messageAgent, logger, dashib):
@@ -229,8 +240,6 @@ class MeasurerCommandSender(threading.Thread):
                     self.sendGetTopoCmd(zoneName)
                     self.sendGetServersCmd(zoneName)
                     self.sendGetSFCIStatusCmd(zoneName)
-                    if zoneName in [TURBONET_ZONE]:
-                        self.sendGetVNFIStateCmd(zoneName)
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex)
             finally:
@@ -242,8 +251,10 @@ class MeasurerCommandSender(threading.Thread):
         msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getTopoCmd)
         if zoneName == SIMULATOR_ZONE:
             self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
-        else:
+        elif zoneName == TURBONET_ZONE:
             pass
+        else:
+            raise ValueError("Unimplement zone {0}".format(zoneName))
 
     def sendGetServersCmd(self, zoneName):
         getServersCmd = Command(CMD_TYPE_GET_SERVER_SET, uuid.uuid1(),
@@ -252,9 +263,11 @@ class MeasurerCommandSender(threading.Thread):
         if zoneName == SIMULATOR_ZONE:
             self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, \
                                             msg)
-        else:
+        elif zoneName == TURBONET_ZONE:
             self._messageAgent.sendMsgByRPC(SERVER_MANAGER_IP, \
                                             SERVER_MANAGER_PORT, msg)
+        else:
+            raise ValueError("Unimplement zone {0}".format(zoneName))
 
     def sendGetSFCIStatusCmd(self, zoneName):
         getSFCIStateCmd = Command(CMD_TYPE_GET_SFCI_STATE, uuid.uuid1(),
@@ -262,23 +275,29 @@ class MeasurerCommandSender(threading.Thread):
         msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getSFCIStateCmd)
         if zoneName == SIMULATOR_ZONE:
             self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
-        else:
+        elif zoneName == TURBONET_ZONE:
             self._messageAgent.sendMsgByRPC(SFF_CONTROLLER_IP, \
                                             SFF_CONTROLLER_PORT, msg)
             self._messageAgent.sendMsgByRPC(P4_CONTROLLER_IP, \
                                             P4_CONTROLLER_PORT, msg)
-
-    def sendGetVNFIStateCmd(self, zoneName):
-        getVNFIStateCmd = Command(CMD_TYPE_GET_VNFI_STATE, uuid.uuid1(),
-            {"zone":zoneName})
-        msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getVNFIStateCmd)
-        if zoneName == SIMULATOR_ZONE:
-            self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
-        else:
             self._messageAgent.sendMsgByRPC(VNF_CONTROLLER_IP, \
                                             VNF_CONTROLLER_PORT, msg)
-            self._messageAgent.sendMsgByRPC(P4_CONTROLLER_IP, \
-                                            P4_CONTROLLER_PORT, msg)
+        else:
+            raise ValueError("Unimplement zone {0}".format(zoneName))
+
+    # def sendGetVNFIStateCmd(self, zoneName):
+    #     getVNFIStateCmd = Command(CMD_TYPE_GET_VNFI_STATE, uuid.uuid1(),
+    #         {"zone":zoneName})
+    #     msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getVNFIStateCmd)
+    #     if zoneName == SIMULATOR_ZONE:
+    #         self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
+    #     elif zoneName == TURBONET_ZONE:
+    #         self._messageAgent.sendMsgByRPC(VNF_CONTROLLER_IP, \
+    #                                         VNF_CONTROLLER_PORT, msg)
+    #         self._messageAgent.sendMsgByRPC(P4_CONTROLLER_IP, \
+    #                                         P4_CONTROLLER_PORT, msg)
+    #     else:
+    #         raise ValueError("Unimplement zone {0}".format(zoneName))
 
 
 if __name__=="__main__":

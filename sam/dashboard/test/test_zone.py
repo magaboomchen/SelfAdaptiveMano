@@ -21,7 +21,8 @@ class TestZoneClass(DashboardTestBase):
     @pytest.fixture(scope="function")
     def setup_zoneInfo(self):
         # setup
-        self.dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent", "123")
+        self.dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent", "123",
+                                                            reInitialTable=True)
         self.zoneNum = 2
         self.zoneNameList = self.genZoneNameList(self.zoneNum)
 

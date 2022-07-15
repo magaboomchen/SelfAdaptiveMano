@@ -7,7 +7,7 @@ from sam.base.xibMaintainer import XInfoBaseMaintainer
 class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self):
         super(LinkInfoBaseMaintainer, self).__init__()
-        self._links = {}    # [zoneName][(srcID,dstID)] = {'link':link, 'Active':True/False, 'Status':none}
+        self._links = {}    # [zoneName][(srcID,dstID)] = {'link':link, 'Active':True, 'Status':none}
         self._linksReservedResources = {}
         self.isLinkInfoInDB = False
 
@@ -60,7 +60,7 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
                     )
         else:
             linkID = link.linkID
-            self._links[zoneName][linkID] = {'link':link, 'Active':True/False, 'Status':None}
+            self._links[zoneName][linkID] = {'link':link, 'Active':True, 'Status':None}
 
     def delLink(self, link, zoneName):
         if self.isLinkInfoInDB:

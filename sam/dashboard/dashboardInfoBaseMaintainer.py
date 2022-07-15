@@ -5,8 +5,10 @@ from sam.base.xibMaintainer import XInfoBaseMaintainer
 
 
 class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
-    def __init__(self, host, user, passwd):
+    def __init__(self, host, user, passwd, reInitialTable=False):
         super(DashboardInfoBaseMaintainer, self).__init__()
+        # print("reInitialTable {0}".format(reInitialTable))
+        self.reInitialTable = reInitialTable
         self.addDatabaseAgent(host, user, passwd)
         self.dbA.connectDB(db = "Dashboard")
         self._initZoneTable()
@@ -15,6 +17,9 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
         # self._initServerTable()
 
     def _initZoneTable(self):
+        if self.reInitialTable:
+            # print("drop zone")
+            self.dbA.dropTable("Zone")
         if not self.dbA.hasTable("Dashboard", "Zone"):
             self.dbA.createTable("Zone",
                 """
@@ -27,7 +32,7 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def addZone(self, zoneName):
         if not self.hasZone(zoneName):
-            self.dbA.insert("Zone", " ZONE_NAME ", (zoneName))
+            self.dbA.insert("Zone", " ZONE_NAME ", (zoneName,))
 
     def hasZone(self, zoneName):
         results = self.dbA.query("Zone", " ZONE_NAME ",
@@ -49,7 +54,8 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
         return zoneList
 
     def _initUserTable(self):
-        # self.dbA.dropTable("User")
+        if self.reInitialTable:
+            self.dbA.dropTable("User")
         if not self.dbA.hasTable("Dashboard", "User"):
             self.dbA.createTable("User",
                 """
@@ -90,6 +96,8 @@ class DashboardInfoBaseMaintainer(XInfoBaseMaintainer):
         return userList
 
     def _initRoutingMorphicTable(self):
+        if self.reInitialTable:
+            self.dbA.dropTable("RoutingMorphic")
         # self.dbA.dropTable("RoutingMorphic")
         if not self.dbA.hasTable("Dashboard", "RoutingMorphic"):
             self.dbA.createTable("RoutingMorphic",

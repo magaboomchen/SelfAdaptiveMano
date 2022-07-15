@@ -7,7 +7,7 @@ from sam.base.xibMaintainer import XInfoBaseMaintainer
 class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self):
         super(ServerInfoBaseMaintainer, self).__init__()
-        self._servers = {}  # [zoneName][serverID] = {'server':server, 'Active':True/False, 'timestamp':time, 'Status':none}
+        self._servers = {}  # [zoneName][serverID] = {'server':server, 'Active':True, 'timestamp':time, 'Status':none}
         self._serversReservedResources = {} # [zoneName][serverID] = {'bandwidth':bw, 'cores':cpu, 'memory':mem}
         self.isServerInfoInDB = False
 
@@ -64,8 +64,10 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
                         )
                     )
         else:
+            if zoneName not in self._servers:
+                self._servers[zoneName] = {}
             serverID = server.getServerID()
-            self._servers[zoneName][serverID] = {'server':server, 'Active':True/False, 'timestamp':None, 'Status':None}
+            self._servers[zoneName][serverID] = {'server':server, 'Active':True, 'timestamp':None, 'Status':None}
 
     def delServer(self, serverID, zoneName):
         if self.isServerInfoInDB:

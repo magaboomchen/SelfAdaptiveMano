@@ -7,7 +7,7 @@ from sam.base.command import CMD_STATE_FAIL, CMD_STATE_SUCCESSFUL, CommandReply
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.link import Link
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.messageAgent import DEFAULT_ZONE, SAMMessage, MessageAgent, \
+from sam.base.messageAgent import DEFAULT_ZONE, SIMULATOR_ZONE, SAMMessage, MessageAgent, \
     MSG_TYPE_SIMULATOR_CMD_REPLY, SIMULATOR_QUEUE
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import SIMULATOR_IP, SIMULATOR_PORT
 from sam.base.server import SERVER_TYPE_NORMAL, Server
@@ -57,28 +57,30 @@ class SimulatorStub(object):
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex, "simulator")
         finally:
-            cmdRply = CommandReply(cmd.cmdID, CMD_STATE_SUCCESSFUL, dict(attributes, source='simulator'))
+            attributes.update({'source':'simulator',
+                            'zone':SIMULATOR_ZONE})
+            cmdRply = CommandReply(cmd.cmdID, CMD_STATE_SUCCESSFUL, attributes)
             rplyMsg = SAMMessage(MSG_TYPE_SIMULATOR_CMD_REPLY, cmdRply)
         return rplyMsg
 
-
     def genTopoAttr(self):
-        switchList = []
+        switchDict = {}
         switch = Switch(uuid.uuid1(), SWITCH_TYPE_NPOP)
-        switchList.append(switch)
+        switchDict[switch.switchID] = switch
 
-        linkList = []
+        linkDict = {}
         link = Link(1,2)
-        linkList.append(link)
+        linkDict[(1,2)] = link
 
-        return {'switches':switchList,
-                'links':linkList,
+        return {'switches':switchDict,
+                'links':linkDict,
                 'zone':DEFAULT_ZONE
                 }
 
     def genServerAttr(self):
-        serverList = []
+        serverDict = {}
         server = Server("ens3", "2.2.0.34", SERVER_TYPE_NORMAL)
-        serverList.append(server)
+        server.setServerID(10001)
+        serverDict[10001] = server
 
-        return {'servers':serverList}
+        return {'servers':serverDict}

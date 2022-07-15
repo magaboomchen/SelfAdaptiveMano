@@ -2,16 +2,29 @@
 # -*- coding: UTF-8 -*-
 
 import logging
+from sam.base.command import CMD_STATE_SUCCESSFUL, CommandReply
+from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.base.loggerConfigurator import LoggerConfigurator
 
-from sam.base.messageAgent import SAMMessage, MessageAgent, MEDIATOR_QUEUE, \
+from sam.base.messageAgent import TURBONET_ZONE, SAMMessage, MessageAgent, MEDIATOR_QUEUE, \
     MSG_TYPE_VNF_CONTROLLER_CMD_REPLY
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
+from sam.base.sfc import SFCI
+from sam.base.slo import SLO
 from sam.base.sshAgent import SSHAgent
+from sam.base.vnf import VNF_TYPE_RATELIMITER, VNFI, VNFIStatus
 from sam.serverController.sffController.sibMaintainer import SIBMaintainer
 
 
 class VNFControllerStub(object):
     def __init__(self):
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'vnfController.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.mA = MessageAgent()
+        self.mA.startMsgReceiverRPCServer(VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT)
+
         self.sibm = SIBMaintainer()
         self.vnfBase = {}
 
@@ -83,3 +96,55 @@ class VNFControllerStub(object):
         command = "sudo -S docker stop "+name
         logging.info(command)
         return command
+
+    def recvCmdFromMeasurer(self):
+        while True:
+            msg = self.mA.getMsgByRPC(VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT)
+            msgType = msg.getMessageType()
+            if msgType == None:
+                pass
+            else:
+                body = msg.getbody()
+                source = msg.getSource()
+                try:
+                    if self.mA.isRequest(body):
+                        pass
+                    elif self.mA.isCommand(body):
+                        rplyMsg = self._command_handler(body)
+                        self.mA.sendMsgByRPC(source["srcIP"], source["srcPort"], rplyMsg)
+                        break
+                    else:
+                        self.logger.error("Unknown massage body")
+                except Exception as ex:
+                    ExceptionProcessor(self.logger).logException(ex,
+                        "measurer")
+
+    def _command_handler(self, cmd):
+        self.logger.debug(" VNFController gets a command ")
+        attributes = {}
+        try:
+            attributes = self.genSFCIAttr()
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex, "vnfController")
+        finally:
+            attributes.update({'source':'vnfController', 'zone':TURBONET_ZONE})
+            cmdRply = CommandReply(cmd.cmdID, CMD_STATE_SUCCESSFUL, attributes)
+            rplyMsg = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, cmdRply)
+        return rplyMsg
+
+    def genSFCIAttr(self):
+        sfciDict = {}
+        vnfiSeq = [
+                    [VNFI(VNF_TYPE_RATELIMITER,VNF_TYPE_RATELIMITER,1,1,1,
+                            VNFIStatus(state={
+                                "vnfType": VNF_TYPE_RATELIMITER,
+                                "rateLimitition":1}))
+                    ]
+                ]
+        slo = SLO()
+        sfci = SFCI(1,vnfiSequence=vnfiSeq,sloRealTimeValue=slo)
+        sfciDict[1] = sfci
+
+        return {'sfcisDict':sfciDict,
+                'zone':TURBONET_ZONE
+                }

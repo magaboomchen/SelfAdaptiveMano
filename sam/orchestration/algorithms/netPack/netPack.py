@@ -101,7 +101,7 @@ class NetPack(MappingAlgorithmBase, PathServerFiller):
         #     for servers in serverSet:
         #         for server in servers:
         #             self.logger.debug(server.getServerID())
-        self.requestOrchestrationInfo = {}   # "accept": true/false; "computation time": 1
+        self.requestOrchestrationInfo = {}   # "accept": true; "computation time": 1
         self.totalComputationTime = None
         constructStartTime = time.time()
         self.G = self.constructGraph()

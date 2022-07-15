@@ -56,6 +56,8 @@ class ODCNInfoRetriever(object):
                 self._dib.updateLinksInAllZone(values)
             elif key == 'vnfis':
                 self._dib.updateVnfisInAllZone(values)
+            elif key == 'sfcis':
+                self._dib.updateSFCIsInAllZone(values)
             else:
                 self.logger.error("Unknown reply attributes:{0}".format(
                     key

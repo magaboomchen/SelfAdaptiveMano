@@ -1,33 +1,29 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.command import CMD_STATE_SUCCESSFUL, CommandReply
-from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.messageAgent import TURBONET_ZONE, SAMMessage, MessageAgent, MEDIATOR_QUEUE, \
-    MSG_TYPE_SFF_CONTROLLER_CMD_REPLY
-from sam.base.messageAgentAuxillary.msgAgentRPCConf import SFF_CONTROLLER_IP, SFF_CONTROLLER_PORT
 from sam.base.sfc import SFCI
 from sam.base.slo import SLO
+from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.vnf import VNF_TYPE_RATELIMITER, VNFI, VNFIStatus
+from sam.base.command import CMD_STATE_SUCCESSFUL, CommandReply
+from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD_REPLY, \
+                                    TURBONET_ZONE, SAMMessage, MessageAgent
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import P4_CONTROLLER_IP, P4_CONTROLLER_PORT
 
 
-class SFFControllerStub(object):
+class P4ControllerStub(object):
     def __init__(self):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'sffController.log', level='debug')
+            'serverManager.log', level='debug')
         self.logger = logConfigur.getLogger()
 
         self.mA = MessageAgent()
-        self.mA.startMsgReceiverRPCServer(SFF_CONTROLLER_IP, SFF_CONTROLLER_PORT)
-
-    def sendCmdRply(self,cmdRply):
-        msg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD_REPLY, cmdRply)
-        self.mA.sendMsg(MEDIATOR_QUEUE, msg)
+        self.mA.startMsgReceiverRPCServer(P4_CONTROLLER_IP, P4_CONTROLLER_PORT)
 
     def recvCmdFromMeasurer(self):
         while True:
-            msg = self.mA.getMsgByRPC(SFF_CONTROLLER_IP, SFF_CONTROLLER_PORT)
+            msg = self.mA.getMsgByRPC(P4_CONTROLLER_IP, P4_CONTROLLER_PORT)
             msgType = msg.getMessageType()
             if msgType == None:
                 pass
@@ -48,31 +44,21 @@ class SFFControllerStub(object):
                         "measurer")
 
     def _command_handler(self, cmd):
-        self.logger.debug(" SFFController gets a command ")
+        self.logger.debug(" P4Controller gets a command ")
         attributes = {}
         try:
             attributes = self.genSFCIAttr()
         except Exception as ex:
-            ExceptionProcessor(self.logger).logException(ex, "sffController")
+            ExceptionProcessor(self.logger).logException(ex, "p4Controller")
         finally:
-            attributes.update({'source':'sffController', 'zone':TURBONET_ZONE})
+            attributes.update({'source':'p4Controller', 'zone':TURBONET_ZONE})
             cmdRply = CommandReply(cmd.cmdID, CMD_STATE_SUCCESSFUL, attributes)
-            rplyMsg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD_REPLY, cmdRply)
+            rplyMsg = SAMMessage(MSG_TYPE_P4CONTROLLER_CMD_REPLY, cmdRply)
         return rplyMsg
 
     def genSFCIAttr(self):
         sfciDict = {}
-        vnfiSeq = [
-                    [VNFI(VNF_TYPE_RATELIMITER,VNF_TYPE_RATELIMITER,1,1,1,
-                            VNFIStatus(
-                                inputTrafficAmount=100,
-                                inputPacketAmount=100,
-                                outputTrafficAmount=50,
-                                outputPacketAmount=50
-                            ))
-                    ]
-                ]
-
+        vnfiSeq = [[VNFI(VNF_TYPE_RATELIMITER,VNF_TYPE_RATELIMITER,1,1,1,VNFIStatus())]]
         slo = SLO()
         sfci = SFCI(1,vnfiSequence=vnfiSeq,sloRealTimeValue=slo)
         sfciDict[1] = sfci
@@ -80,3 +66,4 @@ class SFFControllerStub(object):
         return {'sfcisDict':sfciDict,
                 'zone':TURBONET_ZONE
                 }
+

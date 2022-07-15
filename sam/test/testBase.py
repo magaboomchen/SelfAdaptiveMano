@@ -618,7 +618,7 @@ class TestBase(object):
 
     def initZone(self):
         self._dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent",
-            "123")
+            "123", reInitialTable=True)
         self._dashib.addZone(SIMULATOR_ZONE)
         if not SIMULATOR_ZONE_ONLY:
             self._dashib.addZone(TURBONET_ZONE)

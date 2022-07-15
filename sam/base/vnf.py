@@ -120,9 +120,17 @@ class VNFI(object):
 
 
 class VNFIStatus(object):
-    def __init__(self):
-        self.inputTrafficAmount = None
-        self.inputPacketAmount = None
-        self.outputTrafficAmount = None
-        self.outputPacketAmount = None
-        self.state = None
+    def __init__(self, inputTrafficAmount=None, inputPacketAmount=None,
+                    outputTrafficAmount=None, outputPacketAmount=None,
+                    state=None):
+        self.inputTrafficAmount = inputTrafficAmount
+        self.inputPacketAmount = inputPacketAmount
+        self.outputTrafficAmount = outputTrafficAmount
+        self.outputPacketAmount = outputPacketAmount
+        self.state = state
+
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string

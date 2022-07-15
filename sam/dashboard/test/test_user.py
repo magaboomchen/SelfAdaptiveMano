@@ -24,7 +24,8 @@ class TestUserClass(DashboardTestBase):
     @pytest.fixture(scope="function")
     def setup_userInfo(self):
         # setup
-        self.dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent", "123")
+        self.dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent", "123",
+                                                            reInitialTable=True)
         self.userNum = 2
         self.userList = self.genUserList(self.userNum)
 

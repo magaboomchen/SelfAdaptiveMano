@@ -385,8 +385,10 @@ class MessageAgent(object):
                     # self.logger.error(status_code.name)
                     # should print `(3, 'invalid argument')`
                     # self.logger.error(status_code.value)
-                    self.logger.error("details: {0}; " \
-                        "statusCodeName: {1}; statusCodeValue: {2}".format(
+                    self.logger.error("connecting socket {0}:{1} failed. " \
+                        "details: {2}; " \
+                        "statusCodeName: {3}; statusCodeValue: {4}".format(
+                            dstIP, dstPort,
                             e.details(), status_code.name, status_code.value
                         ))
                     # want to do some specific action based on the error?
