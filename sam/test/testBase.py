@@ -202,7 +202,7 @@ class TestBase(object):
             'destination': {"IPv4":WEBSITE_REAL_IP, "node": None}
         }
         directions = [direction1]
-        slo = SLO(latencyBound=35, throughput=10)
+        slo = SLO(latency=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
             {'zone':DEFAULT_ZONE}, slo=slo, vnfSequence=vnfSequence)

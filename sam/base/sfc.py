@@ -163,7 +163,7 @@ class SFC(object):
         return self.slo.throughput
 
     def getSFCLatencyBound(self):
-        return self.slo.latencyBound
+        return self.slo.latency
 
     def to_dict(self):
         return {

@@ -56,7 +56,7 @@ class TestOSFCAdderDeleterClass(TestBase):
 
         classifier = cls.tc.genClassifier("2.2.0.36")
         cls.sfc = cls.tc.genUniDirectionSFC(classifier)
-        cls.sfc.slo = SLO(latencyBound=10, throughput=0.005)
+        cls.sfc.slo = SLO(latency=10, throughput=0.005)
         cls.sfci = SFCI(cls.tc._genSFCIID(), [],
             forwardingPathSet=ForwardingPathSet({}, MAPPING_TYPE_NOTVIA_PSFC, {}))
         zoneName = cls.sfc.attributes['zone']

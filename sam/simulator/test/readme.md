@@ -81,7 +81,18 @@ attributes = {
 }
 ```
 
-## CMD_TYPE_GET_VNFI_STATE
+## CMD_TYPE_GET_SFCI_STATE
+```
+attributes = {
+    "sfcisDict": sfcisDict={sfciID:sfci},   # see sfc.py, store state in sfci.sloRealTimeValue
+    'zone': SIMULATOR_ZONE
+}
+其中，
+对于sfci.vnfiSequence中的每个vnfi，其成员变量vnfiStatus是一个VNFIStatus()对象
+而VNFIStatus()对象的成员变量state是CMD_TYPE_GET_VNFI_STATE中的contentDict.
+```
+
+## [Optional] CMD_TYPE_GET_VNFI_STATE
 ```
 attributes = {
     "vnfisStateDict": vnfisStateDict={vnfiID:contentDict},
@@ -90,20 +101,13 @@ attributes = {
 其中，
 contentDict = {
     "vnfType": VNF_TYPE_MONITOR,    # or other type of VNF
-    "rateLimitition": 1,
+    # 下面的为可选key，根据vnfType来选择其中一个即可
+    "rateLimitition": 1,            
     "FWRulesNum": 2,
     "FlowStatisticsDict": {
             "1.1.1.1": 100, # unit: Mbps
             "2.2.2.2": 50   # 生成这些数据即可，仅用于演示
         }
-}
-```
-
-## CMD_TYPE_GET_SFCI_STATE
-```
-attributes = {
-    "sfcisDict": sfcisDict={sfciID:sfci},   # see sfc.py, store state in sfci.sloRealTimeValue
-    'zone': SIMULATOR_ZONE
 }
 ```
 

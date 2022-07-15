@@ -68,7 +68,6 @@ class TestGetSFCIStatusClass(TestP4ControllerBase):
             
             sloRealTimeValue = sfci.sloRealTimeValue
             assert sloRealTimeValue.availability >= 99.95
-            assert sloRealTimeValue.latencyBound <= 35
             assert sloRealTimeValue.latency <= 35
             assert sloRealTimeValue.throughput <= 0.1
             assert sloRealTimeValue.dropRate <= 100

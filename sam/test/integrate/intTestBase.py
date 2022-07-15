@@ -85,7 +85,7 @@ class IntTestBaseClass(TestBase):
             'destination': {'node': None, 'IPv4':APP1_REAL_IP}
         }
         directions = [direction1]
-        slo = SLO(throughput=10, latencyBound=100, availability=0.999, \
+        slo = SLO(throughput=10, latency=100, availability=0.999, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
@@ -113,7 +113,7 @@ class IntTestBaseClass(TestBase):
             'destination': {'node': None, 'IPv4':APP2_REAL_IP}
         }
         directions = [direction1]
-        slo = SLO(throughput=1, latencyBound=100, availability=0.9995, \
+        slo = SLO(throughput=1, latency=100, availability=0.9995, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
@@ -140,7 +140,7 @@ class IntTestBaseClass(TestBase):
             'destination': {'node': None, 'IPv4':APP3_REAL_IP}
         }
         directions = [direction1]
-        slo = SLO(throughput=1, latencyBound=10, availability=0.999, \
+        slo = SLO(throughput=1, latency=10, availability=0.999, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
@@ -170,7 +170,7 @@ class IntTestBaseClass(TestBase):
             'destination': {'node': None, 'IPv4':APP4_REAL_IP}
         }
         directions = [direction1]
-        slo = SLO(throughput=1, latencyBound=100, availability=0.999, \
+        slo = SLO(throughput=1, latency=100, availability=0.999, \
                     connections=10000)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
@@ -198,7 +198,7 @@ class IntTestBaseClass(TestBase):
             'destination': {'node': None, 'IPv4':APP5_REAL_IP}
         }
         directions = [direction1]
-        slo = SLO(throughput=0.1, latencyBound=200, availability=0.99, \
+        slo = SLO(throughput=0.1, latency=200, availability=0.99, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,

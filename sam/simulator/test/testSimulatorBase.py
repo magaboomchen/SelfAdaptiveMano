@@ -73,7 +73,7 @@ class TestSimulatorBase(TestBase):
             'destination': {'node': None, 'IPv4':WEBSITE_REAL_IP}
         }
         directions = [direction1]
-        slo = SLO(latencyBound=35, throughput=0.1)
+        slo = SLO(latency=35, throughput=0.1)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
             {'zone': SIMULATOR_ZONE}, slo=slo, routingMorphic=routingMorphic,

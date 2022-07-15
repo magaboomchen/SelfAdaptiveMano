@@ -6,6 +6,7 @@ from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.server import SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.measurement.serverInfoBaseMaintainer import ServerInfoBaseMaintainer
+from sam.measurement.sfciInfoBaseMaintainer import SFCIInfoBaseMaintainer
 from sam.measurement.switchInfoBaseMaintainer import SwitchInfoBaseMaintainer
 from sam.measurement.linkInfoBaseMaintainer import LinkInfoBaseMaintainer
 from sam.measurement.vnfiInfoBaseMaintainer import VNFIInfoBaseMaintainer
@@ -16,7 +17,8 @@ from sam.measurement.vnfiInfoBaseMaintainer import VNFIInfoBaseMaintainer
 class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
                             SwitchInfoBaseMaintainer,
                             LinkInfoBaseMaintainer,
-                            VNFIInfoBaseMaintainer):
+                            VNFIInfoBaseMaintainer,
+                            SFCIInfoBaseMaintainer):
     def __init__(self):
         super(DCNInfoBaseMaintainer, self).__init__()
         # can't implement logger, because it doesn't support deepcopy

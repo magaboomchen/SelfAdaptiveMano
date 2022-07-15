@@ -84,3 +84,4 @@ results*/
 
 # Others
 .DS_Store
+.vscode/settings.json

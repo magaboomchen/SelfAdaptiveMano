@@ -95,7 +95,7 @@ class TestNoticeClass(TestBase):
             'destination': {'node': None, 'IPv4':APP1_REAL_IP}
         }
         directions = [direction1]
-        slo = SLO(throughput=10, latencyBound=100, availability=0.999, \
+        slo = SLO(throughput=10, latency=100, availability=0.999, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,

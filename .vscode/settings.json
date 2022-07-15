@@ -1,8 +1,0 @@
-{
-    "files.associations": {
-        "cstdlib": "cpp",
-        "ostream": "cpp",
-        "limits": "cpp"
-    },
-    "python.pythonPath": "/home/smith/anaconda3/envs/sam3.9/bin/python"
-}

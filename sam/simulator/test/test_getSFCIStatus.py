@@ -26,7 +26,7 @@ from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import SIMULATOR_PORT, TEST_PORT
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.vnf import VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER
+from sam.base.vnf import VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFIStatus
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.simulator.test.testSimulatorBase import TestSimulatorBase
@@ -124,7 +124,6 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
             
             sloRealTimeValue = sfci.sloRealTimeValue
             assert sloRealTimeValue.availability >= 99.95
-            assert sloRealTimeValue.latencyBound <= 35
             assert sloRealTimeValue.latency <= 35
             assert sloRealTimeValue.throughput <= 0.1
             assert sloRealTimeValue.dropRate <= 100
@@ -134,6 +133,7 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
             for vnfis in vnfiSequence:
                 for vnfi in vnfis:
                     vnfiStatus = vnfi.vnfiStatus
+                    assert type(vnfiStatus) == VNFIStatus
                     assert vnfiStatus.inputTrafficAmount["Direction1"] > 0
                     assert vnfiStatus.inputTrafficAmount["Direction2"] > 0
                     assert vnfiStatus.inputPacketAmount["Direction1"] > 0
@@ -144,10 +144,13 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
                     assert vnfiStatus.outputPacketAmount["Direction2"] > 0
                     vnfType = vnfi.vnfType
                     if vnfType == VNF_TYPE_FW:
-                        assert vnfiStatus.state <= 100
+                        assert "FWRulesNum" in vnfiStatus.state
+                        assert vnfiStatus.state["FWRulesNum"] == 2
                     elif vnfType == VNF_TYPE_MONITOR:
-                        assert vnfiStatus.state <= 100
+                        assert "FlowStatisticsDict" in vnfiStatus.state
+                        assert type(vnfiStatus.state["FlowStatisticsDict"]) == dict
                     elif vnfType == VNF_TYPE_RATELIMITER:
-                        assert vnfiStatus.state <= 100
+                        assert "rateLimitition" in vnfiStatus.state
+                        vnfiStatus.state["rateLimitition"] == 1
                     else:
                         raise ValueError("Unknown vnf type {0}".format(vnfType))
