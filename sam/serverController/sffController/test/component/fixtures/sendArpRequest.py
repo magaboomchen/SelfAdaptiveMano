@@ -7,7 +7,7 @@ from scapy.all import sendp
 from scapy.layers.l2 import Ether, ARP
 
 from sam.base.socketConverter import BCAST_MAC
-from sam.serverController.sffController.test.unit.test_sffSFCIAdder import TESTER_SERVER_DATAPATH_IP, \
+from sam.serverController.sffController.test.component.test_sffSFCIAdder import TESTER_SERVER_DATAPATH_IP, \
     TESTER_SERVER_DATAPATH_MAC,  SFF1_DATAPATH_IP
 from sam.test.testBase import TESTER_SERVER_INTF 
 

@@ -200,3 +200,20 @@ export RTE_TARGET=x86_64-native-linuxapp-gcc
 ```
 RYU_APP_PATH=/usr/local/lib/python2.7/dist-packages/ryu/app
 ```
+
+## Disable OS Auto update (For bess server)
+```
+sudoedit /etc/apt/apt.conf.d/20auto-upgrades
+```
+Change content FROM:
+```
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+```
+TO:
+```
+APT::Periodic::Update-Package-Lists "0";
+APT::Periodic::Download-Upgradeable-Packages "0";
+APT::Periodic::AutocleanInterval "0";
+APT::Periodic::Unattended-Upgrade "1";
+```

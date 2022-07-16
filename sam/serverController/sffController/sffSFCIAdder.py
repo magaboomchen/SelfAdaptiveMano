@@ -6,6 +6,7 @@ import math
 import grpc
 from google.protobuf.any_pb2 import Any
 
+from sam.base.server import Server
 from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
 import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
@@ -13,8 +14,6 @@ import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
 import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
 from sam.serverController.bessControlPlane import BessControlPlane
 from sam.serverController.sffController.sffInitializer import SFFInitializer
-
-from sam.base.server import Server
 
 
 class SFFSFCIAdder(BessControlPlane):
@@ -29,6 +28,7 @@ class SFFSFCIAdder(BessControlPlane):
         sfci = cmd.attributes['sfci']
         self._checkVNFISequence(sfci.vnfiSequence)
         self.logger.info("Adding sfci: {0}".format(sfci.sfciID))
+        self.sibms.addSFCI(sfci)
         for vnfiIdx,vnf in enumerate(sfci.vnfiSequence):
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):

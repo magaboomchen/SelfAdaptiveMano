@@ -9,7 +9,7 @@ from scapy.layers.inet import IP, TCP
 
 from sam.test.testBase import TESTER_SERVER_INTF, WEBSITE_REAL_IP, \
     TESTER_SERVER_DATAPATH_MAC, OUTTER_CLIENT_IP
-from sam.serverController.sffController.test.unit.test_sffSFCIAdder import SFF1_DATAPATH_MAC, \
+from sam.serverController.sffController.test.component.test_sffSFCIAdder import SFF1_DATAPATH_MAC, \
     CLASSIFIER_DATAPATH_IP
 
 global VNFI1_0_IP

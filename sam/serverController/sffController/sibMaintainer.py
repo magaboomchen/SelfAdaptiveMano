@@ -12,6 +12,8 @@ from sam.serverController.bessInfoBaseMaintainer import BessInfoBaseMaintainer
 class SIBMS(object):
     def __init__(self, logger):
         self._sibms = {} # {serverID:SIBMaintainer}
+        self._sfcSet = {}   # {sfcUUID:[sfciID]}
+        self._sfciDict = {} # {sfciID: sfci}
         self.logger = logger
 
     def hasSibm(self, serverID):
@@ -33,12 +35,20 @@ class SIBMS(object):
             self.logger.info("{0}'s sibm:".format(key))
             self._sibms[key].show()
 
+    def addSFCI(self, sfci):
+        self._sfciDict[sfci.sfciID] = sfci
+
+    def delSFCI(self, sfci):
+        del self._sfciDict[sfci.sfciID]
+
+    def getAllSFCIs(self):
+        return self._sfciDict
+
 
 class SIBMaintainer(BessInfoBaseMaintainer):
     '''SFF Information Base Maintainer'''
     def __init__(self, *args, **kwargs):
         super(SIBMaintainer, self).__init__(*args, **kwargs)
-        self._sfcSet = {}   # {sfcUUID:[sfciID]}
         self._vnfiDict = {} # {vnfiID:vnfi}
 
     def addLogger(self, logger):
@@ -113,7 +123,6 @@ class SIBMaintainer(BessInfoBaseMaintainer):
         return value
 
     def show(self):
-        self.logger.info("sfcSet:{0}".format(self._sfcSet))
         self.logger.info("modules:{0}".format(self._modules))
         self.logger.info("links:{0}".format(self._links))
 

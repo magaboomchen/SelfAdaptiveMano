@@ -236,11 +236,12 @@ class TestBase(object):
         directions = [direction1, direction2]
         routingMorphic = RoutingMorphic()
         routingMorphic.from_dict(ipv4MorphicDictTemplate)
+        slo = SLO(latency=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions=directions,
             attributes={'zone':DEFAULT_ZONE},
             routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence
+            vnfSequence=vnfSequence, slo=slo
             )
 
     def genUniDirection10BackupSFCI(self):

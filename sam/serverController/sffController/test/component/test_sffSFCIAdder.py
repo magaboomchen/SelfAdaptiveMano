@@ -1,6 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+'''
+Usage:
+    (1) sudo env "PATH=$PATH" python -m pytest ./test_sffSFCIAdder.py -s --disable-warnings
+    (2) Please run 'python  ./serverAgent.py  0000:06:00.0  enp1s0  nfvi  2.2.0.98'
+        on the NFVI running bess.
+'''
+
 import logging
 import time
 
@@ -11,9 +18,10 @@ from scapy.layers.inet import IP
 from scapy.all import Raw, sendp, AsyncSniffer
 from scapy.contrib.nsh import NSH
 
+from sam.base.compatibility import screenInput
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.messageAgent import SFF_CONTROLLER_QUEUE, MEDIATOR_QUEUE, \
-    MSG_TYPE_SFF_CONTROLLER_CMD
+    MSG_TYPE_SFF_CONTROLLER_CMD, TURBONET_ZONE, MessageAgent
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -22,13 +30,13 @@ from sam.test.fixtures.vnfControllerStub import VNFControllerStub
 from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, TestBase, CLASSIFIER_DATAPATH_IP, SFF1_CONTROLNIC_IP, \
     SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC, SFCI1_0_EGRESS_IP, WEBSITE_REAL_IP, SFCI1_1_EGRESS_IP
 from sam.test.fixtures import sendArpRequest
-from sam.serverController.sffController.test.unit.testConfig import TESTER_SERVER_DATAPATH_IP, \
+from sam.serverController.sffController.test.component.testConfig import TESTER_SERVER_DATAPATH_IP, \
     TESTER_SERVER_DATAPATH_MAC, TESTER_DATAPATH_INTF, PRIVATE_KEY_FILE_PATH, BESS_SERVER_USER, \
     BESS_SERVER_USER_PASSWORD
 from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
 from sam.serverController.sffController import sffControllerCommandAgent
-from sam.serverController.sffController.test.unit.fixtures.sendDirection0Traffic import sendDirection0Traffic
-from sam.serverController.sffController.test.unit.fixtures.sendDirection1Traffic import sendDirection1Traffic
+from sam.serverController.sffController.test.component.fixtures.sendDirection0Traffic import sendDirection0Traffic
+from sam.serverController.sffController.test.component.fixtures.sendDirection1Traffic import sendDirection1Traffic
 
 MANUAL_TEST = True
 
@@ -42,6 +50,7 @@ class TestSFFSFCIAdderClass(TestBase):
         logConfigur = LoggerConfigurator(__name__, './log',
             'tester.log', level='debug')
         self.logger = logConfigur.getLogger()
+        self._messageAgent = MessageAgent(self.logger)
 
         # setup
         self.sP = ShellProcessor()
@@ -73,17 +82,15 @@ class TestSFFSFCIAdderClass(TestBase):
     def test_addSFCI(self, setup_addSFCI):
         # exercise
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
-        self.sendCmd(SFF_CONTROLLER_QUEUE,
-                        MSG_TYPE_SFF_CONTROLLER_CMD,
-                        self.addSFCICmd)
-
-        time.sleep(2)
-        # logging.info("Press Any key to test data path!")
-        # raw_input() # type: ignore
+        queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, TURBONET_ZONE)
+        self.sendCmd(queueName, MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
 
         # verify
-        self.verifyArpResponder()
         self.verifyCmdRply()
+        time.sleep(2)
+        logging.info("Press Any key to test data path!")
+        screenInput()
+        self.verifyArpResponder()
 
         # setup again
         try:

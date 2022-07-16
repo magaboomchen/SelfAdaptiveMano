@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-from sam.base.messageAgent import SAMMessage, MessageAgent, SFF_CONTROLLER_QUEUE, \
+from sam.base.messageAgent import MEASURER_QUEUE, SAMMessage, MessageAgent, SFF_CONTROLLER_QUEUE, \
     MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD_REPLY
 from sam.base.command import CommandReply, CMD_STATE_PROCESSING, CMD_TYPE_PAUSE_BESS, \
     CMD_TYPE_RESUME_BESS, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_GET_SFCI_STATE, \
@@ -29,6 +29,8 @@ class SFFControllerCommandAgent(object):
             'sffController.log', level='debug')
         self.logger = logConfigur.getLogger()
 
+        self.zoneName = zoneName
+
         self.sibms = SIBMS(self.logger)
 
         self.sffSFCIAdder = SFFSFCIAdder(self.sibms, self.logger)
@@ -38,6 +40,7 @@ class SFFControllerCommandAgent(object):
 
         self._messageAgent = MessageAgent(self.logger)
         self.queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, zoneName)
+        self.logger.info("Listen on {0}".format(self.queueName))
         self._messageAgent.startRecvMsg(self.queueName)
 
     def startSFFControllerCommandAgent(self):
@@ -67,16 +70,15 @@ class SFFControllerCommandAgent(object):
                             repr(err))
                     continue
 
-                self.logger.info("here")
-
                 # common commands
                 try:
+                    resDict = {}
                     if cmd.cmdType == CMD_TYPE_ADD_SFCI:
                         self.sffSFCIAdder.addSFCIHandler(cmd)
                     elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
                         self.sffSFCIDeleter.delSFCIHandler(cmd)
                     elif cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
-                        self.sffMonitor.monitorSFCIHandler(cmd)
+                        resDict = self.sffMonitor.monitorSFCIHandler()
                     else:
                         self.logger.error("Unkonwn sff command type.")
                         raise ValueError("Unkonwn sff command type.")
@@ -92,9 +94,14 @@ class SFFControllerCommandAgent(object):
                     cmdRply = CommandReply(
                         cmd.cmdID,self._commandsInfo[cmd.cmdID]["state"])
                     cmdRply.attributes["source"] = {"sffController"}
+                    cmdRply.attributes["zone"] = self.zoneName
+                    cmdRply.attributes.update(resDict)
                     rplyMsg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD_REPLY,
-                        cmdRply)
-                    self._messageAgent.sendMsg(MEDIATOR_QUEUE, rplyMsg)
+                                                                    cmdRply)
+                    queueName = MEDIATOR_QUEUE
+                    if cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
+                        queueName = MEASURER_QUEUE
+                    self._messageAgent.sendMsg(queueName, rplyMsg)
             elif msg.getMessageType() == None:
                 pass
             else:

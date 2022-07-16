@@ -24,6 +24,8 @@ class SFFSFCIDeleter(BessControlPlane):
         sfc = cmd.attributes['sfc']
         sfci = cmd.attributes['sfci']
         self._checkVNFISequence(sfci.vnfiSequence)
+        self.logger.info("Deleting sfci: {0}".format(sfci.sfciID))
+        self.sibms.delSFCI(sfci)
         for vnfiIdx,vnf in enumerate(sfci.vnfiSequence):
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):

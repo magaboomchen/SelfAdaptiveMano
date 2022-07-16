@@ -8,3 +8,4 @@ PRIVATE_KEY_FILE_PATH = "/home/smith/.ssh/id_rsa820"
 
 BESS_SERVER_USER = "smith"
 BESS_SERVER_USER_PASSWORD = "smith@netlab325"
+BESS_SERVER_DATAPATH_MAC = "90:e2:ba:b1:4d:0e"

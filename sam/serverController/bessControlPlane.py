@@ -34,7 +34,7 @@ class BessControlPlane(object):
                 count = count - 1
         return False
 
-    def _checkResponse(self,response):
+    def _checkResponse(self, response):
         if response.error.code != 0:
             self.logger.error( str(response.error) )
             raise ValueError('bess cmd failed.')

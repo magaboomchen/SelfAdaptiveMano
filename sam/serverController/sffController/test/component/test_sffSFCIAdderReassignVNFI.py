@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+raise ValueError("Haven't refactor!")
+
 import time
 import logging
 

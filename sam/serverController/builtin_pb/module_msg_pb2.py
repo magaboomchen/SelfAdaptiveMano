@@ -13,19 +13,81 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-import sam.serverController.builtin_pb.util_msg_pb2 as util__msg__pb2
+import util_msg_pb2 as util__msg__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='module_msg.proto',
   package='bess.pb',
   syntax='proto3',
-  serialized_pb=_b('\n\x10module_msg.proto\x12\x07\x62\x65ss.pb\x1a\x0eutil_msg.proto\"\n\n\x08\x45mptyArg\"\x14\n\x12\x42PFCommandClearArg\"K\n\x17\x45xactMatchCommandAddArg\x12\x0c\n\x04gate\x18\x01 \x01(\x04\x12\"\n\x06\x66ields\x18\x02 \x03(\x0b\x32\x12.bess.pb.FieldData\"@\n\x1a\x45xactMatchCommandDeleteArg\x12\"\n\x06\x66ields\x18\x02 \x03(\x0b\x32\x12.bess.pb.FieldData\"\x1b\n\x19\x45xactMatchCommandClearArg\"2\n\"ExactMatchCommandSetDefaultGateArg\x12\x0c\n\x04gate\x18\x01 \x01(\x04\"*\n\x19\x46lowGenCommandSetBurstArg\x12\r\n\x05\x62urst\x18\x01 \x01(\x04\"G\n\x17HashLBCommandSetModeArg\x12\x0c\n\x04mode\x18\x01 \x01(\t\x12\x1e\n\x06\x66ields\x18\x02 \x03(\x0b\x32\x0e.bess.pb.Field\")\n\x18HashLBCommandSetGatesArg\x12\r\n\x05gates\x18\x01 \x03(\x03\"I\n\x15IPLookupCommandAddArg\x12\x0e\n\x06prefix\x18\x01 \x01(\t\x12\x12\n\nprefix_len\x18\x02 \x01(\x04\x12\x0c\n\x04gate\x18\x03 \x01(\x04\">\n\x18IPLookupCommandDeleteArg\x12\x0e\n\x06prefix\x18\x01 \x01(\t\x12\x12\n\nprefix_len\x18\x02 \x01(\x04\"\x19\n\x17IPLookupCommandClearArg\"u\n\x16L2ForwardCommandAddArg\x12\x36\n\x07\x65ntries\x18\x01 \x03(\x0b\x32%.bess.pb.L2ForwardCommandAddArg.Entry\x1a#\n\x05\x45ntry\x12\x0c\n\x04\x61\x64\x64r\x18\x01 \x01(\t\x12\x0c\n\x04gate\x18\x02 \x01(\x03\"*\n\x19L2ForwardCommandDeleteArg\x12\r\n\x05\x61\x64\x64rs\x18\x01 \x03(\t\"1\n!L2ForwardCommandSetDefaultGateArg\x12\x0c\n\x04gate\x18\x01 \x01(\x03\"*\n\x19L2ForwardCommandLookupArg\x12\r\n\x05\x61\x64\x64rs\x18\x01 \x03(\t\"/\n\x1eL2ForwardCommandLookupResponse\x12\r\n\x05gates\x18\x01 \x03(\x04\"N\n\x1bL2ForwardCommandPopulateArg\x12\x0c\n\x04\x62\x61se\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x03\x12\x12\n\ngate_count\x18\x03 \x01(\x03\"e\n\x1bMeasureCommandGetSummaryArg\x12\r\n\x05\x63lear\x18\x01 \x01(\x08\x12\x1b\n\x13latency_percentiles\x18\x02 \x03(\x01\x12\x1a\n\x12jitter_percentiles\x18\x03 \x03(\x01\"\x88\x03\n MeasureCommandGetSummaryResponse\x12\x11\n\ttimestamp\x18\x01 \x01(\x01\x12\x0f\n\x07packets\x18\x02 \x01(\x04\x12\x0c\n\x04\x62its\x18\x03 \x01(\x04\x12\x44\n\x07latency\x18\x04 \x01(\x0b\x32\x33.bess.pb.MeasureCommandGetSummaryResponse.Histogram\x12\x43\n\x06jitter\x18\x05 \x01(\x0b\x32\x33.bess.pb.MeasureCommandGetSummaryResponse.Histogram\x1a\xa6\x01\n\tHistogram\x12\r\n\x05\x63ount\x18\x01 \x01(\x04\x12\x13\n\x0b\x61\x62ove_range\x18\x02 \x01(\x04\x12\x15\n\rresolution_ns\x18\x08 \x01(\x04\x12\x0e\n\x06min_ns\x18\x03 \x01(\x04\x12\x0e\n\x06\x61vg_ns\x18\x04 \x01(\x04\x12\x0e\n\x06max_ns\x18\x05 \x01(\x04\x12\x10\n\x08total_ns\x18\x06 \x01(\x04\x12\x1c\n\x14percentile_values_ns\x18\x07 \x03(\x04\"I\n\x06\x44RRArg\x12\x11\n\tnum_flows\x18\x01 \x01(\r\x12\x0f\n\x07quantum\x18\x02 \x01(\x04\x12\x1b\n\x13max_flow_queue_size\x18\x03 \x01(\r\" \n\rDRRQuantumArg\x12\x0f\n\x07quantum\x18\x01 \x01(\r\"0\n\x16\x44RRMaxFlowQueueSizeArg\x12\x16\n\x0emax_queue_size\x18\x01 \x01(\r\"*\n\x19PortIncCommandSetBurstArg\x12\r\n\x05\x62urst\x18\x01 \x01(\x04\"+\n\x1aQueueIncCommandSetBurstArg\x12\r\n\x05\x62urst\x18\x01 \x01(\x04\"(\n\x17QueueCommandSetBurstArg\x12\r\n\x05\x62urst\x18\x01 \x01(\x04\"&\n\x16QueueCommandSetSizeArg\x12\x0c\n\x04size\x18\x01 \x01(\x04\"\x1a\n\x18QueueCommandGetStatusArg\"q\n\x1dQueueCommandGetStatusResponse\x12\r\n\x05\x63ount\x18\x01 \x01(\x04\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x10\n\x08\x65nqueued\x18\x03 \x01(\x04\x12\x10\n\x08\x64\x65queued\x18\x04 \x01(\x04\x12\x0f\n\x07\x64ropped\x18\x05 \x01(\x04\"\x1d\n\x1bRandomUpdateCommandClearArg\"\x18\n\x16RewriteCommandClearArg\"\x17\n\x15UpdateCommandClearArg\"\x83\x01\n\x1aWildcardMatchCommandAddArg\x12\x0c\n\x04gate\x18\x01 \x01(\x04\x12\x10\n\x08priority\x18\x02 \x01(\x03\x12\"\n\x06values\x18\x03 \x03(\x0b\x32\x12.bess.pb.FieldData\x12!\n\x05masks\x18\x04 \x03(\x0b\x32\x12.bess.pb.FieldData\"f\n\x1dWildcardMatchCommandDeleteArg\x12\"\n\x06values\x18\x01 \x03(\x0b\x32\x12.bess.pb.FieldData\x12!\n\x05masks\x18\x02 \x03(\x0b\x32\x12.bess.pb.FieldData\"\x1e\n\x1cWildcardMatchCommandClearArg\"5\n%WildcardMatchCommandSetDefaultGateArg\x12\x0c\n\x04gate\x18\x01 \x01(\x04\"\x9c\x01\n\x06\x41\x43LArg\x12#\n\x05rules\x18\x01 \x03(\x0b\x32\x14.bess.pb.ACLArg.Rule\x1am\n\x04Rule\x12\x0e\n\x06src_ip\x18\x01 \x01(\t\x12\x0e\n\x06\x64st_ip\x18\x02 \x01(\t\x12\x10\n\x08src_port\x18\x03 \x01(\r\x12\x10\n\x08\x64st_port\x18\x04 \x01(\r\x12\x13\n\x0b\x65stablished\x18\x05 \x01(\x08\x12\x0c\n\x04\x64rop\x18\x06 \x01(\x08\"k\n\x06\x42PFArg\x12\'\n\x07\x66ilters\x18\x01 \x03(\x0b\x32\x16.bess.pb.BPFArg.Filter\x1a\x38\n\x06\x46ilter\x12\x10\n\x08priority\x18\x01 \x01(\x03\x12\x0e\n\x06\x66ilter\x18\x02 \x01(\t\x12\x0c\n\x04gate\x18\x03 \x01(\x03\"\x0b\n\tBufferArg\"Y\n\tBypassArg\x12\x18\n\x10\x63ycles_per_batch\x18\x01 \x01(\r\x12\x19\n\x11\x63ycles_per_packet\x18\x02 \x01(\r\x12\x17\n\x0f\x63ycles_per_byte\x18\x03 \x01(\r\"\x1b\n\x07\x44umpArg\x12\x10\n\x08interval\x18\x01 \x01(\x01\"\x0f\n\rEtherEncapArg\"R\n\rExactMatchArg\x12\x1e\n\x06\x66ields\x18\x01 \x03(\x0b\x32\x0e.bess.pb.Field\x12!\n\x05masks\x18\x02 \x03(\x0b\x32\x12.bess.pb.FieldData\"Y\n\x10\x45xactMatchConfig\x12\x14\n\x0c\x64\x65\x66\x61ult_gate\x18\x01 \x01(\x04\x12/\n\x05rules\x18\x02 \x03(\x0b\x32 .bess.pb.ExactMatchCommandAddArg\"\xea\x01\n\nFlowGenArg\x12\x10\n\x08template\x18\x01 \x01(\x0c\x12\x0b\n\x03pps\x18\x02 \x01(\x01\x12\x11\n\tflow_rate\x18\x03 \x01(\x01\x12\x15\n\rflow_duration\x18\x04 \x01(\x01\x12\x0f\n\x07\x61rrival\x18\x05 \x01(\t\x12\x10\n\x08\x64uration\x18\x06 \x01(\t\x12\x14\n\x0cquick_rampup\x18\x07 \x01(\x08\x12\x14\n\x0cip_src_range\x18\x08 \x01(\r\x12\x14\n\x0cip_dst_range\x18\t \x01(\r\x12\x16\n\x0eport_src_range\x18\n \x01(\r\x12\x16\n\x0eport_dst_range\x18\x0b \x01(\r\" \n\x0fGenericDecapArg\x12\r\n\x05\x62ytes\x18\x01 \x01(\x04\"\xa9\x01\n\x0fGenericEncapArg\x12\x33\n\x06\x66ields\x18\x01 \x03(\x0b\x32#.bess.pb.GenericEncapArg.EncapField\x1a\x61\n\nEncapField\x12\x0c\n\x04size\x18\x01 \x01(\x04\x12\x13\n\tattribute\x18\x02 \x01(\tH\x00\x12#\n\x05value\x18\x03 \x01(\x0b\x32\x12.bess.pb.FieldDataH\x00\x42\x0b\n\tinsertion\"H\n\tHashLBArg\x12\r\n\x05gates\x18\x01 \x03(\x03\x12\x0c\n\x04mode\x18\x02 \x01(\t\x12\x1e\n\x06\x66ields\x18\x03 \x03(\x0b\x32\x0e.bess.pb.Field\"\x0c\n\nIPEncapArg\"3\n\x0bIPLookupArg\x12\x11\n\tmax_rules\x18\x01 \x01(\r\x12\x11\n\tmax_tbl8s\x18\x02 \x01(\r\",\n\x0cL2ForwardArg\x12\x0c\n\x04size\x18\x01 \x01(\x03\x12\x0e\n\x06\x62ucket\x18\x02 \x01(\x03\"\x0c\n\nMACSwapArg\"o\n\nMeasureArg\x12\x0e\n\x06offset\x18\x02 \x01(\x04\x12\x1a\n\x12jitter_sample_prob\x18\x03 \x01(\x01\x12\x16\n\x0elatency_ns_max\x18\x04 \x01(\x04\x12\x1d\n\x15latency_ns_resolution\x18\x05 \x01(\r\"\n\n\x08MergeArg\"\xb7\x02\n\x0fMetadataTestArg\x12\x30\n\x04read\x18\x01 \x03(\x0b\x32\".bess.pb.MetadataTestArg.ReadEntry\x12\x32\n\x05write\x18\x02 \x03(\x0b\x32#.bess.pb.MetadataTestArg.WriteEntry\x12\x34\n\x06update\x18\x03 \x03(\x0b\x32$.bess.pb.MetadataTestArg.UpdateEntry\x1a+\n\tReadEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\x1a,\n\nWriteEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\x1a-\n\x0bUpdateEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\"\xcd\x01\n\x06NATArg\x12\x32\n\text_addrs\x18\x01 \x03(\x0b\x32\x1f.bess.pb.NATArg.ExternalAddress\x1a:\n\tPortRange\x12\r\n\x05\x62\x65gin\x18\x01 \x01(\r\x12\x0b\n\x03\x65nd\x18\x02 \x01(\r\x12\x11\n\tsuspended\x18\x03 \x01(\x08\x1aS\n\x0f\x45xternalAddress\x12\x10\n\x08\x65xt_addr\x18\x01 \x01(\t\x12.\n\x0bport_ranges\x18\x02 \x03(\x0b\x32\x19.bess.pb.NATArg.PortRange\"\xf4\x01\n\x0cStaticNATArg\x12\x35\n\x05pairs\x18\x01 \x03(\x0b\x32&.bess.pb.StaticNATArg.AddressRangePair\x1a*\n\x0c\x41\x64\x64ressRange\x12\r\n\x05start\x18\x01 \x01(\t\x12\x0b\n\x03\x65nd\x18\x02 \x01(\t\x1a\x80\x01\n\x10\x41\x64\x64ressRangePair\x12\x35\n\tint_range\x18\x01 \x01(\x0b\x32\".bess.pb.StaticNATArg.AddressRange\x12\x35\n\text_range\x18\x02 \x01(\x0b\x32\".bess.pb.StaticNATArg.AddressRange\"\t\n\x07NoOpArg\",\n\nPortIncArg\x12\x0c\n\x04port\x18\x01 \x01(\t\x12\x10\n\x08prefetch\x18\x02 \x01(\x08\"\x1a\n\nPortOutArg\x12\x0c\n\x04port\x18\x01 \x01(\t\":\n\x0bQueueIncArg\x12\x0c\n\x04port\x18\x01 \x01(\t\x12\x0b\n\x03qid\x18\x02 \x01(\x04\x12\x10\n\x08prefetch\x18\x03 \x01(\x08\"(\n\x0bQueueOutArg\x12\x0c\n\x04port\x18\x01 \x01(\t\x12\x0b\n\x03qid\x18\x02 \x01(\x04\"@\n\x08QueueArg\x12\x0c\n\x04size\x18\x01 \x01(\x04\x12\x10\n\x08prefetch\x18\x02 \x01(\x08\x12\x14\n\x0c\x62\x61\x63kpressure\x18\x03 \x01(\x08\"2\n\x0eRandomSplitArg\x12\x11\n\tdrop_rate\x18\x01 \x01(\x01\x12\r\n\x05gates\x18\x02 \x03(\x03\"5\n RandomSplitCommandSetDroprateArg\x12\x11\n\tdrop_rate\x18\x01 \x01(\x01\".\n\x1dRandomSplitCommandSetGatesArg\x12\r\n\x05gates\x18\x01 \x03(\x03\"\x82\x01\n\x0fRandomUpdateArg\x12.\n\x06\x66ields\x18\x01 \x03(\x0b\x32\x1e.bess.pb.RandomUpdateArg.Field\x1a?\n\x05\x46ield\x12\x0e\n\x06offset\x18\x01 \x01(\x03\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x0b\n\x03min\x18\x03 \x01(\x04\x12\x0b\n\x03max\x18\x04 \x01(\x04\"\x1f\n\nRewriteArg\x12\x11\n\ttemplates\x18\x01 \x03(\x0c\"-\n\x1cRoundRobinCommandSetGatesArg\x12\r\n\x05gates\x18\x01 \x03(\x03\"+\n\x1bRoundRobinCommandSetModeArg\x12\x0c\n\x04mode\x18\x01 \x01(\t\",\n\rRoundRobinArg\x12\r\n\x05gates\x18\x01 \x03(\x03\x12\x0c\n\x04mode\x18\x02 \x01(\t\"\x1d\n\x0cReplicateArg\x12\r\n\x05gates\x18\x01 \x03(\x03\",\n\x1bReplicateCommandSetGatesArg\x12\r\n\x05gates\x18\x01 \x03(\x03\"\xd2\x01\n\x0eSetMetadataArg\x12\x30\n\x05\x61ttrs\x18\x01 \x03(\x0b\x32!.bess.pb.SetMetadataArg.Attribute\x1a\x8d\x01\n\tAttribute\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x13\n\tvalue_int\x18\x03 \x01(\x04H\x00\x12\x13\n\tvalue_bin\x18\x04 \x01(\x0cH\x00\x12\x0e\n\x06offset\x18\x05 \x01(\x05\x12\x0c\n\x04mask\x18\x06 \x01(\x0c\x12\x13\n\x0brshift_bits\x18\x07 \x01(\x05\x42\x07\n\x05value\"\t\n\x07SinkArg\")\n\x18SourceCommandSetBurstArg\x12\r\n\x05\x62urst\x18\x01 \x01(\x04\".\n\x1aSourceCommandSetPktSizeArg\x12\x10\n\x08pkt_size\x18\x01 \x01(\x04\"\x1d\n\tSourceArg\x12\x10\n\x08pkt_size\x18\x01 \x01(\x04\"\x1f\n\rIPChecksumArg\x12\x0e\n\x06verify\x18\x01 \x01(\x08\"G\n\x08SplitArg\x12\x0c\n\x04size\x18\x01 \x01(\x04\x12\x13\n\tattribute\x18\x02 \x01(\tH\x00\x12\x10\n\x06offset\x18\x03 \x01(\x03H\x00\x42\x06\n\x04type\"\x1e\n\x0cTimestampArg\x12\x0e\n\x06offset\x18\x01 \x01(\x04\"k\n\tUpdateArg\x12(\n\x06\x66ields\x18\x01 \x03(\x0b\x32\x18.bess.pb.UpdateArg.Field\x1a\x34\n\x05\x46ield\x12\x0e\n\x06offset\x18\x01 \x01(\x03\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\r\n\x05value\x18\x03 \x01(\x04\"_\n\x0cUrlFilterArg\x12,\n\tblacklist\x18\x01 \x03(\x0b\x32\x19.bess.pb.UrlFilterArg.Url\x1a!\n\x03Url\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\"?\n\x0fUrlFilterConfig\x12,\n\tblacklist\x18\x01 \x03(\x0b\x32\x19.bess.pb.UrlFilterArg.Url\"\x0c\n\nVLANPopArg\"\x1a\n\x0bVLANPushArg\x12\x0b\n\x03tci\x18\x01 \x01(\x04\"\x0e\n\x0cVLANSplitArg\"\x0f\n\rVXLANDecapArg\" \n\rVXLANEncapArg\x12\x0f\n\x07\x64stport\x18\x01 \x01(\x04\"2\n\x10WildcardMatchArg\x12\x1e\n\x06\x66ields\x18\x01 \x03(\x0b\x32\x0e.bess.pb.Field\"_\n\x13WildcardMatchConfig\x12\x14\n\x0c\x64\x65\x66\x61ult_gate\x18\x01 \x01(\x04\x12\x32\n\x05rules\x18\x02 \x03(\x0b\x32#.bess.pb.WildcardMatchCommandAddArg\"/\n\x0f\x41rpResponderArg\x12\n\n\x02ip\x18\x01 \x01(\t\x12\x10\n\x08mac_addr\x18\x02 \x01(\t\">\n\nMplsPopArg\x12\x19\n\x11remove_eth_header\x18\x01 \x01(\x08\x12\x15\n\rnext_eth_type\x18\x02 \x01(\r\"\x84\x01\n\x0eWorkerSplitArg\x12>\n\x0cworker_gates\x18\x01 \x03(\x0b\x32(.bess.pb.WorkerSplitArg.WorkerGatesEntry\x1a\x32\n\x10WorkerGatesEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\r:\x02\x38\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x10module_msg.proto\x12\x07\x62\x65ss.pb\x1a\x0eutil_msg.proto\"/\n\x1aPingResponderCommandAddArg\x12\x11\n\tipv4_addr\x18\x01 \x01(\t\"2\n\x1dPingResponderCommandDeleteArg\x12\x11\n\tipv4_addr\x18\x01 \x01(\t\"\n\n\x08\x45mptyArg\"\x14\n\x12\x42PFCommandClearArg\"K\n\x17\x45xactMatchCommandAddArg\x12\x0c\n\x04gate\x18\x01 \x01(\x04\x12\"\n\x06\x66ields\x18\x02 \x03(\x0b\x32\x12.bess.pb.FieldData\"@\n\x1a\x45xactMatchCommandDeleteArg\x12\"\n\x06\x66ields\x18\x02 \x03(\x0b\x32\x12.bess.pb.FieldData\"\x1b\n\x19\x45xactMatchCommandClearArg\"2\n\"ExactMatchCommandSetDefaultGateArg\x12\x0c\n\x04gate\x18\x01 \x01(\x04\"*\n\x19\x46lowGenCommandSetBurstArg\x12\r\n\x05\x62urst\x18\x01 \x01(\x04\"G\n\x17HashLBCommandSetModeArg\x12\x0c\n\x04mode\x18\x01 \x01(\t\x12\x1e\n\x06\x66ields\x18\x02 \x03(\x0b\x32\x0e.bess.pb.Field\")\n\x18HashLBCommandSetGatesArg\x12\r\n\x05gates\x18\x01 \x03(\x03\"I\n\x15IPLookupCommandAddArg\x12\x0e\n\x06prefix\x18\x01 \x01(\t\x12\x12\n\nprefix_len\x18\x02 \x01(\x04\x12\x0c\n\x04gate\x18\x03 \x01(\x04\">\n\x18IPLookupCommandDeleteArg\x12\x0e\n\x06prefix\x18\x01 \x01(\t\x12\x12\n\nprefix_len\x18\x02 \x01(\x04\"\x19\n\x17IPLookupCommandClearArg\"u\n\x16L2ForwardCommandAddArg\x12\x36\n\x07\x65ntries\x18\x01 \x03(\x0b\x32%.bess.pb.L2ForwardCommandAddArg.Entry\x1a#\n\x05\x45ntry\x12\x0c\n\x04\x61\x64\x64r\x18\x01 \x01(\t\x12\x0c\n\x04gate\x18\x02 \x01(\x03\"*\n\x19L2ForwardCommandDeleteArg\x12\r\n\x05\x61\x64\x64rs\x18\x01 \x03(\t\"1\n!L2ForwardCommandSetDefaultGateArg\x12\x0c\n\x04gate\x18\x01 \x01(\x03\"*\n\x19L2ForwardCommandLookupArg\x12\r\n\x05\x61\x64\x64rs\x18\x01 \x03(\t\"/\n\x1eL2ForwardCommandLookupResponse\x12\r\n\x05gates\x18\x01 \x03(\x04\"N\n\x1bL2ForwardCommandPopulateArg\x12\x0c\n\x04\x62\x61se\x18\x01 \x01(\t\x12\r\n\x05\x63ount\x18\x02 \x01(\x03\x12\x12\n\ngate_count\x18\x03 \x01(\x03\"e\n\x1bMeasureCommandGetSummaryArg\x12\r\n\x05\x63lear\x18\x01 \x01(\x08\x12\x1b\n\x13latency_percentiles\x18\x02 \x03(\x01\x12\x1a\n\x12jitter_percentiles\x18\x03 \x03(\x01\"\x88\x03\n MeasureCommandGetSummaryResponse\x12\x11\n\ttimestamp\x18\x01 \x01(\x01\x12\x0f\n\x07packets\x18\x02 \x01(\x04\x12\x0c\n\x04\x62its\x18\x03 \x01(\x04\x12\x44\n\x07latency\x18\x04 \x01(\x0b\x32\x33.bess.pb.MeasureCommandGetSummaryResponse.Histogram\x12\x43\n\x06jitter\x18\x05 \x01(\x0b\x32\x33.bess.pb.MeasureCommandGetSummaryResponse.Histogram\x1a\xa6\x01\n\tHistogram\x12\r\n\x05\x63ount\x18\x01 \x01(\x04\x12\x13\n\x0b\x61\x62ove_range\x18\x02 \x01(\x04\x12\x15\n\rresolution_ns\x18\x08 \x01(\x04\x12\x0e\n\x06min_ns\x18\x03 \x01(\x04\x12\x0e\n\x06\x61vg_ns\x18\x04 \x01(\x04\x12\x0e\n\x06max_ns\x18\x05 \x01(\x04\x12\x10\n\x08total_ns\x18\x06 \x01(\x04\x12\x1c\n\x14percentile_values_ns\x18\x07 \x03(\x04\"I\n\x06\x44RRArg\x12\x11\n\tnum_flows\x18\x01 \x01(\r\x12\x0f\n\x07quantum\x18\x02 \x01(\x04\x12\x1b\n\x13max_flow_queue_size\x18\x03 \x01(\r\" \n\rDRRQuantumArg\x12\x0f\n\x07quantum\x18\x01 \x01(\r\"0\n\x16\x44RRMaxFlowQueueSizeArg\x12\x16\n\x0emax_queue_size\x18\x01 \x01(\r\"*\n\x19PortIncCommandSetBurstArg\x12\r\n\x05\x62urst\x18\x01 \x01(\x04\"+\n\x1aQueueIncCommandSetBurstArg\x12\r\n\x05\x62urst\x18\x01 \x01(\x04\"(\n\x17QueueCommandSetBurstArg\x12\r\n\x05\x62urst\x18\x01 \x01(\x04\"&\n\x16QueueCommandSetSizeArg\x12\x0c\n\x04size\x18\x01 \x01(\x04\"\x1a\n\x18QueueCommandGetStatusArg\"q\n\x1dQueueCommandGetStatusResponse\x12\r\n\x05\x63ount\x18\x01 \x01(\x04\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x10\n\x08\x65nqueued\x18\x03 \x01(\x04\x12\x10\n\x08\x64\x65queued\x18\x04 \x01(\x04\x12\x0f\n\x07\x64ropped\x18\x05 \x01(\x04\"\x1d\n\x1bRandomUpdateCommandClearArg\"\x18\n\x16RewriteCommandClearArg\"\x17\n\x15UpdateCommandClearArg\"\x83\x01\n\x1aWildcardMatchCommandAddArg\x12\x0c\n\x04gate\x18\x01 \x01(\x04\x12\x10\n\x08priority\x18\x02 \x01(\x03\x12\"\n\x06values\x18\x03 \x03(\x0b\x32\x12.bess.pb.FieldData\x12!\n\x05masks\x18\x04 \x03(\x0b\x32\x12.bess.pb.FieldData\"f\n\x1dWildcardMatchCommandDeleteArg\x12\"\n\x06values\x18\x01 \x03(\x0b\x32\x12.bess.pb.FieldData\x12!\n\x05masks\x18\x02 \x03(\x0b\x32\x12.bess.pb.FieldData\"\x1e\n\x1cWildcardMatchCommandClearArg\"5\n%WildcardMatchCommandSetDefaultGateArg\x12\x0c\n\x04gate\x18\x01 \x01(\x04\"\x9c\x01\n\x06\x41\x43LArg\x12#\n\x05rules\x18\x01 \x03(\x0b\x32\x14.bess.pb.ACLArg.Rule\x1am\n\x04Rule\x12\x0e\n\x06src_ip\x18\x01 \x01(\t\x12\x0e\n\x06\x64st_ip\x18\x02 \x01(\t\x12\x10\n\x08src_port\x18\x03 \x01(\r\x12\x10\n\x08\x64st_port\x18\x04 \x01(\r\x12\x13\n\x0b\x65stablished\x18\x05 \x01(\x08\x12\x0c\n\x04\x64rop\x18\x06 \x01(\x08\"k\n\x06\x42PFArg\x12\'\n\x07\x66ilters\x18\x01 \x03(\x0b\x32\x16.bess.pb.BPFArg.Filter\x1a\x38\n\x06\x46ilter\x12\x10\n\x08priority\x18\x01 \x01(\x03\x12\x0e\n\x06\x66ilter\x18\x02 \x01(\t\x12\x0c\n\x04gate\x18\x03 \x01(\x03\"\x0b\n\tBufferArg\"Y\n\tBypassArg\x12\x18\n\x10\x63ycles_per_batch\x18\x01 \x01(\r\x12\x19\n\x11\x63ycles_per_packet\x18\x02 \x01(\r\x12\x17\n\x0f\x63ycles_per_byte\x18\x03 \x01(\r\"\x1b\n\x07\x44umpArg\x12\x10\n\x08interval\x18\x01 \x01(\x01\"\x0f\n\rEtherEncapArg\"R\n\rExactMatchArg\x12\x1e\n\x06\x66ields\x18\x01 \x03(\x0b\x32\x0e.bess.pb.Field\x12!\n\x05masks\x18\x02 \x03(\x0b\x32\x12.bess.pb.FieldData\"Y\n\x10\x45xactMatchConfig\x12\x14\n\x0c\x64\x65\x66\x61ult_gate\x18\x01 \x01(\x04\x12/\n\x05rules\x18\x02 \x03(\x0b\x32 .bess.pb.ExactMatchCommandAddArg\"\xea\x01\n\nFlowGenArg\x12\x10\n\x08template\x18\x01 \x01(\x0c\x12\x0b\n\x03pps\x18\x02 \x01(\x01\x12\x11\n\tflow_rate\x18\x03 \x01(\x01\x12\x15\n\rflow_duration\x18\x04 \x01(\x01\x12\x0f\n\x07\x61rrival\x18\x05 \x01(\t\x12\x10\n\x08\x64uration\x18\x06 \x01(\t\x12\x14\n\x0cquick_rampup\x18\x07 \x01(\x08\x12\x14\n\x0cip_src_range\x18\x08 \x01(\r\x12\x14\n\x0cip_dst_range\x18\t \x01(\r\x12\x16\n\x0eport_src_range\x18\n \x01(\r\x12\x16\n\x0eport_dst_range\x18\x0b \x01(\r\" \n\x0fGenericDecapArg\x12\r\n\x05\x62ytes\x18\x01 \x01(\x04\"\xa9\x01\n\x0fGenericEncapArg\x12\x33\n\x06\x66ields\x18\x01 \x03(\x0b\x32#.bess.pb.GenericEncapArg.EncapField\x1a\x61\n\nEncapField\x12\x0c\n\x04size\x18\x01 \x01(\x04\x12\x13\n\tattribute\x18\x02 \x01(\tH\x00\x12#\n\x05value\x18\x03 \x01(\x0b\x32\x12.bess.pb.FieldDataH\x00\x42\x0b\n\tinsertion\"H\n\tHashLBArg\x12\r\n\x05gates\x18\x01 \x03(\x03\x12\x0c\n\x04mode\x18\x02 \x01(\t\x12\x1e\n\x06\x66ields\x18\x03 \x03(\x0b\x32\x0e.bess.pb.Field\"\x0c\n\nIPEncapArg\"3\n\x0bIPLookupArg\x12\x11\n\tmax_rules\x18\x01 \x01(\r\x12\x11\n\tmax_tbl8s\x18\x02 \x01(\r\",\n\x0cL2ForwardArg\x12\x0c\n\x04size\x18\x01 \x01(\x03\x12\x0e\n\x06\x62ucket\x18\x02 \x01(\x03\"\x0c\n\nMACSwapArg\"\x8e\x01\n\nMeasureArg\x12\x10\n\x06offset\x18\x02 \x01(\x04H\x00\x12\x13\n\tattr_name\x18\x06 \x01(\tH\x00\x12\x1a\n\x12jitter_sample_prob\x18\x03 \x01(\x01\x12\x16\n\x0elatency_ns_max\x18\x04 \x01(\x04\x12\x1d\n\x15latency_ns_resolution\x18\x05 \x01(\rB\x06\n\x04type\"\n\n\x08MergeArg\"\xb7\x02\n\x0fMetadataTestArg\x12\x30\n\x04read\x18\x01 \x03(\x0b\x32\".bess.pb.MetadataTestArg.ReadEntry\x12\x32\n\x05write\x18\x02 \x03(\x0b\x32#.bess.pb.MetadataTestArg.WriteEntry\x12\x34\n\x06update\x18\x03 \x03(\x0b\x32$.bess.pb.MetadataTestArg.UpdateEntry\x1a+\n\tReadEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\x1a,\n\nWriteEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\x1a-\n\x0bUpdateEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\"\xcd\x01\n\x06NATArg\x12\x32\n\text_addrs\x18\x01 \x03(\x0b\x32\x1f.bess.pb.NATArg.ExternalAddress\x1a:\n\tPortRange\x12\r\n\x05\x62\x65gin\x18\x01 \x01(\r\x12\x0b\n\x03\x65nd\x18\x02 \x01(\r\x12\x11\n\tsuspended\x18\x03 \x01(\x08\x1aS\n\x0f\x45xternalAddress\x12\x10\n\x08\x65xt_addr\x18\x01 \x01(\t\x12.\n\x0bport_ranges\x18\x02 \x03(\x0b\x32\x19.bess.pb.NATArg.PortRange\"\xf4\x01\n\x0cStaticNATArg\x12\x35\n\x05pairs\x18\x01 \x03(\x0b\x32&.bess.pb.StaticNATArg.AddressRangePair\x1a*\n\x0c\x41\x64\x64ressRange\x12\r\n\x05start\x18\x01 \x01(\t\x12\x0b\n\x03\x65nd\x18\x02 \x01(\t\x1a\x80\x01\n\x10\x41\x64\x64ressRangePair\x12\x35\n\tint_range\x18\x01 \x01(\x0b\x32\".bess.pb.StaticNATArg.AddressRange\x12\x35\n\text_range\x18\x02 \x01(\x0b\x32\".bess.pb.StaticNATArg.AddressRange\"\t\n\x07NoOpArg\",\n\nPortIncArg\x12\x0c\n\x04port\x18\x01 \x01(\t\x12\x10\n\x08prefetch\x18\x02 \x01(\x08\"\x1a\n\nPortOutArg\x12\x0c\n\x04port\x18\x01 \x01(\t\":\n\x0bQueueIncArg\x12\x0c\n\x04port\x18\x01 \x01(\t\x12\x0b\n\x03qid\x18\x02 \x01(\x04\x12\x10\n\x08prefetch\x18\x03 \x01(\x08\"(\n\x0bQueueOutArg\x12\x0c\n\x04port\x18\x01 \x01(\t\x12\x0b\n\x03qid\x18\x02 \x01(\x04\"@\n\x08QueueArg\x12\x0c\n\x04size\x18\x01 \x01(\x04\x12\x10\n\x08prefetch\x18\x02 \x01(\x08\x12\x14\n\x0c\x62\x61\x63kpressure\x18\x03 \x01(\x08\"2\n\x0eRandomSplitArg\x12\x11\n\tdrop_rate\x18\x01 \x01(\x01\x12\r\n\x05gates\x18\x02 \x03(\x03\"5\n RandomSplitCommandSetDroprateArg\x12\x11\n\tdrop_rate\x18\x01 \x01(\x01\".\n\x1dRandomSplitCommandSetGatesArg\x12\r\n\x05gates\x18\x01 \x03(\x03\"\x82\x01\n\x0fRandomUpdateArg\x12.\n\x06\x66ields\x18\x01 \x03(\x0b\x32\x1e.bess.pb.RandomUpdateArg.Field\x1a?\n\x05\x46ield\x12\x0e\n\x06offset\x18\x01 \x01(\x03\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x0b\n\x03min\x18\x03 \x01(\x04\x12\x0b\n\x03max\x18\x04 \x01(\x04\"\x1f\n\nRewriteArg\x12\x11\n\ttemplates\x18\x01 \x03(\x0c\"-\n\x1cRoundRobinCommandSetGatesArg\x12\r\n\x05gates\x18\x01 \x03(\x03\"+\n\x1bRoundRobinCommandSetModeArg\x12\x0c\n\x04mode\x18\x01 \x01(\t\",\n\rRoundRobinArg\x12\r\n\x05gates\x18\x01 \x03(\x03\x12\x0c\n\x04mode\x18\x02 \x01(\t\"\x1d\n\x0cReplicateArg\x12\r\n\x05gates\x18\x01 \x03(\x03\",\n\x1bReplicateCommandSetGatesArg\x12\r\n\x05gates\x18\x01 \x03(\x03\"\xd2\x01\n\x0eSetMetadataArg\x12\x30\n\x05\x61ttrs\x18\x01 \x03(\x0b\x32!.bess.pb.SetMetadataArg.Attribute\x1a\x8d\x01\n\tAttribute\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x13\n\tvalue_int\x18\x03 \x01(\x04H\x00\x12\x13\n\tvalue_bin\x18\x04 \x01(\x0cH\x00\x12\x0e\n\x06offset\x18\x05 \x01(\x05\x12\x0c\n\x04mask\x18\x06 \x01(\x0c\x12\x13\n\x0brshift_bits\x18\x07 \x01(\x05\x42\x07\n\x05value\"\t\n\x07SinkArg\")\n\x18SourceCommandSetBurstArg\x12\r\n\x05\x62urst\x18\x01 \x01(\x04\".\n\x1aSourceCommandSetPktSizeArg\x12\x10\n\x08pkt_size\x18\x01 \x01(\x04\"\x1d\n\tSourceArg\x12\x10\n\x08pkt_size\x18\x01 \x01(\x04\"\x1f\n\rIPChecksumArg\x12\x0e\n\x06verify\x18\x01 \x01(\x08\"\x1f\n\rL4ChecksumArg\x12\x0e\n\x06verify\x18\x01 \x01(\x08\"G\n\x08SplitArg\x12\x0c\n\x04size\x18\x01 \x01(\x04\x12\x13\n\tattribute\x18\x02 \x01(\tH\x00\x12\x10\n\x06offset\x18\x03 \x01(\x03H\x00\x42\x06\n\x04type\"=\n\x0cTimestampArg\x12\x10\n\x06offset\x18\x01 \x01(\x04H\x00\x12\x13\n\tattr_name\x18\x02 \x01(\tH\x00\x42\x06\n\x04type\"k\n\tUpdateArg\x12(\n\x06\x66ields\x18\x01 \x03(\x0b\x32\x18.bess.pb.UpdateArg.Field\x1a\x34\n\x05\x46ield\x12\x0e\n\x06offset\x18\x01 \x01(\x03\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\r\n\x05value\x18\x03 \x01(\x04\"_\n\x0cUrlFilterArg\x12,\n\tblacklist\x18\x01 \x03(\x0b\x32\x19.bess.pb.UrlFilterArg.Url\x1a!\n\x03Url\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x0c\n\x04path\x18\x02 \x01(\t\"?\n\x0fUrlFilterConfig\x12,\n\tblacklist\x18\x01 \x03(\x0b\x32\x19.bess.pb.UrlFilterArg.Url\"\x0c\n\nVLANPopArg\"\x1a\n\x0bVLANPushArg\x12\x0b\n\x03tci\x18\x01 \x01(\x04\"\x0e\n\x0cVLANSplitArg\"\x0f\n\rVXLANDecapArg\" \n\rVXLANEncapArg\x12\x0f\n\x07\x64stport\x18\x01 \x01(\x04\"2\n\x10WildcardMatchArg\x12\x1e\n\x06\x66ields\x18\x01 \x03(\x0b\x32\x0e.bess.pb.Field\"_\n\x13WildcardMatchConfig\x12\x14\n\x0c\x64\x65\x66\x61ult_gate\x18\x01 \x01(\x04\x12\x32\n\x05rules\x18\x02 \x03(\x0b\x32#.bess.pb.WildcardMatchCommandAddArg\"/\n\x0f\x41rpResponderArg\x12\n\n\x02ip\x18\x01 \x01(\t\x12\x10\n\x08mac_addr\x18\x02 \x01(\t\">\n\nMplsPopArg\x12\x19\n\x11remove_eth_header\x18\x01 \x01(\x08\x12\x15\n\rnext_eth_type\x18\x02 \x01(\r\"\x84\x01\n\x0eWorkerSplitArg\x12>\n\x0cworker_gates\x18\x01 \x03(\x0b\x32(.bess.pb.WorkerSplitArg.WorkerGatesEntry\x1a\x32\n\x10WorkerGatesEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\r:\x02\x38\x01\x62\x06proto3')
   ,
   dependencies=[util__msg__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
+
+
+_PINGRESPONDERCOMMANDADDARG = _descriptor.Descriptor(
+  name='PingResponderCommandAddArg',
+  full_name='bess.pb.PingResponderCommandAddArg',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='ipv4_addr', full_name='bess.pb.PingResponderCommandAddArg.ipv4_addr', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=45,
+  serialized_end=92,
+)
+
+
+_PINGRESPONDERCOMMANDDELETEARG = _descriptor.Descriptor(
+  name='PingResponderCommandDeleteArg',
+  full_name='bess.pb.PingResponderCommandDeleteArg',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='ipv4_addr', full_name='bess.pb.PingResponderCommandDeleteArg.ipv4_addr', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=94,
+  serialized_end=144,
+)
 
 
 _EMPTYARG = _descriptor.Descriptor(
@@ -47,8 +109,8 @@ _EMPTYARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=45,
-  serialized_end=55,
+  serialized_start=146,
+  serialized_end=156,
 )
 
 
@@ -71,8 +133,8 @@ _BPFCOMMANDCLEARARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=57,
-  serialized_end=77,
+  serialized_start=158,
+  serialized_end=178,
 )
 
 
@@ -109,8 +171,8 @@ _EXACTMATCHCOMMANDADDARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=79,
-  serialized_end=154,
+  serialized_start=180,
+  serialized_end=255,
 )
 
 
@@ -140,8 +202,8 @@ _EXACTMATCHCOMMANDDELETEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=156,
-  serialized_end=220,
+  serialized_start=257,
+  serialized_end=321,
 )
 
 
@@ -164,8 +226,8 @@ _EXACTMATCHCOMMANDCLEARARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=222,
-  serialized_end=249,
+  serialized_start=323,
+  serialized_end=350,
 )
 
 
@@ -195,8 +257,8 @@ _EXACTMATCHCOMMANDSETDEFAULTGATEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=251,
-  serialized_end=301,
+  serialized_start=352,
+  serialized_end=402,
 )
 
 
@@ -226,8 +288,8 @@ _FLOWGENCOMMANDSETBURSTARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=303,
-  serialized_end=345,
+  serialized_start=404,
+  serialized_end=446,
 )
 
 
@@ -264,8 +326,8 @@ _HASHLBCOMMANDSETMODEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=347,
-  serialized_end=418,
+  serialized_start=448,
+  serialized_end=519,
 )
 
 
@@ -295,8 +357,8 @@ _HASHLBCOMMANDSETGATESARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=420,
-  serialized_end=461,
+  serialized_start=521,
+  serialized_end=562,
 )
 
 
@@ -340,8 +402,8 @@ _IPLOOKUPCOMMANDADDARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=463,
-  serialized_end=536,
+  serialized_start=564,
+  serialized_end=637,
 )
 
 
@@ -378,8 +440,8 @@ _IPLOOKUPCOMMANDDELETEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=538,
-  serialized_end=600,
+  serialized_start=639,
+  serialized_end=701,
 )
 
 
@@ -402,8 +464,8 @@ _IPLOOKUPCOMMANDCLEARARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=602,
-  serialized_end=627,
+  serialized_start=703,
+  serialized_end=728,
 )
 
 
@@ -440,8 +502,8 @@ _L2FORWARDCOMMANDADDARG_ENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=711,
-  serialized_end=746,
+  serialized_start=812,
+  serialized_end=847,
 )
 
 _L2FORWARDCOMMANDADDARG = _descriptor.Descriptor(
@@ -470,8 +532,8 @@ _L2FORWARDCOMMANDADDARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=629,
-  serialized_end=746,
+  serialized_start=730,
+  serialized_end=847,
 )
 
 
@@ -501,8 +563,8 @@ _L2FORWARDCOMMANDDELETEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=748,
-  serialized_end=790,
+  serialized_start=849,
+  serialized_end=891,
 )
 
 
@@ -532,8 +594,8 @@ _L2FORWARDCOMMANDSETDEFAULTGATEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=792,
-  serialized_end=841,
+  serialized_start=893,
+  serialized_end=942,
 )
 
 
@@ -563,8 +625,8 @@ _L2FORWARDCOMMANDLOOKUPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=843,
-  serialized_end=885,
+  serialized_start=944,
+  serialized_end=986,
 )
 
 
@@ -594,8 +656,8 @@ _L2FORWARDCOMMANDLOOKUPRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=887,
-  serialized_end=934,
+  serialized_start=988,
+  serialized_end=1035,
 )
 
 
@@ -639,8 +701,8 @@ _L2FORWARDCOMMANDPOPULATEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=936,
-  serialized_end=1014,
+  serialized_start=1037,
+  serialized_end=1115,
 )
 
 
@@ -684,8 +746,8 @@ _MEASURECOMMANDGETSUMMARYARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1016,
-  serialized_end=1117,
+  serialized_start=1117,
+  serialized_end=1218,
 )
 
 
@@ -764,8 +826,8 @@ _MEASURECOMMANDGETSUMMARYRESPONSE_HISTOGRAM = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1346,
-  serialized_end=1512,
+  serialized_start=1447,
+  serialized_end=1613,
 )
 
 _MEASURECOMMANDGETSUMMARYRESPONSE = _descriptor.Descriptor(
@@ -822,8 +884,8 @@ _MEASURECOMMANDGETSUMMARYRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1120,
-  serialized_end=1512,
+  serialized_start=1221,
+  serialized_end=1613,
 )
 
 
@@ -867,8 +929,8 @@ _DRRARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1514,
-  serialized_end=1587,
+  serialized_start=1615,
+  serialized_end=1688,
 )
 
 
@@ -898,8 +960,8 @@ _DRRQUANTUMARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1589,
-  serialized_end=1621,
+  serialized_start=1690,
+  serialized_end=1722,
 )
 
 
@@ -929,8 +991,8 @@ _DRRMAXFLOWQUEUESIZEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1623,
-  serialized_end=1671,
+  serialized_start=1724,
+  serialized_end=1772,
 )
 
 
@@ -960,8 +1022,8 @@ _PORTINCCOMMANDSETBURSTARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1673,
-  serialized_end=1715,
+  serialized_start=1774,
+  serialized_end=1816,
 )
 
 
@@ -991,8 +1053,8 @@ _QUEUEINCCOMMANDSETBURSTARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1717,
-  serialized_end=1760,
+  serialized_start=1818,
+  serialized_end=1861,
 )
 
 
@@ -1022,8 +1084,8 @@ _QUEUECOMMANDSETBURSTARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1762,
-  serialized_end=1802,
+  serialized_start=1863,
+  serialized_end=1903,
 )
 
 
@@ -1053,8 +1115,8 @@ _QUEUECOMMANDSETSIZEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1804,
-  serialized_end=1842,
+  serialized_start=1905,
+  serialized_end=1943,
 )
 
 
@@ -1077,8 +1139,8 @@ _QUEUECOMMANDGETSTATUSARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1844,
-  serialized_end=1870,
+  serialized_start=1945,
+  serialized_end=1971,
 )
 
 
@@ -1136,8 +1198,8 @@ _QUEUECOMMANDGETSTATUSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1872,
-  serialized_end=1985,
+  serialized_start=1973,
+  serialized_end=2086,
 )
 
 
@@ -1160,8 +1222,8 @@ _RANDOMUPDATECOMMANDCLEARARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1987,
-  serialized_end=2016,
+  serialized_start=2088,
+  serialized_end=2117,
 )
 
 
@@ -1184,8 +1246,8 @@ _REWRITECOMMANDCLEARARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2018,
-  serialized_end=2042,
+  serialized_start=2119,
+  serialized_end=2143,
 )
 
 
@@ -1208,8 +1270,8 @@ _UPDATECOMMANDCLEARARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2044,
-  serialized_end=2067,
+  serialized_start=2145,
+  serialized_end=2168,
 )
 
 
@@ -1260,8 +1322,8 @@ _WILDCARDMATCHCOMMANDADDARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2070,
-  serialized_end=2201,
+  serialized_start=2171,
+  serialized_end=2302,
 )
 
 
@@ -1298,8 +1360,8 @@ _WILDCARDMATCHCOMMANDDELETEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2203,
-  serialized_end=2305,
+  serialized_start=2304,
+  serialized_end=2406,
 )
 
 
@@ -1322,8 +1384,8 @@ _WILDCARDMATCHCOMMANDCLEARARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2307,
-  serialized_end=2337,
+  serialized_start=2408,
+  serialized_end=2438,
 )
 
 
@@ -1353,8 +1415,8 @@ _WILDCARDMATCHCOMMANDSETDEFAULTGATEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2339,
-  serialized_end=2392,
+  serialized_start=2440,
+  serialized_end=2493,
 )
 
 
@@ -1419,8 +1481,8 @@ _ACLARG_RULE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2442,
-  serialized_end=2551,
+  serialized_start=2543,
+  serialized_end=2652,
 )
 
 _ACLARG = _descriptor.Descriptor(
@@ -1449,8 +1511,8 @@ _ACLARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2395,
-  serialized_end=2551,
+  serialized_start=2496,
+  serialized_end=2652,
 )
 
 
@@ -1494,8 +1556,8 @@ _BPFARG_FILTER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2604,
-  serialized_end=2660,
+  serialized_start=2705,
+  serialized_end=2761,
 )
 
 _BPFARG = _descriptor.Descriptor(
@@ -1524,8 +1586,8 @@ _BPFARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2553,
-  serialized_end=2660,
+  serialized_start=2654,
+  serialized_end=2761,
 )
 
 
@@ -1548,8 +1610,8 @@ _BUFFERARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2662,
-  serialized_end=2673,
+  serialized_start=2763,
+  serialized_end=2774,
 )
 
 
@@ -1593,8 +1655,8 @@ _BYPASSARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2675,
-  serialized_end=2764,
+  serialized_start=2776,
+  serialized_end=2865,
 )
 
 
@@ -1624,8 +1686,8 @@ _DUMPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2766,
-  serialized_end=2793,
+  serialized_start=2867,
+  serialized_end=2894,
 )
 
 
@@ -1648,8 +1710,8 @@ _ETHERENCAPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2795,
-  serialized_end=2810,
+  serialized_start=2896,
+  serialized_end=2911,
 )
 
 
@@ -1686,8 +1748,8 @@ _EXACTMATCHARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2812,
-  serialized_end=2894,
+  serialized_start=2913,
+  serialized_end=2995,
 )
 
 
@@ -1724,8 +1786,8 @@ _EXACTMATCHCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2896,
-  serialized_end=2985,
+  serialized_start=2997,
+  serialized_end=3086,
 )
 
 
@@ -1825,8 +1887,8 @@ _FLOWGENARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2988,
-  serialized_end=3222,
+  serialized_start=3089,
+  serialized_end=3323,
 )
 
 
@@ -1856,8 +1918,8 @@ _GENERICDECAPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3224,
-  serialized_end=3256,
+  serialized_start=3325,
+  serialized_end=3357,
 )
 
 
@@ -1904,8 +1966,8 @@ _GENERICENCAPARG_ENCAPFIELD = _descriptor.Descriptor(
       name='insertion', full_name='bess.pb.GenericEncapArg.EncapField.insertion',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=3331,
-  serialized_end=3428,
+  serialized_start=3432,
+  serialized_end=3529,
 )
 
 _GENERICENCAPARG = _descriptor.Descriptor(
@@ -1934,8 +1996,8 @@ _GENERICENCAPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3259,
-  serialized_end=3428,
+  serialized_start=3360,
+  serialized_end=3529,
 )
 
 
@@ -1979,8 +2041,8 @@ _HASHLBARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3430,
-  serialized_end=3502,
+  serialized_start=3531,
+  serialized_end=3603,
 )
 
 
@@ -2003,8 +2065,8 @@ _IPENCAPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3504,
-  serialized_end=3516,
+  serialized_start=3605,
+  serialized_end=3617,
 )
 
 
@@ -2041,8 +2103,8 @@ _IPLOOKUPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3518,
-  serialized_end=3569,
+  serialized_start=3619,
+  serialized_end=3670,
 )
 
 
@@ -2079,8 +2141,8 @@ _L2FORWARDARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3571,
-  serialized_end=3615,
+  serialized_start=3672,
+  serialized_end=3716,
 )
 
 
@@ -2103,8 +2165,8 @@ _MACSWAPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3617,
-  serialized_end=3629,
+  serialized_start=3718,
+  serialized_end=3730,
 )
 
 
@@ -2123,21 +2185,28 @@ _MEASUREARG = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='jitter_sample_prob', full_name='bess.pb.MeasureArg.jitter_sample_prob', index=1,
+      name='attr_name', full_name='bess.pb.MeasureArg.attr_name', index=1,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='jitter_sample_prob', full_name='bess.pb.MeasureArg.jitter_sample_prob', index=2,
       number=3, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='latency_ns_max', full_name='bess.pb.MeasureArg.latency_ns_max', index=2,
+      name='latency_ns_max', full_name='bess.pb.MeasureArg.latency_ns_max', index=3,
       number=4, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='latency_ns_resolution', full_name='bess.pb.MeasureArg.latency_ns_resolution', index=3,
+      name='latency_ns_resolution', full_name='bess.pb.MeasureArg.latency_ns_resolution', index=4,
       number=5, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -2154,9 +2223,12 @@ _MEASUREARG = _descriptor.Descriptor(
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
+    _descriptor.OneofDescriptor(
+      name='type', full_name='bess.pb.MeasureArg.type',
+      index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=3631,
-  serialized_end=3742,
+  serialized_start=3733,
+  serialized_end=3875,
 )
 
 
@@ -2179,8 +2251,8 @@ _MERGEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3744,
-  serialized_end=3754,
+  serialized_start=3877,
+  serialized_end=3887,
 )
 
 
@@ -2217,8 +2289,8 @@ _METADATATESTARG_READENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3932,
-  serialized_end=3975,
+  serialized_start=4065,
+  serialized_end=4108,
 )
 
 _METADATATESTARG_WRITEENTRY = _descriptor.Descriptor(
@@ -2254,8 +2326,8 @@ _METADATATESTARG_WRITEENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3977,
-  serialized_end=4021,
+  serialized_start=4110,
+  serialized_end=4154,
 )
 
 _METADATATESTARG_UPDATEENTRY = _descriptor.Descriptor(
@@ -2291,8 +2363,8 @@ _METADATATESTARG_UPDATEENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4023,
-  serialized_end=4068,
+  serialized_start=4156,
+  serialized_end=4201,
 )
 
 _METADATATESTARG = _descriptor.Descriptor(
@@ -2335,8 +2407,8 @@ _METADATATESTARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3757,
-  serialized_end=4068,
+  serialized_start=3890,
+  serialized_end=4201,
 )
 
 
@@ -2380,8 +2452,8 @@ _NATARG_PORTRANGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4133,
-  serialized_end=4191,
+  serialized_start=4266,
+  serialized_end=4324,
 )
 
 _NATARG_EXTERNALADDRESS = _descriptor.Descriptor(
@@ -2417,8 +2489,8 @@ _NATARG_EXTERNALADDRESS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4193,
-  serialized_end=4276,
+  serialized_start=4326,
+  serialized_end=4409,
 )
 
 _NATARG = _descriptor.Descriptor(
@@ -2447,8 +2519,8 @@ _NATARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4071,
-  serialized_end=4276,
+  serialized_start=4204,
+  serialized_end=4409,
 )
 
 
@@ -2485,8 +2557,8 @@ _STATICNATARG_ADDRESSRANGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4350,
-  serialized_end=4392,
+  serialized_start=4483,
+  serialized_end=4525,
 )
 
 _STATICNATARG_ADDRESSRANGEPAIR = _descriptor.Descriptor(
@@ -2522,8 +2594,8 @@ _STATICNATARG_ADDRESSRANGEPAIR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4395,
-  serialized_end=4523,
+  serialized_start=4528,
+  serialized_end=4656,
 )
 
 _STATICNATARG = _descriptor.Descriptor(
@@ -2552,8 +2624,8 @@ _STATICNATARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4279,
-  serialized_end=4523,
+  serialized_start=4412,
+  serialized_end=4656,
 )
 
 
@@ -2576,8 +2648,8 @@ _NOOPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4525,
-  serialized_end=4534,
+  serialized_start=4658,
+  serialized_end=4667,
 )
 
 
@@ -2614,8 +2686,8 @@ _PORTINCARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4536,
-  serialized_end=4580,
+  serialized_start=4669,
+  serialized_end=4713,
 )
 
 
@@ -2645,8 +2717,8 @@ _PORTOUTARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4582,
-  serialized_end=4608,
+  serialized_start=4715,
+  serialized_end=4741,
 )
 
 
@@ -2690,8 +2762,8 @@ _QUEUEINCARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4610,
-  serialized_end=4668,
+  serialized_start=4743,
+  serialized_end=4801,
 )
 
 
@@ -2728,8 +2800,8 @@ _QUEUEOUTARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4670,
-  serialized_end=4710,
+  serialized_start=4803,
+  serialized_end=4843,
 )
 
 
@@ -2773,8 +2845,8 @@ _QUEUEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4712,
-  serialized_end=4776,
+  serialized_start=4845,
+  serialized_end=4909,
 )
 
 
@@ -2811,8 +2883,8 @@ _RANDOMSPLITARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4778,
-  serialized_end=4828,
+  serialized_start=4911,
+  serialized_end=4961,
 )
 
 
@@ -2842,8 +2914,8 @@ _RANDOMSPLITCOMMANDSETDROPRATEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4830,
-  serialized_end=4883,
+  serialized_start=4963,
+  serialized_end=5016,
 )
 
 
@@ -2873,8 +2945,8 @@ _RANDOMSPLITCOMMANDSETGATESARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4885,
-  serialized_end=4931,
+  serialized_start=5018,
+  serialized_end=5064,
 )
 
 
@@ -2925,8 +2997,8 @@ _RANDOMUPDATEARG_FIELD = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5001,
-  serialized_end=5064,
+  serialized_start=5134,
+  serialized_end=5197,
 )
 
 _RANDOMUPDATEARG = _descriptor.Descriptor(
@@ -2955,8 +3027,8 @@ _RANDOMUPDATEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4934,
-  serialized_end=5064,
+  serialized_start=5067,
+  serialized_end=5197,
 )
 
 
@@ -2986,8 +3058,8 @@ _REWRITEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5066,
-  serialized_end=5097,
+  serialized_start=5199,
+  serialized_end=5230,
 )
 
 
@@ -3017,8 +3089,8 @@ _ROUNDROBINCOMMANDSETGATESARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5099,
-  serialized_end=5144,
+  serialized_start=5232,
+  serialized_end=5277,
 )
 
 
@@ -3048,8 +3120,8 @@ _ROUNDROBINCOMMANDSETMODEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5146,
-  serialized_end=5189,
+  serialized_start=5279,
+  serialized_end=5322,
 )
 
 
@@ -3086,8 +3158,8 @@ _ROUNDROBINARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5191,
-  serialized_end=5235,
+  serialized_start=5324,
+  serialized_end=5368,
 )
 
 
@@ -3117,8 +3189,8 @@ _REPLICATEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5237,
-  serialized_end=5266,
+  serialized_start=5370,
+  serialized_end=5399,
 )
 
 
@@ -3148,8 +3220,8 @@ _REPLICATECOMMANDSETGATESARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5268,
-  serialized_end=5312,
+  serialized_start=5401,
+  serialized_end=5445,
 )
 
 
@@ -3224,8 +3296,8 @@ _SETMETADATAARG_ATTRIBUTE = _descriptor.Descriptor(
       name='value', full_name='bess.pb.SetMetadataArg.Attribute.value',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=5384,
-  serialized_end=5525,
+  serialized_start=5517,
+  serialized_end=5658,
 )
 
 _SETMETADATAARG = _descriptor.Descriptor(
@@ -3254,8 +3326,8 @@ _SETMETADATAARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5315,
-  serialized_end=5525,
+  serialized_start=5448,
+  serialized_end=5658,
 )
 
 
@@ -3278,8 +3350,8 @@ _SINKARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5527,
-  serialized_end=5536,
+  serialized_start=5660,
+  serialized_end=5669,
 )
 
 
@@ -3309,8 +3381,8 @@ _SOURCECOMMANDSETBURSTARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5538,
-  serialized_end=5579,
+  serialized_start=5671,
+  serialized_end=5712,
 )
 
 
@@ -3340,8 +3412,8 @@ _SOURCECOMMANDSETPKTSIZEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5581,
-  serialized_end=5627,
+  serialized_start=5714,
+  serialized_end=5760,
 )
 
 
@@ -3371,8 +3443,8 @@ _SOURCEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5629,
-  serialized_end=5658,
+  serialized_start=5762,
+  serialized_end=5791,
 )
 
 
@@ -3402,8 +3474,39 @@ _IPCHECKSUMARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5660,
-  serialized_end=5691,
+  serialized_start=5793,
+  serialized_end=5824,
+)
+
+
+_L4CHECKSUMARG = _descriptor.Descriptor(
+  name='L4ChecksumArg',
+  full_name='bess.pb.L4ChecksumArg',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='verify', full_name='bess.pb.L4ChecksumArg.verify', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=5826,
+  serialized_end=5857,
 )
 
 
@@ -3450,8 +3553,8 @@ _SPLITARG = _descriptor.Descriptor(
       name='type', full_name='bess.pb.SplitArg.type',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=5693,
-  serialized_end=5764,
+  serialized_start=5859,
+  serialized_end=5930,
 )
 
 
@@ -3469,6 +3572,13 @@ _TIMESTAMPARG = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='attr_name', full_name='bess.pb.TimestampArg.attr_name', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -3480,9 +3590,12 @@ _TIMESTAMPARG = _descriptor.Descriptor(
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
+    _descriptor.OneofDescriptor(
+      name='type', full_name='bess.pb.TimestampArg.type',
+      index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=5766,
-  serialized_end=5796,
+  serialized_start=5932,
+  serialized_end=5993,
 )
 
 
@@ -3526,8 +3639,8 @@ _UPDATEARG_FIELD = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5853,
-  serialized_end=5905,
+  serialized_start=6050,
+  serialized_end=6102,
 )
 
 _UPDATEARG = _descriptor.Descriptor(
@@ -3556,8 +3669,8 @@ _UPDATEARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5798,
-  serialized_end=5905,
+  serialized_start=5995,
+  serialized_end=6102,
 )
 
 
@@ -3594,8 +3707,8 @@ _URLFILTERARG_URL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5969,
-  serialized_end=6002,
+  serialized_start=6166,
+  serialized_end=6199,
 )
 
 _URLFILTERARG = _descriptor.Descriptor(
@@ -3624,8 +3737,8 @@ _URLFILTERARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5907,
-  serialized_end=6002,
+  serialized_start=6104,
+  serialized_end=6199,
 )
 
 
@@ -3655,8 +3768,8 @@ _URLFILTERCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6004,
-  serialized_end=6067,
+  serialized_start=6201,
+  serialized_end=6264,
 )
 
 
@@ -3679,8 +3792,8 @@ _VLANPOPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6069,
-  serialized_end=6081,
+  serialized_start=6266,
+  serialized_end=6278,
 )
 
 
@@ -3710,8 +3823,8 @@ _VLANPUSHARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6083,
-  serialized_end=6109,
+  serialized_start=6280,
+  serialized_end=6306,
 )
 
 
@@ -3734,8 +3847,8 @@ _VLANSPLITARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6111,
-  serialized_end=6125,
+  serialized_start=6308,
+  serialized_end=6322,
 )
 
 
@@ -3758,8 +3871,8 @@ _VXLANDECAPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6127,
-  serialized_end=6142,
+  serialized_start=6324,
+  serialized_end=6339,
 )
 
 
@@ -3789,8 +3902,8 @@ _VXLANENCAPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6144,
-  serialized_end=6176,
+  serialized_start=6341,
+  serialized_end=6373,
 )
 
 
@@ -3820,8 +3933,8 @@ _WILDCARDMATCHARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6178,
-  serialized_end=6228,
+  serialized_start=6375,
+  serialized_end=6425,
 )
 
 
@@ -3858,8 +3971,8 @@ _WILDCARDMATCHCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6230,
-  serialized_end=6325,
+  serialized_start=6427,
+  serialized_end=6522,
 )
 
 
@@ -3896,8 +4009,8 @@ _ARPRESPONDERARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6327,
-  serialized_end=6374,
+  serialized_start=6524,
+  serialized_end=6571,
 )
 
 
@@ -3934,8 +4047,8 @@ _MPLSPOPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6376,
-  serialized_end=6438,
+  serialized_start=6573,
+  serialized_end=6635,
 )
 
 
@@ -3972,8 +4085,8 @@ _WORKERSPLITARG_WORKERGATESENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6523,
-  serialized_end=6573,
+  serialized_start=6720,
+  serialized_end=6770,
 )
 
 _WORKERSPLITARG = _descriptor.Descriptor(
@@ -4002,8 +4115,8 @@ _WORKERSPLITARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6441,
-  serialized_end=6573,
+  serialized_start=6638,
+  serialized_end=6770,
 )
 
 _EXACTMATCHCOMMANDADDARG.fields_by_name['fields'].message_type = util__msg__pb2._FIELDDATA
@@ -4035,6 +4148,12 @@ _GENERICENCAPARG_ENCAPFIELD.oneofs_by_name['insertion'].fields.append(
 _GENERICENCAPARG_ENCAPFIELD.fields_by_name['value'].containing_oneof = _GENERICENCAPARG_ENCAPFIELD.oneofs_by_name['insertion']
 _GENERICENCAPARG.fields_by_name['fields'].message_type = _GENERICENCAPARG_ENCAPFIELD
 _HASHLBARG.fields_by_name['fields'].message_type = util__msg__pb2._FIELD
+_MEASUREARG.oneofs_by_name['type'].fields.append(
+  _MEASUREARG.fields_by_name['offset'])
+_MEASUREARG.fields_by_name['offset'].containing_oneof = _MEASUREARG.oneofs_by_name['type']
+_MEASUREARG.oneofs_by_name['type'].fields.append(
+  _MEASUREARG.fields_by_name['attr_name'])
+_MEASUREARG.fields_by_name['attr_name'].containing_oneof = _MEASUREARG.oneofs_by_name['type']
 _METADATATESTARG_READENTRY.containing_type = _METADATATESTARG
 _METADATATESTARG_WRITEENTRY.containing_type = _METADATATESTARG
 _METADATATESTARG_UPDATEENTRY.containing_type = _METADATATESTARG
@@ -4066,6 +4185,12 @@ _SPLITARG.fields_by_name['attribute'].containing_oneof = _SPLITARG.oneofs_by_nam
 _SPLITARG.oneofs_by_name['type'].fields.append(
   _SPLITARG.fields_by_name['offset'])
 _SPLITARG.fields_by_name['offset'].containing_oneof = _SPLITARG.oneofs_by_name['type']
+_TIMESTAMPARG.oneofs_by_name['type'].fields.append(
+  _TIMESTAMPARG.fields_by_name['offset'])
+_TIMESTAMPARG.fields_by_name['offset'].containing_oneof = _TIMESTAMPARG.oneofs_by_name['type']
+_TIMESTAMPARG.oneofs_by_name['type'].fields.append(
+  _TIMESTAMPARG.fields_by_name['attr_name'])
+_TIMESTAMPARG.fields_by_name['attr_name'].containing_oneof = _TIMESTAMPARG.oneofs_by_name['type']
 _UPDATEARG_FIELD.containing_type = _UPDATEARG
 _UPDATEARG.fields_by_name['fields'].message_type = _UPDATEARG_FIELD
 _URLFILTERARG_URL.containing_type = _URLFILTERARG
@@ -4075,6 +4200,8 @@ _WILDCARDMATCHARG.fields_by_name['fields'].message_type = util__msg__pb2._FIELD
 _WILDCARDMATCHCONFIG.fields_by_name['rules'].message_type = _WILDCARDMATCHCOMMANDADDARG
 _WORKERSPLITARG_WORKERGATESENTRY.containing_type = _WORKERSPLITARG
 _WORKERSPLITARG.fields_by_name['worker_gates'].message_type = _WORKERSPLITARG_WORKERGATESENTRY
+DESCRIPTOR.message_types_by_name['PingResponderCommandAddArg'] = _PINGRESPONDERCOMMANDADDARG
+DESCRIPTOR.message_types_by_name['PingResponderCommandDeleteArg'] = _PINGRESPONDERCOMMANDDELETEARG
 DESCRIPTOR.message_types_by_name['EmptyArg'] = _EMPTYARG
 DESCRIPTOR.message_types_by_name['BPFCommandClearArg'] = _BPFCOMMANDCLEARARG
 DESCRIPTOR.message_types_by_name['ExactMatchCommandAddArg'] = _EXACTMATCHCOMMANDADDARG
@@ -4154,6 +4281,7 @@ DESCRIPTOR.message_types_by_name['SourceCommandSetBurstArg'] = _SOURCECOMMANDSET
 DESCRIPTOR.message_types_by_name['SourceCommandSetPktSizeArg'] = _SOURCECOMMANDSETPKTSIZEARG
 DESCRIPTOR.message_types_by_name['SourceArg'] = _SOURCEARG
 DESCRIPTOR.message_types_by_name['IPChecksumArg'] = _IPCHECKSUMARG
+DESCRIPTOR.message_types_by_name['L4ChecksumArg'] = _L4CHECKSUMARG
 DESCRIPTOR.message_types_by_name['SplitArg'] = _SPLITARG
 DESCRIPTOR.message_types_by_name['TimestampArg'] = _TIMESTAMPARG
 DESCRIPTOR.message_types_by_name['UpdateArg'] = _UPDATEARG
@@ -4169,6 +4297,20 @@ DESCRIPTOR.message_types_by_name['WildcardMatchConfig'] = _WILDCARDMATCHCONFIG
 DESCRIPTOR.message_types_by_name['ArpResponderArg'] = _ARPRESPONDERARG
 DESCRIPTOR.message_types_by_name['MplsPopArg'] = _MPLSPOPARG
 DESCRIPTOR.message_types_by_name['WorkerSplitArg'] = _WORKERSPLITARG
+
+PingResponderCommandAddArg = _reflection.GeneratedProtocolMessageType('PingResponderCommandAddArg', (_message.Message,), dict(
+  DESCRIPTOR = _PINGRESPONDERCOMMANDADDARG,
+  __module__ = 'module_msg_pb2'
+  # @@protoc_insertion_point(class_scope:bess.pb.PingResponderCommandAddArg)
+  ))
+_sym_db.RegisterMessage(PingResponderCommandAddArg)
+
+PingResponderCommandDeleteArg = _reflection.GeneratedProtocolMessageType('PingResponderCommandDeleteArg', (_message.Message,), dict(
+  DESCRIPTOR = _PINGRESPONDERCOMMANDDELETEARG,
+  __module__ = 'module_msg_pb2'
+  # @@protoc_insertion_point(class_scope:bess.pb.PingResponderCommandDeleteArg)
+  ))
+_sym_db.RegisterMessage(PingResponderCommandDeleteArg)
 
 EmptyArg = _reflection.GeneratedProtocolMessageType('EmptyArg', (_message.Message,), dict(
   DESCRIPTOR = _EMPTYARG,
@@ -4834,6 +4976,13 @@ IPChecksumArg = _reflection.GeneratedProtocolMessageType('IPChecksumArg', (_mess
   # @@protoc_insertion_point(class_scope:bess.pb.IPChecksumArg)
   ))
 _sym_db.RegisterMessage(IPChecksumArg)
+
+L4ChecksumArg = _reflection.GeneratedProtocolMessageType('L4ChecksumArg', (_message.Message,), dict(
+  DESCRIPTOR = _L4CHECKSUMARG,
+  __module__ = 'module_msg_pb2'
+  # @@protoc_insertion_point(class_scope:bess.pb.L4ChecksumArg)
+  ))
+_sym_db.RegisterMessage(L4ChecksumArg)
 
 SplitArg = _reflection.GeneratedProtocolMessageType('SplitArg', (_message.Message,), dict(
   DESCRIPTOR = _SPLITARG,

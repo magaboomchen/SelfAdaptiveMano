@@ -14,14 +14,14 @@ _sym_db = _symbol_database.Default()
 
 
 from google.protobuf import any_pb2 as google_dot_protobuf_dot_any__pb2
-import sam.serverController.builtin_pb.error_pb2 as error__pb2
+import error_pb2 as error__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='bess_msg.proto',
   package='bess.pb',
   syntax='proto3',
-  serialized_pb=_b('\n\x0e\x62\x65ss_msg.proto\x12\x07\x62\x65ss.pb\x1a\x19google/protobuf/any.proto\x1a\x0b\x65rror.proto\"\x0e\n\x0c\x45mptyRequest\".\n\rEmptyResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\"A\n\x0fVersionResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0f\n\x07version\x18\x02 \x01(\t\"#\n\x13ImportPluginRequest\x12\x0c\n\x04path\x18\x01 \x01(\t\"#\n\x13UnloadPluginRequest\x12\x0c\n\x04path\x18\x01 \x01(\t\"C\n\x13ListPluginsResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\r\n\x05paths\x18\x02 \x03(\t\"\xda\x01\n\x13ListWorkersResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x41\n\x0eworkers_status\x18\x02 \x03(\x0b\x32).bess.pb.ListWorkersResponse.WorkerStatus\x1a\x61\n\x0cWorkerStatus\x12\x0b\n\x03wid\x18\x01 \x01(\x03\x12\x0c\n\x04\x63ore\x18\x02 \x01(\x03\x12\x0f\n\x07running\x18\x03 \x01(\x08\x12\x0f\n\x07num_tcs\x18\x04 \x01(\x03\x12\x14\n\x0csilent_drops\x18\x05 \x01(\x03\"@\n\x10\x41\x64\x64WorkerRequest\x12\x0b\n\x03wid\x18\x01 \x01(\x03\x12\x0c\n\x04\x63ore\x18\x02 \x01(\x03\x12\x11\n\tscheduler\x18\x03 \x01(\t\"#\n\x14\x44\x65stroyWorkerRequest\x12\x0b\n\x03wid\x18\x01 \x01(\x03\"\x96\x03\n\x0cTrafficClass\x12\x0e\n\x06parent\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0f\n\x07\x62locked\x18\x03 \x01(\x08\x12\x0e\n\x06policy\x18\x04 \x01(\t\x12\x10\n\x08resource\x18\x05 \x01(\t\x12\x12\n\x08priority\x18\x06 \x01(\x03H\x00\x12\x0f\n\x05share\x18\x07 \x01(\x03H\x00\x12\x0b\n\x03wid\x18\x08 \x01(\x03\x12/\n\x05limit\x18\t \x03(\x0b\x32 .bess.pb.TrafficClass.LimitEntry\x12\x36\n\tmax_burst\x18\n \x03(\x0b\x32#.bess.pb.TrafficClass.MaxBurstEntry\x12\x18\n\x10leaf_module_name\x18\x0b \x01(\t\x12\x1a\n\x12leaf_module_taskid\x18\x0c \x01(\x04\x1a,\n\nLimitEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\x1a/\n\rMaxBurstEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\x42\x05\n\x03\x61rg\"\x1d\n\x0eListTcsRequest\x12\x0b\n\x03wid\x18\x01 \x01(\x03\"\xc1\x01\n\x0fListTcsResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x43\n\x0e\x63lasses_status\x18\x02 \x03(\x0b\x32+.bess.pb.ListTcsResponse.TrafficClassStatus\x1aJ\n\x12TrafficClassStatus\x12$\n\x05\x63lass\x18\x01 \x01(\x0b\x32\x15.bess.pb.TrafficClass\x12\x0e\n\x06parent\x18\x02 \x01(\t\"\xf3\x02\n\"CheckSchedulingConstraintsResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\r\n\x05\x66\x61tal\x18\x02 \x01(\x08\x12N\n\nviolations\x18\x03 \x03(\x0b\x32:.bess.pb.CheckSchedulingConstraintsResponse.ViolatingClass\x12L\n\x07modules\x18\x04 \x03(\x0b\x32;.bess.pb.CheckSchedulingConstraintsResponse.ViolatingModule\x1a`\n\x0eViolatingClass\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x12\n\nconstraint\x18\x02 \x01(\x05\x12\x15\n\rassigned_node\x18\x03 \x01(\x05\x12\x15\n\rassigned_core\x18\x04 \x01(\x05\x1a\x1f\n\x0fViolatingModule\x12\x0c\n\x04name\x18\x01 \x01(\t\"4\n\x0c\x41\x64\x64TcRequest\x12$\n\x05\x63lass\x18\x01 \x01(\x0b\x32\x15.bess.pb.TrafficClass\"=\n\x15UpdateTcParamsRequest\x12$\n\x05\x63lass\x18\x01 \x01(\x0b\x32\x15.bess.pb.TrafficClass\"=\n\x15UpdateTcParentRequest\x12$\n\x05\x63lass\x18\x01 \x01(\x0b\x32\x15.bess.pb.TrafficClass\"!\n\x11GetTcStatsRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x84\x01\n\x12GetTcStatsResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x11\n\ttimestamp\x18\x02 \x01(\x01\x12\r\n\x05\x63ount\x18\x03 \x01(\x04\x12\x0e\n\x06\x63ycles\x18\x04 \x01(\x04\x12\x0f\n\x07packets\x18\x05 \x01(\x04\x12\x0c\n\x04\x62its\x18\x06 \x01(\x04\"J\n\x13ListDriversResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x14\n\x0c\x64river_names\x18\x02 \x03(\t\"+\n\x14GetDriverInfoRequest\x12\x13\n\x0b\x64river_name\x18\x01 \x01(\t\"d\n\x15GetDriverInfoResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04help\x18\x03 \x01(\t\x12\x10\n\x08\x63ommands\x18\x04 \x03(\t\"\x9a\x01\n\x11ListPortsResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12.\n\x05ports\x18\x02 \x03(\x0b\x32\x1f.bess.pb.ListPortsResponse.Port\x1a\x36\n\x04Port\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06\x64river\x18\x02 \x01(\t\x12\x10\n\x08mac_addr\x18\x03 \x01(\t\"\xa2\x01\n\x11\x43reatePortRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06\x64river\x18\x02 \x01(\t\x12\x11\n\tnum_inc_q\x18\x03 \x01(\x04\x12\x11\n\tnum_out_q\x18\x04 \x01(\x04\x12\x12\n\nsize_inc_q\x18\x05 \x01(\x04\x12\x12\n\nsize_out_q\x18\x06 \x01(\x04\x12!\n\x03\x61rg\x18\x07 \x01(\x0b\x32\x14.google.protobuf.Any\";\n\x08PortConf\x12\x10\n\x08mac_addr\x18\x01 \x01(\t\x12\x0b\n\x03mtu\x18\x02 \x01(\r\x12\x10\n\x08\x61\x64min_up\x18\x03 \x01(\x08\"C\n\x12SetPortConfRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1f\n\x04\x63onf\x18\x02 \x01(\x0b\x32\x11.bess.pb.PortConf\"\"\n\x12GetPortConfRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"U\n\x13GetPortConfResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x1f\n\x04\x63onf\x18\x02 \x01(\x0b\x32\x11.bess.pb.PortConf\"S\n\x12\x43reatePortResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x10\n\x08mac_addr\x18\x03 \x01(\t\"\"\n\x12\x44\x65stroyPortRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"#\n\x13GetPortStatsRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\xa3\x02\n\x14GetPortStatsResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12/\n\x03inc\x18\x02 \x01(\x0b\x32\".bess.pb.GetPortStatsResponse.Stat\x12/\n\x03out\x18\x03 \x01(\x0b\x32\".bess.pb.GetPortStatsResponse.Stat\x12\x11\n\ttimestamp\x18\x04 \x01(\x01\x1aw\n\x04Stat\x12\x0f\n\x07packets\x18\x01 \x01(\x04\x12\x0f\n\x07\x64ropped\x18\x02 \x01(\x04\x12\r\n\x05\x62ytes\x18\x03 \x01(\x04\x12\x16\n\x0erequested_hist\x18\x04 \x03(\x04\x12\x13\n\x0b\x61\x63tual_hist\x18\x05 \x03(\x04\x12\x11\n\tdiff_hist\x18\x06 \x03(\x04\"$\n\x14GetLinkStatusRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"|\n\x15GetLinkStatusResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\r\n\x05speed\x18\x02 \x01(\r\x12\x13\n\x0b\x66ull_duplex\x18\x03 \x01(\x08\x12\x0f\n\x07\x61utoneg\x18\x04 \x01(\x08\x12\x0f\n\x07link_up\x18\x05 \x01(\x08\"B\n\x12ListMclassResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\r\n\x05names\x18\x02 \x03(\t\"$\n\x14GetMclassInfoRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"r\n\x15GetMclassInfoResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04help\x18\x03 \x01(\t\x12\x0c\n\x04\x63mds\x18\x04 \x03(\t\x12\x10\n\x08\x63md_args\x18\x05 \x03(\t\"\xa0\x01\n\x13ListModulesResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x34\n\x07modules\x18\x02 \x03(\x0b\x32#.bess.pb.ListModulesResponse.Module\x1a\x34\n\x06Module\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06mclass\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x65sc\x18\x03 \x01(\t\"V\n\x13\x43reateModuleRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06mclass\x18\x02 \x01(\t\x12!\n\x03\x61rg\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\"C\n\x14\x43reateModuleResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\"$\n\x14\x44\x65stroyModuleRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"$\n\x14GetModuleInfoRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\xb3\x06\n\x15GetModuleInfoResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0e\n\x06mclass\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x65sc\x18\x04 \x01(\t\x12\x34\n\x06igates\x18\x06 \x03(\x0b\x32$.bess.pb.GetModuleInfoResponse.IGate\x12\x34\n\x06ogates\x18\x07 \x03(\x0b\x32$.bess.pb.GetModuleInfoResponse.OGate\x12:\n\x08metadata\x18\x08 \x03(\x0b\x32(.bess.pb.GetModuleInfoResponse.Attribute\x1a\x31\n\x08GateHook\x12\x12\n\nclass_name\x18\x01 \x01(\t\x12\x11\n\thook_name\x18\x02 \x01(\t\x1a\xf7\x01\n\x05IGate\x12\r\n\x05igate\x18\x01 \x01(\x04\x12:\n\x06ogates\x18\x02 \x03(\x0b\x32*.bess.pb.GetModuleInfoResponse.IGate.OGate\x12\x0b\n\x03\x63nt\x18\x03 \x01(\x04\x12\x0c\n\x04pkts\x18\x04 \x01(\x04\x12\r\n\x05\x62ytes\x18\x05 \x01(\x04\x12\x11\n\ttimestamp\x18\x06 \x01(\x01\x12:\n\tgatehooks\x18\x08 \x03(\x0b\x32\'.bess.pb.GetModuleInfoResponse.GateHook\x1a$\n\x05OGate\x12\r\n\x05ogate\x18\x01 \x01(\x04\x12\x0c\n\x04name\x18\x02 \x01(\tJ\x04\x08\x07\x10\x08\x1a\xb2\x01\n\x05OGate\x12\r\n\x05ogate\x18\x01 \x01(\x04\x12\x0b\n\x03\x63nt\x18\x02 \x01(\x04\x12\x0c\n\x04pkts\x18\x03 \x01(\x04\x12\r\n\x05\x62ytes\x18\x04 \x01(\x04\x12\x11\n\ttimestamp\x18\x05 \x01(\x01\x12\x0c\n\x04name\x18\x06 \x01(\t\x12\r\n\x05igate\x18\x07 \x01(\x04\x12:\n\tgatehooks\x18\t \x03(\x0b\x32\'.bess.pb.GetModuleInfoResponse.GateHookJ\x04\x08\x08\x10\t\x1a\x45\n\tAttribute\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x0c\n\x04mode\x18\x03 \x01(\t\x12\x0e\n\x06offset\x18\x04 \x01(\x03\"i\n\x15\x43onnectModulesRequest\x12\n\n\x02m1\x18\x01 \x01(\t\x12\n\n\x02m2\x18\x02 \x01(\t\x12\r\n\x05ogate\x18\x03 \x01(\x04\x12\r\n\x05igate\x18\x04 \x01(\x04\x12\x1a\n\x12skip_default_hooks\x18\x05 \x01(\x08\"7\n\x18\x44isconnectModulesRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05ogate\x18\x02 \x01(\x04\"\x84\x02\n\x0bMempoolDump\x12\x0e\n\x06socket\x18\x01 \x01(\x05\x12\x13\n\x0binitialized\x18\x02 \x01(\x08\x12\x0f\n\x07mp_size\x18\x03 \x01(\r\x12\x15\n\rmp_cache_size\x18\x04 \x01(\r\x12\x17\n\x0fmp_element_size\x18\x05 \x01(\r\x12\x19\n\x11mp_populated_size\x18\x06 \x01(\r\x12\x1a\n\x12mp_available_count\x18\x07 \x01(\r\x12\x17\n\x0fmp_in_use_count\x18\x08 \x01(\r\x12\x12\n\nring_count\x18\t \x01(\r\x12\x17\n\x0fring_free_count\x18\n \x01(\r\x12\x12\n\nring_bytes\x18\x0b \x01(\x04\"$\n\x12\x44umpMempoolRequest\x12\x0e\n\x06socket\x18\x01 \x01(\x05\"Y\n\x13\x44umpMempoolResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12#\n\x05\x64umps\x18\x02 \x03(\x0b\x32\x14.bess.pb.MempoolDump\"N\n\x0e\x43ommandRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0b\n\x03\x63md\x18\x02 \x01(\t\x12!\n\x03\x61rg\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\"T\n\x0f\x43ommandResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\"\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\"I\n\x19ListGateHookClassResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\r\n\x05names\x18\x02 \x03(\t\"+\n\x1bGetGateHookClassInfoRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"y\n\x1cGetGateHookClassInfoResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04help\x18\x03 \x01(\t\x12\x0c\n\x04\x63mds\x18\x04 \x03(\t\x12\x10\n\x08\x63md_args\x18\x05 \x03(\t\"\x18\n\x08TrackArg\x12\x0c\n\x04\x62its\x18\x05 \x01(\x08\"<\n\nTcpdumpArg\x12\x0c\n\x04\x66ifo\x18\x05 \x01(\t\x12\r\n\x05\x64\x65\x66\x65r\x18\x06 \x01(\x08\x12\x11\n\treconnect\x18\x07 \x01(\x08\";\n\tPcapngArg\x12\x0c\n\x04\x66ifo\x18\x05 \x01(\t\x12\r\n\x05\x64\x65\x66\x65r\x18\x06 \x01(\x08\x12\x11\n\treconnect\x18\x07 \x01(\x08\"\x97\x01\n\x0cGateHookInfo\x12\x12\n\nclass_name\x18\x01 \x01(\t\x12\x11\n\thook_name\x18\x02 \x01(\t\x12\x13\n\x0bmodule_name\x18\x03 \x01(\t\x12\x0f\n\x05igate\x18\x04 \x01(\x03H\x00\x12\x0f\n\x05ogate\x18\x05 \x01(\x03H\x00\x12!\n\x03\x61rg\x18\x06 \x01(\x0b\x32\x14.google.protobuf.AnyB\x06\n\x04gate\"O\n\x18\x43onfigureGateHookRequest\x12#\n\x04hook\x18\x01 \x01(\x0b\x32\x15.bess.pb.GateHookInfo\x12\x0e\n\x06\x65nable\x18\x02 \x01(\x08\"H\n\x19\x43onfigureGateHookResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\"\\\n\x15ListGateHooksResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12$\n\x05hooks\x18\x02 \x03(\x0b\x32\x15.bess.pb.GateHookInfo\"J\n\x16GateHookCommandRequest\x12#\n\x04hook\x18\x01 \x01(\x0b\x32\x15.bess.pb.GateHookInfo\x12\x0b\n\x03\x63md\x18\x02 \x01(\t\"b\n\x1a\x43onfigureResumeHookRequest\x12\x11\n\thook_name\x18\x01 \x01(\t\x12\x0e\n\x06\x65nable\x18\x02 \x01(\x08\x12!\n\x03\x61rg\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\"!\n\x12PauseWorkerRequest\x12\x0b\n\x03wid\x18\x01 \x01(\x03\"\"\n\x13ResumeWorkerRequest\x12\x0b\n\x03wid\x18\x01 \x01(\x03\x62\x06proto3')
+  serialized_pb=_b('\n\x0e\x62\x65ss_msg.proto\x12\x07\x62\x65ss.pb\x1a\x19google/protobuf/any.proto\x1a\x0b\x65rror.proto\"\x0e\n\x0c\x45mptyRequest\".\n\rEmptyResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\"A\n\x0fVersionResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0f\n\x07version\x18\x02 \x01(\t\"#\n\x13ImportPluginRequest\x12\x0c\n\x04path\x18\x01 \x01(\t\"#\n\x13UnloadPluginRequest\x12\x0c\n\x04path\x18\x01 \x01(\t\"C\n\x13ListPluginsResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\r\n\x05paths\x18\x02 \x03(\t\"\xda\x01\n\x13ListWorkersResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x41\n\x0eworkers_status\x18\x02 \x03(\x0b\x32).bess.pb.ListWorkersResponse.WorkerStatus\x1a\x61\n\x0cWorkerStatus\x12\x0b\n\x03wid\x18\x01 \x01(\x03\x12\x0c\n\x04\x63ore\x18\x02 \x01(\x03\x12\x0f\n\x07running\x18\x03 \x01(\x08\x12\x0f\n\x07num_tcs\x18\x04 \x01(\x03\x12\x14\n\x0csilent_drops\x18\x05 \x01(\x03\"@\n\x10\x41\x64\x64WorkerRequest\x12\x0b\n\x03wid\x18\x01 \x01(\x03\x12\x0c\n\x04\x63ore\x18\x02 \x01(\x03\x12\x11\n\tscheduler\x18\x03 \x01(\t\"#\n\x14\x44\x65stroyWorkerRequest\x12\x0b\n\x03wid\x18\x01 \x01(\x03\"\x96\x03\n\x0cTrafficClass\x12\x0e\n\x06parent\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0f\n\x07\x62locked\x18\x03 \x01(\x08\x12\x0e\n\x06policy\x18\x04 \x01(\t\x12\x10\n\x08resource\x18\x05 \x01(\t\x12\x12\n\x08priority\x18\x06 \x01(\x03H\x00\x12\x0f\n\x05share\x18\x07 \x01(\x03H\x00\x12\x0b\n\x03wid\x18\x08 \x01(\x03\x12/\n\x05limit\x18\t \x03(\x0b\x32 .bess.pb.TrafficClass.LimitEntry\x12\x36\n\tmax_burst\x18\n \x03(\x0b\x32#.bess.pb.TrafficClass.MaxBurstEntry\x12\x18\n\x10leaf_module_name\x18\x0b \x01(\t\x12\x1a\n\x12leaf_module_taskid\x18\x0c \x01(\x04\x1a,\n\nLimitEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\x1a/\n\rMaxBurstEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x03:\x02\x38\x01\x42\x05\n\x03\x61rg\"\x1d\n\x0eListTcsRequest\x12\x0b\n\x03wid\x18\x01 \x01(\x03\"\xc1\x01\n\x0fListTcsResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x43\n\x0e\x63lasses_status\x18\x02 \x03(\x0b\x32+.bess.pb.ListTcsResponse.TrafficClassStatus\x1aJ\n\x12TrafficClassStatus\x12$\n\x05\x63lass\x18\x01 \x01(\x0b\x32\x15.bess.pb.TrafficClass\x12\x0e\n\x06parent\x18\x02 \x01(\t\"\xf3\x02\n\"CheckSchedulingConstraintsResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\r\n\x05\x66\x61tal\x18\x02 \x01(\x08\x12N\n\nviolations\x18\x03 \x03(\x0b\x32:.bess.pb.CheckSchedulingConstraintsResponse.ViolatingClass\x12L\n\x07modules\x18\x04 \x03(\x0b\x32;.bess.pb.CheckSchedulingConstraintsResponse.ViolatingModule\x1a`\n\x0eViolatingClass\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x12\n\nconstraint\x18\x02 \x01(\x05\x12\x15\n\rassigned_node\x18\x03 \x01(\x05\x12\x15\n\rassigned_core\x18\x04 \x01(\x05\x1a\x1f\n\x0fViolatingModule\x12\x0c\n\x04name\x18\x01 \x01(\t\"4\n\x0c\x41\x64\x64TcRequest\x12$\n\x05\x63lass\x18\x01 \x01(\x0b\x32\x15.bess.pb.TrafficClass\"=\n\x15UpdateTcParamsRequest\x12$\n\x05\x63lass\x18\x01 \x01(\x0b\x32\x15.bess.pb.TrafficClass\"=\n\x15UpdateTcParentRequest\x12$\n\x05\x63lass\x18\x01 \x01(\x0b\x32\x15.bess.pb.TrafficClass\"!\n\x11GetTcStatsRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x84\x01\n\x12GetTcStatsResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x11\n\ttimestamp\x18\x02 \x01(\x01\x12\r\n\x05\x63ount\x18\x03 \x01(\x04\x12\x0e\n\x06\x63ycles\x18\x04 \x01(\x04\x12\x0f\n\x07packets\x18\x05 \x01(\x04\x12\x0c\n\x04\x62its\x18\x06 \x01(\x04\"J\n\x13ListDriversResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x14\n\x0c\x64river_names\x18\x02 \x03(\t\"+\n\x14GetDriverInfoRequest\x12\x13\n\x0b\x64river_name\x18\x01 \x01(\t\"d\n\x15GetDriverInfoResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04help\x18\x03 \x01(\t\x12\x10\n\x08\x63ommands\x18\x04 \x03(\t\"\x93\x02\n\x11ListPortsResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12.\n\x05ports\x18\x02 \x03(\x0b\x32\x1f.bess.pb.ListPortsResponse.Port\x1a\xae\x01\n\x04Port\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06\x64river\x18\x02 \x01(\t\x12\x10\n\x08mac_addr\x18\x03 \x01(\t\x12\x11\n\tnum_inc_q\x18\x04 \x01(\x04\x12\x11\n\tnum_out_q\x18\x05 \x01(\x04\x12\x12\n\nsize_inc_q\x18\x06 \x01(\x04\x12\x12\n\nsize_out_q\x18\x07 \x01(\x04\x12(\n\ndriver_arg\x18\x08 \x01(\x0b\x32\x14.google.protobuf.Any\"\xa2\x01\n\x11\x43reatePortRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06\x64river\x18\x02 \x01(\t\x12\x11\n\tnum_inc_q\x18\x03 \x01(\x04\x12\x11\n\tnum_out_q\x18\x04 \x01(\x04\x12\x12\n\nsize_inc_q\x18\x05 \x01(\x04\x12\x12\n\nsize_out_q\x18\x06 \x01(\x04\x12!\n\x03\x61rg\x18\x07 \x01(\x0b\x32\x14.google.protobuf.Any\";\n\x08PortConf\x12\x10\n\x08mac_addr\x18\x01 \x01(\t\x12\x0b\n\x03mtu\x18\x02 \x01(\r\x12\x10\n\x08\x61\x64min_up\x18\x03 \x01(\x08\"C\n\x12SetPortConfRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1f\n\x04\x63onf\x18\x02 \x01(\x0b\x32\x11.bess.pb.PortConf\"\"\n\x12GetPortConfRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"U\n\x13GetPortConfResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x1f\n\x04\x63onf\x18\x02 \x01(\x0b\x32\x11.bess.pb.PortConf\"S\n\x12\x43reatePortResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x10\n\x08mac_addr\x18\x03 \x01(\t\"\"\n\x12\x44\x65stroyPortRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"#\n\x13GetPortStatsRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\xa3\x02\n\x14GetPortStatsResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12/\n\x03inc\x18\x02 \x01(\x0b\x32\".bess.pb.GetPortStatsResponse.Stat\x12/\n\x03out\x18\x03 \x01(\x0b\x32\".bess.pb.GetPortStatsResponse.Stat\x12\x11\n\ttimestamp\x18\x04 \x01(\x01\x1aw\n\x04Stat\x12\x0f\n\x07packets\x18\x01 \x01(\x04\x12\x0f\n\x07\x64ropped\x18\x02 \x01(\x04\x12\r\n\x05\x62ytes\x18\x03 \x01(\x04\x12\x16\n\x0erequested_hist\x18\x04 \x03(\x04\x12\x13\n\x0b\x61\x63tual_hist\x18\x05 \x03(\x04\x12\x11\n\tdiff_hist\x18\x06 \x03(\x04\"$\n\x14GetLinkStatusRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"|\n\x15GetLinkStatusResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\r\n\x05speed\x18\x02 \x01(\r\x12\x13\n\x0b\x66ull_duplex\x18\x03 \x01(\x08\x12\x0f\n\x07\x61utoneg\x18\x04 \x01(\x08\x12\x0f\n\x07link_up\x18\x05 \x01(\x08\"B\n\x12ListMclassResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\r\n\x05names\x18\x02 \x03(\t\"$\n\x14GetMclassInfoRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"r\n\x15GetMclassInfoResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04help\x18\x03 \x01(\t\x12\x0c\n\x04\x63mds\x18\x04 \x03(\t\x12\x10\n\x08\x63md_args\x18\x05 \x03(\t\"\xa0\x01\n\x13ListModulesResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x34\n\x07modules\x18\x02 \x03(\x0b\x32#.bess.pb.ListModulesResponse.Module\x1a\x34\n\x06Module\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06mclass\x18\x02 \x01(\t\x12\x0c\n\x04\x64\x65sc\x18\x03 \x01(\t\"V\n\x13\x43reateModuleRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06mclass\x18\x02 \x01(\t\x12!\n\x03\x61rg\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\"C\n\x14\x43reateModuleResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\"$\n\x14\x44\x65stroyModuleRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"$\n\x14GetModuleInfoRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\xc5\x06\n\x15GetModuleInfoResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0e\n\x06mclass\x18\x03 \x01(\t\x12\x0c\n\x04\x64\x65sc\x18\x04 \x01(\t\x12\x34\n\x06igates\x18\x06 \x03(\x0b\x32$.bess.pb.GetModuleInfoResponse.IGate\x12\x34\n\x06ogates\x18\x07 \x03(\x0b\x32$.bess.pb.GetModuleInfoResponse.OGate\x12:\n\x08metadata\x18\x08 \x03(\x0b\x32(.bess.pb.GetModuleInfoResponse.Attribute\x12\x10\n\x08\x64\x65\x61\x64\x65nds\x18\t \x01(\x04\x1a\x31\n\x08GateHook\x12\x12\n\nclass_name\x18\x01 \x01(\t\x12\x11\n\thook_name\x18\x02 \x01(\t\x1a\xf7\x01\n\x05IGate\x12\r\n\x05igate\x18\x01 \x01(\x04\x12:\n\x06ogates\x18\x02 \x03(\x0b\x32*.bess.pb.GetModuleInfoResponse.IGate.OGate\x12\x0b\n\x03\x63nt\x18\x03 \x01(\x04\x12\x0c\n\x04pkts\x18\x04 \x01(\x04\x12\r\n\x05\x62ytes\x18\x05 \x01(\x04\x12\x11\n\ttimestamp\x18\x06 \x01(\x01\x12:\n\tgatehooks\x18\x08 \x03(\x0b\x32\'.bess.pb.GetModuleInfoResponse.GateHook\x1a$\n\x05OGate\x12\r\n\x05ogate\x18\x01 \x01(\x04\x12\x0c\n\x04name\x18\x02 \x01(\tJ\x04\x08\x07\x10\x08\x1a\xb2\x01\n\x05OGate\x12\r\n\x05ogate\x18\x01 \x01(\x04\x12\x0b\n\x03\x63nt\x18\x02 \x01(\x04\x12\x0c\n\x04pkts\x18\x03 \x01(\x04\x12\r\n\x05\x62ytes\x18\x04 \x01(\x04\x12\x11\n\ttimestamp\x18\x05 \x01(\x01\x12\x0c\n\x04name\x18\x06 \x01(\t\x12\r\n\x05igate\x18\x07 \x01(\x04\x12:\n\tgatehooks\x18\t \x03(\x0b\x32\'.bess.pb.GetModuleInfoResponse.GateHookJ\x04\x08\x08\x10\t\x1a\x45\n\tAttribute\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04size\x18\x02 \x01(\x04\x12\x0c\n\x04mode\x18\x03 \x01(\t\x12\x0e\n\x06offset\x18\x04 \x01(\x03\"i\n\x15\x43onnectModulesRequest\x12\n\n\x02m1\x18\x01 \x01(\t\x12\n\n\x02m2\x18\x02 \x01(\t\x12\r\n\x05ogate\x18\x03 \x01(\x04\x12\r\n\x05igate\x18\x04 \x01(\x04\x12\x1a\n\x12skip_default_hooks\x18\x05 \x01(\x08\"7\n\x18\x44isconnectModulesRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05ogate\x18\x02 \x01(\x04\"\x84\x02\n\x0bMempoolDump\x12\x0e\n\x06socket\x18\x01 \x01(\x05\x12\x13\n\x0binitialized\x18\x02 \x01(\x08\x12\x0f\n\x07mp_size\x18\x03 \x01(\r\x12\x15\n\rmp_cache_size\x18\x04 \x01(\r\x12\x17\n\x0fmp_element_size\x18\x05 \x01(\r\x12\x19\n\x11mp_populated_size\x18\x06 \x01(\r\x12\x1a\n\x12mp_available_count\x18\x07 \x01(\r\x12\x17\n\x0fmp_in_use_count\x18\x08 \x01(\r\x12\x12\n\nring_count\x18\t \x01(\r\x12\x17\n\x0fring_free_count\x18\n \x01(\r\x12\x12\n\nring_bytes\x18\x0b \x01(\x04\"$\n\x12\x44umpMempoolRequest\x12\x0e\n\x06socket\x18\x01 \x01(\x05\"Y\n\x13\x44umpMempoolResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12#\n\x05\x64umps\x18\x02 \x03(\x0b\x32\x14.bess.pb.MempoolDump\"N\n\x0e\x43ommandRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0b\n\x03\x63md\x18\x02 \x01(\t\x12!\n\x03\x61rg\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\"T\n\x0f\x43ommandResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\"\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x14.google.protobuf.Any\"I\n\x19ListGateHookClassResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\r\n\x05names\x18\x02 \x03(\t\"+\n\x1bGetGateHookClassInfoRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"y\n\x1cGetGateHookClassInfoResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04help\x18\x03 \x01(\t\x12\x0c\n\x04\x63mds\x18\x04 \x03(\t\x12\x10\n\x08\x63md_args\x18\x05 \x03(\t\"\x18\n\x08TrackArg\x12\x0c\n\x04\x62its\x18\x05 \x01(\x08\"<\n\nTcpdumpArg\x12\x0c\n\x04\x66ifo\x18\x05 \x01(\t\x12\r\n\x05\x64\x65\x66\x65r\x18\x06 \x01(\x08\x12\x11\n\treconnect\x18\x07 \x01(\x08\";\n\tPcapngArg\x12\x0c\n\x04\x66ifo\x18\x05 \x01(\t\x12\r\n\x05\x64\x65\x66\x65r\x18\x06 \x01(\x08\x12\x11\n\treconnect\x18\x07 \x01(\x08\"\x97\x01\n\x0cGateHookInfo\x12\x12\n\nclass_name\x18\x01 \x01(\t\x12\x11\n\thook_name\x18\x02 \x01(\t\x12\x13\n\x0bmodule_name\x18\x03 \x01(\t\x12\x0f\n\x05igate\x18\x04 \x01(\x03H\x00\x12\x0f\n\x05ogate\x18\x05 \x01(\x03H\x00\x12!\n\x03\x61rg\x18\x06 \x01(\x0b\x32\x14.google.protobuf.AnyB\x06\n\x04gate\"O\n\x18\x43onfigureGateHookRequest\x12#\n\x04hook\x18\x01 \x01(\x0b\x32\x15.bess.pb.GateHookInfo\x12\x0e\n\x06\x65nable\x18\x02 \x01(\x08\"H\n\x19\x43onfigureGateHookResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12\x0c\n\x04name\x18\x02 \x01(\t\"\\\n\x15ListGateHooksResponse\x12\x1d\n\x05\x65rror\x18\x01 \x01(\x0b\x32\x0e.bess.pb.Error\x12$\n\x05hooks\x18\x02 \x03(\x0b\x32\x15.bess.pb.GateHookInfo\"J\n\x16GateHookCommandRequest\x12#\n\x04hook\x18\x01 \x01(\x0b\x32\x15.bess.pb.GateHookInfo\x12\x0b\n\x03\x63md\x18\x02 \x01(\t\"b\n\x1a\x43onfigureResumeHookRequest\x12\x11\n\thook_name\x18\x01 \x01(\t\x12\x0e\n\x06\x65nable\x18\x02 \x01(\x08\x12!\n\x03\x61rg\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\"!\n\x12PauseWorkerRequest\x12\x0b\n\x03wid\x18\x01 \x01(\x03\"\"\n\x13ResumeWorkerRequest\x12\x0b\n\x03wid\x18\x01 \x01(\x03\x62\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_any__pb2.DESCRIPTOR,error__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -1157,6 +1157,41 @@ _LISTPORTSRESPONSE_PORT = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='num_inc_q', full_name='bess.pb.ListPortsResponse.Port.num_inc_q', index=3,
+      number=4, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='num_out_q', full_name='bess.pb.ListPortsResponse.Port.num_out_q', index=4,
+      number=5, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='size_inc_q', full_name='bess.pb.ListPortsResponse.Port.size_inc_q', index=5,
+      number=6, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='size_out_q', full_name='bess.pb.ListPortsResponse.Port.size_out_q', index=6,
+      number=7, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='driver_arg', full_name='bess.pb.ListPortsResponse.Port.driver_arg', index=7,
+      number=8, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -1169,8 +1204,8 @@ _LISTPORTSRESPONSE_PORT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2349,
-  serialized_end=2403,
+  serialized_start=2350,
+  serialized_end=2524,
 )
 
 _LISTPORTSRESPONSE = _descriptor.Descriptor(
@@ -1207,7 +1242,7 @@ _LISTPORTSRESPONSE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=2249,
-  serialized_end=2403,
+  serialized_end=2524,
 )
 
 
@@ -1279,8 +1314,8 @@ _CREATEPORTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2406,
-  serialized_end=2568,
+  serialized_start=2527,
+  serialized_end=2689,
 )
 
 
@@ -1324,8 +1359,8 @@ _PORTCONF = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2570,
-  serialized_end=2629,
+  serialized_start=2691,
+  serialized_end=2750,
 )
 
 
@@ -1362,8 +1397,8 @@ _SETPORTCONFREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2631,
-  serialized_end=2698,
+  serialized_start=2752,
+  serialized_end=2819,
 )
 
 
@@ -1393,8 +1428,8 @@ _GETPORTCONFREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2700,
-  serialized_end=2734,
+  serialized_start=2821,
+  serialized_end=2855,
 )
 
 
@@ -1431,8 +1466,8 @@ _GETPORTCONFRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2736,
-  serialized_end=2821,
+  serialized_start=2857,
+  serialized_end=2942,
 )
 
 
@@ -1476,8 +1511,8 @@ _CREATEPORTRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2823,
-  serialized_end=2906,
+  serialized_start=2944,
+  serialized_end=3027,
 )
 
 
@@ -1507,8 +1542,8 @@ _DESTROYPORTREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2908,
-  serialized_end=2942,
+  serialized_start=3029,
+  serialized_end=3063,
 )
 
 
@@ -1538,8 +1573,8 @@ _GETPORTSTATSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2944,
-  serialized_end=2979,
+  serialized_start=3065,
+  serialized_end=3100,
 )
 
 
@@ -1604,8 +1639,8 @@ _GETPORTSTATSRESPONSE_STAT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3154,
-  serialized_end=3273,
+  serialized_start=3275,
+  serialized_end=3394,
 )
 
 _GETPORTSTATSRESPONSE = _descriptor.Descriptor(
@@ -1655,8 +1690,8 @@ _GETPORTSTATSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2982,
-  serialized_end=3273,
+  serialized_start=3103,
+  serialized_end=3394,
 )
 
 
@@ -1686,8 +1721,8 @@ _GETLINKSTATUSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3275,
-  serialized_end=3311,
+  serialized_start=3396,
+  serialized_end=3432,
 )
 
 
@@ -1745,8 +1780,8 @@ _GETLINKSTATUSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3313,
-  serialized_end=3437,
+  serialized_start=3434,
+  serialized_end=3558,
 )
 
 
@@ -1783,8 +1818,8 @@ _LISTMCLASSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3439,
-  serialized_end=3505,
+  serialized_start=3560,
+  serialized_end=3626,
 )
 
 
@@ -1814,8 +1849,8 @@ _GETMCLASSINFOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3507,
-  serialized_end=3543,
+  serialized_start=3628,
+  serialized_end=3664,
 )
 
 
@@ -1873,8 +1908,8 @@ _GETMCLASSINFORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3545,
-  serialized_end=3659,
+  serialized_start=3666,
+  serialized_end=3780,
 )
 
 
@@ -1918,8 +1953,8 @@ _LISTMODULESRESPONSE_MODULE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3770,
-  serialized_end=3822,
+  serialized_start=3891,
+  serialized_end=3943,
 )
 
 _LISTMODULESRESPONSE = _descriptor.Descriptor(
@@ -1955,8 +1990,8 @@ _LISTMODULESRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3662,
-  serialized_end=3822,
+  serialized_start=3783,
+  serialized_end=3943,
 )
 
 
@@ -2000,8 +2035,8 @@ _CREATEMODULEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3824,
-  serialized_end=3910,
+  serialized_start=3945,
+  serialized_end=4031,
 )
 
 
@@ -2038,8 +2073,8 @@ _CREATEMODULERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3912,
-  serialized_end=3979,
+  serialized_start=4033,
+  serialized_end=4100,
 )
 
 
@@ -2069,8 +2104,8 @@ _DESTROYMODULEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3981,
-  serialized_end=4017,
+  serialized_start=4102,
+  serialized_end=4138,
 )
 
 
@@ -2100,8 +2135,8 @@ _GETMODULEINFOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4019,
-  serialized_end=4055,
+  serialized_start=4140,
+  serialized_end=4176,
 )
 
 
@@ -2138,8 +2173,8 @@ _GETMODULEINFORESPONSE_GATEHOOK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4326,
-  serialized_end=4375,
+  serialized_start=4465,
+  serialized_end=4514,
 )
 
 _GETMODULEINFORESPONSE_IGATE_OGATE = _descriptor.Descriptor(
@@ -2175,8 +2210,8 @@ _GETMODULEINFORESPONSE_IGATE_OGATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4583,
-  serialized_end=4619,
+  serialized_start=4722,
+  serialized_end=4758,
 )
 
 _GETMODULEINFORESPONSE_IGATE = _descriptor.Descriptor(
@@ -2247,8 +2282,8 @@ _GETMODULEINFORESPONSE_IGATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4378,
-  serialized_end=4625,
+  serialized_start=4517,
+  serialized_end=4764,
 )
 
 _GETMODULEINFORESPONSE_OGATE = _descriptor.Descriptor(
@@ -2326,8 +2361,8 @@ _GETMODULEINFORESPONSE_OGATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4628,
-  serialized_end=4806,
+  serialized_start=4767,
+  serialized_end=4945,
 )
 
 _GETMODULEINFORESPONSE_ATTRIBUTE = _descriptor.Descriptor(
@@ -2377,8 +2412,8 @@ _GETMODULEINFORESPONSE_ATTRIBUTE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4808,
-  serialized_end=4877,
+  serialized_start=4947,
+  serialized_end=5016,
 )
 
 _GETMODULEINFORESPONSE = _descriptor.Descriptor(
@@ -2437,6 +2472,13 @@ _GETMODULEINFORESPONSE = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='deadends', full_name='bess.pb.GetModuleInfoResponse.deadends', index=7,
+      number=9, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -2449,8 +2491,8 @@ _GETMODULEINFORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4058,
-  serialized_end=4877,
+  serialized_start=4179,
+  serialized_end=5016,
 )
 
 
@@ -2508,8 +2550,8 @@ _CONNECTMODULESREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4879,
-  serialized_end=4984,
+  serialized_start=5018,
+  serialized_end=5123,
 )
 
 
@@ -2546,8 +2588,8 @@ _DISCONNECTMODULESREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4986,
-  serialized_end=5041,
+  serialized_start=5125,
+  serialized_end=5180,
 )
 
 
@@ -2647,8 +2689,8 @@ _MEMPOOLDUMP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5044,
-  serialized_end=5304,
+  serialized_start=5183,
+  serialized_end=5443,
 )
 
 
@@ -2678,8 +2720,8 @@ _DUMPMEMPOOLREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5306,
-  serialized_end=5342,
+  serialized_start=5445,
+  serialized_end=5481,
 )
 
 
@@ -2716,8 +2758,8 @@ _DUMPMEMPOOLRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5344,
-  serialized_end=5433,
+  serialized_start=5483,
+  serialized_end=5572,
 )
 
 
@@ -2761,8 +2803,8 @@ _COMMANDREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5435,
-  serialized_end=5513,
+  serialized_start=5574,
+  serialized_end=5652,
 )
 
 
@@ -2799,8 +2841,8 @@ _COMMANDRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5515,
-  serialized_end=5599,
+  serialized_start=5654,
+  serialized_end=5738,
 )
 
 
@@ -2837,8 +2879,8 @@ _LISTGATEHOOKCLASSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5601,
-  serialized_end=5674,
+  serialized_start=5740,
+  serialized_end=5813,
 )
 
 
@@ -2868,8 +2910,8 @@ _GETGATEHOOKCLASSINFOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5676,
-  serialized_end=5719,
+  serialized_start=5815,
+  serialized_end=5858,
 )
 
 
@@ -2927,8 +2969,8 @@ _GETGATEHOOKCLASSINFORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5721,
-  serialized_end=5842,
+  serialized_start=5860,
+  serialized_end=5981,
 )
 
 
@@ -2958,8 +3000,8 @@ _TRACKARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5844,
-  serialized_end=5868,
+  serialized_start=5983,
+  serialized_end=6007,
 )
 
 
@@ -3003,8 +3045,8 @@ _TCPDUMPARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5870,
-  serialized_end=5930,
+  serialized_start=6009,
+  serialized_end=6069,
 )
 
 
@@ -3048,8 +3090,8 @@ _PCAPNGARG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5932,
-  serialized_end=5991,
+  serialized_start=6071,
+  serialized_end=6130,
 )
 
 
@@ -3117,8 +3159,8 @@ _GATEHOOKINFO = _descriptor.Descriptor(
       name='gate', full_name='bess.pb.GateHookInfo.gate',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=5994,
-  serialized_end=6145,
+  serialized_start=6133,
+  serialized_end=6284,
 )
 
 
@@ -3155,8 +3197,8 @@ _CONFIGUREGATEHOOKREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6147,
-  serialized_end=6226,
+  serialized_start=6286,
+  serialized_end=6365,
 )
 
 
@@ -3193,8 +3235,8 @@ _CONFIGUREGATEHOOKRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6228,
-  serialized_end=6300,
+  serialized_start=6367,
+  serialized_end=6439,
 )
 
 
@@ -3231,8 +3273,8 @@ _LISTGATEHOOKSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6302,
-  serialized_end=6394,
+  serialized_start=6441,
+  serialized_end=6533,
 )
 
 
@@ -3269,8 +3311,8 @@ _GATEHOOKCOMMANDREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6396,
-  serialized_end=6470,
+  serialized_start=6535,
+  serialized_end=6609,
 )
 
 
@@ -3314,8 +3356,8 @@ _CONFIGURERESUMEHOOKREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6472,
-  serialized_end=6570,
+  serialized_start=6611,
+  serialized_end=6709,
 )
 
 
@@ -3345,8 +3387,8 @@ _PAUSEWORKERREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6572,
-  serialized_end=6605,
+  serialized_start=6711,
+  serialized_end=6744,
 )
 
 
@@ -3376,8 +3418,8 @@ _RESUMEWORKERREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=6607,
-  serialized_end=6641,
+  serialized_start=6746,
+  serialized_end=6780,
 )
 
 _EMPTYRESPONSE.fields_by_name['error'].message_type = error__pb2._ERROR
@@ -3411,6 +3453,7 @@ _UPDATETCPARENTREQUEST.fields_by_name['class'].message_type = _TRAFFICCLASS
 _GETTCSTATSRESPONSE.fields_by_name['error'].message_type = error__pb2._ERROR
 _LISTDRIVERSRESPONSE.fields_by_name['error'].message_type = error__pb2._ERROR
 _GETDRIVERINFORESPONSE.fields_by_name['error'].message_type = error__pb2._ERROR
+_LISTPORTSRESPONSE_PORT.fields_by_name['driver_arg'].message_type = google_dot_protobuf_dot_any__pb2._ANY
 _LISTPORTSRESPONSE_PORT.containing_type = _LISTPORTSRESPONSE
 _LISTPORTSRESPONSE.fields_by_name['error'].message_type = error__pb2._ERROR
 _LISTPORTSRESPONSE.fields_by_name['ports'].message_type = _LISTPORTSRESPONSE_PORT
