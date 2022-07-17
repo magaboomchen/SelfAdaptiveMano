@@ -84,8 +84,8 @@ class TestSimulatorBase(TestBase):
                                             serverBasedClassifier=True,
                                             vnfType=VNF_TYPE_FORWARD):
         if mappedVNFISeq:
-            vnfiSequence = self.gen10BackupServerVNFISequence(sfcLength,
-                                            vnfType=VNF_TYPE_FORWARD)
+            vnfiSequence = self.gen10BackupServerVNFISequence(sfcLength, 
+                                                                vnfType)
         else:
             vnfiSequence = None
         return SFCI(self.assignSFCIID(), vnfiSequence, None,

@@ -90,7 +90,8 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
             self.sfcList.append(sfc)
             sfci = self.genUniDirection10BackupServerNFVISFCI(
                                 sfcLength=sfcLength,
-                    serverBasedClassifier=self.serverBasedClassifier)
+                    serverBasedClassifier=self.serverBasedClassifier,
+                    vnfType=VNF_TYPE_RATELIMITER)
             self.sfciList.append(sfci)
 
         for idx in [0,1,2]:
@@ -134,14 +135,14 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
                 for vnfi in vnfis:
                     vnfiStatus = vnfi.vnfiStatus
                     assert type(vnfiStatus) == VNFIStatus
-                    assert vnfiStatus.inputTrafficAmount["Direction1"] > 0
-                    assert vnfiStatus.inputTrafficAmount["Direction2"] > 0
-                    assert vnfiStatus.inputPacketAmount["Direction1"] > 0
-                    assert vnfiStatus.inputPacketAmount["Direction2"] > 0
-                    assert vnfiStatus.outputTrafficAmount["Direction1"] > 0
-                    assert vnfiStatus.outputTrafficAmount["Direction2"] > 0
-                    assert vnfiStatus.outputPacketAmount["Direction1"] > 0
-                    assert vnfiStatus.outputPacketAmount["Direction2"] > 0
+                    assert vnfiStatus.inputTrafficAmount["Direction1"] >= 0
+                    assert vnfiStatus.inputTrafficAmount["Direction2"] >= 0
+                    assert vnfiStatus.inputPacketAmount["Direction1"] >= 0
+                    assert vnfiStatus.inputPacketAmount["Direction2"] >= 0
+                    assert vnfiStatus.outputTrafficAmount["Direction1"] >= 0
+                    assert vnfiStatus.outputTrafficAmount["Direction2"] >= 0
+                    assert vnfiStatus.outputPacketAmount["Direction1"] >= 0
+                    assert vnfiStatus.outputPacketAmount["Direction2"] >= 0
                     vnfType = vnfi.vnfType
                     if vnfType == VNF_TYPE_FW:
                         assert "FWRulesNum" in vnfiStatus.state
