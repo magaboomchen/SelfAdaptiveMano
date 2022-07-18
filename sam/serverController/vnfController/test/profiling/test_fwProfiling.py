@@ -86,13 +86,13 @@ class TestVNFAddFW(TestBase):
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
                 config = {}
-                config['ACL'] = self.genTestFWRules()
+                config['ACL'] = self.genTestIPv4FWRules()
                 vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
                     vnfiID=uuid.uuid1(), config=config, node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
-    def genTestFWRules(self):
+    def genTestIPv4FWRules(self):
         rules = []
         rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
             srcPort=(1234, 1234), dstPort=(80, 80)))

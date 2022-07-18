@@ -8,12 +8,10 @@ class VNFIDeleter(object):
     def __init__(self, dockerPort):
         self._dockerPort = dockerPort
     
-    def deleteVNFI(self, vnfiDS, vioAllo, cpuAllo):
+    def deleteVNFI(self, vnfiDS, vioAllo, cpuAllo, socketPortAllo):
         if vnfiDS.error is not None:  # this vnfi is not sucessfully deployed
             assert vnfiDS.containerID is None
             return
-        vioAllo.freeSource(vnfiDS.vioStart, 2)
-        cpuAllo.freeCPU(vnfiDS.cpus)
         server = vnfiDS.vnfi.node
         ''' kill container '''        
         docker_url = 'tcp://%s:%d' % (server.getControlNICIP(), self._dockerPort)
@@ -23,4 +21,9 @@ class VNFIDeleter(object):
             container = client.containers.get(containerID)
             container.kill()
         except:
-            return
+            pass
+        finally:
+            vioAllo.freeSource(vnfiDS.vioStart, 2)
+            cpuAllo.freeCPU(vnfiDS.cpus)
+            if vnfiDS.controlSocketPort != None:
+                socketPortAllo.freeSocketPort(vnfiDS.controlSocketPort)

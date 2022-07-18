@@ -18,15 +18,25 @@ class VNFIDeployStatus(object):
         self.containerID = None 
         self.vioStart = None  # start port of virtio in dpdk vdev
         self.cpus = None # allocated cpus [nodeNum][]
+        self.controlSocketPort = None
         self.error = None # error of the docker
 
 
 class VNFIMaintainer(object):
     def __init__(self):
         self._vnfiSet = {}   # {sfciID: {vnfiID: VNFIDeployStatus}}
+        self._sfciDict = {}   # {sfciID: sfci}
 
-    def addSFCI(self, sfciID):
+    def addSFCI(self, sfci):
+        sfciID = sfci.sfciID
         self._vnfiSet[sfciID] = {}
+        self._sfciDict[sfciID] = sfci
+
+    def getAllSFCI(self):
+        return self._sfciDict
+
+    def getAllSFCI2VNFIDict(self):
+        return self._vnfiSet
 
     def hasSFCI(self, sfciID):
         return sfciID in self._vnfiSet
@@ -38,6 +48,13 @@ class VNFIMaintainer(object):
         for sfciID, vnfiDict in self._vnfiSet.items():
             if vnfi.vnfiID in vnfiDict:
                 return True
+        else:
+            return False
+
+    def getVNFIDeployStatus(self, vnfi):
+        for sfciID, vnfiDict in self._vnfiSet.items():
+            if vnfi.vnfiID in vnfiDict:
+                return vnfiDict[vnfi.vnfiID]
         else:
             return False
 
@@ -53,6 +70,9 @@ class VNFIMaintainer(object):
     def setVNFICPU(self, sfciID, vnfi, cpus):
         self._vnfiSet[sfciID][vnfi.vnfiID].cpus = cpus
 
+    def setVNFISocketPort(self, sfciID, vnfi, controlSocketPort):
+        self._vnfiSet[sfciID][vnfi.vnfiID].controlSocketPort = controlSocketPort
+
     def setVNFIError(self, sfciID, vnfi, error):
         self._vnfiSet[sfciID][vnfi.vnfiID].error = error
 
@@ -65,5 +85,7 @@ class VNFIMaintainer(object):
     def deleteVNFI(self, sfciID, vnfiID):
         del(self._vnfiSet[sfciID][vnfiID])
 
-    def deleteSFCI(self, sfciID):
+    def deleteSFCI(self, sfci):
+        sfciID = sfci.sfciID
         del(self._vnfiSet[sfciID])
+        del(self._sfciDict[sfciID])

@@ -4,8 +4,8 @@
 import uuid
 import random
 import logging
-from sam.base.acl import ACL_ACTION_ALLOW, ACL_PROTO_UDP, ACLTuple
 
+from sam.base.acl import ACL_ACTION_ALLOW, ACL_PROTO_UDP, ACLTuple
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, VNF_TYPE_FORWARD, VNF_TYPE_MAX
 from sam.base.slo import SLO
@@ -36,7 +36,9 @@ from sam.measurement import measurer
 DCN_GATEWAY_IP = "2.2.0.0"
 
 OUTTER_CLIENT_IP = "1.1.1.1"
+OUTTER_CLIENT_IPV6 = "3ff2:1ce1:2::"
 WEBSITE_REAL_IP = "3.3.3.3"
+WEBSITE_REAL_IPV6 = "3ff3:1ce1:2::"
 APP1_REAL_IP = "4.4.4.4"
 APP2_REAL_IP = "5.5.5.5"
 APP3_REAL_IP = "6.6.6.6"
@@ -62,6 +64,8 @@ MON_VNFI1_0_IP = "10.64.1.1"
 MON_VNFI1_1_IP = "10.64.1.128"
 LB_VNFI1_0_IP = "10.80.1.1"
 LB_VNFI1_1_IP = "10.80.1.128"
+RL_VNFI1_0_IP = "10.96.1.1"
+RL_VNFI1_1_IP = "10.96.1.128"
 NAT_VNFI1_0_IP = "10.112.1.1"
 NAT_VNFI1_1_IP = "10.112.1.128"
 VPN_VNFI1_0_IP = "10.128.1.1"
@@ -76,8 +80,9 @@ SFCI1_1_EGRESS_IP = "10.0.1.128"
 # SFF1_CONTROLNIC_MAC = "52:54:00:80:ea:94"
 # SFF1_SERVERID = 10003
 
+SFF1_CONTROLNIC_INTERFACE = "enp1s0"
 SFF1_DATAPATH_IP = "2.2.0.98"
-SFF1_DATAPATH_MAC = "90:e2:ba:b1:4d:0e"
+SFF1_DATAPATH_MAC = "52:67:f7:65:01:00"
 SFF1_CONTROLNIC_IP = "192.168.20.6"
 SFF1_CONTROLNIC_MAC = "52:54:00:9d:c2:77"
 SFF1_SERVERID = 10003
@@ -184,7 +189,7 @@ class TestBase(object):
         filePath = mediator.__file__
         self.sP.runPythonScript(filePath)
 
-    def genUniDirectionSFC(self, classifier):
+    def genUniDirectionSFC(self, classifier, zone=DEFAULT_ZONE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_FORWARD]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_FORWARD,
@@ -205,13 +210,21 @@ class TestBase(object):
         slo = SLO(latency=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
-            {'zone':DEFAULT_ZONE}, slo=slo, vnfSequence=vnfSequence)
+            {'zone':zone}, slo=slo, vnfSequence=vnfSequence)
 
-    def genBiDirectionSFC(self, classifier, vnfTypeSeq=[VNF_TYPE_FORWARD]):
+    def genBiDirectionSFC(self, classifier, vnfTypeSeq=None,
+                            routingMorphicTemplate=ipv4MorphicDictTemplate,
+                            zone=DEFAULT_ZONE):
         sfcUUID = uuid.uuid1()
-        vNFTypeSequence = vnfTypeSeq
-        vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_FORWARD,
-                        None, PREFERRED_DEVICE_TYPE_SERVER)] * len(vnfTypeSeq)
+        if vnfTypeSeq == None:
+            vNFTypeSequence = [VNF_TYPE_FORWARD]
+        else:
+            vNFTypeSequence = vnfTypeSeq
+        vnfSequence = []
+        for idx in range(len(vnfTypeSeq)):
+            vnf = VNF(uuid.uuid1(), vNFTypeSequence[idx],
+                        None, PREFERRED_DEVICE_TYPE_SERVER)
+            vnfSequence.append(vnf)
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
@@ -235,11 +248,11 @@ class TestBase(object):
         }
         directions = [direction1, direction2]
         routingMorphic = RoutingMorphic()
-        routingMorphic.from_dict(ipv4MorphicDictTemplate)
+        routingMorphic.from_dict(routingMorphicTemplate)
         slo = SLO(latency=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions=directions,
-            attributes={'zone':DEFAULT_ZONE},
+            attributes={'zone':zone},
             routingMorphic=routingMorphic,
             vnfSequence=vnfSequence, slo=slo
             )

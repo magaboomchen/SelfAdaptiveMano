@@ -105,8 +105,30 @@ contentDict = {
     "rateLimitition": 1,            
     "FWRulesNum": 2,
     "FlowStatisticsDict": {
-            "1.1.1.1": 100, # unit: Mbps
-            "2.2.2.2": 50   # 生成这些数据即可，仅用于演示
+            "ipv4_mon_direction0":{
+                "1.1.1.1": 100, # unit: Mbps
+                "2.2.2.2": 50   # 生成这些数据即可，仅用于演示
+            },
+            "ipv4_mon_direction1":{
+                "1.1.1.1": 100,
+                "2.2.2.2": 50
+            },
+            "ipv6_mon_direction0":{
+                "1.1.1.1": 100,
+                "2.2.2.2": 50
+            },
+            "ipv6_mon_direction1":{
+                "1.1.1.1": 100,
+                "2.2.2.2": 50
+            },
+            "rocev1_mon_direction0":{
+                "1.1.1.1": 100,
+                "2.2.2.2": 50
+            },
+            "rocev1_mon_direction1":{
+                "1.1.1.1": 100,
+                "2.2.2.2": 50
+            }
         }
 }
 ```

@@ -201,6 +201,14 @@ export RTE_TARGET=x86_64-native-linuxapp-gcc
 RYU_APP_PATH=/usr/local/lib/python2.7/dist-packages/ryu/app
 ```
 
+## Java Apps
+```
+sudo apt install default-jre
+sudo apt install default-jdk
+cd sam/serverController/vnfController/click/ControlSocket
+javac ./ControlSocket.java 
+```
+
 ## Disable OS Auto update (For bess server)
 ```
 sudoedit /etc/apt/apt.conf.d/20auto-upgrades

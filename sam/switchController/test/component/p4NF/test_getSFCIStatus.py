@@ -44,10 +44,10 @@ class TestGetSFCIStatusClass(TestP4ControllerBase):
         self.exerciseAddSFCAndSFCI()
 
         self.startMsgAgentRPCReciever("localhost", TEST_PORT)
-        self.getSFCIStatusCmd = self.measurer.genCMDGetSFCIStatus()
+        self.getSFCIStateCmd = self.measurer.genCMDGetSFCIState()
         self.sendCmdByRPC("localhost", P4_CONTROLLER_IP,
                         MSG_TYPE_P4CONTROLLER_CMD,
-                        self.getSFCIStatusCmd)
+                        self.getSFCIStateCmd)
 
         # verify
         self.verifyGetSFCIStatusCmdRply()
@@ -56,7 +56,7 @@ class TestGetSFCIStatusClass(TestP4ControllerBase):
 
     def verifyGetSFCIStatusCmdRply(self):
         cmdRply = self.recvCmdRplyByRPC("localhost", TEST_PORT)
-        assert cmdRply.cmdID == self.getSFCIStatusCmd.cmdID
+        assert cmdRply.cmdID == self.getSFCIStateCmd.cmdID
         assert "sfcisDict" in cmdRply.attributes
         assert type(cmdRply.attributes["sfcisDict"]) == dict
         assert len(cmdRply.attributes["sfcisDict"]) >= 0

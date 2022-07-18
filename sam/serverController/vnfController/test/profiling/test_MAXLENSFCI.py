@@ -96,7 +96,7 @@ class TestVNFSFCIAdderClass(TestBase):
         vnfiSequence[index].append(vnfi)
 
         config = {}
-        config['ACL'] = self.genTestFWRules()
+        config['ACL'] = self.genTestIPv4FWRules()
         vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
             vnfiID=uuid.uuid1(), config=config, node=server)
         vnfi.maxCPUNum = 1
@@ -142,7 +142,7 @@ class TestVNFSFCIAdderClass(TestBase):
         logging.info("vnfiSequence: {0}".format(vnfiSequence))
         return vnfiSequence
 
-    def genTestFWRules(self):
+    def genTestIPv4FWRules(self):
         rules = []
         rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
             srcPort=(1234, 1234), dstPort=(80, 80)))

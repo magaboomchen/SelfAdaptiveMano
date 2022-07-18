@@ -1,0 +1,284 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+'''
+Usage:
+    (1) sudo env "PATH=$PATH" python -m pytest ./test_vnfControllerAddRL.py -s --disable-warnings
+    (2) Please run 'python  ./serverAgent.py  0000:06:00.0  enp1s0  nfvi  2.2.0.98'
+        on the NFVI running bess.
+'''
+
+import time
+import uuid
+import logging
+
+import pytest
+from scapy.all import sniff, AsyncSniffer, Raw, sendp
+from scapy.layers.inet import IP, TCP
+from scapy.contrib.nsh import NSH
+from scapy.layers.inet6 import IPv6
+from scapy.contrib.roce import GRH
+
+from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.messageAgent import TURBONET_ZONE, VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
+    SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE, MessageAgent
+from sam.base.rateLimiter import RateLimiterConfig
+from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
+from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNF_TYPE_FW, VNFIStatus
+from sam.base.server import SERVER_TYPE_NFVI, Server, SERVER_TYPE_NORMAL
+from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
+from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.acl import ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP, \
+    ACL_ACTION_DENY
+from sam.base.shellProcessor import ShellProcessor
+from sam.test.fixtures.measurementStub import MeasurementStub
+from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
+from sam.test.fixtures.mediatorStub import MediatorStub
+from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
+from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, OUTTER_CLIENT_IPV6, SFF1_CONTROLNIC_INTERFACE, WEBSITE_REAL_IPV6, TestBase, WEBSITE_REAL_IP, OUTTER_CLIENT_IP, \
+    CLASSIFIER_DATAPATH_IP, SFCI1_0_EGRESS_IP, SFCI1_1_EGRESS_IP, \
+    SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC, SFF1_CONTROLNIC_IP, SFF1_CONTROLNIC_MAC
+from sam.serverController.sffController.test.component.testConfig import TESTER_SERVER_DATAPATH_IP, \
+    TESTER_SERVER_DATAPATH_MAC, TESTER_DATAPATH_INTF, PRIVATE_KEY_FILE_PATH, BESS_SERVER_USER, \
+    BESS_SERVER_USER_PASSWORD
+from sam.serverController.vnfController.test.fixtures.sendDirection0Traffic import DGID, sendDirection0Traffic
+from sam.serverController.vnfController.test.fixtures.sendDirection1Traffic import sendDirection1Traffic
+
+
+MANUAL_TEST = True
+
+logging.basicConfig(level=logging.INFO)
+
+
+class TestVNFAddRL(TestBase):
+    @pytest.fixture(scope="function")
+    def setup_addRL(self):
+        # setup
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'tester.log', level='debug')
+        self.logger = logConfigur.getLogger()
+        self._messageAgent = MessageAgent(self.logger)
+
+        self.sP = ShellProcessor()
+        self.clearQueue()
+        self.killAllModule()
+
+        self.routeMorphic = ROCEV1_ROUTE_PROTOCOL
+
+        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
+        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_RATELIMITER],
+                            routingMorphicTemplate=ipv4MorphicDictTemplate,
+                            zone=TURBONET_ZONE)
+        self.sfci = self.genBiDirection10BackupSFCI()
+        self.mediator = MediatorStub()
+
+        self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
+                                            TESTER_SERVER_DATAPATH_MAC)
+
+        self.runSFFController()
+        self.addSFCI2SFF()
+        self.runVNFController()
+
+        self.measurer = MeasurementStub()
+
+        yield
+        # teardown
+        self.delVNFI4Server()
+        self.killSFFController()
+        self.killVNFController()
+
+    def gen10BackupVNFISequence(self, SFCLength=1):
+        # hard-code function
+        vnfiSequence = []
+        for index in range(SFCLength):
+            vnfiSequence.append([])
+            for iN in range(1):
+                server = Server(SFF1_CONTROLNIC_INTERFACE, SFF1_DATAPATH_IP,
+                                    SERVER_TYPE_NFVI)
+                server.setServerID(SERVERID_OFFSET + 1)
+                server.setControlNICIP(SFF1_CONTROLNIC_IP)
+                server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
+                server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
+                server.updateResource()
+                config = RateLimiterConfig(maxMbps=100)
+                vnfi = VNFI(VNF_TYPE_RATELIMITER, vnfType=VNF_TYPE_RATELIMITER, 
+                    vnfiID=uuid.uuid1(), config=config, node=server)
+                vnfiSequence[index].append(vnfi)
+        return vnfiSequence
+
+    def addSFCI2SFF(self):
+        logging.info("setup add SFCI to sff")
+        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
+        queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, TURBONET_ZONE)
+        self.sendCmd(queueName, MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
+        self.verifyCmdRply(MEDIATOR_QUEUE, self.addSFCICmd.cmdID)
+
+    def delVNFI4Server(self):
+        logging.warning("Deleting VNFII")
+        self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
+        queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, TURBONET_ZONE)
+        self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
+        self.verifyCmdRply(MEDIATOR_QUEUE, self.delSFCICmd.cmdID)
+
+    def test_addRL(self, setup_addRL):
+        # exercise
+        logging.info("exercise")
+        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
+        queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, TURBONET_ZONE)
+        self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD, self.addSFCICmd)
+
+        # verifiy
+        self.verifyCmdRply(MEDIATOR_QUEUE, self.addSFCICmd.cmdID)
+        self.verifyDirection0Traffic()
+        self.verifyDirection1Traffic()
+
+        # exercise
+        logging.info("exercise")
+        self.getSFCIStateCmd = self.measurer.genCMDGetSFCIState()
+        queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, TURBONET_ZONE)
+        self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD, self.getSFCIStateCmd)
+
+        # verifiy
+        self.verifyGetSFCIStateCmdRply(MEDIATOR_QUEUE, self.getSFCIStateCmd.cmdID)
+
+    def verifyDirection0Traffic(self):
+        aSniffer = self._checkEncapsulatedTraffic(inIntf=TESTER_DATAPATH_INTF)
+        time.sleep(2)
+        sendDirection0Traffic(routeMorphic=self.routeMorphic)
+        while True:
+            if not aSniffer.running:
+                break
+
+    def _checkEncapsulatedTraffic(self,inIntf):
+        logging.info("_checkEncapsulatedTraffic: wait for packet")
+        filterRE = "ether dst " + str(self.server.getDatapathNICMac())
+        # sniff(filter=filterRE,
+        #     iface=inIntf, prn=self.encap_callback,count=1,store=0)
+        aSniffer = AsyncSniffer(filter=filterRE,
+            iface=inIntf, prn=self.encap_callback,count=1,store=0)
+        aSniffer.start()
+        return aSniffer
+
+    def encap_callback(self,frame):
+        logging.info("Get encap back packet!")
+        frame.show()
+        if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
+            condition = (frame[IP].src == SFF1_DATAPATH_IP \
+                and frame[IP].dst == SFCI1_0_EGRESS_IP \
+                and frame[IP].proto == 0x04)
+            assert condition
+            outterPkt = frame.getlayer('IP')[0]
+            innerPkt = frame.getlayer('IP')[1]
+            assert innerPkt[IP].dst == WEBSITE_REAL_IP
+        elif DEFAULT_CHAIN_TYPE == CHAIN_TYPE_NSHOVERETH:
+            condition = (frame[NSH].spi == DIRECTION0_TRAFFIC_SPI \
+                and frame[NSH].si == 0)
+            assert condition == True
+            if self.routeMorphic == IPV4_ROUTE_PROTOCOL:
+                assert frame[NSH].nextproto == 0x1
+                innerPkt = frame.getlayer('IP')[0]
+                assert innerPkt[IP].dst == WEBSITE_REAL_IP
+            elif self.routeMorphic in [IPV6_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL]:
+                assert frame[NSH].nextproto == 0x2
+                innerPkt = frame.getlayer('IPv6')[0]
+                assert innerPkt[IPv6].dst == WEBSITE_REAL_IPV6
+            elif self.routeMorphic == ROCEV1_ROUTE_PROTOCOL:
+                assert frame[NSH].nextproto == 0x6
+                # innerPkt = frame.getlayer('IPv6')[0]
+                # assert innerPkt[GRH].dgid == DGID
+            else:
+                raise ValueError("Unknown nextproto.")
+        else:
+            raise ValueError("Unknown chain type {0}".format(DEFAULT_CHAIN_TYPE))
+
+    def verifyDirection1Traffic(self):
+        aSniffer = self._checkDecapsulatedTraffic(inIntf=TESTER_DATAPATH_INTF)
+        time.sleep(2)
+        sendDirection1Traffic(routeMorphic=self.routeMorphic)
+        while True:
+            if not aSniffer.running:
+                break
+
+    def _checkDecapsulatedTraffic(self,inIntf):
+        logging.info("_checkDecapsulatedTraffic: wait for packet")
+        # sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
+        #     iface=inIntf, prn=self.decap_callback,count=1,store=0)
+        aSniffer = AsyncSniffer(filter="ether dst " + str(self.server.getDatapathNICMac()),
+            iface=inIntf, prn=self.decap_callback,count=1,store=0)
+        aSniffer.start()
+        return aSniffer
+
+    def decap_callback(self,frame):
+        logging.info("Get decap back packet!")
+        frame.show()
+        if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
+            condition = (frame[IP].src == SFF1_DATAPATH_IP and \
+                frame[IP].dst == SFCI1_1_EGRESS_IP and \
+                frame[IP].proto == 0x04)
+            assert condition == True
+            outterPkt = frame.getlayer('IP')[0]
+            innerPkt = frame.getlayer('IP')[1]
+            assert innerPkt[IP].src == WEBSITE_REAL_IP
+        elif DEFAULT_CHAIN_TYPE == CHAIN_TYPE_NSHOVERETH:
+            condition = (frame[NSH].spi == DIRECTION1_TRAFFIC_SPI \
+                and frame[NSH].si == 0)
+            if self.routeMorphic == IPV4_ROUTE_PROTOCOL:
+                assert frame[NSH].nextproto == 0x1
+                innerPkt = frame.getlayer('IP')[0]
+                assert innerPkt[IP].src == WEBSITE_REAL_IP
+            elif self.routeMorphic in [IPV6_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL]:
+                assert frame[NSH].nextproto == 0x2
+                innerPkt = frame.getlayer('IPv6')[0]
+                assert innerPkt[IPv6].src == WEBSITE_REAL_IPV6
+            elif self.routeMorphic == ROCEV1_ROUTE_PROTOCOL:
+                assert frame[NSH].nextproto == 0x6
+                # innerPkt = frame.getlayer('GRH')[0]
+                # assert innerPkt[GRH].sgid == DGID
+            else:
+                raise ValueError("Unknown nextproto.")
+        else:
+            raise ValueError("Unknown chain type {0}".format(DEFAULT_CHAIN_TYPE))
+
+    def verifyCmdRply(self, queueName, cmdID):
+        cmdRply = self.recvCmdRply(queueName)
+        assert cmdRply.cmdID == cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == TURBONET_ZONE
+        logging.info("Verify cmy rply successfully!")
+
+    def verifyGetSFCIStateCmdRply(self, queueName, cmdID):
+        cmdRply = self.recvCmdRply(queueName)
+        assert cmdRply.cmdID == cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == TURBONET_ZONE
+
+        assert "sfcisDict" in cmdRply.attributes
+        assert type(cmdRply.attributes["sfcisDict"]) == dict
+        assert len(cmdRply.attributes["sfcisDict"]) >= 0
+        sfcisDict = cmdRply.attributes["sfcisDict"]
+        self.logger.info("get sfcisDict {0}".format(sfcisDict))
+        for sfciID,sfci in sfcisDict.items():
+            assert sfci.sfciID == sfciID
+            assert len(sfci.vnfiSequence) != 0
+            vnfiSequence = sfci.vnfiSequence
+            for vnfis in vnfiSequence:
+                for vnfi in vnfis:
+                    vnfiStatus = vnfi.vnfiStatus
+                    assert type(vnfiStatus) == VNFIStatus
+                    if type(vnfi.node) == Server:
+                        vnfType = vnfi.vnfType
+                        if vnfType == VNF_TYPE_FW:
+                            assert "FWRulesNum" in vnfiStatus.state
+                            assert vnfiStatus.state["FWRulesNum"] == len(vnfi.config)
+                        elif vnfType == VNF_TYPE_MONITOR:
+                            assert "FlowStatisticsDict" in vnfiStatus.state
+                            flowStatisticsDict = vnfiStatus.state["FlowStatisticsDict"]
+                            assert type(flowStatisticsDict) == dict
+                            self.logger.info("mon stat {0}".format(flowStatisticsDict))
+                        elif vnfType == VNF_TYPE_RATELIMITER:
+                            assert "rateLimitition" in vnfiStatus.state
+                            vnfiStatus.state["rateLimitition"] == vnfi.config.maxMbps
+                        else:
+                            raise ValueError("Unknown vnf type {0}".format(vnfType))
+
+        logging.info("Verify cmy rply successfully!")

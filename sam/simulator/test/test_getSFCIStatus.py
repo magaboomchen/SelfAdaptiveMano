@@ -74,10 +74,10 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
         self.addSFCI2Simulator()
         self.startMsgAgentRPCReciever("localhost", TEST_PORT)
 
-        self.getSFCIStatusCmd = self.measurer.genCMDGetSFCIState()
+        self.getSFCIStateCmd = self.measurer.genCMDGetSFCIState()
         self.sendCmdByRPC("localhost", SIMULATOR_PORT,
                         MSG_TYPE_SIMULATOR_CMD,
-                        self.getSFCIStatusCmd)
+                        self.getSFCIStateCmd)
 
         # verify
         self.verifyGetSFCIStatusCmdRply()
@@ -113,7 +113,7 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
 
     def verifyGetSFCIStatusCmdRply(self):
         cmdRply = self.recvCmdRplyByRPC("localhost", TEST_PORT)
-        assert cmdRply.cmdID == self.getSFCIStatusCmd.cmdID
+        assert cmdRply.cmdID == self.getSFCIStateCmd.cmdID
         assert "sfcisDict" in cmdRply.attributes
         assert type(cmdRply.attributes["sfcisDict"]) == dict
         assert len(cmdRply.attributes["sfcisDict"]) >= 0

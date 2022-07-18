@@ -2,7 +2,17 @@
 # -*- coding: UTF-8 -*-
 
 '''
-https://www.segment-routing.net/images/201901-SRv6.pdf
+https://tools.ietf.org/id/draft-ietf-sfc-nsh-17.html
+Next protocol
+0x0: Unassigned
+0x1: IPv4
+0x2: IPv6
+0x3: Ethernet
+0x4: NSH
+0x5: MPLS
+0x6: ROCEv1
+0xFE: Experiment 1
+0xFF: Experiment 2
 '''
 
 import numpy as np

@@ -232,7 +232,6 @@ class SFFInitializer(BessControlPlane):
             argument.Pack(arg)
             response = stub.ModuleCommand(bess_msg_pb2.CommandRequest(
                 name="wm1",cmd="add",arg=argument))
-            self.logger.warning("add rule 5 response {0}".format(response))
             self._checkResponse(response)
 
             # WildcardMatch 2

@@ -33,9 +33,6 @@ class TestVNFSFCIDeleterClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_delSFCI(self):
         # setup
-        self.resetRabbitMQConf(
-            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.json",
-            "192.168.0.158", "mq", "123456")
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()

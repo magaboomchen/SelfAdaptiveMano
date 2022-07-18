@@ -8,6 +8,10 @@ Source (virtio ID or CPU) allocator for servers.
 from sam.serverController.vnfController.vcConfig import vcConfig
 
 
+MIN_SOCKET_PORT = 1024
+MAX_SOCKET_PORT_NUM = 65535 - 1024
+
+
 class SourceAllocator(object):
     def __init__(self, serverID, maxNum, start=0):
         self._serverID = serverID
@@ -27,6 +31,35 @@ class SourceAllocator(object):
         # no result found 
         return -1
 
+    def allocateSpecificSource(self, start, num):
+        result = start
+        for i in range(len(self._unallocatedList)):
+            if start == self._unallocatedList[i][0] and start+num-1 == self._unallocatedList[i][1]:
+                del(self._unallocatedList[i])
+                break
+            elif start == self._unallocatedList[i][0] and start+num-1 < self._unallocatedList[i][1]:
+                self._unallocatedList[i][0] += num
+                break
+            elif start > self._unallocatedList[i][0] and start+num-1 == self._unallocatedList[i][1]:
+                self._unallocatedList[i][1] -= num
+                break
+            elif start > self._unallocatedList[i][0] and start+num-1 < self._unallocatedList[i][1]:
+                oriLargerBound = self._unallocatedList[i][1]
+                self._unallocatedList[i][1] = start - 1
+                self._unallocatedList.insert(i+1, [start + num, oriLargerBound])
+                break
+        else:
+            # no result found 
+            result = -1
+        if result == start:
+            # merge adjacent ranges
+            for i in range(len(self._unallocatedList) - 1):
+                if self._unallocatedList[i][1] == self._unallocatedList[i + 1][0]:
+                    self._unallocatedList[i][1] = self._unallocatedList[i + 1][1]
+                    del(self._unallocatedList[i + 1])
+                    break
+        return result
+
     def freeSource(self, start, num):
         if len(self._unallocatedList) == 0:
             self._unallocatedList.append([start, start + num])
@@ -45,6 +78,23 @@ class SourceAllocator(object):
                 self._unallocatedList[i][1] = self._unallocatedList[i + 1][1]
                 del(self._unallocatedList[i + 1])
                 break
+
+
+class SocketPortAllocator(SourceAllocator):
+    def __init__(self, serverID):
+        start = MIN_SOCKET_PORT
+        self._serverID = serverID
+        self._maxNum = MIN_SOCKET_PORT + MAX_SOCKET_PORT_NUM
+        self._unallocatedList = [[start, self._maxNum]]  # simple implementation
+
+    def allocateSocketPort(self):
+        return self.allocateSource(1)
+    
+    def allocateSpecificSocketPort(self, port):
+        return self.allocateSpecificSource(port, 1)
+
+    def freeSocketPort(self, port):
+        return self.freeSource(port, 1)
 
 
 class CPUAllocator(object):

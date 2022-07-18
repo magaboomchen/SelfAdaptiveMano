@@ -1,11 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import time
 import docker
+from sam.base.rateLimiter import RateLimiterConfig
 
 from sam.base.vnf import VNF_TYPE_FORWARD, VNF_TYPE_FW, \
     VNF_TYPE_FORWARD, VNF_TYPE_FW, VNF_TYPE_MONITOR, \
-    VNF_TYPE_LB, VNF_TYPE_NAT, VNF_TYPE_VPN
+    VNF_TYPE_LB, VNF_TYPE_NAT, VNF_TYPE_RATELIMITER, VNF_TYPE_VPN
+from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
 from sam.serverController.sffController.sibMaintainer import SIBMaintainer
 from sam.serverController.vnfController.vcConfig import vcConfig
 
@@ -16,28 +19,35 @@ class VNFIAdder(object):
         self._dockerPort = dockerPort
         self.logger = logger
 
-    def addVNFI(self, vnfi, vioAllo, cpuAllo):  
+    def addVNFI(self, vnfi, vioAllo, cpuAllo, socketPortAllo):  
         server = vnfi.node
         docker_url = 'tcp://%s:%d' % (server.getControlNICIP(), self._dockerPort)
         self.logger.info("docker_url is {0}".format(docker_url))
         client = docker.DockerClient(base_url=docker_url, timeout=5)
 
+        # inf = client.info()
+        # self.logger.info("client inf {0}".format(inf))
+
         vnfiType = vnfi.vnfType
         if vnfiType == VNF_TYPE_FORWARD:  # add testpmd
-            return self._addFWD(vnfi, client, vioAllo, cpuAllo)
+            return self._addFWD(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
         elif vnfiType == VNF_TYPE_FW:
-            return self._addFW(vnfi, client, vioAllo, cpuAllo)
+            return self._addFW(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
         elif vnfiType == VNF_TYPE_LB:
-            return self._addLB(vnfi, client, vioAllo, cpuAllo)
+            return self._addLB(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
         elif vnfiType == VNF_TYPE_MONITOR:
-            return self._addMON(vnfi, client, vioAllo, cpuAllo)
+            return self._addMON(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
         elif vnfiType == VNF_TYPE_NAT:
-            return self._addNAT(vnfi, client, vioAllo, cpuAllo)
+            return self._addNAT(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
         elif vnfiType == VNF_TYPE_VPN:
-            return self._addVPN(vnfi, client, vioAllo, cpuAllo)
-        client.close()
+            return self._addVPN(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
+        elif vnfiType == VNF_TYPE_RATELIMITER:
+            return self._addRateLimiter(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
+        else:
+            client.close()
+            raise ValueError("Unknown vnf type {0}".format(vnfiType))
 
-    def _addFWD(self, vnfi, client, vioAllo, cpuAllo, useFastClick=vcConfig.DEFAULT_FASTCLICK, debug=vcConfig.DEBUG):
+    def _addFWD(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, useFastClick=vcConfig.DEFAULT_FASTCLICK, debug=vcConfig.DEBUG):
         cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)
         cpuStr = ''
         for each in cpus:
@@ -74,7 +84,7 @@ class VNFIAdder(object):
             socketMem = socketMem[:-1]
 
             command = 'sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.FWD_APP_CLICK)
-            command = command + " && ./fastclick/bin/click --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s  -- %s" % (cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
+            command = command + " && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s  -- %s" % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
         containerName = 'vnf-%s' % vnfi.vnfiID
         try:
             #print(command)
@@ -89,10 +99,13 @@ class VNFIAdder(object):
             cpuAllo.freeCPU(cpus)
             vioAllo.freeSource(vioStart, 2)
             raise e
-        return container.id, cpus, vioStart
 
-    def _addFW(self, vnfi, client, vioAllo, cpuAllo, debug=vcConfig.DEBUG):
-        ACL = vnfi.config['ACL']        
+        controlSocketPort = self._getContainerHostPort(container)
+        socketPortAllo.allocateSpecificSocketPort(controlSocketPort)
+
+        return container.id, cpus, vioStart, controlSocketPort
+
+    def _addFW(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
         cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)
         cpuStr = ''
         for each in cpus:
@@ -105,7 +118,7 @@ class VNFIAdder(object):
         vdev0 = '%s,path=%s' % ('net_virtio_user%d' % vioStart, _vdev0[1][6:])
         vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
         imageName = vcConfig.FW_IMAGE_CLICK
-        appName = vcConfig.FW_APP_CLICK
+        # appName = vcConfig.FW_APP_CLICK
         containerName = 'vnf-%s' % vnfi.vnfiID 
         filePrefix = 'fw-%d' % (vioStart / 2)
         dpdkInfo = 'DPDKInfo('
@@ -120,19 +133,104 @@ class VNFIAdder(object):
         dpdkInfo = dpdkInfo[:-2] + ')'
         socketMem = socketMem[:-1]
         try:
+            clickConfFilePath = vcConfig.FW_APP_CLICK + "_" + containerName + ".click"
+            appName = clickConfFilePath
+            command = ' cp %s %s' %(vcConfig.FW_APP_CLICK, clickConfFilePath)
             if not vcConfig.USING_PRECONFIG:
-                command = 'sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.FW_APP_CLICK)
-                command = command + ' && mkdir %s' % vcConfig.FW_RULE_DIR
-                for rule in ACL:
-                    command = command + ' && echo \"%s\" >> %s' % (rule.genFWLine(), vcConfig.FW_RULE_PATH)
-                command = command + ' && ./fastclick/bin/click --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
+                command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, clickConfFilePath)
+                command = command + ' && mkdir -p %s' % vcConfig.FW_RULE_DIR
+                if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
+                    if 'ACL' in vnfi.config.keys():
+                        ACL = vnfi.config['ACL']
+                        for rule in ACL:
+                            command = command + ' && echo \"%s\" >> %s' % (rule.genFWLine(), vcConfig.FW_RULE_PATH)
+                elif DEFAULT_CHAIN_TYPE == CHAIN_TYPE_NSHOVERETH:
+                    if 'ACL' in vnfi.config.keys():
+                        ACL = vnfi.config['ACL']
+                        newIPV4FWRulesFileName = "statelessIPV4FWRules_" +  containerName
+                        newIPV4FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newIPV4FWRulesFileName
+                        command = command + ' && sed -i \'s/statelessIPV4FWRules/%s/\' %s' % (newIPV4FWRulesFileName, clickConfFilePath)
+                        for rule in ACL:
+                            command = command + ' && echo \"%s\" >> %s' % (rule.genFWLine(), newIPV4FWRulesPath)
+                    if 'IPv6ACL' in vnfi.config.keys():
+                        IPv6ACL = vnfi.config['IPv6ACL']
+                        newIPV6FWRulesFileName = "statelessIPV6FWRules_" +  containerName
+                        newIPV6FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newIPV6FWRulesFileName
+                        command = command + ' && sed -i \'s/statelessIPV6FWRules/%s/\' %s' % (newIPV6FWRulesFileName, clickConfFilePath)
+                        for rule in IPv6ACL:
+                            command = command + ' && echo \"%s\" >> %s' % (rule.gen128BitsDstIdentifierFWLine(), newIPV6FWRulesPath)
+                    if 'RoceV1ACL' in vnfi.config.keys():
+                        RoceV1ACL = vnfi.config['RoceV1ACL']
+                        newROCEV1FWRulesFileName = "statelessROCEV1FWRules_" +  containerName
+                        newROCEV1FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newROCEV1FWRulesFileName
+                        command = command + ' && sed -i \'s/statelessROCEV1FWRules/%s/\' %s' % (newROCEV1FWRulesFileName, clickConfFilePath)
+                        for rule in RoceV1ACL:
+                            command = command + ' && echo \"%s\" >> %s' % (rule.gen128BitsDstIdentifierFWLine(), newROCEV1FWRulesPath)
+                else:
+                    raise ValueError("Unknown chain type {0}".format(DEFAULT_CHAIN_TYPE))
+                command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
                 #logging.info(command)
                 volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
                 #ulimit = docker.types.Ulimit(name='stack', soft=268435456, hard=268435456)
             else:
-                command = 'sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.FW_APP_CLICK)
-                command = command + ' && ./fastclick/bin/click --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
-                volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}, vcConfig.PRECONFIG_PATH: {'bind': vcConfig.FW_RULE_DIR, 'mode': 'rw'}}
+                command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, clickConfFilePath)
+                command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
+                if vcConfig.DEBUG:
+                    volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}, vcConfig.PRECONFIG_PATH: {'bind': vcConfig.FW_RULE_DIR, 'mode': 'rw'}}
+                else:
+                    volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
+            container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
+                volumes=volumes, detach=True) #, ulimits=[ulimit])
+            
+            # self.logger.info("container status {0}".format(container.status))
+
+        except Exception as e:
+            # free allocated CPU and virtioID
+            cpuAllo.freeCPU(cpus)
+            vioAllo.freeSource(vioStart, 2)
+            raise e
+
+        controlSocketPort = self._getContainerHostPort(container)
+        socketPortAllo.allocateSpecificSocketPort(controlSocketPort)
+
+        return container.id, cpus, vioStart, controlSocketPort
+
+    def _addRateLimiter(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):   
+        cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)
+        cpuStr = ''
+        for each in cpus:
+            for cpu in each:
+                cpuStr = cpuStr + '%d,' % cpu
+        cpuStr = cpuStr[:-1]
+        vioStart = vioAllo.allocateSource(2)
+        _vdev0 = self._sibm.getVdev(vnfi.vnfiID, 0).split(',')
+        _vdev1 = self._sibm.getVdev(vnfi.vnfiID, 1).split(',')
+        vdev0 = '%s,path=%s' % ('net_virtio_user%d' % vioStart, _vdev0[1][6:])
+        vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
+        imageName = vcConfig.RATELIMITER_IMAGE_CLICK
+        containerName = 'vnf-%s' % vnfi.vnfiID 
+        filePrefix = 'fw-%d' % (vioStart / 2)
+        dpdkInfo = 'DPDKInfo('
+        socketMem = '' 
+        for each in cpus:
+            if len(each) != 0:
+                dpdkInfo = dpdkInfo + 'NB_SOCKET_MBUF %d, ' % vcConfig.DPDKINFO_BUF
+                socketMem = socketMem + '%d,' % vnfi.maxMem
+            else:
+                dpdkInfo = dpdkInfo + 'NB_SOCKET_MBUF 0, '
+                socketMem = socketMem + '%d,' % 0
+        dpdkInfo = dpdkInfo[:-2] + ')'
+        socketMem = socketMem[:-1]
+        try:
+            clickConfFilePath = vcConfig.RATELIMITER_APP_CLICK + "_" + containerName + ".click"
+            appName = clickConfFilePath
+            command = ' cp %s %s' %(vcConfig.RATELIMITER_APP_CLICK, clickConfFilePath)
+            if type(vnfi.config) == RateLimiterConfig:
+                maxRate = vnfi.config.maxMbps
+                command = command + ' && sed -i \'s/2000Bps/%s/\' %s' % (maxRate, clickConfFilePath)
+            command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, clickConfFilePath)
+            command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
+            volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
             container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
                 volumes=volumes, detach=True) #, ulimits=[ulimit])
 
@@ -141,9 +239,13 @@ class VNFIAdder(object):
             cpuAllo.freeCPU(cpus)
             vioAllo.freeSource(vioStart, 2)
             raise e
-        return container.id, cpus, vioStart
 
-    def _addLB(self, vnfi, client, vioAllo, cpuAllo, debug=vcConfig.DEBUG):
+        controlSocketPort = self._getContainerHostPort(container)
+        socketPortAllo.allocateSpecificSocketPort(controlSocketPort)
+
+        return container.id, cpus, vioStart, controlSocketPort
+
+    def _addLB(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
         LB = vnfi.config['LB']
         cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)
         cpuStr = ''
@@ -178,7 +280,7 @@ class VNFIAdder(object):
             declLine = 'lb :: IPLoadBalancer(%s)' % declLine
             command = 'sed -i \"1i\\%s\" %s' % (declLine, vcConfig.LB_APP_CLICK)
             command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.LB_APP_CLICK)
-            command = command + ' && ./fastclick/bin/click --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
+            command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
             #print(command)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
             container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
@@ -188,9 +290,13 @@ class VNFIAdder(object):
             cpuAllo.freeCPU(cpus)
             vioAllo.freeSource(vioStart, 2)
             raise e
-        return container.id, cpus, vioStart
 
-    def _addMON(self, vnfi, client, vioAllo, cpuAllo, debug=vcConfig.DEBUG):
+        controlSocketPort = self._getContainerHostPort(container)
+        socketPortAllo.allocateSpecificSocketPort(controlSocketPort)
+
+        return container.id, cpus, vioStart, controlSocketPort
+
+    def _addMON(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
         cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)
         cpuStr = ''
         for each in cpus:
@@ -217,10 +323,15 @@ class VNFIAdder(object):
                 socketMem = socketMem + '%d,' % 0
         dpdkInfo = dpdkInfo[:-2] + ')'
         socketMem = socketMem[:-1]
-        command = 'sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.MON_APP_CLICK)
-        command = command + " && ./fastclick/bin/click --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s" % (cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
+        clickConfFilePath = vcConfig.MON_APP_CLICK + "_" + containerName + ".click"
+        appName = clickConfFilePath
+        command = ' cp %s %s' %(vcConfig.MON_APP_CLICK, clickConfFilePath)
+        command = command + '&& sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.MON_APP_CLICK)
+        # command = command + ' && sed -i \'s/7777/%s/\' %s' % (controlSocketPort, clickConfFilePath)
+        command = command + " && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s" % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
         volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
         ports = {'%d/tcp' % vcConfig.MON_TCP_PORT: None}
+        # ports = {'%d/tcp' % vcConfig.MON_TCP_PORT: controlSocketPort}
         try:
             container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
                 volumes=volumes, detach=True, ports=ports)
@@ -230,15 +341,12 @@ class VNFIAdder(object):
             vioAllo.freeSource(vioStart, 2)
             raise e
         
-        # to get the host port of this container
-        '''
-        container.reload()
-        for key in container.ports:
-            print(int(container.ports[key][0]['HostPort']))
-        '''
-        return container.id, cpus, vioStart
+        controlSocketPort = self._getContainerHostPort(container)
+        socketPortAllo.allocateSpecificSocketPort(controlSocketPort)
 
-    def _addNAT(self, vnfi, client, vioAllo, cpuAllo, debug=vcConfig.DEBUG):
+        return container.id, cpus, vioStart, controlSocketPort
+        
+    def _addNAT(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
         NAT = vnfi.config['NAT']
         cpus = cpuAllo.allocateCPU(1)
         cpuStr = ''
@@ -270,7 +378,7 @@ class VNFIAdder(object):
             declLine = 'nat :: IPRewriterPatterns(NAT %s %d-%d - -)' % (NAT.pubIP, NAT.minPort, NAT.maxPort)
             command = 'sed -i \"1i\\%s\" %s' % (declLine, vcConfig.NAT_APP_CLICK)
             command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.NAT_APP_CLICK)
-            command = command + ' && ./fastclick/bin/click --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
+            command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
             #logging.info(command)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
             container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
@@ -280,9 +388,13 @@ class VNFIAdder(object):
             cpuAllo.freeCPU(cpus)
             vioAllo.freeSource(vioStart, 2)
             raise e
-        return container.id, cpus, vioStart
+        
+        controlSocketPort = self._getContainerHostPort(container)
+        socketPortAllo.allocateSpecificSocketPort(controlSocketPort)
 
-    def _addVPN(self, vnfi, client, vioAllo, cpuAllo, debug=vcConfig.DEBUG):
+        return container.id, cpus, vioStart, controlSocketPort
+
+    def _addVPN(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
         VPN = vnfi.config['VPN']
         cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)
         cpuStr = ''
@@ -309,14 +421,14 @@ class VNFIAdder(object):
                 socketMem = socketMem + '%d,' % 0
         dpdkInfo = dpdkInfo[:-2] + ')'
         socketMem = socketMem[:-1]
-        # command = "./fastclick/bin/click --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
+        # command = "%s --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (vcConfig.CLICK_PATH, startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
         declLine = "%s 0 234 \\\\\\\\<%s> \\\\\\\\<%s> 300 64," % (VPN.tunnelSrcIP, VPN.encryptKey, VPN.authKey)
         command = "sed -i \"3i %s\" %s" % (declLine, vcConfig.VPN_APP_CLICK)
         declLine = "0.0.0.0/0 %s 1 234 \\\\\\\\<%s> \\\\\\\\<%s> 300 64" % (VPN.tunnelDstIP, VPN.encryptKey, VPN.authKey)
         command = command + " && sed -i \"4i %s\" %s" % (declLine, vcConfig.VPN_APP_CLICK)
         # command = command + " && cat ./click-conf/vpn.click "
         command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.VPN_APP_CLICK)
-        command = command + ' && ./fastclick/bin/click --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
+        command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
         containerName = 'vnf-%s' % vnfi.vnfiID
         try:
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
@@ -328,4 +440,16 @@ class VNFIAdder(object):
             cpuAllo.freeCPU(cpus)
             vioAllo.freeSource(vioStart, 2)
             raise e
-        return container.id, cpus, vioStart
+
+        controlSocketPort = self._getContainerHostPort(container)
+        socketPortAllo.allocateSpecificSocketPort(controlSocketPort)
+
+        return container.id, cpus, vioStart, controlSocketPort
+
+    def _getContainerHostPort(self, container):
+        # to get the host port of this container
+        container.reload()
+        for key in container.ports:
+            controlSocketPort = int(container.ports[key][0]['HostPort'])
+            self.logger.debug("controlSocketPort is {0}".format(controlSocketPort))
+            return controlSocketPort

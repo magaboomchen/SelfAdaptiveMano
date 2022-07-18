@@ -91,14 +91,14 @@ class TestVNFSFCIAdderClass(TestBase):
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
                 vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
-                    vnfiID=uuid.uuid1(), node=server, config={"ACL":self.genTestFWRules()})
+                    vnfiID=uuid.uuid1(), node=server, config={"ACL":self.genTestIPv4FWRules()})
                 # vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD, 
                 #     vnfiID=uuid.uuid1(), node=server)
                 vnfi.maxCPUNum = 1
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
-    def genTestFWRules(self):
+    def genTestIPv4FWRules(self):
         rules = []
         for idx in range(100):
             sport1 = random.randint(100, 60000)

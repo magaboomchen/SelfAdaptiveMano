@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import time
 import logging
 
 import pytest
@@ -12,16 +11,15 @@ from scapy.layers.inet import IP
 from sam import base
 from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
-from sam.base.vnf import VNFI, VNF_TYPE_LB, VNF_TYPE_MONITOR
+from sam.base.vnf import VNFI, VNF_TYPE_NAT
 from sam.base.server import Server, SERVER_TYPE_NORMAL
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.command import CMD_STATE_SUCCESSFUL
-from sam.base.lb import LBTuple
+from sam.base.nat import NATTuple
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.test.testBase import TestBase, WEBSITE_REAL_IP, OUTTER_CLIENT_IP, \
-    TESTER_SERVER_DATAPATH_MAC, CLASSIFIER_DATAPATH_IP, SFCI1_0_EGRESS_IP, \
-    SFCI1_1_EGRESS_IP
+from sam.test.testBase import TestBase, SFCI1_1_EGRESS_IP, \
+    TESTER_SERVER_DATAPATH_MAC, CLASSIFIER_DATAPATH_IP, SFCI1_0_EGRESS_IP
 
 MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.199"
@@ -32,21 +30,23 @@ SFF0_DATAPATH_MAC = "52:54:00:5a:14:f0"
 SFF0_CONTROLNIC_IP = "192.168.0.201"
 SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 
+NAT_PIP = "8.0.8.8"
+NAT_MIN_PORT = 11111
+NAT_MAX_PORT = 11111
+
 logging.basicConfig(level=logging.INFO)
 
-class TestVNFAddMON(TestBase):
+
+class TestVNFAddNAT(TestBase):
     @pytest.fixture(scope="function")
-    def setup_addMON(self):
+    def setup_addNAT(self):
         # setup
-        self.resetRabbitMQConf(
-            base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.json",
-            "192.168.0.158", "mq", "123456")
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
 
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_LB])
+        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_NAT])
         self.sfci = self.genBiDirection10BackupSFCI()
         self.mediator = MediatorStub()
 
@@ -62,8 +62,7 @@ class TestVNFAddMON(TestBase):
 
         yield
         # teardown
-        # here we can't remove kill the container because we should test its tcp server in the server node (TODO)
-        self.delVNFI4Server()   
+        self.delVNFI4Server()
         self.killSFFController()
         self.killVNFController()
 
@@ -79,8 +78,11 @@ class TestVNFAddMON(TestBase):
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
-                vnfi = VNFI(VNF_TYPE_MONITOR, vnfType=VNF_TYPE_MONITOR, 
-                    vnfiID=uuid.uuid1(), node=server)
+                config = {}
+                config['NAT'] = NATTuple(NAT_PIP, NAT_MIN_PORT, NAT_MAX_PORT)
+                vnfi = VNFI(VNF_TYPE_NAT, vnfType=VNF_TYPE_NAT, 
+                    vnfiID=uuid.uuid1(), config=config, node=server)
+                vnfi.maxCPUNum = 1
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
@@ -118,7 +120,7 @@ class TestVNFAddMON(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
 
-    def test_addMON(self, setup_addMON):
+    def test_addNAT(self, setup_addNAT):
         # exercise
         logging.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
@@ -127,10 +129,7 @@ class TestVNFAddMON(TestBase):
 
         # verifiy
         self.verifyCmdRply()
-        time.sleep(2)
         self.verifyDirection0Traffic()
-        self.verifyDirection1Traffic()
-        self.verifyDirection0Traffic()  # repeat and test the flow aggregation
         self.verifyDirection1Traffic()
 
     def verifyDirection0Traffic(self):
@@ -138,7 +137,7 @@ class TestVNFAddMON(TestBase):
         self._checkEncapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection0Traffic2SFF(self):
-        filePath = "../fixtures/sendMONDirection0Traffic.py"
+        filePath = "../fixtures/sendNATDirection0Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
@@ -155,14 +154,14 @@ class TestVNFAddMON(TestBase):
         assert condition
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].dst in WEBSITE_REAL_IP
+        assert innerPkt[IP].src == '8.0.8.8'
 
     def verifyDirection1Traffic(self):
         self._sendDirection1Traffic2SFF()
         self._checkDecapsulatedTraffic(inIntf="ens8")
 
     def _sendDirection1Traffic2SFF(self):
-        filePath = "../fixtures/sendMONDirection1Traffic.py"
+        filePath = "../fixtures/sendNATDirection1Traffic.py"
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
@@ -178,7 +177,7 @@ class TestVNFAddMON(TestBase):
         assert condition == True
         outterPkt = frame.getlayer('IP')[0]
         innerPkt = frame.getlayer('IP')[1]
-        assert innerPkt[IP].src == WEBSITE_REAL_IP
+        assert innerPkt[IP].dst == '3.0.0.4'
 
     def verifyCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)

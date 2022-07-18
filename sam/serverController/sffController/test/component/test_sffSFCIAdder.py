@@ -12,10 +12,9 @@ import logging
 import time
 
 import pytest
-from scapy.all import sniff
+from scapy.all import sniff, AsyncSniffer, Raw, sendp
 from scapy.layers.l2 import ARP
 from scapy.layers.inet import IP
-from scapy.all import Raw, sendp, AsyncSniffer
 from scapy.contrib.nsh import NSH
 
 from sam.base.compatibility import screenInput
@@ -73,10 +72,6 @@ class TestSFFSFCIAdderClass(TestBase):
         self.vC.uninstallVNF(BESS_SERVER_USER, BESS_SERVER_USER_PASSWORD,
             SFF1_CONTROLNIC_IP, self.sfci.vnfiSequence[0][0].vnfiID, PRIVATE_KEY_FILE_PATH)
         self.killSFFController()
-
-    def runSFFController(self):
-        filePath = sffControllerCommandAgent.__file__
-        self.sP.runPythonScript(filePath)
 
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_addSFCI(self, setup_addSFCI):
@@ -179,6 +174,8 @@ class TestSFFSFCIAdderClass(TestBase):
             assert condition == True
             innerPkt = frame.getlayer('IP')[0]
             assert innerPkt[IP].dst == WEBSITE_REAL_IP
+        else:
+            raise ValueError("Unknown chain type {0}".format(DEFAULT_CHAIN_TYPE))
 
     def verifyDirection1Traffic(self):
         aSniffer = self._checkDecapsulatedTraffic(inIntf=TESTER_DATAPATH_INTF)

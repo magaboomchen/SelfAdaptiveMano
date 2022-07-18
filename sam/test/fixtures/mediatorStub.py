@@ -56,12 +56,6 @@ class MediatorStub(OrchestrationStub):
         cmd = Command(CMD_TYPE_GET_FLOW_SET, cmdID, attr)
         return cmd
 
-    def genCMDGetSFCIStatus(self):
-        cmdID = uuid.uuid1()
-        attr = {}
-        cmd = Command(CMD_TYPE_GET_SFCI_STATE, cmdID, attr)
-        return cmd
-
     def genCMDGetVNFIState(self):
         cmdID = uuid.uuid1()
         attr = {}

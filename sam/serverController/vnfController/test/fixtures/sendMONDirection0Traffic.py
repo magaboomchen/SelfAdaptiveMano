@@ -3,20 +3,29 @@ import time
 from scapy.all import Raw, sendp, sniff
 from scapy.layers.l2 import Ether, ARP
 from scapy.layers.inet import IP, TCP
+from scapy.contrib.nsh import NSH
 
 from sam.test.testBase import TESTER_SERVER_DATAPATH_MAC, CLASSIFIER_DATAPATH_IP, \
-    WEBSITE_REAL_IP, OUTTER_CLIENT_IP, MON_VNFI1_0_IP
-from sam.serverController.vnfController.test.SMPInVM.test_vnfControllerAddSFCI import SFF0_DATAPATH_MAC
+    WEBSITE_REAL_IP, OUTTER_CLIENT_IP, MON_VNFI1_0_IP, SFF1_DATAPATH_MAC, \
+    DIRECTION0_TRAFFIC_SPI, DIRECTION0_TRAFFIC_SI
+from sam.serverController.sffController.test.component.testConfig import TESTER_DATAPATH_INTF, \
+    TESTER_SERVER_DATAPATH_MAC
+from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
 
 
 def sendDirection0Traffic():
     data = "Hello World"
-    ether = Ether(src=TESTER_SERVER_DATAPATH_MAC, dst=SFF0_DATAPATH_MAC)
-    ip1 = IP(src=CLASSIFIER_DATAPATH_IP, dst=MON_VNFI1_0_IP)
+    ether = Ether(src=TESTER_SERVER_DATAPATH_MAC, dst=SFF1_DATAPATH_MAC)
     ip2 = IP(src=OUTTER_CLIENT_IP, dst=WEBSITE_REAL_IP)
     tcp = TCP(sport=1234, dport=80)
-    frame = ether / ip1 / ip2 / tcp /Raw(load=data)
-    sendp(frame,iface="ens8")
+    if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
+        ip1 = IP(src=CLASSIFIER_DATAPATH_IP, dst=MON_VNFI1_0_IP)
+        frame = ether / ip1 / ip2 / tcp / Raw(load=data)
+    elif DEFAULT_CHAIN_TYPE == CHAIN_TYPE_NSHOVERETH:
+        nsh = NSH(spi = DIRECTION0_TRAFFIC_SPI, si = DIRECTION0_TRAFFIC_SI, nextproto=0x1, length=0x6)
+        frame = ether / nsh / ip2 / tcp / Raw(load=data) 
+    sendp(frame,iface=TESTER_DATAPATH_INTF)
+    frame.show()
 
 if __name__=="__main__":
     time.sleep(0.1)

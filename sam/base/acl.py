@@ -77,6 +77,21 @@ class ACLTuple(object):
             line = line + ' && %s' % entry
         return line
 
+    def gen128BitsDstIdentifierFWLine(self):
+        if self.action == ACL_ACTION_ALLOW:
+            action = 1
+        elif self.action == ACL_ACTION_DENY:
+            action = 0
+        else:
+            action = 0
+
+        if self._isWildcard():
+            line = '::0/0 ::0 {0}'.format(action)
+            return line
+
+        line = "{0} {1}".format(self.dstAddr, action)
+        return line
+
 def parseACLFile(path):
     res = []
     with open(path, 'r') as f:
@@ -105,7 +120,7 @@ def parseACLFile(path):
 
 if __name__ == '__main__':
     # for test
-    '''
+    
     acl1 = ACLTuple(0, 1, '192.168.0.2', '2.0.0.8/24', (0,1024), (5982, 5982))
     print(acl1.genFWLine())
     acl2 = ACLTuple(1, None, None, '2.0.0.8/24', (0,1024), (None, 5982))
@@ -116,10 +131,10 @@ if __name__ == '__main__':
     print(acl4.genFWLine())
     acl5 = ACLTuple(0, None, None, None, (1024, None), None)
     print(acl5.genFWLine())
-    '''
-    fileName = sys.argv[1]
-    acls = parseACLFile(fileName)
-    with open('statelessFW', 'w') as f:
-        for each in acls:
-            f.write(each.genFWLine())
-            f.write('\n')
+
+    # fileName = sys.argv[1]
+    # acls = parseACLFile(fileName)
+    # with open('statelessFW', 'w') as f:
+    #     for each in acls:
+    #         f.write(each.genFWLine())
+    #         f.write('\n')
