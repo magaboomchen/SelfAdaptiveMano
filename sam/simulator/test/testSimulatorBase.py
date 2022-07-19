@@ -6,12 +6,12 @@ import logging
 from sam.base.rateLimiter import RateLimiterConfig
 
 from sam.base.slo import SLO
-from sam.base.routingMorphic import RoutingMorphic
+from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, RoutingMorphic
 from sam.base.messageAgent import SIMULATOR_ZONE
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.path import MAPPING_TYPE_MMLPSFC, ForwardingPathSet
 from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
-from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI,  \
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNF_TYPE_FW, VNF_TYPE_MONITOR, VNFI,  \
                             VNF_TYPE_RATELIMITER, VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, SWITCH_TYPE_NPOP, Switch
@@ -103,8 +103,16 @@ class TestSimulatorBase(TestBase):
                 server.setControlNICIP(SFF1_CONTROLNIC_IP)
                 server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
+                if vnfType == VNF_TYPE_RATELIMITER:
+                    config = RateLimiterConfig(maxMbps=100)
+                elif vnfType == VNF_TYPE_FW:
+                    config = self.genFWConfigExample(IPV4_ROUTE_PROTOCOL)
+                elif vnfType == VNF_TYPE_MONITOR:
+                    config = None
+                else:
+                    config = None
                 vnfi = VNFI(vnfType, vnfType=vnfType,
-                    vnfiID=uuid.uuid1(), node=server)
+                    vnfiID=uuid.uuid1(), config=config, node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 

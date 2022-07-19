@@ -15,9 +15,10 @@ import uuid
 import logging
 
 import pytest
+from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 
 from sam.base.compatibility import screenInput
-from sam.base.messageAgent import DISPATCHER_QUEUE, SIMULATOR_ZONE
+from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, REGULATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
                         REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
 from sam.test.integrate.intTestBase import IntTestBaseClass
@@ -75,17 +76,25 @@ class TestAddSFCClass(IntTestBaseClass):
 
         # exercise
         for idx, sfci in enumerate(self.sfciList):
+            sfc = self.getSFCFromDB(self.sfcList[idx].sfcUUID)
             rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
                 attributes={
-                    "sfc": self.getSFCFromDB(self.sfcList[idx].sfcUUID),
+                    "sfc": sfc,
                     "sfci": sfci,
                     "zone": SIMULATOR_ZONE
                 })
+            logging.info("sfc is {0}".format(sfc))
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
         logging.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()
+
+        # exercise
+        logging.info("Please input abnormal serverID!")
+        abnServerID = int(screenInput())
+        cmd = self.genAbnormalServerHandleCommand(abnServerID)
+        self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
 
         # exercise
         for idx, sfci in enumerate(self.sfciList):
@@ -113,3 +122,23 @@ class TestAddSFCClass(IntTestBaseClass):
         logging.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()
+
+    def genAbnormalServerHandleCommand(self, serverID):
+        detectionDict = {
+            "failure":{
+                "switchIDList":[],
+                "serverIDList":[],
+                "linkIDList":[]
+            },
+            "abnormal":{
+                "switchIDList":[],
+                "serverIDList":[serverID],
+                "linkIDList":[]
+            }
+        }
+        allZoneDetectionDict={SIMULATOR_ZONE: detectionDict,  SIMULATOR_ZONE: detectionDict}
+        attr = {
+            "allZoneDetectionDict": allZoneDetectionDict
+        }
+        cmd = Command(CMD_TYPE_HANDLE_FAILURE_ABNORMAL, uuid.uuid1(), attributes=attr)
+        return cmd

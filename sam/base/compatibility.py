@@ -8,4 +8,4 @@ else:
     pass
 
 def screenInput(hint="Type Here: "):
-    raw_input(hint)
+    return raw_input(hint)

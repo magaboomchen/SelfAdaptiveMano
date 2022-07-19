@@ -218,7 +218,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         sfc = cmd.attributes['sfc']
         zoneName = sfc.attributes["zone"]
         sfci = cmd.attributes['sfci']
-        if self.hasSFCI(sfci):
+        if self.hasSFCI(sfci.sfciID):
             sfciState = self._getSFCIState(sfci.sfciID)
             while sfciState != STATE_DELETED:
                 time.sleep(0.5)

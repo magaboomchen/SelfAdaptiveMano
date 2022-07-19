@@ -10,7 +10,7 @@ The work flow:
     PS2: Class TestBase and TestSimulatorBase has many useful function;
 
 Usage of this unit test:
-    sudo python -m pytest ./test_getFlowSet.py -s --disable-warnings
+    python -m pytest ./sam/simulator/test/test_getFlowSet.py -s --disable-warnings
 '''
 
 import logging

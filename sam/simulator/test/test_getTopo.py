@@ -11,7 +11,7 @@ The work flow:
     PS3: GET_TOPOLOGY command replay's attributes includes switches and links which is the topology in effact.
 
 Usage of this unit test:
-    sudo python -m pytest ./test_getTopo.py -s --disable-warnings
+    python -m pytest ./sam/simulator/test/test_getTopo.py -s --disable-warnings
 '''
 
 import time
