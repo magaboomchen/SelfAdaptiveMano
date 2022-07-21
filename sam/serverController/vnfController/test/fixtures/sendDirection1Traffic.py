@@ -17,17 +17,19 @@ from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, 
 
 
 def sendDirection1Traffic(routeMorphic=IPV4_ROUTE_PROTOCOL, pufferDstIP=FW_VNFI1_1_IP):
+    tcp = TCP(sport=80, dport=1234)
     data = "Hello World"
+    payloadLen = len(data)+len(tcp)
     ether = Ether(src=TESTER_SERVER_DATAPATH_MAC, dst=SFF1_DATAPATH_MAC)
     if routeMorphic==IPV4_ROUTE_PROTOCOL:
-        ip2 = IP(src=WEBSITE_REAL_IP, dst=OUTTER_CLIENT_IP)
+        ip2 = IP(src=WEBSITE_REAL_IP, dst=OUTTER_CLIENT_IP, len=payloadLen+len(IP()))
     elif routeMorphic in [IPV6_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL]:
-        ip2 = IPv6(src=WEBSITE_REAL_IPV6, dst=OUTTER_CLIENT_IPV6)
+        ip2 = IPv6(src=WEBSITE_REAL_IPV6, dst=OUTTER_CLIENT_IPV6, plen=payloadLen)
     elif routeMorphic == ROCEV1_ROUTE_PROTOCOL:
-        ip2 = GRH(sgid=5678<<64, dgid=1234<<64)
+        ip2 = GRH(sgid=5678<<64, dgid=1234<<64, paylen=payloadLen)
     else:
         pass
-    tcp = TCP(sport=80, dport=1234)
+
     oriPkt = ip2 / tcp / Raw(load=data)
     if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
         ip1 = IP(src=CLASSIFIER_DATAPATH_IP, dst=pufferDstIP)
