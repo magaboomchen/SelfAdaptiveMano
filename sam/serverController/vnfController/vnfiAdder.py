@@ -227,7 +227,7 @@ class VNFIAdder(object):
             command = ' cp %s %s' %(vcConfig.RATELIMITER_APP_CLICK, clickConfFilePath)
             if type(vnfi.config) == RateLimiterConfig:
                 maxRate = vnfi.config.maxMbps
-                command = command + ' && sed -i \'s/2000Bps/%s/\' %s' % (maxRate, clickConfFilePath)
+                command = command + ' && sed -i \'s/2000Bps/%sBps/\' %s' % (maxRate*1000.0, clickConfFilePath)
             command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, clickConfFilePath)
             command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}

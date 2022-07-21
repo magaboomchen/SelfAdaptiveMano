@@ -22,7 +22,8 @@ from sam.base.sfc import APP_TYPE_BEST_EFFORT, APP_TYPE_HIGH_AVA, \
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.slo import SLO
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, VNF, VNF_TYPE_FW, \
-        PREFERRED_DEVICE_TYPE_SERVER, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER
+        PREFERRED_DEVICE_TYPE_SERVER, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, \
+        VNFI_RESOURCE_QUOTA_SMALL
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.test.testBase import APP1_REAL_IP, APP2_REAL_IP, APP3_REAL_IP, \
                                 APP4_REAL_IP, APP5_REAL_IP, TestBase
@@ -90,7 +91,7 @@ class IntTestBaseClass(TestBase):
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
             {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence)
+            vnfSequence=vnfSequence, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genHighAvaSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
@@ -118,7 +119,7 @@ class IntTestBaseClass(TestBase):
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
             {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence)
+            vnfSequence=vnfSequence, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genLowLatencySFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
@@ -145,7 +146,7 @@ class IntTestBaseClass(TestBase):
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
             {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence)
+            vnfSequence=vnfSequence, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genLargeConnectionSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
@@ -175,7 +176,7 @@ class IntTestBaseClass(TestBase):
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
             {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence)
+            vnfSequence=vnfSequence, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genBestEffortSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
@@ -203,7 +204,7 @@ class IntTestBaseClass(TestBase):
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
             {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence)
+            vnfSequence=vnfSequence, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genSFCITemplate(self):
         vnfiSequence = None

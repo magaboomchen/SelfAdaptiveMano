@@ -27,7 +27,7 @@ from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, Switch
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
-from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI
+from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNFI_RESOURCE_QUOTA_SMALL
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.base.messageAgent import DISPATCHER_QUEUE, REGULATOR_QUEUE, \
@@ -99,7 +99,7 @@ class TestNoticeClass(TestBase):
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
-            {'zone': SIMULATOR_ZONE}, slo=slo)
+            {'zone': SIMULATOR_ZONE}, slo=slo, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genUniDirection10BackupSFCI(self):
         vnfiSequence = self.genLargeBandwidthVNFISequence()

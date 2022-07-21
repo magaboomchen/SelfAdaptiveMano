@@ -35,8 +35,6 @@ ClassifierController
 * None
 
 vnfController
-* (optinal) numa node support: numa cpu core and mem allocation
-* independent dpdk apps: set different --file-prefix for differenct vnfi
 * test chain deployment in one server
 * (optinal) scalability: divide into server/client mode. distribute the vnfiAdder agent to different servers
 * Bugs: In addVNFI(), client.close() fails in the last line of code. I recommand store client in a dib, may be could save TCP connection time!

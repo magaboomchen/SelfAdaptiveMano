@@ -315,8 +315,7 @@ class Server(object):
                 rv = map(lambda x: int(x), rv)
             elif rv.find("-") != -1:
                 rv = rv.split("-")
-                rv = map(lambda x: int(x), rv)
-                rv = range(rv[0], rv[1] + 1)
+                rv = range(int(rv[0]), int(rv[1]) + 1)
             else:
                 raise ValueError("Can't parse NUMA Core")
             rv = list(rv)

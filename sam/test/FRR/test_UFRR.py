@@ -60,41 +60,6 @@ class TestUFRRClass(TestFRR):
         self.killSFFController()
         self.killVNFController()
 
-    # def addVNFI2Server(self):
-    #     self.sendCmd(VNF_CONTROLLER_QUEUE,
-    #         MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
-    #     cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-    #     assert cmdRply.cmdID == self.addSFCICmd.cmdID
-    #     assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-    # def delVNFI4Server(self):
-    #     logging.warning("Deleting VNFI")
-    #     self.sendCmd(VNF_CONTROLLER_QUEUE,
-    #         MSG_TYPE_VNF_CONTROLLER_CMD , self.delSFCICmd)
-    #     cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
-    #     assert cmdRply.cmdID == self.delSFCICmd.cmdID
-    #     assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-
-    # def genUniDirectionSFC(self, classifier):
-    #     sfcUUID = uuid.uuid1()
-    #     vNFTypeSequence = [VNF_TYPE_FORWARD]
-    #     maxScalingInstanceNumber = 1
-    #     backupInstanceNumber = 0
-    #     applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
-    #     direction1 = {
-    #         'ID': 0,
-    #         'source': {"IPv4":"*", "node":None},
-    #         'ingress': classifier,
-    #         'match': {'srcIP': "*",'dstIP':WEBSITE_REAL_IP,
-    #             'srcPort': "*",'dstPort': "*",'proto': "*"},
-    #         'egress': classifier,
-    #         'destination': {"IPv4":WEBSITE_REAL_IP, "node":None}
-    #     }
-    #     directions = [direction1]
-    #     slo = SLO(latency=35, throughput=10)
-    #     return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-    #         backupInstanceNumber, applicationType, directions, slo=slo)
-
     # @pytest.mark.skip(reason='Temporarly')
     def test_UFRRAddUniSFCI(self, setup_addUniSFCI):
         logging.info("You need start ryu-manager and mininet manually!"

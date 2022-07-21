@@ -44,6 +44,11 @@ NAME_OF_VNFTYPE={
 PREFERRED_DEVICE_TYPE_P4 = "DEVICE_TYPE_P4"
 PREFERRED_DEVICE_TYPE_SERVER = "DEVICE_TYPE_SERVER"
 
+VNFI_RESOURCE_QUOTA_SMALL = {
+    "cpu": 1,
+    "mem": 1    # 1 GiB hugepage
+}
+
 
 class VNF(object):
     def __init__(self, vnfUUID= None, vnfType=None, config=None, 

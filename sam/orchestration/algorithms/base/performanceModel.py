@@ -105,7 +105,7 @@ class PerformanceModel(object):
             3: [1/0.302, 1],
             4: [1/0.612, 1],
             5: [1/5.040, 1],
-            6: [1/0.612, 1],    # need measurement
+            6: [1/10.0, 1],    # need measurement
             7: [1/0.300, 1],
             8: [1/0.400, 1],
             9: [1/1.1, 1],      # [2018][TON]Middlebox-Based Packet-Level
@@ -132,6 +132,10 @@ class PerformanceModel(object):
         resConRatio.append(trafficDemand)
 
         return resConRatio
+
+    def getVNFIExpectedThroughput(self, vnfType, cpuCoresNum):
+        resConRatio = self.getResourceConsumeRatioOfVNF(vnfType)
+        return cpuCoresNum * 1.0 / resConRatio[0] * 1.0
 
     def getMaxLatencyOfVNF(self, vnfType):
         # VNF_TYPE_CLASSIFIER = 0

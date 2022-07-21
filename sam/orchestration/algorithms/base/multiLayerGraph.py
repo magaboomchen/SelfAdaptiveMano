@@ -27,6 +27,7 @@ class MultiLayerGraph(object):
             'MultiLayerGraph.log', level='debug')
         self.logger = logConfigur.getLogger()
         self.enablePreferredDeviceSelection = enablePreferredDeviceSelection
+        self.pM = PerformanceModel()
 
     def loadInstance4dibAndRequest(self, dib, request, weightType,
                                     connectingLinkWeightType=WEIGHT_TYPE_CONST):
@@ -35,6 +36,7 @@ class MultiLayerGraph(object):
         self.sfc = request.attributes['sfc']
         self.sfcLength = self.sfc.getSFCLength()
         self.zoneName = self.sfc.attributes['zone']
+        self.sfci = request.attributes['sfci']
         self.weightType = weightType
         self.connectingLinkWeightType = connectingLinkWeightType
         self.abandonNodeIDList = []
@@ -127,9 +129,20 @@ class MultiLayerGraph(object):
 
         return G
 
-    def _getExpectedBandwidth(self, stage):
-        trafficDemand = self.sfc.getSFCTrafficDemand()
-        return (stage+1) * trafficDemand
+    def _getExpectedBandwidth(self, stageNum):
+        if self.sfc.isFixedResourceQuota():
+            if stageNum > len(self.sfc.vNFTypeSequence)-1:
+                vnfType = self.sfc.vNFTypeSequence[-1]
+            else:
+                vnfType = self.sfc.vNFTypeSequence[stageNum]
+            cpuQuota = self.sfc.vnfiResourceQuota['cpu']
+            maxThroughput = self.pM.getVNFIExpectedThroughput(vnfType, cpuQuota)
+            trafficDemand = self.sfc.getSFCTrafficDemand()
+            expectedBandwidth = min(maxThroughput, trafficDemand)
+        else:
+            trafficDemand = self.sfc.getSFCTrafficDemand()
+            expectedBandwidth = trafficDemand
+        return (stageNum+1) * expectedBandwidth
 
     def _getExpectedTCAM(self, stage):
         return stage+1
@@ -174,12 +187,10 @@ class MultiLayerGraph(object):
         return reservedBandwidth*1.0/bandwidth
 
     def _getLinkPropagationLatency(self, link):
-        pM = PerformanceModel()
-        return pM.getPropogationLatency(link.linkLength)
+        return self.pM.getPropogationLatency(link.linkLength)
 
     def _getLinkLatency(self, link, linkUtil):
-        pM = PerformanceModel()
-        return pM.getLatencyOfLink(link, linkUtil)
+        return self.pM.getLatencyOfLink(link, linkUtil)
 
     def _connectLayersInMLG(self, mLG):
         for stage in range(self.sfcLength):
@@ -242,10 +253,15 @@ class MultiLayerGraph(object):
         return pDT
 
     def _getExpectedServerResource(self, layerNum):
-        vnfType = self.sfc.vNFTypeSequence[layerNum]
-        trafficDemand = self.sfc.getSFCTrafficDemand()
-        pM = PerformanceModel()
-        return pM.getExpectedServerResource(vnfType, trafficDemand)
+        if self.sfc.isFixedResourceQuota():
+            cpuQuota = self.sfc.vnfiResourceQuota['cpu']
+            memQuota = self.sfc.vnfiResourceQuota['mem']
+            expectedBandwidth = self._getExpectedBandwidth(layerNum)
+            return (cpuQuota, memQuota, expectedBandwidth)
+        else:
+            vnfType = self.sfc.vNFTypeSequence[layerNum]
+            trafficDemand = self.sfc.getSFCTrafficDemand()
+            return self.pM.getExpectedServerResource(vnfType, trafficDemand)
 
     def getPath(self, startLayer, startNodeID, endLayer, endNodeID):
         startNodeInMLG = (startLayer, startNodeID)

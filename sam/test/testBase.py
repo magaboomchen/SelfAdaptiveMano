@@ -7,7 +7,7 @@ import logging
 
 from sam.base.acl import ACL_ACTION_ALLOW, ACL_PROTO_UDP, ACLTuple
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
-from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, VNF_TYPE_FORWARD, VNF_TYPE_MAX
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, VNF_TYPE_FORWARD, VNF_TYPE_MAX, VNFI_RESOURCE_QUOTA_SMALL
 from sam.base.slo import SLO
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI, \
     SERVER_TYPE_TESTER
@@ -210,7 +210,8 @@ class TestBase(object):
         slo = SLO(latency=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
-            {'zone':zone}, slo=slo, vnfSequence=vnfSequence)
+            {'zone':zone}, slo=slo, vnfSequence=vnfSequence,
+            vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genBiDirectionSFC(self, classifier, vnfTypeSeq=None,
                             routingMorphicTemplate=ipv4MorphicDictTemplate,
@@ -254,7 +255,8 @@ class TestBase(object):
             backupInstanceNumber, applicationType, directions=directions,
             attributes={'zone':zone},
             routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence, slo=slo
+            vnfSequence=vnfSequence, slo=slo,
+            vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL
             )
 
     def genUniDirection10BackupSFCI(self):

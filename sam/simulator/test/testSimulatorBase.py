@@ -12,7 +12,7 @@ from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.path import MAPPING_TYPE_MMLPSFC, ForwardingPathSet
 from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNF_TYPE_FW, VNF_TYPE_MONITOR, VNFI,  \
-                            VNF_TYPE_RATELIMITER, VNF_TYPE_FORWARD
+                            VNF_TYPE_RATELIMITER, VNF_TYPE_FORWARD, VNFI_RESOURCE_QUOTA_SMALL
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, SWITCH_TYPE_NPOP, Switch
 from sam.test.testBase import DCN_GATEWAY_IP, TestBase, WEBSITE_REAL_IP, CLASSIFIER_DATAPATH_IP
@@ -77,7 +77,7 @@ class TestSimulatorBase(TestBase):
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
             {'zone': SIMULATOR_ZONE}, slo=slo, routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence)
+            vnfSequence=vnfSequence, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genUniDirection10BackupServerNFVISFCI(self, mappedVNFISeq=True,
                                             sfcLength=1,

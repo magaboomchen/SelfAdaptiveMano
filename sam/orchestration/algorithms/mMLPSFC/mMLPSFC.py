@@ -16,10 +16,12 @@ from sam.orchestration.oConfig import ENABLE_INGRESS_EGRESS_GENERATION, ENABLE_P
 
 class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
     def __init__(self, dib, requestList):
+        super(MMLPSFC, self).__init__()
         self._dib = copy.deepcopy(dib)
         self._initDib = copy.deepcopy(dib)
         self.requestList = requestList
         self.enablePreferredDeviceSelection = ENABLE_PREFERRED_DEVICE_SELECTION
+        self.pM = PerformanceModel()
 
         logConfigur = LoggerConfigurator(__name__,
             './log', 'MMLPSFC.log', level='debug')
@@ -93,7 +95,7 @@ class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
         for rIndex in pathDict.keys():
             request = requestList[rIndex]
             sfc = self.getSFC4Request(request)
-            latencySLA = sfc.getSFCLatencyBound
+            latencySLA = sfc.getSFCLatencyBound()
             path = pathDict[rIndex]
             latency = self._getPathLatency(dib, request, path)
             # self.logger.debug("e2e latency: {0}".format(latency))

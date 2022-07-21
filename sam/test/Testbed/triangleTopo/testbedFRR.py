@@ -5,7 +5,7 @@ import uuid
 import logging
 
 from sam.base.slo import SLO
-from sam.base.vnf import VNFI, VNF_TYPE_FORWARD
+from sam.base.vnf import VNFI, VNF_TYPE_FORWARD, VNFI_RESOURCE_QUOTA_SMALL
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.command import Command, CMD_STATE_SUCCESSFUL, \
     CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE
@@ -163,7 +163,8 @@ class TestbedFRR(TestBase):
         directions = [direction1]
         slo = SLO(latency=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-                    backupInstanceNumber, applicationType, directions, slo=slo)
+                    backupInstanceNumber, applicationType, directions,
+                    slo=slo, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genUniDirection12BackupSFCI(self):
         vnfiSequence = self.gen12BackupVNFISequence()

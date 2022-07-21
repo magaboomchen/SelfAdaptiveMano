@@ -81,14 +81,15 @@ class SFCI(object):
 class SFC(object):
     def __init__(self, sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
                  backupInstanceNumber, applicationType, directions=None,
-                 attributes=None, traffic=None, slo=None, sfChainMethod=None,
-                 scalingMode=MANUAL_SCALE, sFCIs=None, routingMorphic=None,
+                 attributes=None, slo=None, 
+                 scalingMode=MANUAL_SCALE, routingMorphic=None,
                  protectionMode=WITHOUT_PROTECTION, recoveryMode=MANUAL_RECOVERY,
-                 vnfSequence=None):
+                 vnfSequence=None, vnfiResourceQuota=None):
         self.sfcUUID = sfcUUID
         self.vNFTypeSequence = vNFTypeSequence  # [FW, LB]
         self.vnfSequence = vnfSequence
         self.scalingMode = scalingMode
+        self.vnfiResourceQuota = vnfiResourceQuota  # VNFI_RESOURCE_QUOTA_SMALL
         self.maxScalingInstanceNumber = maxScalingInstanceNumber  # 2
         self.protectionMode = protectionMode
         self.backupInstanceNumber = backupInstanceNumber  # 1
@@ -146,16 +147,6 @@ class SFC(object):
         # }
         # ]
 
-        # following member is created by orchestrator
-        if sFCIs is None:
-            self.sFCIs = []
-        else:
-            self.sFCIs = sFCIs  # {SFCIID:active, SFCIID:active},
-        # For switch, we use pathID to distinguish
-        # different direction;
-        # For bess, we use (src, dst) pair to distinguish
-        # different direction.
-
     def getSFCLength(self):
         return len(self.vNFTypeSequence)
 
@@ -164,6 +155,9 @@ class SFC(object):
 
     def getSFCLatencyBound(self):
         return self.slo.latency
+
+    def isFixedResourceQuota(self):
+        return self.vnfiResourceQuota != None
 
     def to_dict(self):
         return {

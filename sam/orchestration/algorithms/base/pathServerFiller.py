@@ -12,6 +12,7 @@ from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 class PathServerFiller(object):
     def __init__(self):
         self.abandonElementIDList = []
+        self.pM = PerformanceModel()
 
     def _selectNPoPNodeAndServers(self, path, rIndex, abandonElementIDList=None):
         self.logger.debug("path: {0}".format(path))
@@ -130,19 +131,19 @@ class PathServerFiller(object):
             self.abandonElementIDList = []
         else:
             self.abandonElementIDList = abandonElementIDList
-        sfc = request.attributes['sfc']
-        trafficDemand = sfc.getSFCTrafficDemand()
-        c = sfc.getSFCLength()
+        self.sfc = request.attributes['sfc']
+        trafficDemand = self.sfc.getSFCTrafficDemand()
+        c = self.sfc.getSFCLength()
         serverList = []
         self.logger.debug(dividedPath)
         dividedPathLength = len(dividedPath)
         startIndex = c+1 - dividedPathLength
         # for index in range(startIndex, c):
         for index in range(len(dividedPath)-1):
-            pDT = sfc.vnfSequence[index].preferredDeviceType
+            pDT = self.sfc.vnfSequence[index].preferredDeviceType
             if pDT == PREFERRED_DEVICE_TYPE_SERVER:
                 layerNum = dividedPath[index][0][0]
-                vnfType = sfc.vNFTypeSequence[layerNum]
+                vnfType = self.sfc.vNFTypeSequence[layerNum]
                 switchID = dividedPath[index][-1][1]
                 self.logger.debug("switchID:{0}".format(switchID))
                 servers = self._dib.getConnectedNFVIs(switchID,
@@ -182,11 +183,21 @@ class PathServerFiller(object):
         return serverID in self.abandonElementIDList
 
     def _hasEnoughResource(self, server, vnfType, trafficDemand):
-        pM = PerformanceModel()
-        (expectedCores, expectedMemory, 
-            expectedBandwidth) = pM.getExpectedServerResource(vnfType,
-                trafficDemand)
+        if self.sfc.isFixedResourceQuota():
+            cpuQuota = self.sfc.vnfiResourceQuota['cpu']
+            memQuota = self.sfc.vnfiResourceQuota['mem']
+            maxThroughput = self.pM.getVNFIExpectedThroughput(vnfType, cpuQuota)
+            trafficDemand = self.sfc.getSFCTrafficDemand()
+            expectedBandwidth = min(maxThroughput, trafficDemand)
+            expectedCores = cpuQuota
+            expectedMemory = memQuota
+        else:
+            (expectedCores, expectedMemory, 
+                expectedBandwidth) = self.pM.getExpectedServerResource(vnfType,
+                    trafficDemand)
         serverID = server.getServerID()
+        self.logger.debug("expected res {0}, {1}, {2}".format(expectedCores,
+                expectedMemory, expectedBandwidth))
         return self._dib.hasEnoughServerResources(
             serverID, (expectedCores, expectedMemory, expectedBandwidth),
                 self.zoneName)
