@@ -24,7 +24,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         self._initSFCTable()
         self._initSFCITable()
 
-    def cleanTable(self):
+    def dropTable(self):
         if self.dbA.hasTable("Orchestrator", "Request"):
             self.dbA.dropTable("Request")
         if self.dbA.hasTable("Orchestrator", "SFC"):

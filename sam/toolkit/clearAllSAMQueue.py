@@ -1,26 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-'''
-queueList = [
-    "REQUEST_PROCESSOR_QUEUE",
-    "DCN_INFO_RECIEVER_QUEUE",
-    "MEASURER_QUEUE",
-    "ORCHESTRATOR_QUEUE",
-    "MEDIATOR_QUEUE",
-    "SFF_CONTROLLER_QUEUE",
-    "SFF_CONTROLLER_QUEUE_PICA8_ZONE",
-    "VNF_CONTROLLER_QUEUE",
-    "VNF_CONTROLLER_QUEUE_PICA8_ZONE",
-    "SERVER_CLASSIFIER_CONTROLLER_QUEUE",
-    "SERVER_CLASSIFIER_CONTROLLER_QUEUE_PICA8_ZONE",
-    "SERVER_MANAGER_QUEUE",
-    "SERVER_MANAGER_QUEUE_PICA8_ZONE",
-    "NETWORK_CONTROLLER_QUEUE",
-    "NETWORK_CONTROLLER_QUEUE_PICA8_ZONE",
-    "MININET_TESTER_QUEUE"
-]
-'''
+import sys
 
 from sam.base.shellProcessor import ShellProcessor
 
@@ -28,10 +9,19 @@ from sam.base.shellProcessor import ShellProcessor
 def clearAllSAMQueue():
     sP = ShellProcessor()
     res = sP.runShellCommand("sudo rabbitmqctl list_queues")
-    res = res.strip().split('\n')
+    res = str(res)
+    if sys.version > '3':
+        res = res.strip().split('\\n')
+    else:
+        res = res.strip().split('\n')
     for idx,line in enumerate(res):
         if idx>=3:
-            line = line.split()
+            if sys.version > '3':
+                line = line.split('\\t')
+            else:
+                line = line.split('\t')
+            if len(line) != 2:
+                continue
             queueName = line[0]
             print("queueName is {0}".format(queueName))
             messageNum = int(line[1])

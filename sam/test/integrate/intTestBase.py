@@ -46,7 +46,7 @@ class IntTestBaseClass(TestBase):
         self.cleanLog()
         self.clearQueue()
         self.killAllModule()
-        self.cleanSFCAndSFCIInDB()
+        self.dropRequestAndSFCAndSFCITableInDB()
         self.initZone()
         time.sleep(3)
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",

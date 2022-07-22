@@ -47,7 +47,7 @@ class TestGetVNFIStateClass(TestSimulatorBase):
         self.sP = ShellProcessor()
         self.cleanLog()
         self.clearQueue()
-        self.cleanSFCAndSFCIInDB()
+        self.dropRequestAndSFCAndSFCITableInDB()
         self.killAllModule()
         self.mediator = MediatorStub()
         self.measurer = MeasurementStub()

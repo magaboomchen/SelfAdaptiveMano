@@ -49,7 +49,7 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
         self.cleanLog()
         self.clearQueue()
         self.killAllModule()
-        self.cleanSFCAndSFCIInDB()
+        self.dropRequestAndSFCAndSFCITableInDB()
         self.mediator = MediatorStub()
         self.measurer = MeasurementStub()
 

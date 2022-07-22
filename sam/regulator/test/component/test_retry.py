@@ -7,7 +7,7 @@ The work flow:
     * generate 1 addSFC and 1 addSFCI command to dispatcher
 
 Usage of this unit test:
-    sudo python -m pytest ./test_retry.py -s --disable-warnings
+    python -m pytest ./test_retry.py -s --disable-warnings
 '''
 
 from sam.test.testBase import TestBase

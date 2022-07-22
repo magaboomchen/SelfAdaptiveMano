@@ -19,7 +19,7 @@ from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
     VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
 from sam.base.command import Command, CMD_TYPE_GET_TOPOLOGY, \
     CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_SFCI_STATE
-from sam.base.request import Reply, REQUEST_STATE_SUCCESSFUL, \
+from sam.base.request import REQUEST_TYPE_GET_SFCI_STATE, Reply, REQUEST_STATE_SUCCESSFUL, \
                                 REQUEST_TYPE_GET_DCN_INFO
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
@@ -40,12 +40,9 @@ class Measurer(object):
             "123", reInitialTable=False)
 
         self._messageAgent = MessageAgent(self.logger)
-        self.queueName = self._messageAgent.genQueueName(MEASURER_QUEUE)
-        # self._messageAgent.startRecvMsg(self.queueName)
         self._messageAgent.startMsgReceiverRPCServer(MEASURER_IP, MEASURER_PORT)
 
         self._threadSet = {}
-        self.logger.info("self.queueName:{0}".format(self.queueName))
 
     def startMeasurer(self):
         self._collectTopology()
@@ -92,7 +89,6 @@ class Measurer(object):
 
     def _runService(self):
         while True:
-            # msg = self._messageAgent.getMsg(self.queueName)
             msg = self._messageAgent.getMsgByRPC(MEASURER_IP, MEASURER_PORT)
             msgType = msg.getMessageType()
             if msgType == None:
@@ -119,6 +115,11 @@ class Measurer(object):
             rply = Reply(request.requestID,
                 REQUEST_STATE_SUCCESSFUL, attributes)
             return rply
+        elif request.requestType == REQUEST_TYPE_GET_SFCI_STATE:
+            attributes = self.getSFCIAttributes()
+            rply = Reply(request.requestID,
+                REQUEST_STATE_SUCCESSFUL, attributes)
+            return rply
         else:
             self.logger.warning("Unknown request:{0}".format(
                 request.requestType))
@@ -130,6 +131,10 @@ class Measurer(object):
         sfcis = self._dib.getSFCIsInAllZone()
         return {'switches':switches, 'links':links, 'servers':servers,
                     'sfcis':sfcis}
+
+    def getSFCIAttributes(self):
+        sfcis = self._dib.getSFCIsInAllZone()
+        return {'sfcis':sfcis}
 
     def sendReply(self, rply, dstIP, dstPort):
         msg = SAMMessage(MSG_TYPE_REPLY, rply)

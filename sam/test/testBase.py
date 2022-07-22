@@ -655,8 +655,13 @@ class TestBase(object):
         fwConfigList.append(entry)
         return fwConfigList
 
-    def cleanSFCAndSFCIInDB(self):
+    def dropRequestAndSFCAndSFCITableInDB(self):
         _oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             True)
-        _oib.cleanTable()                                            
+        _oib.dropTable()                                           
+        del _oib
+    
+    def cleanRequestAndSFCAndSFCITableInDB(self):
+        _oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
+                                            True)
         del _oib

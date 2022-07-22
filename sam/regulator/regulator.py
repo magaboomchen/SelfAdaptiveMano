@@ -9,10 +9,15 @@ Get SFCI from db, check which switch/server has been used for each SFCI.
 
 """
 
+import sys
 import time
 import uuid
+import ctypes
+import inspect
+from packaging import version
 
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, MEASURER_PORT, REGULATOR_IP, REGULATOR_PORT
 from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
 from sam.base.pickleIO import PickleIO
 from sam.base.exceptionProcessor import ExceptionProcessor
@@ -22,11 +27,12 @@ from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, MSG_
 from sam.base.request import REQUEST_STATE_FAILED, REQUEST_STATE_IN_PROCESSING, \
                                 REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
                                 REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, \
-                                REQUEST_TYPE_GET_DCN_INFO, Request
+                                REQUEST_TYPE_GET_DCN_INFO, REQUEST_TYPE_GET_SFCI_STATE, Request
 from sam.base.sfc import STATE_ACTIVE
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.regulator.argParser import ArgParser
 from sam.regulator.config import FAILURE_REQUEST_RETRY_TIMEOUT, MAX_RETRY_NUM
+from sam.regulator.regulatorRequestSender import RegulatorRequestSender
 
 
 class Regulator(object):
@@ -41,10 +47,24 @@ class Regulator(object):
         self.regulatorQueueName = REGULATOR_QUEUE
         self._messageAgent = MessageAgent(self.logger)
         self._messageAgent.startRecvMsg(self.regulatorQueueName)
+        self._messageAgent.startMsgReceiverRPCServer(REGULATOR_IP,
+                                                    REGULATOR_PORT)
         self.enableRetryFailureRequest = False
 
+        self._threadSet = {}
+
     def startRegulator(self):
+        self._collectSFCIState()
         self.startRoutine()
+
+    def _collectSFCIState(self):
+        # start a new thread to send command
+        threadID = len(self._threadSet)
+        thread = RegulatorRequestSender(threadID, self._messageAgent,
+                                                        self.logger)
+        self._threadSet[threadID] = thread
+        thread.setDaemon(True)
+        thread.start()
 
     def startRoutine(self):
         try:
@@ -56,7 +76,7 @@ class Regulator(object):
                     prevTimestamp = time.time()
                     if self.enableRetryFailureRequest:
                         self.retryFailureRequests()
-                msgCnt = self._messageAgent.getMsgCnt(self.regulatorQueueName)
+                # Listen on command
                 msg = self._messageAgent.getMsg(self.regulatorQueueName)
                 msgType = msg.getMessageType()
                 if msgType == None:
@@ -67,6 +87,19 @@ class Regulator(object):
                         self._commandHandler(body)
                     else:
                         self.logger.error("Unknown massage body:{0}".format(body))
+
+                # Listen on request
+                msg = self._messageAgent.getMsgByRPC(REGULATOR_IP, REGULATOR_PORT)
+                msgType = msg.getMessageType()
+                if msgType == None:
+                    pass
+                else:
+                    body = msg.getbody()
+                    if self._messageAgent.isReply(body):
+                        self._replyHandler(body)
+                    else:
+                        self.logger.error("Unknown massage body:{0}".format(body))
+
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex, 
                 "Regulator msg handler")
@@ -95,8 +128,6 @@ class Regulator(object):
                     self._messageAgent.sendMsg(DISPATCHER_QUEUE, msg)
                 elif requestType in [REQUEST_TYPE_GET_DCN_INFO]:
                     self.logger.warning("Disable retry for get dcn info request!")
-                    # msg = SAMMessage(MSG_TYPE_REQUEST, request)
-                    # self._messageAgent.sendMsg(MEASURER_QUEUE, msg)
                 else:
                     raise ValueError("Unknown request type {0}".format(requestType))
 
@@ -217,6 +248,40 @@ class Regulator(object):
     def getAllSFCsFromDB(self):
         sfcTupleList = self._oib.getAllSFC()
         return sfcTupleList
+
+    def _replyHandler(self, reply):
+        pass
+        # TODO
+
+    def __del__(self):
+        self.logger.info("Delete Regulator.")
+        self.logger.debug(self._threadSet)
+        for key, thread in self._threadSet.items():
+            self.logger.debug("check thread is alive?")
+            if version.parse(sys.version.split(' ')[0]) \
+                                    >= version.parse('3.9'):
+                threadLiveness = thread.is_alive()
+            else:
+                threadLiveness = thread.isAlive()
+            if threadLiveness:
+                self.logger.info("Kill thread: %d" %thread.ident)
+                self._async_raise(thread.ident, KeyboardInterrupt)
+                thread.join()
+
+    def _async_raise(self,tid, exctype):
+        """raises the exception, performs cleanup if needed"""
+        tid = ctypes.c_long(tid)
+        if not inspect.isclass(exctype):
+            exctype = type(exctype)
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid,
+            ctypes.py_object(exctype))
+        if res == 0:
+            raise ValueError("Invalid thread id")
+        elif res != 1:
+            # """if it returns a number greater than one, you're in trouble,
+            # and you should call it again with exc=NULL to revert the effect"""
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
+            raise SystemError("PyThreadState_SetAsyncExc failed")
 
 
 if __name__ == "__main__":

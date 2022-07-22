@@ -7,7 +7,7 @@ The work flow:
     * generate 1 addSFC and 1 addSFCI command to dispatcher
 
 Usage of this unit test:
-    python -m pytest ./test_notice.py -s --disable-warnings
+    python -m pytest ./test_scaling.py -s --disable-warnings
 '''
 
 import time
@@ -43,10 +43,10 @@ from sam.test.testBase import APP1_REAL_IP, SFF2_CONTROLNIC_IP, \
 MANUAL_TEST = True
 
 
-class TestNoticeClass(TestBase):
+class TestScalingClass(TestBase):
     def common_setup(self):
         logConfigur = LoggerConfigurator(__name__, './log',
-                                            'testNoticeClass.log',
+                                            'testScalingClass.log',
                                             level='debug')
         self.logger = logConfigur.getLogger()
         self.logger.setLevel(logging.DEBUG)
