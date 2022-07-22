@@ -23,31 +23,32 @@ class VNFIAdder(object):
         server = vnfi.node
         docker_url = 'tcp://%s:%d' % (server.getControlNICIP(), self._dockerPort)
         self.logger.info("docker_url is {0}".format(docker_url))
-        client = docker.DockerClient(base_url=docker_url, timeout=5)
+        dockerClient = docker.DockerClient(base_url=docker_url, timeout=5)
+        self.apiClient = docker.APIClient(base_url=docker_url)
 
-        # inf = client.info()
-        # self.logger.info("client inf {0}".format(inf))
+        # inf = dockerClient.info()
+        # self.logger.info("dockerClient inf {0}".format(inf))
 
         vnfiType = vnfi.vnfType
         if vnfiType == VNF_TYPE_FORWARD:  # add testpmd
-            return self._addFWD(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
+            return self._addFWD(vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo)
         elif vnfiType == VNF_TYPE_FW:
-            return self._addFW(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
+            return self._addFW(vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo)
         elif vnfiType == VNF_TYPE_LB:
-            return self._addLB(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
+            return self._addLB(vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo)
         elif vnfiType == VNF_TYPE_MONITOR:
-            return self._addMON(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
+            return self._addMON(vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo)
         elif vnfiType == VNF_TYPE_NAT:
-            return self._addNAT(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
+            return self._addNAT(vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo)
         elif vnfiType == VNF_TYPE_VPN:
-            return self._addVPN(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
+            return self._addVPN(vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo)
         elif vnfiType == VNF_TYPE_RATELIMITER:
-            return self._addRateLimiter(vnfi, client, vioAllo, cpuAllo, socketPortAllo)
+            return self._addRateLimiter(vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo)
         else:
-            client.close()
+            dockerClient.close()
             raise ValueError("Unknown vnf type {0}".format(vnfiType))
 
-    def _addFWD(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, useFastClick=vcConfig.DEFAULT_FASTCLICK, debug=vcConfig.DEBUG):
+    def _addFWD(self, vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo, useFastClick=vcConfig.DEFAULT_FASTCLICK, debug=vcConfig.DEBUG):
         cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)
         cpuStr = ''
         for each in cpus:
@@ -90,8 +91,9 @@ class VNFIAdder(object):
             #print(command)
             self.logger.info("command is {0}".format(command))
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
-            container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
-                volumes=volumes, detach=True, ports = {'%d/tcp' % vcConfig.MON_TCP_PORT: None})
+            ports = {'%d/tcp' % vcConfig.CLICK_CONTROLL_SOCKET_PORT: None}
+            container = dockerClient.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
+                volumes=volumes, detach=True, ports=ports)
             # logging.info(container.logs())
             self.logger.info("container's logs: {0}".format(container.logs()))
         except Exception as e:
@@ -105,7 +107,7 @@ class VNFIAdder(object):
 
         return container.id, cpus, vioStart, controlSocketPort
 
-    def _addFW(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
+    def _addFW(self, vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
         cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)
         cpuStr = ''
         for each in cpus:
@@ -179,8 +181,9 @@ class VNFIAdder(object):
                     volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}, vcConfig.PRECONFIG_PATH: {'bind': vcConfig.FW_RULE_DIR, 'mode': 'rw'}}
                 else:
                     volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
-            container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
-                volumes=volumes, detach=True) #, ulimits=[ulimit])
+            ports = {'%d/tcp' % vcConfig.CLICK_CONTROLL_SOCKET_PORT: None}
+            container = dockerClient.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
+                volumes=volumes, detach=True, ports=ports) #, ulimits=[ulimit])
             
             # self.logger.info("container status {0}".format(container.status))
 
@@ -195,7 +198,7 @@ class VNFIAdder(object):
 
         return container.id, cpus, vioStart, controlSocketPort
 
-    def _addRateLimiter(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):   
+    def _addRateLimiter(self, vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):   
         cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)
         cpuStr = ''
         for each in cpus:
@@ -231,8 +234,9 @@ class VNFIAdder(object):
             command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, clickConfFilePath)
             command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
-            container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
-                volumes=volumes, detach=True) #, ulimits=[ulimit])
+            ports = {'%d/tcp' % vcConfig.CLICK_CONTROLL_SOCKET_PORT: None}
+            container = dockerClient.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
+                volumes=volumes, detach=True, ports=ports) #, ulimits=[ulimit])
 
         except Exception as e:
             # free allocated CPU and virtioID
@@ -245,7 +249,7 @@ class VNFIAdder(object):
 
         return container.id, cpus, vioStart, controlSocketPort
 
-    def _addLB(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
+    def _addLB(self, vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
         LB = vnfi.config['LB']
         cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)
         cpuStr = ''
@@ -283,8 +287,9 @@ class VNFIAdder(object):
             command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
             #print(command)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
-            container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
-                volumes=volumes, detach=True)
+            ports = {'%d/tcp' % vcConfig.CLICK_CONTROLL_SOCKET_PORT: None}
+            container = dockerClient.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
+                volumes=volumes, detach=True, ports=ports)
         except Exception as e:
             # free allocated CPU and virtioID
             cpuAllo.freeCPU(cpus)
@@ -296,7 +301,7 @@ class VNFIAdder(object):
 
         return container.id, cpus, vioStart, controlSocketPort
 
-    def _addMON(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
+    def _addMON(self, vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
         cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)
         cpuStr = ''
         for each in cpus:
@@ -330,10 +335,10 @@ class VNFIAdder(object):
         # command = command + ' && sed -i \'s/7777/%s/\' %s' % (controlSocketPort, clickConfFilePath)
         command = command + " && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s" % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
         volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
-        ports = {'%d/tcp' % vcConfig.MON_TCP_PORT: None}
-        # ports = {'%d/tcp' % vcConfig.MON_TCP_PORT: controlSocketPort}
+        ports = {'%d/tcp' % vcConfig.CLICK_CONTROLL_SOCKET_PORT: None}
+        # ports = {'%d/tcp' % vcConfig.CLICK_CONTROLL_SOCKET_PORT: controlSocketPort}
         try:
-            container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
+            container = dockerClient.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
                 volumes=volumes, detach=True, ports=ports)
         except Exception as e:
             # free allocated CPU and virtioID
@@ -346,7 +351,7 @@ class VNFIAdder(object):
 
         return container.id, cpus, vioStart, controlSocketPort
         
-    def _addNAT(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
+    def _addNAT(self, vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
         NAT = vnfi.config['NAT']
         cpus = cpuAllo.allocateCPU(1)
         cpuStr = ''
@@ -381,8 +386,9 @@ class VNFIAdder(object):
             command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
             #logging.info(command)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
-            container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
-                volumes=volumes, detach=True) #, ports=ports)
+            ports = {'%d/tcp' % vcConfig.CLICK_CONTROLL_SOCKET_PORT: None}
+            container = dockerClient.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
+                volumes=volumes, detach=True, ports=ports)
         except Exception as e:
             # free allocated CPU and virtioID
             cpuAllo.freeCPU(cpus)
@@ -394,7 +400,7 @@ class VNFIAdder(object):
 
         return container.id, cpus, vioStart, controlSocketPort
 
-    def _addVPN(self, vnfi, client, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
+    def _addVPN(self, vnfi, dockerClient, vioAllo, cpuAllo, socketPortAllo, debug=vcConfig.DEBUG):
         VPN = vnfi.config['VPN']
         cpus = cpuAllo.allocateCPU(vnfi.maxCPUNum)
         cpuStr = ''
@@ -432,8 +438,9 @@ class VNFIAdder(object):
         containerName = 'vnf-%s' % vnfi.vnfiID
         try:
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
-            container = client.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
-                volumes=volumes, detach=True)
+            ports = {'%d/tcp' % vcConfig.CLICK_CONTROLL_SOCKET_PORT: None}
+            container = dockerClient.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
+                volumes=volumes, detach=True, ports=ports)
             #logging.info(container.logs())
         except Exception as e:
             # free allocated CPU and virtioID
@@ -449,7 +456,15 @@ class VNFIAdder(object):
     def _getContainerHostPort(self, container):
         # to get the host port of this container
         container.reload()
-        for key in container.ports:
-            controlSocketPort = int(container.ports[key][0]['HostPort'])
-            self.logger.debug("controlSocketPort is {0}".format(controlSocketPort))
-            return controlSocketPort
+        if len(container.ports) != 0:
+            for key in container.ports:
+                controlSocketPort = int(container.ports[key][0]['HostPort'])
+                self.logger.debug("controlSocketPort is {0}".format(controlSocketPort))
+                return controlSocketPort
+        else:
+            raise ValueError("Can't get controlSocketPort!")
+
+        # self.logger.info("container.id is {0}".format(container.id))
+        # port_data = self.apiClient.inspect_container(container.id)['NetworkSettings']['Ports']
+        # self.logger.info("port_data is {0}".format(port_data))
+        # return port_data[0]['HostPort']

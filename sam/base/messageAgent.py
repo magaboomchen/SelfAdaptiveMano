@@ -448,28 +448,33 @@ class MessageAgent(object):
 
     def __del__(self):
         # Can't run file logger when call __del__() methods
-        self.logger.info("Delete MessageAgent.")
+        if sys.version < '3':
+            self.logger.info("Delete MessageAgent.")
         for srcQueueName, thread in self._threadSet.items():
-            self.logger.debug("check thread is alive?")
+            if sys.version < '3':
+                self.logger.debug("check thread is alive?")
             if version.parse(sys.version.split(' ')[0]) \
                                     >= version.parse('3.9'):
                 threadLiveness = thread.is_alive()
             else:
                 threadLiveness = thread.isAlive()
             if threadLiveness:
-                self.logger.info("Kill thread: %d" %thread.ident)
+                if sys.version < '3':
+                    self.logger.info("Kill thread: %d" %thread.ident)
                 self._async_raise(thread.ident, KeyboardInterrupt)
                 thread.join()
 
-        self.logger.info("Disconnect from RabbiMQServer.")
+        if sys.version < '3':
+            self.logger.info("Disconnect from RabbiMQServer.")
         self._disConnectRabbiMQServer()
 
-        self.logger.info("close gRPC channel")
+        if sys.version < '3':
+            self.logger.info("close gRPC channel")
         if self.gRPCChannel != None:
             self.gRPCChannel.close()
 
         if sys.version > '3':
-            self.logger.warning("Bugs: Unimplement gRPC server " \
+            print("Bugs: Unimplement gRPC server " \
                 "stop function because of the unlimited wait time.")
             # for server in self.gRPCServersList:
             #     server.stop(None)

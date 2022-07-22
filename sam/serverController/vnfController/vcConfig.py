@@ -42,7 +42,7 @@ class VCConfig:
 
         MON_IMAGE_CLICK = 'fastclick-vnf'
         MON_APP_CLICK = './click-conf/monitor.click'
-        MON_TCP_PORT = 8888  # maybe unsafe
+        CLICK_CONTROLL_SOCKET_PORT = 8888  # maybe unsafe
 
         NAT_IMAGE_CLICK = 'fastclick-vnf'
         NAT_APP_CLICK = './click-conf/nat.click'
@@ -52,6 +52,7 @@ class VCConfig:
 
     elif DEFAULT_CHAIN_TYPE == CHAIN_TYPE_NSHOVERETH:
         CLICK_PATH = "./bin/click"
+        CLICK_CONTROLL_SOCKET_PORT = 7777
 
         FWD_IMAGE_CLICK = 'samfastclick:v1'
         FWD_APP_CLICK = './conf/sam/fwd.click'
@@ -72,7 +73,6 @@ class VCConfig:
 
         MON_IMAGE_CLICK = 'samfastclick:v1'
         MON_APP_CLICK = './conf/sam/monitor.click'
-        MON_TCP_PORT = 7777  # maybe unsafe
 
         RATELIMITER_IMAGE_CLICK = 'samfastclick:v1'
         RATELIMITER_APP_CLICK = './conf/sam/rateLimiter.click'

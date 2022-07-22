@@ -163,7 +163,7 @@ class VNFController(object):
             self.logger.error('SFCI %s not maintained in vnf controller.' % sfciID)
             return False
         success = True
-        for vnfiID in sfciState.keys():
+        for vnfiID in list(sfciState.keys()):
             serverID = sfciState[vnfiID].vnfi.node.getServerID()
             try: 
                 vioAllo = self._vioManager[serverID]
