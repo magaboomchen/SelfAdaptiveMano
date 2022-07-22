@@ -10,8 +10,9 @@ from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.dispatcher.argParser import ArgParser
 from sam.dispatcher.orchestratorManager import OrchestratorManager
-from sam.dispatcher.config import AUTO_SCALE, ZONE_INFO_LIST
+from sam.dispatcher.config import AUTO_SCALE, RE_INIT_TABLE, ZONE_INFO_LIST
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 
 class Dispatcher(object):
@@ -59,6 +60,10 @@ class Dispatcher(object):
 
         # decide the orchestrator number and corresponding idx;
         oInfoList = oM.computeOrchInfoList()
+
+        # reInit orchestartor database
+        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent",
+                                            "123", RE_INIT_TABLE)
 
         # start orchestrator instance
         for idx, oInfoDict in enumerate(oInfoList):

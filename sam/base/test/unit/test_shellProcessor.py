@@ -2,12 +2,14 @@
 # -*- coding: UTF-8 -*-
 
 import logging
+import os
 import subprocess
 
 import pytest
 
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.test.unit.fixtures import tmpScript
+from sam.orchestration import orchestrator
 
 MANUAL_TEST = True
 
@@ -61,7 +63,8 @@ class TestShellProcessorClass(object):
         assert out_bytes.count("tmpScript.py") == 2
 
     def test_getPythonScriptProcessPid(self):
-        cmdline = "python /home/smith/Projects/SelfAdaptiveMano/sam/orchestration/orchestrator.py -name 0-19 -p 20 -minPIdx 0 -maxPIdx 19"
+        orchestratorFilePath = os.path.abspath(orchestrator.__file__)
+        cmdline = "python {0} -name 0-19 -p 20 -minPIdx 0 -maxPIdx 19".format(orchestratorFilePath)
         pId = self.sP.getPythonScriptProcessPid(cmdline)
         print("pId is {0}".format(pId))
         assert 2 == 2

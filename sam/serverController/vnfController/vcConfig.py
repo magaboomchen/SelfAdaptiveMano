@@ -57,14 +57,14 @@ class VCConfig:
         FWD_APP_CLICK = './conf/sam/fwd.click'
 
         USING_PRECONFIG = False  # whether to use the pre-config firewall rules 
-        PRECONFIG_PATH = '/home/smith/Projects/fastclick/conf/sam/'
+        PRECONFIG_PATH = './conf/sam/'
 
         FW_IMAGE_CLICK = 'samfastclick:v1'
         FW_APP_CLICK = './conf/sam/statelessFW.click'
-        FW_RULE_DIR = '/home/smith/Projects/fastclick/conf/sam'
-        FW_IPV4_RULE_PATH = '/home/smith/Projects/fastclick/conf/sam/statelessFWRules'
-        FW_IPV6_RULE_PATH = '/home/smith/Projects/fastclick/conf/sam/statelessFWIPv6Rules'
-        FW_ROCEV1_RULE_PATH = '/home/smith/Projects/fastclick/conf/sam/statelessFWRoceV1Rules'
+        FW_RULE_DIR = './conf/sam'
+        FW_IPV4_RULE_PATH = './conf/sam/statelessFWRules'
+        FW_IPV6_RULE_PATH = './conf/sam/statelessFWIPv6Rules'
+        FW_ROCEV1_RULE_PATH = './conf/sam/statelessFWRoceV1Rules'
 
         # TODO: implement this vnf
         # LB_IMAGE_CLICK = 'samfastclick:v1'

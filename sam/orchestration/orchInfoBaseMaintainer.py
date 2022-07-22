@@ -332,12 +332,14 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     def updateRequestState2DB(self, request, state):
         request.requestState = state
         self.dbA.update("Request", 
-            " PICKLE = '{0}' ".format(self._encodeObject2Pickle(request)),
+            " PICKLE = '{0}' ".format(self._encodeObject2Pickle(request).decode()),
             " REQUEST_UUID = '{0}' ".format(request.requestID)
             )
 
     def addSFC2DB(self, sfc, sfciIDList=None, state=STATE_IN_PROCESSING):
         if not self.hasSFC(sfc.sfcUUID):
+            if sfciIDList == None:
+                sfciIDList = []
             fields = " ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE, PICKLE "
             dataTuple = (
                             sfc.attributes["zone"],
@@ -375,17 +377,19 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     def _addSFCI2SFCInDB(self, sfcUUID, sfciID):
         results = self.dbA.query("SFC", " SFCIID_LIST ",
             " SFC_UUID = '{0}' ".format(sfcUUID))
-        sfciIDList = results[0][0]
-        sfciIDList = sfciIDList + "{0},".format(sfciID)
-        self.dbA.update("SFC", " SFCIID_LIST = '{0}' ".format(sfciIDList),
+        sfciIDList = self.pIO.pickle2Obj(results[0][0])
+        sfciIDList.append(sfciID)
+        sfciIDListPickle = self.pIO.obj2Pickle(sfciIDList)
+        self.dbA.update("SFC", " SFCIID_LIST = '{0}' ".format(sfciIDListPickle.decode()),
             " SFC_UUID = '{0}' ".format(sfcUUID))
 
     def _delSFCI4SFCInDB(self, sfcUUID, sfciID):
         results = self.dbA.query("SFC", " SFCIID_LIST ",
             " SFC_UUID = '{0}' ".format(sfcUUID))
-        sfciIDList = results[0][0]
-        sfciIDList = sfciIDList.replace(str(sfciID)+",", "")
-        self.dbA.update("SFC", " SFCIID_LIST = '{0}' ".format(sfciIDList),
+        sfciIDList = self.pIO.pickle2Obj(results[0][0])
+        sfciIDList.remove(sfciID)
+        sfciIDListPickle = self.pIO.obj2Pickle(sfciIDList)
+        self.dbA.update("SFC", " SFCIID_LIST = '{0}' ".format(sfciIDListPickle.decode()),
             " SFC_UUID = '{0}' ".format(sfcUUID))
 
     def getSFCI4DB(self, sfciID):

@@ -6,6 +6,8 @@ import argparse
 from sam.base.argParser import ArgParserBase
 from sam.base.sshAgent import SSHAgent
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.compatibility import SAM_MODULE_ABS_PATH
+from sam.dispatcher.test.testConfig import PRIVATE_KEY_FILE_PATH, RABBITMQ_SERVER_IP
 
 
 class ArgParser(ArgParserBase):
@@ -27,12 +29,12 @@ class QueueCleaner(object):
 
         self.sA = SSHAgent()
         self.sshUsrname = "smith"
-        self.privateKeyFilePath = "/home/smith/.ssh/id_rsa819"
-        self.remoteIP = "192.168.8.19"
+        self.privateKeyFilePath = PRIVATE_KEY_FILE_PATH
+        self.remoteIP = RABBITMQ_SERVER_IP
         self.sA.connectSSHWithRSA(self.sshUsrname, self.privateKeyFilePath, self.remoteIP, remoteSSHPort=22)
         self.sA.loadUserPassword(password)
-        resDict = self.sA.runShellCommandWithSudo("python /home/smith/Projects/SelfAdaptiveMano/sam/toolkit/clearAllSAMQueue.py")
-        
+        resDict = self.sA.runShellCommandWithSudo("python {0}/toolkit/clearAllSAMQueue.py".format(SAM_MODULE_ABS_PATH))
+
         data = resDict['stdout'].read().decode("utf-8")
         self.logger.info(data)
 

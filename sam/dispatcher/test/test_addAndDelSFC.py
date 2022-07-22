@@ -20,18 +20,15 @@ import uuid
 import pytest
 
 from sam.base.compatibility import screenInput
-from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REQUEST, SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
+from sam.base.messageAgent import DISPATCHER_QUEUE, \
     MEDIATOR_QUEUE, SIMULATOR_ZONE
-from sam.base.command import CMD_STATE_PROCESSING, CMD_STATE_SUCCESSFUL, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI
+from sam.base.command import CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
-from sam.orchestration.oConfig import RE_INIT_TABLE
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.test.fixtures.mediatorStub import MediatorStub
-from sam.simulator.test.testSimulatorBase import TestSimulatorBase, CLASSIFIER_DATAPATH_IP
-from sam.simulator import simulator
+from sam.simulator.test.testSimulatorBase import TestSimulatorBase
 
 MANUAL_TEST = True
 

@@ -43,13 +43,6 @@ class TestDatabaseAgentClass(object):
 
     def test_createTable(self):
         self.dbA.createTable("Request",
-            # """
-            # runoob_id INT UNSIGNED AUTO_INCREMENT,
-            # runoob_title VARCHAR(100) NOT NULL,
-            # runoob_author VARCHAR(40) NOT NULL,
-            # submission_date DATE,
-            # PRIMARY KEY ( runoob_id )
-            # """
             """
             USER_ID INT UNSIGNED AUTO_INCREMENT,
             FIRST_NAME  CHAR(20) NOT NULL,
@@ -79,12 +72,34 @@ class TestDatabaseAgentClass(object):
             str(self.REQUEST_UUID) )
         assert self._decodePickle2Object(results[0][7]) == self.testObject
 
-    def test_update(self):
+    def test_update1(self):
         self.dbA.update("Request", "AGE = 10", " SEX = 'M'")
         results = self.dbA.query("Request", "*")
         assert results[0][:-2] == (1, 'Mac', 'Mohan', 10, 'M', 2000.0,
             str(self.REQUEST_UUID))
         assert self._decodePickle2Object(results[0][7]) == self.testObject
+        assert type(uuid.UUID(results[0][6])) == type(uuid.uuid1())
+
+    def test_update2(self):
+        request = {"requestID":1}
+        self.dbA.update("Request",
+                        "AGE = 10",
+                        " REQUEST_UUID = '{0}' ".format(self.REQUEST_UUID))
+        results = self.dbA.query("Request", "*")
+        assert results[0][:-2] == (1, 'Mac', 'Mohan', 10, 'M', 2000.0,
+            str(self.REQUEST_UUID))
+        assert self._decodePickle2Object(results[0][7]) == self.testObject
+        assert type(uuid.UUID(results[0][6])) == type(uuid.uuid1())
+
+    def test_update3(self):
+        request = {"requestID":1}
+        self.dbA.update("Request",
+                        " PICKLE = '{0}' ".format(self._encodeObject2Pickle(request).decode()),
+                        " REQUEST_UUID = '{0}' ".format(self.REQUEST_UUID))
+        results = self.dbA.query("Request", "*")
+        assert results[0][:-2] == (1, 'Mac', 'Mohan', 10, 'M', 2000.0,
+            str(self.REQUEST_UUID))
+        assert self._decodePickle2Object(results[0][7]) == request
         assert type(uuid.UUID(results[0][6])) == type(uuid.uuid1())
 
     def test_delete(self):

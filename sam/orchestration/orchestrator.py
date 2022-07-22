@@ -2,8 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import sys
-
-from sam.base.sfc import STATE_INACTIVE
 if sys.version > '3':
     import queue as Queue
 else:
@@ -11,6 +9,8 @@ else:
 import time
 import math
 
+from sam.base.link import Link
+from sam.base.sfc import STATE_INACTIVE
 from sam.base.messageAgent import SAMMessage, MessageAgent, \
     MEDIATOR_QUEUE, ORCHESTRATOR_QUEUE, MSG_TYPE_ORCHESTRATOR_CMD
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_DEL_SFCI, \
@@ -26,7 +26,7 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.server import Server
 from sam.base.switch import Switch
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
-from sam.orchestration.oConfig import BATCH_SIZE, BATCH_TIMEOUT, DEFAULT_MAPPING_TYPE, ENABLE_OIB, RE_INIT_TABLE
+from sam.orchestration.oConfig import BATCH_SIZE, BATCH_TIMEOUT, DEFAULT_MAPPING_TYPE, ENABLE_OIB
 from sam.orchestration.oSFCAdder import OSFCAdder
 from sam.orchestration.oSFCDeleter import OSFCDeleter
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
@@ -49,7 +49,7 @@ class Orchestrator(object):
 
         self._dib = DCNInfoBaseMaintainer()
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent",
-                                            "123", RE_INIT_TABLE)
+                                            "123", False)
         self._cm = CommandMaintainer()
 
         self._osa = OSFCAdder(self._dib, self.logger, podNum, minPodIdx,
@@ -337,11 +337,12 @@ class Orchestrator(object):
 
         delServerCandidateDict = {}
         delSwitchCandidateDict = {}
-        links = dib.getLinksByZone(self.zoneName)
-        for linkID in links.keys():
+        delLinkCandidateDict = {}
+        linksInfo = dib.getLinksByZone(self.zoneName)
+        for linkID in linksInfo.keys():
             srcID = linkID[0]
             dstID = linkID[1]
-            link = links[linkID]['link']
+            link = linksInfo[linkID]['link']
             for idx, nodeID in enumerate(linkID):
                 if dib.isServerID(nodeID):
                     switchID = linkID[1-idx]
@@ -351,13 +352,15 @@ class Orchestrator(object):
                             delServerCandidateDict[serverID] = 1
                             delSwitchCandidateDict[switchID] = 1
                             # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
-                            dib.delLink(link, self.zoneName)
+                            delLinkCandidateDict[linkID] = 1
+                            # dib.delLink(link, self.zoneName)
                         break
                 elif dib.isSwitchID(nodeID):
                     if not self.isSwitchInSubTopologyZone(nodeID):
                         # self.logger.warning("delink: {0}->{1}".format(srcID, dstID))
                         delSwitchCandidateDict[nodeID] = 1
-                        dib.delLink(link, self.zoneName)
+                        delLinkCandidateDict[linkID] = 1
+                        # dib.delLink(link, self.zoneName)
                         break
 
         # prune servers
@@ -367,6 +370,11 @@ class Orchestrator(object):
         # prune switches
         for switchID in delSwitchCandidateDict.keys():
             dib.delSwitch(switchID, self.zoneName)
+
+        # prune links
+        for linkID in delLinkCandidateDict.keys():
+            link = Link(linkID[0], linkID[1])
+            dib.delLink(link, self.zoneName)
 
         return dib
 

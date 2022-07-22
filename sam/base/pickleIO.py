@@ -20,7 +20,10 @@ class PickleIO(object):
 
     def readPickleFile(self, filePath):
         df = open(filePath, 'rb')
-        obj = cPickle.load(df)
+        if sys.version > '3':
+            obj = cPickle.load(df, encoding="latin1")
+        else:
+            obj = cPickle.load(df)
         df.close()
         # self.logger.debug("obj:{0}".format(obj))
         return obj

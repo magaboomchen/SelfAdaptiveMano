@@ -191,7 +191,7 @@ Install BESS according to the guide on https://github.com/NetSys/bess
 ## DPDK environment (Only need for client server)
 export $RTE_SDK to the directory of dpdk in bess, for example:
 ``` 
-export RTE_SDK=/home/t1/Projects/bess/deps/dpdk-17.11/
+export RTE_SDK=${PATH_TO_DPDK}
 export RTE_TARGET=x86_64-native-linuxapp-gcc
 ```
 

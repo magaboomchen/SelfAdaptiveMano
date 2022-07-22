@@ -88,7 +88,6 @@ class TestVNFAddFW(TestBase):
 
     def genTestFWRules(self):
         rules = []
-        #rules = parseACLFile('/home/t1/Projects/Classbench/fw4_1k')
         rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
             srcPort=(1234, 1234), dstPort=(80, 80)))
         rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=WEBSITE_REAL_IP, dstAddr=OUTTER_CLIENT_IP,
