@@ -9,6 +9,7 @@ from sam.base.messageAgent import MSG_TYPE_REQUEST, SAMMessage
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, MEASURER_PORT
 from sam.base.request import Request, REQUEST_TYPE_GET_SFCI_STATE
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.regulator.config import TRAFFIC_LOAD_DETECT_TIMESLOT
 
 
 class RegulatorRequestSender(threading.Thread):
@@ -26,7 +27,7 @@ class RegulatorRequestSender(threading.Thread):
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex)
             finally:
-                time.sleep(2.5)
+                time.sleep(TRAFFIC_LOAD_DETECT_TIMESLOT)
 
     def sendGetSFCIStatusRequest(self):
         getSFCIStateRequest = Request(uuid.uuid1(), uuid.uuid1(), 

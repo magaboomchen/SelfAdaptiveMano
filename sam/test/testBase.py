@@ -22,6 +22,7 @@ from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
 from sam.measurement.mConfig import SIMULATOR_ZONE_ONLY
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
+from sam.regulator import regulator
 from sam.toolkit.cleanAllLogFile import cleanAllLogFile
 from sam.toolkit.clearAllSAMQueue import clearAllSAMQueue
 from sam.toolkit.killAllSAMPythonScripts import killAllSAMPythonScripts
@@ -187,6 +188,10 @@ class TestBase(object):
 
     def runMediator(self):
         filePath = mediator.__file__
+        self.sP.runPythonScript(filePath)
+
+    def runRegulator(self):
+        filePath = regulator.__file__
         self.sP.runPythonScript(filePath)
 
     def genUniDirectionSFC(self, classifier, zone=DEFAULT_ZONE):
@@ -483,8 +488,12 @@ class TestBase(object):
         del tmpMessageAgent
 
     def sendCmdByRPC(self, dstIP, dstPort, msgType, cmd):
+        tmpMessageAgent = MessageAgent()
+        oSP = tmpMessageAgent.getOpenSocketPort()
+        tmpMessageAgent.startMsgReceiverRPCServer("localhost", oSP)
         msg = SAMMessage(msgType, cmd)
-        self.tmpMessageAgent.sendMsgByRPC(dstIP, dstPort, msg)
+        tmpMessageAgent.sendMsgByRPC(dstIP, dstPort, msg)
+        del tmpMessageAgent
 
     def sendCmdRply(self, queue, msgType, cmdRply):
         tmpMessageAgent = MessageAgent()

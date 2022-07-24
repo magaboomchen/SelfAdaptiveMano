@@ -8,7 +8,7 @@ from sam.base.xibMaintainer import XInfoBaseMaintainer
 class SFCIInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self):
         super(SFCIInfoBaseMaintainer, self).__init__()
-        self._sfcis = {}
+        self._sfcis = {}    # [sfciID]: sfci
         self._sfcisReservedResources = {}
 
     def updateSFCIsInAllZone(self, sfcis):
@@ -16,6 +16,11 @@ class SFCIInfoBaseMaintainer(XInfoBaseMaintainer):
 
     def updateSFCIsByZone(self, sfcis, zoneName):
         self._sfcis[zoneName] = sfcis
+
+    def addSFCIByZone(self, sfci, zoneName):
+        if zoneName not in self._sfcis:
+            self._sfcis[zoneName] = {}
+        self._sfcis[zoneName][sfci.sfciID] = sfci
 
     def updatePartialSFCIsByZone(self, sfcisDict, zoneName):
         if zoneName not in self._sfcis:

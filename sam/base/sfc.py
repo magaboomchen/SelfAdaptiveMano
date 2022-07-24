@@ -14,7 +14,7 @@ APP_TYPE_LARGE_CONNECTION = "APP_TYPE_LARGE_CONNECTION"
 APP_TYPE_BEST_EFFORT = "APP_TYPE_BEST_EFFORT"
 
 MANUAL_SCALE = "MANUAL_SCALE"
-ADAPTIVE_SCALE = "ADAPTIVE_SCALE"
+AUTO_SCALE = "AUTO_SCALE"
 
 WITHOUT_PROTECTION = "WITHOUT_PROTECTION"
 WITH_PROTECTION = "WITH_PROTECTION"
@@ -23,24 +23,25 @@ MANUAL_RECOVERY = "MANUAL_RECOVERY"
 AUTO_RECOVERY = "AUTO_RECOVERY"
 
 STATE_IN_PROCESSING = "STATE_IN_PROCESSING"
+STATE_INIT_FAILED = "STATE_INIT_FAILED"
 STATE_ACTIVE = "STATE_ACTIVE"
 STATE_INACTIVE = "STATE_INACTIVE"  # There maybe some resource used in DCN
 STATE_DELETED = "STATE_DELETED"  # All resource of this sfc/sfci has been released
-# Delete an sfc/sfci will not release SFCIID
+# Warning: Delete an sfc/sfci will not release SFCIID
 # To get back SFCIID, please prune sfc/sfci from database
-# STATE_RECOVER_MODE = "STATE_RECOVER_MODE"  # when a failure happen, sfc/sfci will be in this state
+STATE_RECOVER_MODE = "STATE_RECOVER_MODE"  # when a failure happen, sfc/sfci will be in this state
+STATE_SCALING_OUT_MODE = "STATE_SCALING_OUT_MODE"  # when the sfc is scaling out, sfc will be in this state
+STATE_SCALING_IN_MODE = "STATE_SCALING_IN_MODE" 
 
-
-# MORPHIC_IPV4 = "MORPHIC_IPV4"
-# MORPHIC_IDENTITY = "MORPHIC_IDENTITY"
-# MORPHIC_GEO = "MORPHIC_GEO"
-# MORPHIC_CONTENT = "MORPHIC_CONTENT"
+# SFCIID allocation
+DASHBOARD_SFCIID_ALLOCATED_RANGE = [1, 9999]
+REGULATOR_SFCIID_ALLOCATED_RANGE = [10000, 20000]
 
 
 class SFCI(object):
     def __init__(self, sfciID, vnfiSequence=None, sloRealTimeValue=None,
                     forwardingPathSet=None, routingMorphic=None):
-        self.sfciID = sfciID
+        self.sfciID = sfciID               # not uuid! It's a integer
         self.vnfiSequence = vnfiSequence  # only show the direction1
         self.sloRealTimeValue = sloRealTimeValue
         self.forwardingPathSet = forwardingPathSet
@@ -82,8 +83,8 @@ class SFC(object):
     def __init__(self, sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
                  backupInstanceNumber, applicationType, directions=None,
                  attributes=None, slo=None, 
-                 scalingMode=MANUAL_SCALE, routingMorphic=None,
-                 protectionMode=WITHOUT_PROTECTION, recoveryMode=MANUAL_RECOVERY,
+                 scalingMode=AUTO_SCALE, routingMorphic=None,
+                 protectionMode=WITHOUT_PROTECTION, recoveryMode=AUTO_RECOVERY,
                  vnfSequence=None, vnfiResourceQuota=None):
         self.sfcUUID = sfcUUID
         self.vNFTypeSequence = vNFTypeSequence  # [FW, LB]

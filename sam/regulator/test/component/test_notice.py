@@ -202,9 +202,10 @@ class TestNoticeClass(TestBase):
         return cmd
 
     def test_abnormal(self, setup_OneSFC):
-        self.logger.info("Please turn on regulator,"\
-                        "Then press andy key to continue!")
-        screenInput()
+        # self.logger.info("Please turn on regulator,"\
+        #                 "Then press andy key to continue!")
+        # screenInput()
+        self.runRegulator()
 
         # exercise
         # send command
@@ -221,9 +222,10 @@ class TestNoticeClass(TestBase):
         assert req.attributes["sfci"].sfciID == self.sfci.sfciID
 
     def test_failure(self, setup_OneSFC):
-        self.logger.info("Please turn on regulator,"\
-                        "Then press andy key to continue!")
-        screenInput()
+        # self.logger.info("Please turn on regulator,"\
+        #                 "Then press andy key to continue!")
+        # screenInput()
+        self.runRegulator()
 
         # exercise
         # send command

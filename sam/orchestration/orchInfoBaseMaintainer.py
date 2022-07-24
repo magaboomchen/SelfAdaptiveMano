@@ -133,8 +133,12 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         fields = " ZONE_NAME, SFC_UUID, SFCIID_LIST, STATE, PICKLE "
         results = self.dbA.query("SFC", fields)
         sfcTupleList = []
-        for sfcTuple in results:
-            sfcTupleList.append(sfcTuple)
+        for sfciTuple in results:
+            sfciResList = list(sfciTuple)
+            sfciResList[2] = self._decodePickle2Object(sfciResList[2])
+            sfciResList[4] = self._decodePickle2Object(sfciResList[4])
+            transedSFCITuple = tuple(sfciResList)
+            sfcTupleList.append(transedSFCITuple)
         return sfcTupleList
 
     def _initSFCITable(self):
@@ -344,7 +348,8 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             dataTuple = (
                             sfc.attributes["zone"],
                             sfc.sfcUUID,
-                            self.pIO.obj2Pickle(sfciIDList), state,
+                            self.pIO.obj2Pickle(sfciIDList),
+                            state,
                             self.pIO.obj2Pickle(sfc)
                         )
             self.dbA.insert("SFC", fields, dataTuple)
@@ -360,6 +365,15 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         else:
             sfc = None
         return sfc
+
+    def getSFCCorrespondingSFCI4DB(self, sfcUUID):
+        results = self.dbA.query("SFC", " SFCIID_LIST ", 
+            " SFC_UUID = '{0}' ".format(sfcUUID))
+        if results != ():
+            sfciIDList = self._decodePickle2Object(results[0][0])
+        else:
+            sfciIDList = []
+        return sfciIDList
 
     def _updateSFCState(self, sfcUUID, state):
         self.dbA.update("SFC", " STATE = '{0}' ".format(state),
