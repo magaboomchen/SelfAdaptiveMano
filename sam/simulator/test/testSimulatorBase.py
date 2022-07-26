@@ -10,6 +10,7 @@ from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, RoutingMorphic
 from sam.base.messageAgent import SIMULATOR_ZONE
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.path import MAPPING_TYPE_MMLPSFC, ForwardingPathSet
+from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNF_TYPE_FW, VNF_TYPE_MONITOR, VNFI,  \
                             VNF_TYPE_RATELIMITER, VNF_TYPE_FORWARD, VNFI_RESOURCE_QUOTA_SMALL
@@ -62,7 +63,7 @@ class TestSimulatorBase(TestBase):
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
         routingMorphic = RoutingMorphic()
-        routingMorphic.from_dict(srv6MorphicDictTemplate)
+        routingMorphic.from_dict(ipv4MorphicDictTemplate)
         direction1 = {
             'ID': 0,
             'source': {'node': None, 'IPv4':"*"},
