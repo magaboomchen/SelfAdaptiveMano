@@ -1,7 +1,0 @@
-#!/bin/bash
-
-docker rmi release/fastclick-vnf
-docker rmi 192.168.0.194:5000/release/fastclick-vnf
-docker pull 192.168.0.194:5000/release/fastclick-vnf
-docker tag 192.168.0.194:5000/release/fastclick-vnf release/fastclick-vnf
-docker tag 192.168.0.194:5000/release/fastclick-vnf fastclick-vnf
