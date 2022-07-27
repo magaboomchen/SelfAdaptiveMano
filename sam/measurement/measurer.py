@@ -9,9 +9,10 @@ import inspect
 import threading
 from packaging import version
 
-from sam.measurement.mConfig import SIMULATOR_ZONE_ONLY
-from sam.base.messageAgent import PUFFER_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, SAMMessage, MessageAgent, \
-    MEASURER_QUEUE, MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD
+from sam.measurement.mConfig import MEASURE_TIME_SLOT, SIMULATOR_ZONE_ONLY
+from sam.base.messageAgent import PUFFER_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, \
+                                SAMMessage, MessageAgent, \
+                                MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
     MEASURER_PORT, P4_CONTROLLER_IP, P4_CONTROLLER_PORT, SFF_CONTROLLER_IP, \
     SFF_CONTROLLER_PORT, SIMULATOR_IP, SIMULATOR_PORT, \
@@ -19,7 +20,8 @@ from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
     VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
 from sam.base.command import Command, CMD_TYPE_GET_TOPOLOGY, \
     CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_SFCI_STATE
-from sam.base.request import REQUEST_TYPE_GET_SFCI_STATE, Reply, REQUEST_STATE_SUCCESSFUL, \
+from sam.base.request import REQUEST_TYPE_GET_SFCI_STATE, Reply, \
+                                REQUEST_STATE_SUCCESSFUL, \
                                 REQUEST_TYPE_GET_DCN_INFO
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
@@ -248,7 +250,7 @@ class MeasurerCommandSender(threading.Thread):
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex)
             finally:
-                time.sleep(5)
+                time.sleep(MEASURE_TIME_SLOT)
 
     def sendGetTopoCmd(self, zoneName):
         getTopoCmd = Command(CMD_TYPE_GET_TOPOLOGY, uuid.uuid1(),

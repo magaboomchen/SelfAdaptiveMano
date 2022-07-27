@@ -160,6 +160,7 @@ MSG_TYPE_TESTER_CMD = "MSG_TYPE_TESTER_CMD"
 MSG_TYPE_REGULATOR_CMD = "MSG_TYPE_REGULATOR_CMD"
 
 MESSAGE_AGENT_MAX_QUEUE_SIZE = 99999
+MESSAGE_AGENT_GRPC_RETRY_WAIT_TIME = 1
 
 
 class SAMMessage(object):
@@ -399,7 +400,7 @@ class MessageAgent(object):
                 ExceptionProcessor(self.logger).logException(ex,
                     "messageAgent")
             finally:
-                time.sleep(1)
+                time.sleep(MESSAGE_AGENT_GRPC_RETRY_WAIT_TIME)
                 cnt = cnt + 1
 
         self.gRPCChannel.close()

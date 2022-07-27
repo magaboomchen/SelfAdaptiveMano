@@ -102,6 +102,15 @@ class TestDatabaseAgentClass(object):
         assert self._decodePickle2Object(results[0][7]) == request
         assert type(uuid.UUID(results[0][6])) == type(uuid.uuid1())
 
+    def test_update4(self):
+        request = {"requestID":1}
+        self.dbA.update("Request", "AGE = 10, FIRST_NAME = 'Mike'", " SEX = 'M'")
+        results = self.dbA.query("Request", "*")
+        assert results[0][:-2] == (1, 'Mike', 'Mohan', 10, 'M', 2000.0,
+            str(self.REQUEST_UUID))
+        assert self._decodePickle2Object(results[0][7]) == request
+        assert type(uuid.UUID(results[0][6])) == type(uuid.uuid1())
+
     def test_delete(self):
         self.dbA.delete("Request", " SEX = 'M'")
         results = self.dbA.query("Request", "*")

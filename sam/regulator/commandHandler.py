@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import time
 import uuid
 
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL
@@ -8,7 +9,12 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, MSG_TYPE_REQUEST, SAMMessage
 from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI, Request
-from sam.base.sfc import STATE_ACTIVE
+from sam.base.sfc import AUTO_RECOVERY, STATE_ACTIVE, STATE_DELETED, STATE_INACTIVE, STATE_RECOVER_MODE
+
+RECOVERY_TASK_STATE_READY = "RECOVERY_TASK_STATE_READY"
+RECOVERY_TASK_STATE_DELETING = "RECOVERY_TASK_STATE_DELETING"
+RECOVERY_TASK_STATE_ADDING = "RECOVERY_TASK_STATE_ADDING"
+RECOVERY_TASK_STATE_WAITING = "RECOVERY_TASK_STATE_WAITING"
 
 
 class CommandHandler(object):
@@ -16,24 +22,13 @@ class CommandHandler(object):
         self.logger = logger
         self._messageAgent = msgAgent
         self._oib = oib
+        self.recoveryTaskDict = {}  # Dict[sfcUUID, Dict[SFCIID, taskState]]
 
     def handle(self, cmd):
         try:
             self.logger.info("Get a command reply")
             if cmd.cmdType == CMD_TYPE_HANDLE_FAILURE_ABNORMAL:
-                self.logger.info("Get CMD_TYPE_HANDLE_FAILURE_ABNORMAL!")
-                allZoneDetectionDict = cmd.attributes["allZoneDetectionDict"]
-                for zoneName, detectionDict in allZoneDetectionDict.items():
-                    infSFCIAndSFCTupleList = self._getInfluencedSFCIAndSFCList(
-                                                                zoneName, detectionDict)
-                    self.logger.debug("infSFCIAndSFCTupleList is {0}".format(infSFCIAndSFCTupleList))
-                    infSFCIAndSFCTupleList = self._sortInfSFCIAndSFCTupleList(infSFCIAndSFCTupleList)
-                    for sfci, sfc in infSFCIAndSFCTupleList:
-                        self._sendCmd2Dispatcher(cmd)
-                        req = self._genDelSFCIRequest(sfci)
-                        self._sendRequest2Dispatcher(req)
-                        req = self._genAddSFCIRequest(sfc, sfci)
-                        self._sendRequest2Dispatcher(req)
+                self.failureAbnormalHandler(cmd)
             else:
                 pass
         except Exception as ex:
@@ -42,10 +37,91 @@ class CommandHandler(object):
         finally:
             pass
 
+    def failureAbnormalHandler(self, cmd):
+        self.logger.info("Get CMD_TYPE_HANDLE_FAILURE_ABNORMAL!")
+        allZoneDetectionDict = cmd.attributes["allZoneDetectionDict"]
+        self._sendCmd2Dispatcher(cmd)
+        for zoneName, detectionDict in allZoneDetectionDict.items():
+            infSFCIAndSFCTupleList = self._getInfluencedSFCIAndSFCList(
+                                                        zoneName, detectionDict)
+            self.logger.debug("infSFCIAndSFCTupleList is {0}".format(infSFCIAndSFCTupleList))
+            infSFCIAndSFCTupleList = self._sortInfSFCIAndSFCTupleList(infSFCIAndSFCTupleList)
+            for sfci, sfc, recoveryTaskState in infSFCIAndSFCTupleList:
+                if not self.hasRecoveryTask(sfc, sfci) and self.isSFCAutoRecovery(sfc):
+                    self.addRecoveryTask(sfc, sfci, recoveryTaskState)
+
+    def addRecoveryTask(self, sfc, sfci, recoveryTaskState):
+        if sfc.sfcUUID not in self.recoveryTaskDict.keys():
+            self.recoveryTaskDict[sfc.sfcUUID] = {}
+        self.recoveryTaskDict[sfc.sfcUUID][sfci.sfciID] = recoveryTaskState
+
+    def hasRecoveryTask(self, sfc, sfci):
+        if sfc.sfcUUID not in self.recoveryTaskDict.keys():
+            return False
+        else:
+            return sfci.sfciID in self.recoveryTaskDict[sfc.sfcUUID].keys()
+
+    def isSFCAutoRecovery(self, sfc):
+        return sfc.recoveryMode == AUTO_RECOVERY
+
+    def updateRecoveryTask(self, sfc, sfci, recoveryTaskState):
+        if sfc.sfcUUID not in self.recoveryTaskDict.keys():
+            self.recoveryTaskDict[sfc.sfcUUID] = {}
+        self.recoveryTaskDict[sfc.sfcUUID][sfci.sfciID] = recoveryTaskState
+
+    def deleteRecoveryTask(self, sfc, sfci):
+        if sfc.sfcUUID in self.recoveryTaskDict.keys():
+            del self.recoveryTaskDict[sfc.sfcUUID][sfci.sfciID]
+
+    def isAllSFCIRecovered(self, sfcUUID):
+        if len(self.recoveryTaskDict[sfcUUID]) == 0:
+            return True
+        else:
+            return False
+
+    def processAllRecoveryTasks(self):
+        self.logger.debug(" recovery task dict is {0}".format(self.recoveryTaskDict))
+        time.sleep(1)
+        for sfcUUID in list(self.recoveryTaskDict.keys()):
+            for sfciID, recoveryTaskState in list(self.recoveryTaskDict[sfcUUID].items()):
+                sfcState = self._oib.getSFCState(sfcUUID)
+                sfciState = self._oib.getSFCIState(sfciID)
+                sfc = self._oib.getSFC4DB(sfcUUID)
+                sfci = self._oib.getSFCI4DB(sfciID)
+                if recoveryTaskState == RECOVERY_TASK_STATE_WAITING:
+                    if self.isReadyToRecover(sfcState, sfciState):
+                        self.updateSFCIAndSFCState2RecoveryMode(sfci, sfc)
+                        self.updateRecoveryTask(sfc, sfci, 
+                                recoveryTaskState=RECOVERY_TASK_STATE_READY)
+                elif recoveryTaskState == RECOVERY_TASK_STATE_READY:
+                    req = self._genDelSFCIRequest(sfci)
+                    self._sendRequest2Dispatcher(req)
+                    self.updateRecoveryTask(sfc, sfci, 
+                                recoveryTaskState=RECOVERY_TASK_STATE_DELETING)
+                elif recoveryTaskState == RECOVERY_TASK_STATE_DELETING:
+                    if sfciState == STATE_DELETED:
+                        req = self._genAddSFCIRequest(sfc, sfci)
+                        self._sendRequest2Dispatcher(req)
+                        self.updateRecoveryTask(sfc, sfci, 
+                                    recoveryTaskState=RECOVERY_TASK_STATE_ADDING)
+                    self.logger.debug("sfciState is {0}".format(sfciState))
+                elif recoveryTaskState == RECOVERY_TASK_STATE_ADDING:
+                    if sfciState == STATE_ACTIVE:
+                        self.deleteRecoveryTask(sfc, sfci)
+                        if self.isAllSFCIRecovered(sfcUUID):
+                            self._oib.updateSFCState(sfcUUID, STATE_ACTIVE)
+                else:
+                    raise ValueError("Unknown task state {0}".format(recoveryTaskState))
+
     def _sendCmd2Dispatcher(self, cmd):
         queueName = DISPATCHER_QUEUE
         msg = SAMMessage(MSG_TYPE_REGULATOR_CMD, cmd)
         self._messageAgent.sendMsg(queueName, msg)
+
+    def updateSFCIAndSFCState2RecoveryMode(self, sfci, sfc):
+        self._oib.updateSFCState(sfc.sfcUUID, STATE_RECOVER_MODE)
+        self.logger.info("updateSFCIAndSFCState2RecoveryMode")
+        self._oib.updateSFCIState(sfci.sfciID, STATE_INACTIVE)
 
     def _getInfluencedSFCIAndSFCList(self, zoneName, detectionDict):
         infSFCIAndSFCTupleList = []
@@ -58,9 +134,12 @@ class CommandHandler(object):
                 # (SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME, ZONE_NAME)
                 sfcUUID = sfciTuple[1]
                 sfc = self._oib.getSFC4DB(sfcUUID)
-                state = sfciTuple[3]
-                if not (state == STATE_ACTIVE):
-                    continue
+                sfcState = self._oib.getSFCState(sfcUUID)
+                sfciState = sfciTuple[3]
+                if self.isReadyToRecover(sfcState, sfciState):
+                    recoveryTaskState = RECOVERY_TASK_STATE_WAITING
+                else:
+                    recoveryTaskState = RECOVERY_TASK_STATE_READY
                 sfci = sfciTuple[4]
                 for directionID in [DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET]:
                     fPathList = []
@@ -72,14 +151,19 @@ class CommandHandler(object):
                         for segPath in forwardingPath:
                             for stage, nodeID in segPath:
                                 if self.isNodeIDInDetectionDict(nodeID, detectionDict):
-                                    infSFCIAndSFCTupleList.append((sfci, sfc))
+                                    infSFCIAndSFCTupleList.append((sfci, sfc, recoveryTaskState))
                             for stage, nodeID in segPath[:-2]:
                                 linkID = (nodeID, segPath[stage+1])
                                 if self.isLinkIDInDetectionDict(linkID, detectionDict):
-                                    infSFCIAndSFCTupleList.append((sfci, sfc))
+                                    infSFCIAndSFCTupleList.append((sfci, sfc, recoveryTaskState))
             else:
                 self.logger.debug("zoneName is {0}, sfciZoneName is {1}".format(zoneName, sfciZoneName))
         return infSFCIAndSFCTupleList
+
+    def isReadyToRecover(self, sfcState, sfciState):
+        return ( (sfciState == STATE_ACTIVE)
+                and (sfcState in [STATE_ACTIVE,
+                                STATE_RECOVER_MODE]))
 
     def isNodeIDInDetectionDict(self, nodeID, detectionDict):
         keyList = ["failure", "abnormal"]

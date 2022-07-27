@@ -21,7 +21,7 @@ from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, REGU
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
 from sam.base.server import SERVER_TYPE_NFVI, Server
-from sam.base.sfc import APP_TYPE_LARGE_BANDWIDTH, SFC, SFCI, STATE_ACTIVE
+from sam.base.sfc import APP_TYPE_LARGE_BANDWIDTH, SFC, SFCI, STATE_ACTIVE, STATE_DELETED, STATE_MANUAL, STATE_RECOVER_MODE
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.slo import SLO
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, Switch
@@ -147,10 +147,10 @@ class TestNoticeClass(TestBase):
                                     backupForwardingPath)
 
     def storeSFC2DB(self, sfc):
-        self._oib.addSFC2DB(sfc)
+        self._oib.addSFC2DB(sfc, state=STATE_ACTIVE)
 
     def storeSFCI2DB(self, sfci, sfcUUID, zoneName):
-        self._oib.addSFCI2DB(sfci, sfcUUID, zoneName)
+        self._oib.addSFCI2DB(sfci, sfcUUID, zoneName, state=STATE_ACTIVE)
 
     def delSFC4DB(self, sfc):
         self._oib.pruneSFC4DB(sfc.sfcUUID)
@@ -158,7 +158,7 @@ class TestNoticeClass(TestBase):
     def delSFCI4DB(self, sfci):
         self._oib.pruneSFCI4DB(sfci.sfciID)
 
-    def updateSFCIState2DB(self, sfci, sfciState=STATE_ACTIVE):
+    def updateSFCIState2DB(self, sfci, sfciState):
         self._oib.updateSFCIState(sfci.sfciID, sfciState)
 
     def genAbnormalServerHandleCommand(self):
@@ -216,10 +216,39 @@ class TestNoticeClass(TestBase):
         req = self.recvRequest(DISPATCHER_QUEUE)
         assert req.requestType == REQUEST_TYPE_DEL_SFCI
         assert req.attributes["sfci"].sfciID == self.sfci.sfciID
+        sfcState = self._oib.getSFCState(self.sfc.sfcUUID)
+        assert sfcState == STATE_RECOVER_MODE
+
+        self.logger.info("get request! REQUEST_TYPE_DEL_SFCI")
+
+        self.updateSFCIState2DB(self.sfci, STATE_DELETED)
+
+        sfciState = self._oib.getSFCIState(self.sfci.sfciID)
+        self.logger.info("update sfci state to {0} already!".format(sfciState))
+        # while True:
+        #     sfciState = self._oib.getSFCIState(self.sfci.sfciID)
+        #     self.logger.info("update sfci state to {0} already!".format(sfciState))
+        #     content = screenInput("Please type to continue")
+        #     if content == "go":
+        #         break
+
+        sfcState = self._oib.getSFCState(self.sfc.sfcUUID)
+        assert sfcState == STATE_RECOVER_MODE
 
         req = self.recvRequest(DISPATCHER_QUEUE)
         assert req.requestType == REQUEST_TYPE_ADD_SFCI
         assert req.attributes["sfci"].sfciID == self.sfci.sfciID
+
+        self.logger.info("get request! REQUEST_TYPE_ADD_SFCI")
+
+        self.updateSFCIState2DB(self.sfci, STATE_ACTIVE)
+
+        sfciState = self._oib.getSFCIState(self.sfci.sfciID)
+        self.logger.info("update sfci state to {0} already!".format(sfciState))
+
+        time.sleep(8)
+        sfcState = self._oib.getSFCState(self.sfc.sfcUUID)
+        assert sfcState == STATE_ACTIVE
 
     def test_failure(self, setup_OneSFC):
         # self.logger.info("Please turn on regulator,"\
@@ -236,7 +265,17 @@ class TestNoticeClass(TestBase):
         req = self.recvRequest(DISPATCHER_QUEUE)
         assert req.requestType == REQUEST_TYPE_DEL_SFCI
         assert req.attributes["sfci"].sfciID == self.sfci.sfciID
+        sfcState = self._oib.getSFCState(self.sfc.sfcUUID)
+        assert sfcState == STATE_RECOVER_MODE
+
+        self.updateSFCIState2DB(self.sfci, STATE_DELETED)
 
         req = self.recvRequest(DISPATCHER_QUEUE)
         assert req.requestType == REQUEST_TYPE_ADD_SFCI
         assert req.attributes["sfci"].sfciID == self.sfci.sfciID
+
+        self.updateSFCIState2DB(self.sfci, STATE_ACTIVE)
+
+        time.sleep(8)
+        sfcState = self._oib.getSFCState(self.sfc.sfcUUID)
+        assert sfcState == STATE_ACTIVE

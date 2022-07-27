@@ -22,6 +22,11 @@ class SFCIInfoBaseMaintainer(XInfoBaseMaintainer):
             self._sfcis[zoneName] = {}
         self._sfcis[zoneName][sfci.sfciID] = sfci
 
+    def delSFCIByZone(self, sfci, zoneName):
+        if zoneName not in self._sfcis:
+            self._sfcis[zoneName] = {}
+        del self._sfcis[zoneName][sfci.sfciID]
+
     def updatePartialSFCIsByZone(self, sfcisDict, zoneName):
         if zoneName not in self._sfcis:
             self._sfcis[zoneName] = {}

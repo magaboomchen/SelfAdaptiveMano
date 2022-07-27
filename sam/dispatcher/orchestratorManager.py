@@ -8,14 +8,17 @@ import numpy as np
 
 import psutil
 
-from sam.base.messageAgent import MessageAgent, SAMMessage, MSG_TYPE_DISPATCHER_CMD
-from sam.base.command import CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, Command, CMD_TYPE_PUT_ORCHESTRATION_STATE, \
-    CMD_TYPE_TURN_ORCHESTRATION_ON, CMD_TYPE_KILL_ORCHESTRATION
+from sam.base.messageAgent import MessageAgent, SAMMessage, \
+                                    MSG_TYPE_DISPATCHER_CMD
+from sam.base.command import CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, \
+                Command, CMD_TYPE_PUT_ORCHESTRATION_STATE, \
+                CMD_TYPE_TURN_ORCHESTRATION_ON, CMD_TYPE_KILL_ORCHESTRATION
 from sam.base.pickleIO import PickleIO
 from sam.orchestration import orchestrator
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.dispatcher.config import CONSTANT_ORCHESTRATOR_NUM, TIME_BUDGET
+from sam.dispatcher.config import CONSTANT_ORCHESTRATOR_NUM, TIME_BUDGET, \
+                                    ORCHESTRATOR_PROCESS_STARTUP_TIME
 from sam.orchestration.oConfig import BATCH_SIZE, MAX_SFC_LENGTH
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.base.exceptionProcessor import ExceptionProcessor
@@ -311,7 +314,7 @@ class OrchestratorManager(object):
                                             oInfoDict["minPodIdx"] , oInfoDict["maxPodIdx"], self.topoType, self.zoneName)
         commandLine = "{0} {1}".format(orchestratorFilePath, args)
         self.sP.runPythonScript(commandLine, cmdPrefix=tasksetCmd)
-        time.sleep(0.0000001)
+        time.sleep(ORCHESTRATOR_PROCESS_STARTUP_TIME)
         return self.sP.getPythonScriptProcessPid(commandLine)
 
     def killAllOrchestratorInstances(self):

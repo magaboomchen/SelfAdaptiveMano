@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.command import CMD_TYPE_ADD_SFCI
+from sam.base.command import CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.messageAgent import SAMMessage, MessageAgent, MSG_TYPE_REPLY
@@ -15,7 +15,7 @@ from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintaine
 class MeasurerStub(object):
     def __init__(self):
         logConfigur = LoggerConfigurator(__name__, './log',
-            'measurer.log', level='debug')
+            'measurerStub.log', level='debug')
         self.logger = logConfigur.getLogger()
 
         self._dib = DCNInfoBaseMaintainer()
@@ -95,20 +95,31 @@ class MeasurerStub(object):
 
     def getSclaingRatio(self):
         stageNum = int(self.getSFCIStateCmdCnt / 10)
-        if stageNum % 2 == 0:
+        if stageNum % 4 == 0:
             return 1.0
-        else:
+        elif stageNum % 4 == 1:
             return 8.0
+        elif stageNum % 4 == 2:
+            return 1.0
+        elif stageNum % 4 == 3:
+            return 0.1
+        else:
+            return 1.0
 
     def sendReply(self, rply, dstIP, dstPort):
         msg = SAMMessage(MSG_TYPE_REPLY, rply)
         self._messageAgent.sendMsgByRPC(dstIP, dstPort, msg)
 
     def _cmdHandler(self, cmd):
+        self.logger.info("Recv a command")
         if cmd.cmdType == CMD_TYPE_ADD_SFCI:
             sfci = cmd.attributes["sfci"]
             zoneName = cmd.attributes["zone"]
             self._dib.addSFCIByZone(sfci, zoneName)
+        elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
+            sfci = cmd.attributes["sfci"]
+            zoneName = cmd.attributes["zone"]
+            self._dib.delSFCIByZone(sfci, zoneName)
         else:
             raise ValueError("Unknown command type {0}".format(cmd.cmdType))
 

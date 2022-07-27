@@ -7,9 +7,6 @@ Output: send del/add SFCI request to dispatcher
 
 Get SFCI from db, check which switch/server has been used for each SFCI.
 
-TODO：故障恢复时需要删除SFCI，如果此时该SFCI需要被scale in，会出现重复的delSFCICmd。
-
-TODO: dashboard需要把删除SFC的request发给regulator来处理，用于保证SFC状态一致性。
 """
 
 import sys
@@ -25,7 +22,7 @@ from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import DISPATCHER_QUEUE, \
                                     MSG_TYPE_REQUEST, REGULATOR_QUEUE, \
                                     MessageAgent, SAMMessage
-from sam.base.request import REQUEST_STATE_FAILED, REQUEST_STATE_IN_PROCESSING, \
+from sam.base.request import REQUEST_STATE_FAILED, REQUEST_STATE_INITIAL, \
                                 REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
                                 REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, \
                                 REQUEST_TYPE_GET_DCN_INFO
@@ -53,7 +50,6 @@ class Regulator(object):
         self._messageAgent.startMsgReceiverRPCServer(REGULATOR_IP,
                                                     REGULATOR_PORT)
         self.enableRetryFailureRequest = False
-        # self.sfcRecoverModule = SFCRecoverModule(self.logger)
         self.prevTimestamp = time.time()
         self.cmdHandler = CommandHandler(self.logger, self._messageAgent,
                                             self._oib)
@@ -79,10 +75,9 @@ class Regulator(object):
     def startRoutine(self):
         try:
             while True:
-                self.retryFailureRequestRoutine()
+                self.requestReplyHandlerRoutine()
                 self.commandHandlerRoutine()
-                self.replyHandlerRoutine()
-                self.requestHandlerRoutine()
+                self.retryFailureRequestRoutine()
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex, 
                 "Regulator msg handler")
@@ -98,7 +93,7 @@ class Regulator(object):
                 self.retryFailureRequests()
 
     def retryFailureRequests(self):
-        requestTupleList = self._oib.getAllRequest()
+        requestTupleList = self._oib.getAllRequest(condition=" STATE = '{0}' ".format(REQUEST_STATE_FAILED))
         # " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, STATE, PICKLE, RETRY_CNT "
         for requestTuple in requestTupleList:
             state = requestTuple[5]
@@ -108,17 +103,21 @@ class Regulator(object):
                 request = requestTuple[6]
                 retryCnt = requestTuple[7]
                 if retryCnt > MAX_RETRY_NUM:
+                    self.logger.warning(" failed request {0} exceeds" \
+                                        " max retry number".format(request))
                     continue
-                self._oib.updateRequestState(requestUUID, REQUEST_STATE_IN_PROCESSING)
-                self._oib.incRequestRetryCnt(requestUUID)
                 if requestType in [REQUEST_TYPE_ADD_SFC, 
                                     REQUEST_TYPE_ADD_SFCI,
                                     REQUEST_TYPE_DEL_SFCI,
                                     REQUEST_TYPE_DEL_SFC]:
+                    self._oib.updateRequestState(requestUUID, REQUEST_STATE_INITIAL)
+                    self._oib.incRequestRetryCnt(requestUUID)
                     msg = SAMMessage(MSG_TYPE_REQUEST, request)
                     self._messageAgent.sendMsg(DISPATCHER_QUEUE, msg)
+                    self.logger.debug(" retry failed request {0}".format(request))
                 elif requestType in [REQUEST_TYPE_GET_DCN_INFO]:
                     self.logger.warning("Disable retry for get dcn info request!")
+                    self._oib.delRequest(requestUUID)
                 else:
                     raise ValueError("Unknown request type {0}".format(requestType))
 
@@ -134,9 +133,10 @@ class Regulator(object):
                 self.cmdHandler.handle(body)
             else:
                 self.logger.error("Unknown massage body:{0}".format(body))
+        self.cmdHandler.processAllRecoveryTasks()
 
-    def replyHandlerRoutine(self):
-        # Listen on reply
+    def requestReplyHandlerRoutine(self):
+        # Listen on request/reply
         msg = self._messageAgent.getMsgByRPC(REGULATOR_IP, REGULATOR_PORT)
         msgType = msg.getMessageType()
         if msgType == None:
@@ -145,21 +145,12 @@ class Regulator(object):
             body = msg.getbody()
             if self._messageAgent.isReply(body):
                 self.replyHandler.handle(body)
-            else:
-                self.logger.error("Unknown massage body:{0}".format(body))
-
-    def requestHandlerRoutine(self):
-        # Listen on request
-        msg = self._messageAgent.getMsgByRPC(REGULATOR_IP, REGULATOR_PORT)
-        msgType = msg.getMessageType()
-        if msgType == None:
-            pass
-        else:
-            body = msg.getbody()
-            if self._messageAgent.isRequest(body):
+            elif self._messageAgent.isRequest(body):
                 self.requestHandler.handle(body)
             else:
                 self.logger.error("Unknown massage body:{0}".format(body))
+        self.replyHandler.processAllScalingTasks()
+        self.requestHandler.processAllRequestTask()
 
     def __del__(self):
         self.logger.info("Delete Regulator.")

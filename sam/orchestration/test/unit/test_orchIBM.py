@@ -125,11 +125,11 @@ class TestOIBMClass(TestBase):
         assert sfc.sfcUUID == self.sfc.sfcUUID
 
     def test_updateSFCState(self):
-        state = self.oib._getSFCState(self.sfc.sfcUUID)
+        state = self.oib.getSFCState(self.sfc.sfcUUID)
         assert state == STATE_IN_PROCESSING
-        self.oib._updateSFCState(self.sfc.sfcUUID, STATE_INACTIVE)
+        self.oib.updateSFCState(self.sfc.sfcUUID, STATE_INACTIVE)
         sfc = self.oib.getSFC4DB(self.sfc.sfcUUID)
-        state = self.oib._getSFCState(self.sfc.sfcUUID)
+        state = self.oib.getSFCState(self.sfc.sfcUUID)
         assert state == STATE_INACTIVE
 
     def test_addSFCI2SFCInDB(self):
@@ -157,7 +157,7 @@ class TestOIBMClass(TestBase):
 
     def test_updateSFCIState(self):
         self.oib.updateSFCIState(self.sfci.sfciID, STATE_DELETED)
-        assert self.oib._getSFCIState(self.sfci.sfciID) == STATE_DELETED
+        assert self.oib.getSFCIState(self.sfci.sfciID) == STATE_DELETED
 
     def test_pruneSFC4DB(self):
         self.oib.pruneSFC4DB(self.sfc.sfcUUID)

@@ -15,9 +15,11 @@ from sam.base.messageAgent import SAMMessage, MessageAgent, \
     MEDIATOR_QUEUE, ORCHESTRATOR_QUEUE, MSG_TYPE_ORCHESTRATOR_CMD
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_DEL_SFCI, \
     REQUEST_TYPE_DEL_SFC, REQUEST_STATE_FAILED
-from sam.base.command import CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
-    CMD_TYPE_PUT_ORCHESTRATION_STATE, CMD_TYPE_GET_ORCHESTRATION_STATE, CMD_TYPE_TURN_ORCHESTRATION_ON, \
-    CMD_TYPE_TURN_ORCHESTRATION_OFF, CMD_TYPE_KILL_ORCHESTRATION, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI
+from sam.base.command import CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, \
+    CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
+    CMD_TYPE_PUT_ORCHESTRATION_STATE, CMD_TYPE_GET_ORCHESTRATION_STATE, \
+    CMD_TYPE_TURN_ORCHESTRATION_ON, CMD_TYPE_TURN_ORCHESTRATION_OFF, \
+    CMD_TYPE_KILL_ORCHESTRATION, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI
 from sam.base.commandMaintainer import CommandMaintainer
 from sam.orchestration.argParser import ArgParser
 from sam.base.request import REQUEST_TYPE_ADD_SFCI
@@ -26,16 +28,16 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.server import Server
 from sam.base.switch import Switch
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
-from sam.orchestration.oConfig import BATCH_SIZE, BATCH_TIMEOUT, DEFAULT_MAPPING_TYPE, ENABLE_OIB
+from sam.orchestration.oConfig import BATCH_SIZE, BATCH_TIMEOUT, \
+                                        DEFAULT_MAPPING_TYPE, ENABLE_OIB
 from sam.orchestration.oSFCAdder import OSFCAdder
 from sam.orchestration.oSFCDeleter import OSFCDeleter
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 
 class Orchestrator(object):
-    def __init__(self, orchestrationName=None, podNum=None, minPodIdx=None, maxPodIdx=None, topoType="fat-tree", zoneName=None):
-        # time.sleep(15)   # wait for other basic module boot
-
+    def __init__(self, orchestrationName=None, podNum=None, minPodIdx=None, 
+                        maxPodIdx=None, topoType="fat-tree", zoneName=None):
         logConfigur = LoggerConfigurator(__name__, './log',
             'orchestrator_{0}.log'.format(orchestrationName), level='info')
         self.logger = logConfigur.getLogger()
@@ -105,12 +107,14 @@ class Orchestrator(object):
     def _requestHandler(self, request):
         try:
             if request.requestType == REQUEST_TYPE_ADD_SFC:
-                # self._odir.getDCNInfo()
                 cmd = self._osa.genAddSFCCmd(request)
-                cmd.attributes['source'] = self.orchInstanceQueueName
-                self._cm.addCmd(cmd)
-                self._oib.addSFCRequestHandler(request, cmd)
-                self.sendCmd(cmd)
+                if self._oib._isAddSFCValidState(cmd):
+                    # self._odir.getDCNInfo()
+                    cmd.attributes['source'] = self.orchInstanceQueueName
+                    self._cm.addCmd(cmd)
+                    self.sendCmd(cmd)
+                if ENABLE_OIB:
+                    self._oib.addSFCRequestHandler(request, cmd)
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
                 if self._batchMode == False:
                     raise ValueError("Deprecated function: genAddSFCICmd"
@@ -144,25 +148,29 @@ class Orchestrator(object):
                         # self.batchLastTime = time.time()
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 cmd = self._osd.genDelSFCICmd(request)
-                cmd.attributes['source'] = self.orchInstanceQueueName
-                ingress = cmd.attributes['sfc'].directions[0]['ingress']
-                if type(ingress) == Server:
-                    self.logger.debug("orchestrator classifier's serverID: {0}".format(
-                        ingress.getServerID()
-                    ))
-                elif type(ingress) == Switch:
-                    self.logger.debug("orchestrator classifier's switchID: {0}".format(
-                        ingress.switchID
-                    ))
-                self._cm.addCmd(cmd)
-                self._oib.delSFCIRequestHandler(request, cmd)
-                self.sendCmd(cmd)
+                if self._oib._isDelSFCIValidState(cmd):
+                    cmd.attributes['source'] = self.orchInstanceQueueName
+                    ingress = cmd.attributes['sfc'].directions[0]['ingress']
+                    if type(ingress) == Server:
+                        self.logger.debug("orchestrator classifier's serverID: {0}".format(
+                            ingress.getServerID()
+                        ))
+                    elif type(ingress) == Switch:
+                        self.logger.debug("orchestrator classifier's switchID: {0}".format(
+                            ingress.switchID
+                        ))
+                    self._cm.addCmd(cmd)
+                    self.sendCmd(cmd)
+                if ENABLE_OIB:
+                    self._oib.delSFCIRequestHandler(request, cmd)
             elif request.requestType == REQUEST_TYPE_DEL_SFC:
                 cmd = self._osd.genDelSFCCmd(request)
-                cmd.attributes['source'] = self.orchInstanceQueueName
-                self._cm.addCmd(cmd)
-                self._oib.delSFCRequestHandler(request, cmd)
-                self.sendCmd(cmd)
+                if self._oib._isDelSFCValidState(cmd):
+                    cmd.attributes['source'] = self.orchInstanceQueueName
+                    self._cm.addCmd(cmd)
+                    self.sendCmd(cmd)
+                if ENABLE_OIB:
+                    self._oib.delSFCRequestHandler(request, cmd)
             else:
                 self.logger.warning(
                     "Unknown request:{0}".format(request.requestType)
@@ -228,11 +236,12 @@ class Orchestrator(object):
                 self._requestBatchQueue)
             self.logger.info("After mapping, there are {0} request in queue".format(self._requestBatchQueue.qsize()))
             for (request, cmd) in reqCmdTupleList:
-                cmd.attributes['source'] = self.orchInstanceQueueName
-                self._cm.addCmd(cmd)
+                if self._oib._isAddSFCIValidState(cmd):
+                    cmd.attributes['source'] = self.orchInstanceQueueName
+                    self._cm.addCmd(cmd)
+                    self.sendCmd(cmd)
                 if ENABLE_OIB:
                     self._oib.addSFCIRequestHandler(request, cmd)
-                self.sendCmd(cmd)
             self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
             self.logger.info("Batch process finish")
             self.batchLastTime = time.time()

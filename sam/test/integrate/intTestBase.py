@@ -25,8 +25,8 @@ from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, VNF, VNF_TYPE_FW, \
         PREFERRED_DEVICE_TYPE_SERVER, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, \
         VNFI_RESOURCE_QUOTA_SMALL
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
-from sam.test.testBase import APP1_REAL_IP, APP2_REAL_IP, APP3_REAL_IP, \
-                                APP4_REAL_IP, APP5_REAL_IP, TestBase
+from sam.test.testBase import APP1_REAL_IPV6, APP2_REAL_IP, APP3_REAL_GID, \
+                                APP4_REAL_IPV6, APP5_REAL_IP, TestBase
 
 
 class IntTestBaseClass(TestBase):
@@ -78,12 +78,12 @@ class IntTestBaseClass(TestBase):
         routingMorphic.from_dict(srv6MorphicDictTemplate)
         direction1 = {
             'ID': 0,
-            'source': {'node': None, 'IPv4':"*"},
+            'source': {'node': None, 'IPv6':"*"},
             'ingress': classifier,
-            'match': {'srcIP': "*",'dstIP':APP1_REAL_IP,
+            'match': {'srcIP': "*",'dstIP':APP1_REAL_IPV6,
                 'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
-            'destination': {'node': None, 'IPv4':APP1_REAL_IP}
+            'destination': {'node': None, 'IPv6':APP1_REAL_IPV6}
         }
         directions = [direction1]
         slo = SLO(throughput=10, latency=100, availability=0.999, \
@@ -133,12 +133,12 @@ class IntTestBaseClass(TestBase):
         routingMorphic.from_dict(roceV1MorphicDictTemplate)
         direction1 = {
             'ID': 0,
-            'source': {'node': None, 'IPv4':"*"},
+            'source': {'node': None, 'RoceV1':"*"},
             'ingress': classifier,
-            'match': {'srcIP': "*",'dstIP':APP3_REAL_IP,
+            'match': {'srcIP': "*",'dstIP':APP3_REAL_GID,
                 'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
-            'destination': {'node': None, 'IPv4':APP3_REAL_IP}
+            'destination': {'node': None, 'RoceV1':APP3_REAL_GID}
         }
         directions = [direction1]
         slo = SLO(throughput=1, latency=10, availability=0.999, \
@@ -150,9 +150,9 @@ class IntTestBaseClass(TestBase):
 
     def genLargeConnectionSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
-        vNFTypeSequence = [VNF_TYPE_MONITOR, VNF_TYPE_FW]
-        vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_MONITOR,
-                            None, PREFERRED_DEVICE_TYPE_P4),
+        vNFTypeSequence = [VNF_TYPE_RATELIMITER, VNF_TYPE_FW]
+        vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_RATELIMITER,
+                            RateLimiterConfig(maxMbps=100), PREFERRED_DEVICE_TYPE_P4),
                         VNF(uuid.uuid1(), VNF_TYPE_FW,
                             self.genFWConfigExample(IPV6_ROUTE_PROTOCOL),
                             PREFERRED_DEVICE_TYPE_P4)]
@@ -163,12 +163,12 @@ class IntTestBaseClass(TestBase):
         routingMorphic.from_dict(ipv6MorphicDictTemplate)
         direction1 = {
             'ID': 0,
-            'source': {'node': None, 'IPv4':"*"},
+            'source': {'node': None, 'IPv6':"*"},
             'ingress': classifier,
-            'match': {'srcIP': "*",'dstIP':APP4_REAL_IP,
+            'match': {'srcIP': "*",'dstIP':APP4_REAL_IPV6,
                 'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
-            'destination': {'node': None, 'IPv4':APP4_REAL_IP}
+            'destination': {'node': None, 'IPv6':APP4_REAL_IPV6}
         }
         directions = [direction1]
         slo = SLO(throughput=1, latency=100, availability=0.999, \

@@ -12,6 +12,7 @@ TIME_BUDGET = 25
 AUTO_SCALE = False
 
 CONSTANT_ORCHESTRATOR_NUM = 32
+ORCHESTRATOR_PROCESS_STARTUP_TIME = 0.001
 RE_INIT_TABLE = True    # Please disable this when presenting after clean up all mysql data.
 
 

@@ -127,8 +127,6 @@ class NotViaNATAndPSFC(FRR):
 
     def _increaseSFCIBackupPathPriority(self, sfciID, backupPathKey):
         # self.logger.warning("sfciID is {0}".format(sfciID))
-        # if sfciID > 75:
-        #     time.sleep(0.01)
         self.logger.debug("_increaseSFCIBackupPathPriority")
         dpidFIBEntryDict \
             = self.pSFCIbm.getSFCIFlowTableEntries(sfciID, backupPathKey)

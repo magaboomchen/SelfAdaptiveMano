@@ -15,15 +15,15 @@ import uuid
 import logging
 
 import pytest
-from sam.base.command import CMD_TYPE_ADD_SFCI, Command
 
+from sam.base.command import CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, Command
 from sam.base.compatibility import screenInput
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, SIMULATOR_ZONE
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, MEASURER_PORT
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
 from sam.base.server import SERVER_TYPE_NFVI, Server
-from sam.base.sfc import APP_TYPE_LARGE_BANDWIDTH, SFC, SFCI, STATE_ACTIVE
+from sam.base.sfc import APP_TYPE_LARGE_BANDWIDTH, SFC, SFCI, STATE_ACTIVE, STATE_DELETED
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.slo import SLO
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, Switch
@@ -100,6 +100,13 @@ class TestScalingClass(TestBase):
 
     def addSFCI2MeasurerStub(self, sfci):
         cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(),
+                        attributes={"sfci":sfci,
+                                    "zone":SIMULATOR_ZONE})
+        self.sendCmdByRPC(MEASURER_IP, MEASURER_PORT, 
+                            MSG_TYPE_REGULATOR_CMD, cmd)
+
+    def delSFCI2MeasurerStub(self, sfci):
+        cmd = Command(CMD_TYPE_DEL_SFCI, uuid.uuid1(),
                         attributes={"sfci":sfci,
                                     "zone":SIMULATOR_ZONE})
         self.sendCmdByRPC(MEASURER_IP, MEASURER_PORT, 
@@ -182,7 +189,7 @@ class TestScalingClass(TestBase):
 
     def delSFCI4DB(self, sfc, sfci):
         self._oib.pruneSFCI4DB(sfci.sfciID)
-        self._oib._delSFCI4SFCInDB(sfc.sfcUUID, sfci.sfciID)
+        # self._oib._delSFCI4SFCInDB(sfc.sfcUUID, sfci.sfciID)
 
     def updateSFCIState2DB(self, sfci, sfciState=STATE_ACTIVE):
         self._oib.updateSFCIState(sfci.sfciID, sfciState)
@@ -196,10 +203,24 @@ class TestScalingClass(TestBase):
         # check dispatcherStub
         req = self.recvRequest(DISPATCHER_QUEUE)
         assert req.requestType == REQUEST_TYPE_ADD_SFCI
-        addedSFCIID = req.attributes["sfci"].sfciID
+        sfc = req.attributes["sfc"]
+        zoneName = sfc.attributes["zone"]
+        addedSFCI = req.attributes["sfci"]
+        addedSFCIID = addedSFCI.sfciID
         self.logger.info("new sfciID {0}".format(addedSFCIID))
+        addedSFCI = self.sfci
+        addedSFCI.sfciID = addedSFCIID
+
+        self.addSFCI2MeasurerStub(addedSFCI)
+        self.storeSFCI2DB(addedSFCI, self.sfc.sfcUUID, zoneName)
+        self.updateSFCIState2DB(addedSFCI, STATE_ACTIVE)
 
         req = self.recvRequest(DISPATCHER_QUEUE)
         assert req.requestType == REQUEST_TYPE_DEL_SFCI
-        addedSFCIID = req.attributes["sfci"].sfciID
-        self.logger.info("deleted sfciID {0}".format(addedSFCIID))
+        deletedSFCI = req.attributes["sfci"]
+        deletedSFCIID = deletedSFCI.sfciID
+        self.logger.info("deleted sfciID {0}".format(deletedSFCIID))
+
+        self.delSFCI2MeasurerStub(deletedSFCI)
+        # self.delSFCI4DB(deletedSFCI)
+        self.updateSFCIState2DB(deletedSFCI, STATE_DELETED)

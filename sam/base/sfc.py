@@ -27,6 +27,8 @@ STATE_INIT_FAILED = "STATE_INIT_FAILED"
 STATE_ACTIVE = "STATE_ACTIVE"
 STATE_INACTIVE = "STATE_INACTIVE"  # There maybe some resource used in DCN
 STATE_DELETED = "STATE_DELETED"  # All resource of this sfc/sfci has been released
+STATE_UNDELETED = "STATE_UNDELETED"
+STATE_MANUAL = "STATE_MANUAL"
 # Warning: Delete an sfc/sfci will not release SFCIID
 # To get back SFCIID, please prune sfc/sfci from database
 STATE_RECOVER_MODE = "STATE_RECOVER_MODE"  # when a failure happen, sfc/sfci will be in this state
@@ -34,8 +36,8 @@ STATE_SCALING_OUT_MODE = "STATE_SCALING_OUT_MODE"  # when the sfc is scaling out
 STATE_SCALING_IN_MODE = "STATE_SCALING_IN_MODE" 
 
 # SFCIID allocation
-DASHBOARD_SFCIID_ALLOCATED_RANGE = [1, 9999]
-REGULATOR_SFCIID_ALLOCATED_RANGE = [10000, 20000]
+DASHBOARD_SFCIID_ALLOCATED_RANGE = [0, 10000]
+REGULATOR_SFCIID_ALLOCATED_RANGE = [10001, 20000]
 
 
 class SFCI(object):
