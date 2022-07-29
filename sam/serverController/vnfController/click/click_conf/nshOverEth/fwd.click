@@ -1,6 +1,6 @@
-in0 :: FromDPDKDevice(0, PROMISC true, N_QUEUES 1, MODE none);
+in0 :: FromDPDKDevice(0, PROMISC true, N_QUEUES 1, MODE none, NUMA true);
 out0 :: ToDPDKDevice(0, N_QUEUES 1);
-in1 :: FromDPDKDevice(1, PROMISC true, N_QUEUES 1, MODE none);
+in1 :: FromDPDKDevice(1, PROMISC true, N_QUEUES 1, MODE none, NUMA true);
 out1 ::ToDPDKDevice(1, N_QUEUES 1);
 in0 -> out1;
 in1 -> out0;

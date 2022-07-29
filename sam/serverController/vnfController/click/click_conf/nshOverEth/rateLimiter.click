@@ -3,9 +3,9 @@ define(
     $QUEUE_CAPACITY 1000,
 );
 
-in0 :: FromDPDKDevice(0, N_QUEUES 1, MODE none);
+in0 :: FromDPDKDevice(0, N_QUEUES 1, MODE none, NUMA true);
 out0 :: ToDPDKDevice(0, N_QUEUES 1);
-in1 :: FromDPDKDevice(1, N_QUEUES 1, MODE none);
+in1 :: FromDPDKDevice(1, N_QUEUES 1, MODE none, NUMA true);
 out1 ::ToDPDKDevice(1, N_QUEUES 1);
 rl_direction0 :: BandwidthRatedUnqueue(RATE $RATE, BURST_BYTES 5000)
 rl_direction1 :: BandwidthRatedUnqueue(RATE $RATE, BURST_BYTES 5000)

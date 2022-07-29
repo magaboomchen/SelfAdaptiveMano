@@ -1,14 +1,17 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import time
 import docker
-from sam.base.rateLimiter import RateLimiterConfig
 
-from sam.base.vnf import VNF_TYPE_FORWARD, VNF_TYPE_FW, \
-    VNF_TYPE_FORWARD, VNF_TYPE_FW, VNF_TYPE_MONITOR, \
-    VNF_TYPE_LB, VNF_TYPE_NAT, VNF_TYPE_RATELIMITER, VNF_TYPE_VPN
-from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
+from sam.base.acl import ACLTable, ACLTuple
+from sam.base.rateLimiter import RateLimiterConfig
+from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, \
+                                    ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
+from sam.base.vnf import VNF_TYPE_FORWARD, VNF_TYPE_FW, VNF_TYPE_FORWARD, \
+        VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_LB, VNF_TYPE_NAT, \
+        VNF_TYPE_RATELIMITER, VNF_TYPE_VPN
+from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, \
+                                            CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
 from sam.serverController.sffController.sibMaintainer import SIBMaintainer
 from sam.serverController.vnfController.vcConfig import vcConfig
 
@@ -142,32 +145,42 @@ class VNFIAdder(object):
                 command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, clickConfFilePath)
                 command = command + ' && mkdir -p %s' % vcConfig.FW_RULE_DIR
                 if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
-                    if 'ACL' in vnfi.config.keys():
-                        ACL = vnfi.config['ACL']
-                        for rule in ACL:
-                            command = command + ' && echo \"%s\" >> %s' % (rule.genFWLine(), vcConfig.FW_RULE_PATH)
+                    if type(vnfi.config) == ACLTable:
+                        aclTable = vnfi.config  # type: ACLTable
+                        ipv4ACLRulesList = aclTable.getRulesList(IPV4_ROUTE_PROTOCOL)    # type: list(ACLTuple)
+                        for rule in ipv4ACLRulesList:
+                            command = command + ' && echo \"%s\" >> %s' % (rule.genFWLine(), vcConfig.FW_IPV4_RULE_PATH)
                 elif DEFAULT_CHAIN_TYPE == CHAIN_TYPE_NSHOVERETH:
-                    if 'ACL' in vnfi.config.keys():
-                        ACL = vnfi.config['ACL']
-                        newIPV4FWRulesFileName = "statelessIPV4FWRules_" +  containerName
-                        newIPV4FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newIPV4FWRulesFileName
-                        command = command + ' && sed -i \'s/statelessIPV4FWRules/%s/\' %s' % (newIPV4FWRulesFileName, clickConfFilePath)
-                        for rule in ACL:
-                            command = command + ' && echo \"%s\" >> %s' % (rule.genFWLine(), newIPV4FWRulesPath)
-                    if 'IPv6ACL' in vnfi.config.keys():
-                        IPv6ACL = vnfi.config['IPv6ACL']
-                        newIPV6FWRulesFileName = "statelessIPV6FWRules_" +  containerName
-                        newIPV6FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newIPV6FWRulesFileName
-                        command = command + ' && sed -i \'s/statelessIPV6FWRules/%s/\' %s' % (newIPV6FWRulesFileName, clickConfFilePath)
-                        for rule in IPv6ACL:
-                            command = command + ' && echo \"%s\" >> %s' % (rule.gen128BitsDstIdentifierFWLine(), newIPV6FWRulesPath)
-                    if 'RoceV1ACL' in vnfi.config.keys():
-                        RoceV1ACL = vnfi.config['RoceV1ACL']
-                        newROCEV1FWRulesFileName = "statelessROCEV1FWRules_" +  containerName
-                        newROCEV1FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newROCEV1FWRulesFileName
-                        command = command + ' && sed -i \'s/statelessROCEV1FWRules/%s/\' %s' % (newROCEV1FWRulesFileName, clickConfFilePath)
-                        for rule in RoceV1ACL:
-                            command = command + ' && echo \"%s\" >> %s' % (rule.gen128BitsDstIdentifierFWLine(), newROCEV1FWRulesPath)
+                    if type(vnfi.config) == ACLTable:
+                        aclTable = vnfi.config  # type: ACLTable
+                        if aclTable.getRulesNum(IPV4_ROUTE_PROTOCOL) != 0:
+                            ipv4ACLRulesList = aclTable.getRulesList(IPV4_ROUTE_PROTOCOL)
+                            newIPV4FWRulesFileName = "statelessIPV4FWRules_" +  containerName
+                            newIPV4FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newIPV4FWRulesFileName
+                            command = command + ' && sed -i \'s/statelessIPV4FWRules/%s/\' %s' % (newIPV4FWRulesFileName, clickConfFilePath)
+                            for rule in ipv4ACLRulesList:
+                                command = command + ' && echo \"%s\" >> %s' % (rule.genFWLine(), newIPV4FWRulesPath)
+                        if aclTable.getRulesNum(IPV6_ROUTE_PROTOCOL) != 0:
+                            ipv6ACLRulesList = aclTable.getRulesList(IPV6_ROUTE_PROTOCOL)
+                            newIPV6FWRulesFileName = "statelessIPV6FWRules_" +  containerName
+                            newIPV6FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newIPV6FWRulesFileName
+                            command = command + ' && sed -i \'s/statelessIPV6FWRules/%s/\' %s' % (newIPV6FWRulesFileName, clickConfFilePath)
+                            for rule in ipv6ACLRulesList:
+                                command = command + ' && echo \"%s\" >> %s' % (rule.gen128BitsDstIdentifierFWLine(), newIPV6FWRulesPath)
+                        if aclTable.getRulesNum(SRV6_ROUTE_PROTOCOL) != 0:
+                            ipv6ACLRulesList = aclTable.getRulesList(SRV6_ROUTE_PROTOCOL)
+                            newIPV6FWRulesFileName = "statelessIPV6FWRules_" +  containerName
+                            newIPV6FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newIPV6FWRulesFileName
+                            command = command + ' && sed -i \'s/statelessIPV6FWRules/%s/\' %s' % (newIPV6FWRulesFileName, clickConfFilePath)
+                            for rule in ipv6ACLRulesList:
+                                command = command + ' && echo \"%s\" >> %s' % (rule.gen128BitsDstIdentifierFWLine(), newIPV6FWRulesPath)
+                        if aclTable.getRulesNum(ROCEV1_ROUTE_PROTOCOL) != 0:
+                            rocev1ACLRulesList = aclTable.getRulesList(ROCEV1_ROUTE_PROTOCOL)
+                            newROCEV1FWRulesFileName = "statelessROCEV1FWRules_" +  containerName
+                            newROCEV1FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newROCEV1FWRulesFileName
+                            command = command + ' && sed -i \'s/statelessROCEV1FWRules/%s/\' %s' % (newROCEV1FWRulesFileName, clickConfFilePath)
+                            for rule in rocev1ACLRulesList:
+                                command = command + ' && echo \"%s\" >> %s' % (rule.gen128BitsDstIdentifierFWLine(), newROCEV1FWRulesPath)
                 else:
                     raise ValueError("Unknown chain type {0}".format(DEFAULT_CHAIN_TYPE))
                 command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)

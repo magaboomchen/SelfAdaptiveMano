@@ -34,8 +34,8 @@ class ReplyHandler(object):
         self.sfciLoadDict = {}      # [sfciID] = [[sloRealTimeValue, timestamp, bandwidth]]
         self.maxLoadListLength = max(MAX_OVER_LOAD_NUM_THRESHOLD, MAX_UNDER_LOAD_NUM_THRESHOLD)
         self.pM = PerformanceModel()
-        self.scalingOutTaskDict = {}  # Dict[sfcUUID, Dict[sfciID, taskState]]
-        self.scalingInTaskDict = {}  # Dict[sfcUUID, Dict[sfciID, taskState]]
+        self.scalingOutTaskDict = {}  # dict[sfcUUID, dict[sfciID, taskState]]
+        self.scalingInTaskDict = {}  # dict[sfcUUID, dict[sfciID, taskState]]
         self.sfciIDAllocator = SFCIDAllocator(self._oib,
                                                 REGULATOR_SFCIID_ALLOCATED_RANGE[0],
                                                 REGULATOR_SFCIID_ALLOCATED_RANGE[1])

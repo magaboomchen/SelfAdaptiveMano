@@ -30,8 +30,8 @@ class ForwardingPathSet(object):
         self.primaryForwardingPath = primaryForwardingPath
         # {pathID:forwardingPath}
         # {1:forwardingPath, 128:forwardingPath}
-        # direction1's pathID == 1
-        # direction2's pathID == 128
+        # direction0's pathID == 1
+        # direction1's pathID == 128
 
         self.mappingType = mappingType  # MAPPING_TYPE_NONE, MAPPING_TYPE_UFRR, etc
         self.backupForwardingPath = backupForwardingPath
@@ -39,8 +39,8 @@ class ForwardingPathSet(object):
         #   1:{(srcID,dstID,pathID):forwardingPath},
         #   128:{(srcID,dstID,pathID):forwardingPath}
         # }
-        # direction1's pathID > 1 and < 128
-        # direction2's pathID > 128 and < 256
+        # direction0's pathID > 1 and < 128
+        # direction1's pathID > 128 and < 256
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

@@ -14,6 +14,7 @@ import logging
 import pytest
 
 from sam.base import server
+from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL
 from sam.base.vnf import VNFI, VNF_TYPE_FW
 from sam.base.compatibility import screenInput
 from sam.base.server import Server, SERVER_TYPE_NORMAL
@@ -21,7 +22,7 @@ from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
-from sam.base.acl import ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP
+from sam.base.acl import ACLTable, ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, WEBSITE_REAL_IP, \
@@ -85,23 +86,23 @@ class TestVNFAddFW(TestBase):
                 server.setControlNICMAC(SFF0_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
-                config = {}
-                config['ACL'] = self.genTestIPv4FWRules()
+                config = self.genTestIPv4FWRules()
                 vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
                     vnfiID=uuid.uuid1(), config=config, node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
     def genTestIPv4FWRules(self):
-        rules = []
-        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
-            srcPort=(1234, 1234), dstPort=(80, 80)))
-        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=WEBSITE_REAL_IP, dstAddr=OUTTER_CLIENT_IP,
-            srcPort=(80, 80), dstPort=(1234, 1234)))
-        # rules.append(ACLTuple(ACL_ACTION_DENY))
-        rules.append(ACLTuple(ACL_ACTION_ALLOW))
-        return rules
-
+        entry1 = ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
+            srcPort=(1234, 1234), dstPort=(80, 80))
+        entry2 = ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=WEBSITE_REAL_IP, dstAddr=OUTTER_CLIENT_IP,
+            srcPort=(80, 80), dstPort=(1234, 1234))
+        entry3 = ACLTuple(ACL_ACTION_ALLOW)
+        aclT = ACLTable()
+        aclT.addRules(entry1, IPV4_ROUTE_PROTOCOL)
+        aclT.addRules(entry2, IPV4_ROUTE_PROTOCOL)
+        aclT.addRules(entry3, IPV4_ROUTE_PROTOCOL)
+        return aclT
 
     def addSFCI2SFF(self):
         logging.info("setup add SFCI to sff")

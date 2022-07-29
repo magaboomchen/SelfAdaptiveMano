@@ -6,6 +6,7 @@ import logging
 
 import psutil
 
+from sam.base.compatibility import x2str
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 
@@ -60,7 +61,7 @@ class ShellProcessor(object):
 
     def runPythonScript(self, filePath, root=False, cmdPrefix="", cmdSuffix=""):
         if root == True:
-            user = "sudo "
+            user = 'sudo env "PATH=$PATH" '
         else:
             user = ""
         subprocess.Popen(
@@ -88,4 +89,4 @@ class ShellProcessor(object):
     
     def runShellCommand(self,shellCmd):
         res = subprocess.check_output([shellCmd], shell=True)
-        return str(res)
+        return x2str(res)

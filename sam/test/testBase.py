@@ -5,7 +5,7 @@ import uuid
 import random
 import logging
 
-from sam.base.acl import ACL_ACTION_ALLOW, ACL_PROTO_UDP, ACLTuple
+from sam.base.acl import ACL_ACTION_ALLOW, ACL_PROTO_UDP, ACLTable, ACLTuple
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, VNF_TYPE_FORWARD, VNF_TYPE_MAX, VNFI_RESOURCE_QUOTA_SMALL
 from sam.base.slo import SLO
@@ -205,7 +205,7 @@ class TestBase(object):
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
-        direction1 = {
+        direction0 = {
             'ID': 0,
             'source': {"IPv4":"*", "node": None},
             'ingress': classifier,
@@ -214,7 +214,7 @@ class TestBase(object):
             'egress': classifier,
             'destination': {"IPv4":WEBSITE_REAL_IP, "node": None}
         }
-        directions = [direction1]
+        directions = [direction0]
         slo = SLO(latency=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions,
@@ -237,7 +237,7 @@ class TestBase(object):
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
-        direction1 = {
+        direction0 = {
             'ID': 0,
             'source': {"IPv4":"*", "node": None},
             'ingress': classifier,
@@ -246,7 +246,7 @@ class TestBase(object):
             'egress': classifier,
             'destination': {"IPv4": WEBSITE_REAL_IP, "node": None}
         }
-        direction2 = {
+        direction1 = {
             'ID': 1,
             'source': {"IPv4": WEBSITE_REAL_IP, "node": None},
             'ingress': classifier,
@@ -255,7 +255,7 @@ class TestBase(object):
             'egress': classifier,
             'destination': {"IPv4":"*", "node": None}
         }
-        directions = [direction1, direction2]
+        directions = [direction0, direction1]
         routingMorphic = RoutingMorphic()
         routingMorphic.from_dict(routingMorphicTemplate)
         slo = SLO(latency=35, throughput=10)
@@ -652,7 +652,6 @@ class TestBase(object):
             self._dashib.addZone(TURBONET_ZONE)
 
     def genFWConfigExample(self, routingMorphic):
-        fwConfigList = []
         if routingMorphic == IPV4_ROUTE_PROTOCOL:
             dstAddr="3.3.3.3"
         elif routingMorphic == IPV6_ROUTE_PROTOCOL:
@@ -664,8 +663,9 @@ class TestBase(object):
         else:
             dstAddr="3.3.3.3"
         entry = ACLTuple(ACL_ACTION_ALLOW, ACL_PROTO_UDP, dstAddr=dstAddr)
-        fwConfigList.append(entry)
-        return fwConfigList
+        aclT = ACLTable()
+        aclT.addRules(entry, routingMorphic)
+        return aclT
 
     def dropRequestAndSFCAndSFCITableInDB(self):
         _oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",

@@ -60,20 +60,34 @@ class TestAddSFCIClass(TestP4ControllerBase):
         self.clearQueue()
         self.killAllModule()
 
-    # @pytest.mark.skip(reason='Skip temporarily')
+    @pytest.mark.skip(reason='Skip temporarily')
     def test_delSFCIWithVNFIOnAServer(self,
                                             setup_delSFCIWithVNFIOnAServer):
         # exercise
         self.exerciseDelSFCAndSFCI()
 
+        yield
+        # teardown
+        self.clearQueue()
+        self.killAllModule()
+
     def exerciseDelSFCAndSFCI(self):
         for idx in [0,1,2]:
             logging.info("test idx {0}".format(idx))
             # exercise
-            self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfcList[idx],
+            self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfcList[idx],
                                                         self.sfciList[idx])
             self.sendCmd(P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD,
-                                                self.addSFCICmd)
+                                                self.delSFCICmd)
 
             # verify
-            self.verifyAddSFCICmdRply()
+            self.verifyDelSFCICmdRply()
+
+            # exercise
+            self.delSFCCmd = self.mediator.genCMDDelSFC(self.sfcList[idx],
+                                                        self.sfciList[idx])
+            self.sendCmd(P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD,
+                                                self.delSFCCmd)
+
+            # verify
+            self.verifyDelSFCCmdRply()

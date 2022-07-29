@@ -1,6 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from typing import Union
+from sam.base.acl import ACLTable
+
+from sam.base.monitorStatistic import MonitorStatistics
+from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.server import Server
 from sam.base.switch import Switch
 
@@ -76,7 +81,7 @@ class VNFI(object):
         self.vnfiID = vnfiID
         self.config = config
         self.node = node # server or switch
-        self.vnfiStatus = vnfiStatus
+        self.vnfiStatus = vnfiStatus    # type: VNFIStatus
         self.minCPUNum = 1
         self.maxCPUNum = 2  # CPU core number
         self.cpuCoreDistribution = []   # place vnfi on specific core
@@ -128,7 +133,8 @@ class VNFIStatus(object):
     def __init__(self, inputTrafficAmount=None, inputPacketAmount=None,
                     outputTrafficAmount=None, outputPacketAmount=None,
                     state=None):
-        self.inputTrafficAmount = inputTrafficAmount
+        # type: (int, int, int, int, Union[MonitorStatistics, RateLimiterConfig, ACLTable]) -> None
+        self.inputTrafficAmount = inputTrafficAmount    # dict[int, int]
         self.inputPacketAmount = inputPacketAmount
         self.outputTrafficAmount = outputTrafficAmount
         self.outputPacketAmount = outputPacketAmount

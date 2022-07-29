@@ -88,7 +88,7 @@ class TestNoticeClass(TestBase):
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_LARGE_BANDWIDTH
-        direction1 = {
+        direction0 = {
             'ID': 0,
             'source': {'node': None, 'IPv4':"*"},
             'ingress': classifier,
@@ -97,7 +97,7 @@ class TestNoticeClass(TestBase):
             'egress': classifier,
             'destination': {'node': None, 'IPv4':APP1_REAL_IP}
         }
-        directions = [direction1]
+        directions = [direction0]
         slo = SLO(throughput=10, latency=100, availability=0.999, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,

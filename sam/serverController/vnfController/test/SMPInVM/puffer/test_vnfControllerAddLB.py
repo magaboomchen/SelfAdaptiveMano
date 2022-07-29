@@ -47,7 +47,7 @@ class TestVNFAddLB(TestBase):
 
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_LB])
-        self.sfci = self.genBiDirection10BackupSFCI()
+        self.sfci = self.genBi0BackupSFCI()
         self.mediator = MediatorStub()
 
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,

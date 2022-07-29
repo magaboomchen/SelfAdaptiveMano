@@ -18,6 +18,7 @@ from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.lb import LBTuple
 from sam.base.shellProcessor import ShellProcessor
+from sam.serverController.vnfController.test.SMPInVM.puffer.test_vnfControllerAddVPN import TESTER_DATAPATH_INTERFACE
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.testBase import TestBase, WEBSITE_REAL_IP, OUTTER_CLIENT_IP, \
     TESTER_SERVER_DATAPATH_MAC, CLASSIFIER_DATAPATH_IP, SFCI1_0_EGRESS_IP, \
@@ -132,7 +133,7 @@ class TestVNFAddMON(TestBase):
 
     def verifyDirection0Traffic(self):
         self._sendDirection0Traffic2SFF()
-        self._checkEncapsulatedTraffic(inIntf=TESTER_DATAPATH_INTF)
+        self._checkEncapsulatedTraffic(inIntf=TESTER_DATAPATH_INTERFACE)
 
     def _sendDirection0Traffic2SFF(self):
         filePath = "../fixtures/sendMONDirection0Traffic.py"

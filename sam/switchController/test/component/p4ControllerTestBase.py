@@ -6,12 +6,13 @@ import logging
 from sam.base.command import CMD_STATE_SUCCESSFUL
 
 from sam.base.messageAgent import MEDIATOR_QUEUE, MSG_TYPE_P4CONTROLLER_CMD, P4CONTROLLER_QUEUE, TURBONET_ZONE
+from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.sfc import SFCI
 from sam.base.path import MAPPING_TYPE_MMLPSFC, ForwardingPathSet
 from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
-from sam.base.vnf import VNFI, VNF_TYPE_FORWARD
+from sam.base.vnf import VNF_TYPE_RATELIMITER, VNFI, VNF_TYPE_FORWARD
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, SWITCH_TYPE_NPOP, Switch
 from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.test.fixtures.mediatorStub import MediatorStub
@@ -86,10 +87,10 @@ class TestP4ControllerBase(IntTestBaseClass):
             for iN in range(1):
                 switch = Switch(SWITCH_SFF1_SWITCHID, SWITCH_TYPE_NPOP, 
                                     SWITCH_SFF1_LANIP, programmable=True)
-                vnfi = VNFI(VNF_TYPE_FORWARD, vnfType=VNF_TYPE_FORWARD,
-                    vnfiID=uuid.uuid1(), node=switch)
+                vnfi = VNFI(VNF_TYPE_RATELIMITER, vnfType=VNF_TYPE_RATELIMITER,
+                    vnfiID=uuid.uuid1(), config = RateLimiterConfig(maxMbps=100), node=switch)
                 vnfiSequence[index].append(vnfi)
-        return vnfiSequence
+        return vnfiSequence # [[VNFI()],[VNFI()], ......]
 
     def genUniDirection10BackupP4BasedForwardingPathSet(self, sfciLength=1):
         # please ref /sam/base/path.py
@@ -117,7 +118,7 @@ class TestP4ControllerBase(IntTestBaseClass):
                 ]
         else:
             raise ValueError("Unimplement sfci length!")
-        primaryForwardingPath = {1:d1FP}   
+        primaryForwardingPath = {0:d1FP}
         mappingType = MAPPING_TYPE_MMLPSFC # This is your mapping algorithm type
         backupForwardingPath = {}   # you don't need to care about backupForwardingPath
         return ForwardingPathSet(primaryForwardingPath, mappingType,
@@ -158,5 +159,11 @@ class TestP4ControllerBase(IntTestBaseClass):
     def verifyDelSFCICmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.delSFCICmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == TURBONET_ZONE
+
+    def verifyDelSFCCmdRply(self):
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.delSFCCmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
         assert cmdRply.attributes['zone'] == TURBONET_ZONE

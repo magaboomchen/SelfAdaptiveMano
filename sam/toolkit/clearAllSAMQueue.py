@@ -3,23 +3,17 @@
 
 import sys
 
+from sam.base.compatibility import x2str
 from sam.base.shellProcessor import ShellProcessor
 
 
 def clearAllSAMQueue():
     sP = ShellProcessor()
     res = sP.runShellCommand("sudo rabbitmqctl list_queues")
-    res = str(res)
-    if sys.version > '3':
-        res = res.strip().split('\\n')
-    else:
-        res = res.strip().split('\n')
+    res = res.strip().split('\n')
     for idx,line in enumerate(res):
         if idx>=3:
-            if sys.version > '3':
-                line = line.split('\\t')
-            else:
-                line = line.split('\t')
+            line = line.split('\t')
             if len(line) != 2:
                 continue
             queueName = line[0]

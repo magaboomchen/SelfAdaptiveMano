@@ -3,10 +3,9 @@
 
 import time
 import uuid
-import random
 import logging
 
-from sam.base.acl import ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP
+from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL
 from sam.base.vnf import VNFI, VNF_TYPE_FW
 from sam.base.server import Server, SERVER_TYPE_NORMAL
 from sam.base.command import CMD_STATE_SUCCESSFUL
@@ -181,22 +180,10 @@ class TestVNFSFCIAdderClass(TestBase):
                 server.setDataPathNICMAC(SFF0_DATAPATH_MAC)
                 server.updateResource()
                 vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
-                    vnfiID=uuid.uuid1(), node=server, config={"ACL":self.genTestIPv4FWRules()})
+                    vnfiID=uuid.uuid1(), node=server, config=self.genFWConfigExample(IPV4_ROUTE_PROTOCOL))
                 vnfi.maxCPUNum = 1
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
-
-    def genTestIPv4FWRules(self):
-        rules = []
-        for idx in range(100):
-            sport1 = random.randint(100, 60000)
-            sport2 = random.randint(100, 60000)
-            dport1 = random.randint(100, 60000)
-            dport2 = random.randint(100, 60000)
-            rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
-                srcPort=(min(sport1,sport2), max(sport1,sport2)), dstPort=(min(dport1,dport2), max(dport1,dport2))))
-        rules.append(ACLTuple(ACL_ACTION_ALLOW))
-        return rules
 
 
 if __name__ == "__main__":

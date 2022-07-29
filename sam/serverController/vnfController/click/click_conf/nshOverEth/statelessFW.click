@@ -1,12 +1,12 @@
 define(
-	$IPV4FW_RULE_PATH  /home/smith/Projects/fastclick/conf/sam/statelessFWRules,
-    $IPV6FW_RULE_PATH  /home/smith/Projects/fastclick/conf/sam/statelessFWIPv6Rules,
-    $ROCEV1FW_RULE_PATH  /home/smith/Projects/fastclick/conf/sam/statelessFWRoceV1Rules
+	$IPV4FW_RULE_PATH  /home/smith/Projects/fastclick/conf/sam/statelessIPV4FWRules,
+    $IPV6FW_RULE_PATH  /home/smith/Projects/fastclick/conf/sam/statelessIPV6FWRules,
+    $ROCEV1FW_RULE_PATH  /home/smith/Projects/fastclick/conf/sam/statelessROCEV1FWRules
 );
 
-in0 :: FromDPDKDevice(0, N_QUEUES 1, MODE none);
+in0 :: FromDPDKDevice(0, N_QUEUES 1, MODE none, NUMA true);
 out0 :: ToDPDKDevice(0, N_QUEUES 1);
-in1 :: FromDPDKDevice(1, N_QUEUES 1, MODE none);
+in1 :: FromDPDKDevice(1, N_QUEUES 1, MODE none, NUMA true);
 out1 ::ToDPDKDevice(1, N_QUEUES 1);
 
 // 0 -> 1

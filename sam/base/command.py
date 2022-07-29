@@ -39,7 +39,7 @@ class Command(object):
     def __init__(self, cmdType, cmdID, attributes={}):
         self.cmdType = cmdType
         self.cmdID = cmdID
-        self.attributes = attributes    # {'sfcUUID':sfcUUID,'sfci':sfci, 'sfc':sfc, 'classifier':classifier}
+        self.attributes = attributes    # {'sfcUUID':sfcUUID,'sfci':SFCI(), 'sfc':SFC(), 'classifier':classifier}
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)
@@ -55,7 +55,7 @@ class CommandReply(object):
     def __init__(self, cmdID, cmdState, attributes={}):
         self.cmdID = cmdID
         self.cmdState = cmdState
-        self.attributes = attributes    # {'switches':{},'links':{},'servers':{},'vnfis':{}}
+        self.attributes = attributes    # {'switches':{},'links':{},'servers':{},'vnfis':{}, "sfcisDict":{}}
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

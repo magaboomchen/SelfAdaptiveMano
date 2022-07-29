@@ -62,7 +62,7 @@ class DPDKConfigurator(object):
 
     def getNICStatus(self):
         out_bytes = subprocess.check_output(
-            ['sudo python $RTE_SDK/usertools/dpdk-devbind.py --status-dev net | grep ' + self._NICPCIAddress],
+            ['sudo env "PATH=$PATH" python $RTE_SDK/usertools/dpdk-devbind.py --status-dev net | grep ' + self._NICPCIAddress],
              shell=True
             )
         out_bytes = str(out_bytes)
@@ -79,12 +79,12 @@ class DPDKConfigurator(object):
 
     def bindNIC(self):
         out_bytes = subprocess.check_output(
-            ["sudo python $RTE_SDK/usertools/dpdk-devbind.py --bind=igb_uio " + self._NICPCIAddress],
+            ['sudo env "PATH=$PATH" python $RTE_SDK/usertools/dpdk-devbind.py --bind=igb_uio ' + self._NICPCIAddress],
              shell=True
             )
 
     def unbindNIC(self):
         out_bytes = subprocess.check_output(
-            ["sudo python $RTE_SDK/usertools/dpdk-devbind.py -u " + self._NICPCIAddress],
+            ['sudo env "PATH=$PATH" python $RTE_SDK/usertools/dpdk-devbind.py -u ' + self._NICPCIAddress],
              shell=True
             )

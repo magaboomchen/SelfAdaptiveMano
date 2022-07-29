@@ -20,10 +20,15 @@ from time import sleep
 
 import pytest
 
+from sam.base.acl import ACLTable
+from sam.base.monitorStatistic import MonitorStatistics
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
     MEDIATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import SIMULATOR_PORT, TEST_PORT
+from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
+from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.vnf import VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFIStatus
@@ -121,8 +126,9 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
         assert cmdRply.attributes['zone'] == SIMULATOR_ZONE
         sfcisDict = cmdRply.attributes["sfcisDict"]
         for sfciID,sfci in sfcisDict.items():
+            # type dict[int, SFCI]
             assert sfci.sfciID == sfciID
-            
+
             sloRealTimeValue = sfci.sloRealTimeValue
             assert sloRealTimeValue.availability >= 99.95
             assert sloRealTimeValue.latency <= 35
@@ -135,23 +141,27 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
                 for vnfi in vnfis:
                     vnfiStatus = vnfi.vnfiStatus
                     assert type(vnfiStatus) == VNFIStatus
-                    assert vnfiStatus.inputTrafficAmount["Direction1"] >= 0
-                    assert vnfiStatus.inputTrafficAmount["Direction2"] >= 0
-                    assert vnfiStatus.inputPacketAmount["Direction1"] >= 0
-                    assert vnfiStatus.inputPacketAmount["Direction2"] >= 0
-                    assert vnfiStatus.outputTrafficAmount["Direction1"] >= 0
-                    assert vnfiStatus.outputTrafficAmount["Direction2"] >= 0
-                    assert vnfiStatus.outputPacketAmount["Direction1"] >= 0
-                    assert vnfiStatus.outputPacketAmount["Direction2"] >= 0
+                    assert vnfiStatus.inputTrafficAmount[SFC_DIRECTION_0] >= 0
+                    assert vnfiStatus.inputTrafficAmount[SFC_DIRECTION_1] >= 0
+                    assert vnfiStatus.inputPacketAmount[SFC_DIRECTION_0] >= 0
+                    assert vnfiStatus.inputPacketAmount[SFC_DIRECTION_1] >= 0
+                    assert vnfiStatus.outputTrafficAmount[SFC_DIRECTION_0] >= 0
+                    assert vnfiStatus.outputTrafficAmount[SFC_DIRECTION_1] >= 0
+                    assert vnfiStatus.outputPacketAmount[SFC_DIRECTION_0] >= 0
+                    assert vnfiStatus.outputPacketAmount[SFC_DIRECTION_1] >= 0
                     vnfType = vnfi.vnfType
                     if vnfType == VNF_TYPE_FW:
-                        assert "FWRulesNum" in vnfiStatus.state
-                        assert vnfiStatus.state["FWRulesNum"] == 2
+                        assert type(vnfiStatus.state) == ACLTable
+                        assert vnfiStatus.state.getRulesNum(IPV4_ROUTE_PROTOCOL) == 2
                     elif vnfType == VNF_TYPE_MONITOR:
-                        assert "FlowStatisticsDict" in vnfiStatus.state
-                        assert type(vnfiStatus.state["FlowStatisticsDict"]) == dict
+                        assert type(vnfiStatus.state) == MonitorStatistics
+                        for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
+                            for routeProtocol in [IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL,
+                                                    SRV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL]:
+                                self.logger.info("MonitorStatistics is {0}".format(
+                                    vnfiStatus.state.getPktBytesRateStatisticDict(directionID, routeProtocol)))
                     elif vnfType == VNF_TYPE_RATELIMITER:
-                        assert "rateLimitition" in vnfiStatus.state
-                        vnfiStatus.state["rateLimitition"] == 1
+                        assert type(vnfiStatus.state) == RateLimiterConfig
+                        assert vnfiStatus.state.maxMbps == 100
                     else:
                         raise ValueError("Unknown vnf type {0}".format(vnfType))

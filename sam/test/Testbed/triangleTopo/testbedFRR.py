@@ -151,7 +151,7 @@ class TestbedFRR(TestBase):
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
-        direction1 = {
+        direction0 = {
             'ID': 0,
             'source': {"IPv4":"*", "node":None},
             'ingress': classifier,
@@ -160,7 +160,7 @@ class TestbedFRR(TestBase):
             'egress': classifier,
             'destination': {"IPv4": WEBSITE_REAL_IP, "node":None}
         }
-        directions = [direction1]
+        directions = [direction0]
         slo = SLO(latency=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
                     backupInstanceNumber, applicationType, directions,

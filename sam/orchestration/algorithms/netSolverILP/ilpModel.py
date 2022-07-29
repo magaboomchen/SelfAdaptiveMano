@@ -15,6 +15,7 @@ from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NETSOLVER_ILP
 from sam.base.mkdirs import mkdirs
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 from sam.orchestration.algorithms.oPSFC.opRandomizedRoundingAlgorithm import OPRandomizedRoundingAlgorithm
 
 INITIAL_PATH_PER_REQUEST_NUM = 2

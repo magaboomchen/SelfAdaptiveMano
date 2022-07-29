@@ -19,16 +19,18 @@ from scapy.contrib.nsh import NSH
 from scapy.layers.inet6 import IPv6
 from scapy.contrib.roce import GRH
 
+from sam.base.rateLimiter import RateLimiterConfig
+from sam.base.monitorStatistic import MonitorStatistics
+from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.acl import ACLTable, ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import TURBONET_ZONE, VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE, MessageAgent
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
 from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNF_TYPE_FW, VNFIStatus
-from sam.base.server import SERVER_TYPE_NFVI, Server, SERVER_TYPE_NORMAL
+from sam.base.server import SERVER_TYPE_NFVI, Server
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.command import CMD_STATE_SUCCESSFUL
-from sam.base.acl import ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP, \
-    ACL_ACTION_DENY
 from sam.base.shellProcessor import ShellProcessor
 from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
 from sam.test.fixtures.measurementStub import MeasurementStub
@@ -99,10 +101,17 @@ class TestVNFAddFW(TestBase):
                 server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
                 server.updateResource()
-                config = {}
-                config['ACL'] = self.genTestIPv4FWRules()
-                config['IPv6ACL'] = self.genTestIPv6FWRules()
-                config['RoceV1ACL'] = self.genTestRoceV1FWRules()
+                aclT = ACLTable()
+                ipv4RulesList = self.genTestIPv4FWRules()
+                for ipv4Rule in ipv4RulesList:
+                    aclT.addRules(ipv4Rule, IPV4_ROUTE_PROTOCOL)
+                ipv6RulesList = self.genTestIPv6FWRules()
+                for ipv6Rule in ipv6RulesList:
+                    aclT.addRules(ipv6Rule, IPV6_ROUTE_PROTOCOL)
+                rocev1RulesList = self.genTestRoceV1FWRules()
+                for rocev1Rule in rocev1RulesList:
+                    aclT.addRules(rocev1Rule, ROCEV1_ROUTE_PROTOCOL)
+                config = aclT
                 vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
                     vnfiID=uuid.uuid1(), config=config, node=server)
                 vnfiSequence[index].append(vnfi)
@@ -293,16 +302,16 @@ class TestVNFAddFW(TestBase):
                     if type(vnfi.node) == Server:
                         vnfType = vnfi.vnfType
                         if vnfType == VNF_TYPE_FW:
-                            assert "FWRulesNum" in vnfiStatus.state
-                            assert vnfiStatus.state["FWRulesNum"] == len(vnfi.config)
+                            assert type(vnfiStatus.state) == ACLTable
                         elif vnfType == VNF_TYPE_MONITOR:
-                            assert "FlowStatisticsDict" in vnfiStatus.state
-                            flowStatisticsDict = vnfiStatus.state["FlowStatisticsDict"]
-                            assert type(flowStatisticsDict) == dict
-                            self.logger.info("mon stat {0}".format(flowStatisticsDict))
+                            assert type(vnfiStatus.state) == MonitorStatistics
+                            for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
+                                for routeProtocol in [IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL,
+                                                        SRV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL]:
+                                    self.logger.info("MonitorStatistics is {0}".format(
+                                        vnfiStatus.state.getPktBytesRateStatisticDict(directionID, routeProtocol)))
                         elif vnfType == VNF_TYPE_RATELIMITER:
-                            assert "rateLimitition" in vnfiStatus.state
-                            vnfiStatus.state["rateLimitition"] == vnfi.config.maxMbps
+                            assert type(vnfiStatus.state) == RateLimiterConfig
                         else:
                             raise ValueError("Unknown vnf type {0}".format(vnfType))
 

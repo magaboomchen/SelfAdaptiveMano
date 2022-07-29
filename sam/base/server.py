@@ -1,13 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import sys
 import logging
 import subprocess
 
 import psutil
 from netifaces import interfaces, ifaddresses, AF_INET
 from getmac import get_mac_address
+from sam.base.compatibility import x2str
 
 SERVER_TYPE_CLASSIFIER = "classifier"
 SERVER_TYPE_NORMAL = "normal"
@@ -80,7 +80,7 @@ class Server(object):
     def updateIfSet(self):
         # update all interface information controlled by linux kernel
         for intf in interfaces():
-            ifName = str(intf)
+            ifName = intf
             self._ifSet[ifName] = {}
             # get mac address
             mac = self._getHwAddrInKernel(ifName)
@@ -125,17 +125,17 @@ class Server(object):
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
             results = res.stdout.readlines()
             for result in results:
-                result = str(result)
+                result = x2str(result)
                 outputText = result
                 if outputText.find("Port 0: ") == -1:
                     raise ValueError("get data path nic mac address error, maybe run out of hugepages?")
                 if result.count(":") == 6:
-                    final = result.split(' ')[2][0:17]
-                    return final
+                    hwAddrInDPDK = result.split(' ')[2][0:17]
+                    return hwAddrInDPDK.lower()
                 elif result.find("Link Down") != -1:
                     print("link down")
-                    final = None
-                    return final
+                    hwAddrInDPDK = None
+                    return hwAddrInDPDK.lower()
                     # raise ValueError("datapath nic link down!")
                 else:
                     pass
@@ -150,7 +150,7 @@ class Server(object):
         addresses = [i['addr'] for i in ifaddresses(ifName).setdefault(AF_INET, [{'addr': 'No IP addr'}])]
         addList = []
         for add in addresses:
-            addList.append(str(add))
+            addList.append(add)
         return addList
 
     def addVNFSupport(self, vnfType):
@@ -236,8 +236,8 @@ class Server(object):
 
     def _isSMP(self):
         rv = subprocess.check_output("lscpu | grep -i 'Socket(s)'", shell=True)
-        rv = str(rv)
-        rv = int(rv.split(":")[1].strip("\\n'"))
+        rv = x2str(rv)
+        rv = int(rv.split(":")[1].strip("\n'"))
         return rv == 1
 
     def _updateMemAccessMode(self):
@@ -245,9 +245,9 @@ class Server(object):
             self._memoryAccessMode = "SMP"
             return None
         rv = subprocess.check_output("lscpu | grep -i numa | grep 'NUMA node(s):'", shell=True)
-        rv = str(rv)
+        rv = x2str(rv)
         rv = rv.strip("'")
-        rv = rv.strip("\\n")
+        rv = rv.strip("\n")
         rv = int(rv.split(":")[1])
         if rv <= 1:
             self._memoryAccessMode = "SMP"
@@ -256,17 +256,14 @@ class Server(object):
 
     def _updateSocketNum(self):
         rv = subprocess.check_output(' lscpu | grep Socket ', shell=True)
-        rv = str(rv)
-        rv = rv.split(":")[1].strip("\\n'")
+        rv = x2str(rv)
+        rv = rv.split(":")[1].strip("\n'")
         self._socketNum = int(rv)
 
     def _getSMPCoresNum(self):
         rv = subprocess.check_output(" lscpu | grep 'CPU(s):' ", shell=True)
-        rv = str(rv)
-        if sys.version > '3':
-            rv = rv.split("\\n")[0]
-        else:
-            rv = rv.split("\n")[0]
+        rv = x2str(rv)
+        rv = rv.split("\n")[0]
         rv = int(rv.split(":")[1])
         return rv
 
@@ -279,7 +276,7 @@ class Server(object):
             regexp = "'NUMA node{0} CPU(s):'".format(nodeIndex)
             cmd = "lscpu | grep -i numa | grep {0}".format(regexp)
             rv = subprocess.check_output([cmd], shell=True)
-            rv = str(rv)
+            rv = x2str(rv)
             rv = rv.strip("\n").split(":")[1].split(",")
             coreNum = len(rv)
             self._coreSocketDistribution.append(coreNum)
@@ -289,8 +286,8 @@ class Server(object):
             self._numaNum = 1
             return None
         rv = subprocess.check_output(" lscpu | grep 'NUMA node(s)' ", shell=True)
-        rv = str(rv)
-        rv = rv.strip("\\n'")
+        rv = x2str(rv)
+        rv = rv.strip("\n'")
         rv = rv.split(":")[1]
         self._numaNum = int(rv)
 
@@ -305,11 +302,8 @@ class Server(object):
             regexp = "'NUMA node{0} CPU(s):'".format(nodeIndex)
             cmd = "lscpu | grep -i numa | grep {0}".format(regexp)
             rv = subprocess.check_output([cmd], shell=True)
-            rv = str(rv)
-            if sys.version > '3':
-                rv = rv.strip("\\n'").split(":")[1]
-            else:
-                rv = rv.strip("\n").split(":")[1]
+            rv = x2str(rv)
+            rv = rv.strip("\n").split(":")[1]
             if rv.find(",") != -1:
                 rv = rv.split(",")
                 rv = map(lambda x: int(x), rv)
@@ -332,35 +326,29 @@ class Server(object):
             regexp = "'Node {0} HugePages_Total:'".format(nodeIndex)
             cmd = "cat /sys/devices/system/node/node*/meminfo | fgrep Huge | grep {0}".format(regexp)
             rv = subprocess.check_output([cmd], shell=True)
-            rv = str(rv)
-            if sys.version > '3':
-                rv = int(rv.strip("\\n'").split(":")[1])
-            else:
-                rv = int(rv.strip("\n").split(":")[1])
+            rv = x2str(rv)
+            rv = int(rv.strip("\n").split(":")[1])
             self._hugepagesTotal.append(rv)
 
     def _updateHugepagesFree(self):
         self._hugepagesFree = []
         if self._isSMP():
             rv = subprocess.check_output(" grep Huge /proc/meminfo | grep 'HugePages_Free:' ", shell=True)
-            rv = str(rv)
-            rv = int(rv.split(":")[1].strip("\\n'"))
+            rv = x2str(rv)
+            rv = int(rv.split(":")[1].strip("\n'"))
             self._hugepagesFree.append(rv)
             return None
         for nodeIndex in range(self._socketNum):
             regexp = "'Node {0} HugePages_Free:'".format(nodeIndex)
             cmd = "cat /sys/devices/system/node/node*/meminfo | fgrep Huge | grep {0}".format(regexp)
             rv = subprocess.check_output([cmd], shell=True)
-            rv = str(rv)
-            if sys.version > '3':
-                rv = int(rv.strip("\\n'").split(":")[1])
-            else:
-                rv = int(rv.strip("\n").split(":")[1])
+            rv = x2str(rv)
+            rv = int(rv.strip("\n").split(":")[1])
             self._hugepagesFree.append(rv)
 
     def _updateHugepagesSize(self):
         out_bytes = subprocess.check_output(['grep Huge /proc/meminfo | grep Hugepagesize'], shell=True)
-        out_bytes = str(out_bytes)
+        out_bytes = x2str(out_bytes)
         self._hugepageSize = int(out_bytes.split(':')[1].split('kB')[0])
 
     def setNICBandwidth(self, bandwidth):
@@ -382,7 +370,7 @@ class Server(object):
         return string
 
     def __repr__(self):
-        return str(self)
+        return x2str(self)
 
 # if __name__ =="__main__":
 #     _NUMACpuCore = []

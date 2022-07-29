@@ -81,7 +81,7 @@ class TestSFCIAdderClass(TestBase):
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
-        direction1 = {
+        direction0 = {
             'ID': 0,
             'source': {"IPv4":"*", "node":None},
             'ingress': classifier,
@@ -90,7 +90,7 @@ class TestSFCIAdderClass(TestBase):
             'egress': classifier,
             'destination': {"IPv4":WEBSITE_REAL_IP, "node":None}
         }
-        direction2 = {
+        direction1 = {
             'ID': 1,
             'source': {"IPv4":WEBSITE_REAL_IP, "node":None},
             'ingress': classifier,
@@ -99,7 +99,7 @@ class TestSFCIAdderClass(TestBase):
             'egress': classifier,
             'destination': {"IPv4":"*", "node":None}
         }
-        directions = [direction1,direction2]
+        directions = [direction0, direction1]
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
             backupInstanceNumber, applicationType, directions, {'zone':DEFAULT_ZONE})
 

@@ -28,6 +28,7 @@ from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
 from sam.test.fixtures.vnfControllerStub import VNFControllerStub
 from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, TestBase, CLASSIFIER_DATAPATH_IP, SFF1_CONTROLNIC_IP, \
     SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC, SFCI1_0_EGRESS_IP, WEBSITE_REAL_IP, SFCI1_1_EGRESS_IP
@@ -261,13 +262,13 @@ class TestSFFSFCIAdderClass(TestBase):
                 for vnfi in vnfis:
                     vnfiStatus = vnfi.vnfiStatus
                     assert type(vnfiStatus) == VNFIStatus
-                    assert vnfiStatus.inputTrafficAmount["Direction1"] >= 0
-                    assert vnfiStatus.inputTrafficAmount["Direction2"] >= 0
-                    assert vnfiStatus.inputPacketAmount["Direction1"] >= 0
-                    assert vnfiStatus.inputPacketAmount["Direction2"] >= 0
-                    assert vnfiStatus.outputTrafficAmount["Direction1"] >= 0
-                    assert vnfiStatus.outputTrafficAmount["Direction2"] >= 0
-                    assert vnfiStatus.outputPacketAmount["Direction1"] >= 0
-                    assert vnfiStatus.outputPacketAmount["Direction2"] >= 0
+                    assert vnfiStatus.inputTrafficAmount[SFC_DIRECTION_0] >= 0
+                    assert vnfiStatus.inputTrafficAmount[SFC_DIRECTION_1] >= 0
+                    assert vnfiStatus.inputPacketAmount[SFC_DIRECTION_0] >= 0
+                    assert vnfiStatus.inputPacketAmount[SFC_DIRECTION_1] >= 0
+                    assert vnfiStatus.outputTrafficAmount[SFC_DIRECTION_0] >= 0
+                    assert vnfiStatus.outputTrafficAmount[SFC_DIRECTION_1] >= 0
+                    assert vnfiStatus.outputPacketAmount[SFC_DIRECTION_0] >= 0
+                    assert vnfiStatus.outputPacketAmount[SFC_DIRECTION_1] >= 0
 
         logging.info("Verify get sfci state cmy rply successfully!")

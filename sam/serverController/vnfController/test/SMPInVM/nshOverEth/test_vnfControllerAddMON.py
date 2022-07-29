@@ -10,6 +10,7 @@ Usage:
             cd /data/smith/Projects/SelfAdaptiveMano/sam/serverController/vnfController/click/ControlSocket && java ControlSocket 192.168.20.6 49167 ipv4_mon_direction0 stat
 '''
 
+import os
 import time
 import uuid
 import logging
@@ -20,8 +21,11 @@ from scapy.layers.inet import IP, TCP
 from scapy.contrib.nsh import NSH
 from scapy.layers.inet6 import IPv6
 from scapy.contrib.roce import GRH
-from sam.base.compatibility import screenInput
 
+from sam.base.rateLimiter import RateLimiterConfig
+from sam.base.monitorStatistic import MonitorStatistics
+from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.acl import ACLTable, ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import TURBONET_ZONE, VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE, MessageAgent
@@ -30,8 +34,7 @@ from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNF_TYPE_
 from sam.base.server import SERVER_TYPE_NFVI, Server, SERVER_TYPE_NORMAL
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.command import CMD_STATE_SUCCESSFUL
-from sam.base.acl import ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP, \
-    ACL_ACTION_DENY
+from sam.base.compatibility import screenInput
 from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.base.shellProcessor import ShellProcessor
 from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
@@ -43,9 +46,10 @@ from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, OU
 from sam.serverController.sffController.test.component.testConfig import TESTER_SERVER_DATAPATH_IP, \
     TESTER_SERVER_DATAPATH_MAC, TESTER_DATAPATH_INTF, PRIVATE_KEY_FILE_PATH, BESS_SERVER_USER, \
     BESS_SERVER_USER_PASSWORD
-from sam.serverController.vnfController.test.fixtures.sendDirection0Traffic import DGID, sendDirection0Traffic
-from sam.serverController.vnfController.test.fixtures.sendDirection1Traffic import sendDirection1Traffic
-
+from sam.serverController.vnfController.test.fixtures import sendDirection0Traffic
+from sam.serverController.vnfController.test.fixtures import sendDirection1Traffic
+from sam.serverController.vnfController.test.fixtures.sendDirection0Traffic import sendDirection0Traffic as sD0Traffic
+from sam.serverController.vnfController.test.fixtures.sendDirection1Traffic import sendDirection1Traffic as sD1Traffic
 
 MANUAL_TEST = True
 
@@ -139,6 +143,10 @@ class TestVNFAddMON(TestBase):
 
         # exercise
         logging.info("exercise")
+        self.sP.runPythonScript(os.path.abspath(sendDirection0Traffic.__file__), cmdSuffix="")
+        self.sP.runPythonScript(os.path.abspath(sendDirection1Traffic.__file__), cmdSuffix="")
+        self.logger.info("Sending pkts")
+        time.sleep(2)
         self.getSFCIStateCmd = self.measurer.genCMDGetSFCIState()
         queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, TURBONET_ZONE)
         self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD, self.getSFCIStateCmd)
@@ -149,7 +157,7 @@ class TestVNFAddMON(TestBase):
     def verifyDirection0Traffic(self):
         aSniffer = self._checkEncapsulatedTraffic(inIntf=TESTER_DATAPATH_INTF)
         time.sleep(2)
-        sendDirection0Traffic(routeMorphic=self.routeMorphic)
+        sD0Traffic(routeMorphic=self.routeMorphic)
         while True:
             if not aSniffer.running:
                 break
@@ -199,7 +207,7 @@ class TestVNFAddMON(TestBase):
     def verifyDirection1Traffic(self):
         aSniffer = self._checkDecapsulatedTraffic(inIntf=TESTER_DATAPATH_INTF)
         time.sleep(2)
-        sendDirection1Traffic(routeMorphic=self.routeMorphic)
+        sD1Traffic(routeMorphic=self.routeMorphic)
         while True:
             if not aSniffer.running:
                 break
@@ -273,16 +281,16 @@ class TestVNFAddMON(TestBase):
                     if type(vnfi.node) == Server:
                         vnfType = vnfi.vnfType
                         if vnfType == VNF_TYPE_FW:
-                            assert "FWRulesNum" in vnfiStatus.state
-                            assert vnfiStatus.state["FWRulesNum"] == len(vnfi.config)
+                            assert type(vnfiStatus.state) == ACLTable
                         elif vnfType == VNF_TYPE_MONITOR:
-                            assert "FlowStatisticsDict" in vnfiStatus.state
-                            flowStatisticsDict = vnfiStatus.state["FlowStatisticsDict"]
-                            assert type(flowStatisticsDict) == dict
-                            self.logger.info("mon stat {0}".format(flowStatisticsDict))
+                            assert type(vnfiStatus.state) == MonitorStatistics
+                            for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
+                                for routeProtocol in [IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL,
+                                                        SRV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL]:
+                                    self.logger.info("MonitorStatistics is {0}".format(
+                                        vnfiStatus.state.getPktBytesRateStatisticDict(directionID, routeProtocol)))
                         elif vnfType == VNF_TYPE_RATELIMITER:
-                            assert "rateLimitition" in vnfiStatus.state
-                            vnfiStatus.state["rateLimitition"] == vnfi.config.maxMbps
+                            assert type(vnfiStatus.state) == RateLimiterConfig
                         else:
                             raise ValueError("Unknown vnf type {0}".format(vnfType))
 

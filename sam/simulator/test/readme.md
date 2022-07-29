@@ -89,58 +89,7 @@ attributes = {
 }
 其中，
 对于sfci.vnfiSequence中的每个vnfi，其成员变量vnfiStatus是一个VNFIStatus()对象
-而VNFIStatus()对象的成员变量state是CMD_TYPE_GET_VNFI_STATE中的contentDict.
-```
-
-## [Optional] CMD_TYPE_GET_VNFI_STATE
-```
-attributes = {
-    "vnfisStateDict": vnfisStateDict={vnfiID:contentDict},
-    'zone': SIMULATOR_ZONE
-}
-其中，
-contentDict = {
-    "vnfType": VNF_TYPE_MONITOR,    # or other type of VNF
-    # 下面的为可选key，根据vnfType来选择其中一个即可
-    "rateLimitition": 1,            
-    "FWRulesNum": 2,
-    "FlowStatisticsDict": {
-            "ipv4_mon_direction0":{
-                ("1.1.1.1", "1.1.1.2"): (100, 5), # unit: Mbps
-                ("2.2.2.2", "2.2.2.3"): (50, 2)   # 生成这些数据即可，仅用于演示
-            },
-            "ipv4_mon_direction1":{
-                ("1.1.1.2", "1.1.1.1"): (100, 5),
-                ("2.2.2.3", "2.2.2.2"): (50, 2)
-            },
-            "ipv6_mon_direction0":{
-                ("2111::42:fdff:fe8c:40e9", "2180::42:fdff:fe8c:40e9"): (100, 5),
-                ("2111::42:fdff:fe8c:40e9", "2180::42:fdff:fe8c:40e9"): (50, 2)
-            },
-            "ipv6_mon_direction1":{
-                ("2180::42:fdff:fe8c:40e9", "2111::42:fdff:fe8c:40e9"): (100, 5),
-                ("2180::42:fdff:fe8c:40e9", "2111::42:fdff:fe8c:40e9"): (50, 2)
-            },
-            "rocev1_mon_direction0":{
-                ("2111::42:fdff:fe8c:40e9", "2180::42:fdff:fe8c:40e9"): (100, 5),
-                ("2111::42:fdff:fe8c:40e9", "2180::42:fdff:fe8c:40e9"): (50, 2)
-            },
-            "rocev1_mon_direction1":{
-                ("2180::42:fdff:fe8c:40e9", "2111::42:fdff:fe8c:40e9"): (100, 5),
-                ("2180::42:fdff:fe8c:40e9", "2111::42:fdff:fe8c:40e9"): (50, 2)
-            }
-        }
-}
-```
-
-## [Optional] CMD_TYPE_GET_FLOW_SET
-```
-attributes = {
-    "flows": flows, # see flow.py
-                        # 其中self.flows是一个list，每个元素是一个sfci在把流量发到vnfID的网络功能时对应的flow对象
-                        # flow对象记录了该阶段这个sfci的流量的identifier（网络识别符号，比如目的IPv4地址），以及其流量大小
-    'zone': SIMULATOR_ZONE
-}
+而VNFIStatus()对象的成员变量state请参考VNF.py文件注释.
 ```
 
 # 测试用例

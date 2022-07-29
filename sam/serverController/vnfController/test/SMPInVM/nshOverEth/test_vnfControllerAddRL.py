@@ -19,6 +19,10 @@ from scapy.contrib.nsh import NSH
 from scapy.layers.inet6 import IPv6
 from scapy.contrib.roce import GRH
 
+from sam.base.rateLimiter import RateLimiterConfig
+from sam.base.monitorStatistic import MonitorStatistics
+from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.acl import ACLTable, ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import TURBONET_ZONE, VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE, MessageAgent
@@ -268,16 +272,16 @@ class TestVNFAddRL(TestBase):
                     if type(vnfi.node) == Server:
                         vnfType = vnfi.vnfType
                         if vnfType == VNF_TYPE_FW:
-                            assert "FWRulesNum" in vnfiStatus.state
-                            assert vnfiStatus.state["FWRulesNum"] == len(vnfi.config)
+                            assert type(vnfiStatus.state) == ACLTable
                         elif vnfType == VNF_TYPE_MONITOR:
-                            assert "FlowStatisticsDict" in vnfiStatus.state
-                            flowStatisticsDict = vnfiStatus.state["FlowStatisticsDict"]
-                            assert type(flowStatisticsDict) == dict
-                            self.logger.info("mon stat {0}".format(flowStatisticsDict))
+                            assert type(vnfiStatus.state) == MonitorStatistics
+                            for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
+                                for routeProtocol in [IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL,
+                                                        SRV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL]:
+                                    self.logger.info("MonitorStatistics is {0}".format(
+                                        vnfiStatus.state.getPktBytesRateStatisticDict(directionID, routeProtocol)))
                         elif vnfType == VNF_TYPE_RATELIMITER:
-                            assert "rateLimitition" in vnfiStatus.state
-                            vnfiStatus.state["rateLimitition"] == vnfi.config.maxMbps
+                            assert type(vnfiStatus.state) == RateLimiterConfig
                         else:
                             raise ValueError("Unknown vnf type {0}".format(vnfType))
 

@@ -16,7 +16,7 @@ class RequestHandler(object):
             REQUEST_TYPE_UPDATE_SFC_STATE: {},
             REQUEST_TYPE_DEL_SFCI: {},
             REQUEST_TYPE_DEL_SFC: {}
-        }    # Dict[requestType, Dict[Request.requestID, Request]]
+        }    # dict[requestType, dict[Request.requestID, Request]]
 
     def handle(self, request):
         try:

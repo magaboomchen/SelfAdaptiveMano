@@ -34,7 +34,7 @@ class VNFController(object):
         self._vnfiDeleter = VNFIDeleter(vcConfig.DOCKER_TCP_PORT)
 
         self._vnfiMaintainer = VNFIMaintainer()
-        self.vnfiStateMonitor = VNFIStateMonitor()
+        self.vnfiStateMonitor = VNFIStateMonitor(self.logger)
 
         self._vioManager = {}  # serverID: sourceAllocator for virtio
         self._cpuManager = {}  # serverID: sourceAllocator for CPU

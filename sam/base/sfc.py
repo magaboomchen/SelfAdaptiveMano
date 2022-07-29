@@ -39,12 +39,15 @@ STATE_SCALING_IN_MODE = "STATE_SCALING_IN_MODE"
 DASHBOARD_SFCIID_ALLOCATED_RANGE = [0, 10000]
 REGULATOR_SFCIID_ALLOCATED_RANGE = [10001, 20000]
 
+SFC_DIRECTION_0 = 0
+SFC_DIRECTION_1 = 1
+
 
 class SFCI(object):
     def __init__(self, sfciID, vnfiSequence=None, sloRealTimeValue=None,
                     forwardingPathSet=None, routingMorphic=None):
         self.sfciID = sfciID               # not uuid! It's a integer
-        self.vnfiSequence = vnfiSequence  # only show the direction1
+        self.vnfiSequence = vnfiSequence  # only show the direction0    # [[VNFI()],[VNFI()]]
         self.sloRealTimeValue = sloRealTimeValue
         self.forwardingPathSet = forwardingPathSet
         self.routingMorphic = routingMorphic

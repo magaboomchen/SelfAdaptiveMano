@@ -6,6 +6,7 @@ import pprint
 from sam.base.server import Server
 from sam.base.vnf import VNFIStatus
 from sam.serverController.bess.bess import BESS
+from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
 from sam.serverController.bess import protobuf_to_dict as pb_conv
 from sam.serverController.bessControlPlane import BessControlPlane
 
@@ -41,7 +42,7 @@ class SFFMonitor(BessControlPlane):
         vnfPMDPort0Name = sibm.getModuleName("PMDPort",vnfiID,0)
         response = client.get_port_stats(vnfPMDPort0Name)
         assert 0 == response.error.code
-        self.logger.warning("direction1 pmdport")
+        self.logger.warning("direction0 pmdport")
         port0res = pb_conv.protobuf_to_dict(response)
 
         vnfPMDPort1Name = sibm.getModuleName("PMDPort",vnfiID,1)
@@ -65,20 +66,20 @@ class SFFMonitor(BessControlPlane):
 
         vnfiStatus = VNFIStatus(
             inputTrafficAmount={
-                "Direction1":port0res['inc']['bytes'],
-                "Direction2":port1res['inc']['bytes']
+                SFC_DIRECTION_0:port0res['inc']['bytes'],
+                SFC_DIRECTION_1:port1res['inc']['bytes']
             },
             inputPacketAmount={
-                "Direction1":port0res['inc']['packets'],
-                "Direction2":port1res['inc']['packets']
+                SFC_DIRECTION_0:port0res['inc']['packets'],
+                SFC_DIRECTION_1:port1res['inc']['packets']
             },
             outputTrafficAmount={
-                "Direction1":port0res['out']['bytes'],
-                "Direction2":port1res['out']['bytes']
+                SFC_DIRECTION_0:port0res['out']['bytes'],
+                SFC_DIRECTION_1:port1res['out']['bytes']
             },
             outputPacketAmount={
-                "Direction1":port0res['out']['packets'],
-                "Direction2":port1res['out']['packets']
+                SFC_DIRECTION_0:port0res['out']['packets'],
+                SFC_DIRECTION_1:port1res['out']['packets']
             }
         )
         return vnfiStatus

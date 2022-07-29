@@ -7,9 +7,9 @@ ipv6_mon_direction1 :: AggregateEthNetworkAddrPair(NETWORK_MORPHIC 1)
 rocev1_mon_direction0 :: AggregateEthNetworkAddrPair(NETWORK_MORPHIC 3)
 rocev1_mon_direction1 :: AggregateEthNetworkAddrPair(NETWORK_MORPHIC 3)
 
-in0 :: FromDPDKDevice(0, N_QUEUES 1, MODE none);
+in0 :: FromDPDKDevice(0, N_QUEUES 1, MODE none, NUMA true);
 out0 :: ToDPDKDevice(0, N_QUEUES 1);
-in1 :: FromDPDKDevice(1, N_QUEUES 1, MODE none);
+in1 :: FromDPDKDevice(1, N_QUEUES 1, MODE none, NUMA true);
 out1 ::ToDPDKDevice(1, N_QUEUES 1);
 
 // 0 -> 1
@@ -57,8 +57,9 @@ ipv4_mon_direction1 -> Unstrip(38) -> out0;
 //ipv4_mon_direction1 -> Unstrip(38) -> EtherMirror() -> out1;
 
 
-innerclass_direction0[1] -> Strip(24) -> GetIP6Address(24) -> ipv6_mon_direction0;
-innerclass_direction1[1] -> Strip(24) -> GetIP6Address(24) -> ipv6_mon_direction1;
+innerclass_direction0[1] -> Strip(24) -> CheckIP6Header() -> ipv6_mon_direction0;
+innerclass_direction1[1] -> Strip(24) -> CheckIP6Header() -> ipv6_mon_direction1;
+
 // restore and send out. (TODO: Here Unstrip(34 = 14 ether header + 20 ip header), but ip header may not be 20.)
 ipv6_mon_direction0 -> Unstrip(38) -> out1;
 ipv6_mon_direction1 -> Unstrip(38) -> out0;
@@ -66,10 +67,22 @@ ipv6_mon_direction1 -> Unstrip(38) -> out0;
 //ipv6_mon_direction1 -> Unstrip(38) -> EtherMirror() -> out1;
 
 
-innerclass_direction0[2] -> Strip(24) -> GetIP6Address(24) -> rocev1_mon_direction0;
-innerclass_direction1[2] -> Strip(24) -> GetIP6Address(24) -> rocev1_mon_direction1;
+innerclass_direction0[2] -> Strip(24) -> CheckIP6Header() -> rocev1_mon_direction0;
+innerclass_direction1[2] -> Strip(24) -> CheckIP6Header() -> rocev1_mon_direction1;
 // restore and send out. (TODO: Here Unstrip(34 = 14 ether header + 20 ip header), but ip header may not be 20.)
-rocev1_mon_direction0 -> Unstrip(38) -> out1;
-rocev1_mon_direction1 -> Unstrip(38) -> out0;
-//rocev1_mon_direction0 -> Unstrip(38) -> EtherMirror() -> out0;
-//rocev1_mon_direction1 -> Unstrip(38) -> EtherMirror() -> out1;
+//rocev1_mon_direction0 -> Unstrip(38) -> out1;
+//rocev1_mon_direction1 -> Unstrip(38) -> out0;
+rocev1_mon_direction0 -> Unstrip(38) -> EtherMirror() -> out0;
+rocev1_mon_direction1 -> Unstrip(38) -> EtherMirror() -> out1;
+
+DriverManager(
+write ipv4_mon_direction0.genRate,
+write ipv4_mon_direction1.genRate,
+write ipv6_mon_direction0.genRate,
+write ipv6_mon_direction1.genRate,
+write rocev1_mon_direction0.genRate,
+write rocev1_mon_direction1.genRate,
+wait 1s,
+//read ipv4_mon_direction0.stat,
+loop
+)

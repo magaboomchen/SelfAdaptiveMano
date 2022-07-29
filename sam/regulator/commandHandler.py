@@ -22,7 +22,7 @@ class CommandHandler(object):
         self.logger = logger
         self._messageAgent = msgAgent
         self._oib = oib
-        self.recoveryTaskDict = {}  # Dict[sfcUUID, Dict[SFCIID, taskState]]
+        self.recoveryTaskDict = {}  # dict[sfcUUID, dict[SFCIID, taskState]]
 
     def handle(self, cmd):
         try:
@@ -141,12 +141,12 @@ class CommandHandler(object):
                 else:
                     recoveryTaskState = RECOVERY_TASK_STATE_READY
                 sfci = sfciTuple[4]
-                for directionID in [DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET]:
+                for pathIDOffset in [DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET]:
                     fPathList = []
-                    if directionID in sfci.forwardingPathSet.primaryForwardingPath:
-                        fPathList.append(sfci.forwardingPathSet.primaryForwardingPath[directionID])
-                    if directionID in sfci.forwardingPathSet.backupForwardingPath:
-                        fPathList.append(sfci.forwardingPathSet.backupForwardingPath[directionID])
+                    if pathIDOffset in sfci.forwardingPathSet.primaryForwardingPath:
+                        fPathList.append(sfci.forwardingPathSet.primaryForwardingPath[pathIDOffset])
+                    if pathIDOffset in sfci.forwardingPathSet.backupForwardingPath:
+                        fPathList.append(sfci.forwardingPathSet.backupForwardingPath[pathIDOffset])
                     for forwardingPath in fPathList:
                         for segPath in forwardingPath:
                             for stage, nodeID in segPath:

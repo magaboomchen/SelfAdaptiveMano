@@ -76,7 +76,7 @@ class IntTestBaseClass(TestBase):
         applicationType = APP_TYPE_LARGE_BANDWIDTH
         routingMorphic = RoutingMorphic()
         routingMorphic.from_dict(srv6MorphicDictTemplate)
-        direction1 = {
+        direction0 = {
             'ID': 0,
             'source': {'node': None, 'IPv6':"*"},
             'ingress': classifier,
@@ -85,7 +85,16 @@ class IntTestBaseClass(TestBase):
             'egress': classifier,
             'destination': {'node': None, 'IPv6':APP1_REAL_IPV6}
         }
-        directions = [direction1]
+        direction1 ={
+            'ID': 0,
+            'source': {'node': None, 'IPv6':"*"},
+            'ingress': classifier,
+            'match': {'srcIP': APP1_REAL_IPV6,'dstIP':"*",
+                'srcPort': "*",'dstPort': "*",'proto': "*"},
+            'egress': classifier,
+            'destination': {'node': None, 'IPv6':APP1_REAL_IPV6}
+        }
+        directions = [direction0, direction1]
         slo = SLO(throughput=10, latency=100, availability=0.999, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
@@ -104,7 +113,7 @@ class IntTestBaseClass(TestBase):
         applicationType = APP_TYPE_HIGH_AVA
         routingMorphic = RoutingMorphic()
         routingMorphic.from_dict(ipv4MorphicDictTemplate)
-        direction1 = {
+        direction0 = {
             'ID': 0,
             'source': {'node': None, 'IPv4':"*"},
             'ingress': classifier,
@@ -113,7 +122,7 @@ class IntTestBaseClass(TestBase):
             'egress': classifier,
             'destination': {'node': None, 'IPv4':APP2_REAL_IP}
         }
-        directions = [direction1]
+        directions = [direction0]
         slo = SLO(throughput=1, latency=100, availability=0.9995, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
@@ -131,7 +140,7 @@ class IntTestBaseClass(TestBase):
         applicationType = APP_TYPE_LOW_LATENCY
         routingMorphic = RoutingMorphic()
         routingMorphic.from_dict(roceV1MorphicDictTemplate)
-        direction1 = {
+        direction0 = {
             'ID': 0,
             'source': {'node': None, 'RoceV1':"*"},
             'ingress': classifier,
@@ -140,7 +149,7 @@ class IntTestBaseClass(TestBase):
             'egress': classifier,
             'destination': {'node': None, 'RoceV1':APP3_REAL_GID}
         }
-        directions = [direction1]
+        directions = [direction0]
         slo = SLO(throughput=1, latency=10, availability=0.999, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
@@ -161,7 +170,7 @@ class IntTestBaseClass(TestBase):
         applicationType = APP_TYPE_LARGE_CONNECTION
         routingMorphic = RoutingMorphic()
         routingMorphic.from_dict(ipv6MorphicDictTemplate)
-        direction1 = {
+        direction0 = {
             'ID': 0,
             'source': {'node': None, 'IPv6':"*"},
             'ingress': classifier,
@@ -170,7 +179,7 @@ class IntTestBaseClass(TestBase):
             'egress': classifier,
             'destination': {'node': None, 'IPv6':APP4_REAL_IPV6}
         }
-        directions = [direction1]
+        directions = [direction0]
         slo = SLO(throughput=1, latency=100, availability=0.999, \
                     connections=10000)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
@@ -189,7 +198,7 @@ class IntTestBaseClass(TestBase):
         applicationType = APP_TYPE_BEST_EFFORT
         routingMorphic = RoutingMorphic()
         routingMorphic.from_dict(ipv4MorphicDictTemplate)
-        direction1 = {
+        direction0 = {
             'ID': 0,
             'source': {'node': None, 'IPv4':"*"},
             'ingress': classifier,
@@ -198,7 +207,7 @@ class IntTestBaseClass(TestBase):
             'egress': classifier,
             'destination': {'node': None, 'IPv4':APP5_REAL_IP}
         }
-        directions = [direction1]
+        directions = [direction0]
         slo = SLO(throughput=0.1, latency=200, availability=0.99, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
