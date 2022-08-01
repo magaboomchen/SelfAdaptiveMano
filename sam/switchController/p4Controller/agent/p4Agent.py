@@ -7,19 +7,32 @@ class P4Agent:
         self.target = client.Target(device_id = 0, pipe_id = 0xffff)
         self.interface.bind_pipeline_config('p4nf_sam')
         self.bfrtinfo = self.interface.bfrt_info_get()
-
-    def removeNF(self, _service_path_index, _service_index):
-        # currently not supported
-        pass
-    
-    def removeFWentry(self, _uuid):
-        # currently not supported
-        pass
     
     def addMonitor(self, _service_path_index, _service_index):
-        pass
+        indextable = self.bfrtinfo.table_get('SwitchIngress.MonitorIndex')
+        for i in range(0, 256):
+            indextable.entry_add(
+                self.target,
+                [indextable.make_key([
+                    client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                    client.KeyTuple('hdr.nsh_h.service_index', _service_index)
+                    client.KeyTuple('ig_md.index_val', i)
+                ])],
+                [indextable.make_data([], 'SwitchIngress.hit_index')]
+            )
+        monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitor')
+        for i in range(0, 65536):
+            monitortable.entry_add(
+                self.target,
+                [monitortable.make_key([
+                    client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                    client.KeyTuple('hdr.nsh_h.service_index', _service_index)
+                    client.KeyTuple('ig_md.hash_val', i)
+                ])],
+                [monitortable.make_data([], 'SwitchIngress.hit_monitor')]
+            )
 
-    def addIEGress(self, _service_path_index, _service_index):
+    def addIEGress(self, _service_path_index, _service_index, _outport = 64):
         ingresstable = self.bfrtinfo.table_get('SwitchIngress.CounterIngress')
         egresstable = self.bfrtinfo.table_get('SwitchIngress.CounterEgress')
         ingresstable.entry_add(
@@ -36,11 +49,31 @@ class P4Agent:
                 client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
                 client.KeyTuple('hdr.nsh_h.service_index', _service_index)
             ])],
-            [egresstable.make_data([], 'SwitchIngress.hit_egress')]
+            [egresstable.make_data([client.DataTuple('portnum', _outport)], 'SwitchIngress.hit_egress')]
         )
     
+    def removeIEGress(self, _service_path_index, _service_index):
+        ingresstable = self.bfrtinfo.table_get('SwitchIngress.CounterIngress')
+        egresstable = self.bfrtinfo.table_get('SwitchIngress.CounterEgress')
+        ingresstable.entry_del(
+            self.target,
+            [ingresstable.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index)
+            ])],
+            [ingresstable.make_data([], 'SwitchIngress.hit_ingress')]
+        )
+        egresstable.entry_del(
+            self.target,
+            [egresstable.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index)
+            ])],
+            [egresstable.make_data([], 'SwitchIngress.hit_egress')]
+        )
+
     def addRateLimiter(self, _service_path_index, _service_index):
-        self.addMonitor(_service_path_index, _service_index)
+        self.addIEGress(_service_path_index, _service_index)
         ratelimiter = self.bfrtinfo.table_get('SwitchIngress.RateLimiter')
         ratelimiter.entry_add(
             self.target,
@@ -68,9 +101,17 @@ class P4Agent:
             )]
         )
 
-    def addFW(self, _service_path_index, _service_index):
-        self.addMonitor(_service_path_index, _service_index)
-        # add to fw list
+    def removeRateLimiter(self, _service_path_index, _service_index):
+        self.addIEGress(_service_path_index, _service_index)
+        ratelimiter = self.bfrtinfo.table_get('SwitchIngress.RateLimiter')
+        ratelimiter.entry_del(
+            self.target,
+            [ratelimiter.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index)
+            ])],
+            [ratelimiter.make_data([], 'SwitchIngress.hit_ratelimiter')]
+        )
 
     def addv4FWentry(self, _service_path_index, _service_index, _src_addr, _dst_addr, _src_mask, _dst_mask, _nxt_hdr, _priority, _is_drop):
         statelessfw = self.bfrtinfo.table_get('SwitchIngress.StatelessFirewallv4')
@@ -92,6 +133,26 @@ class P4Agent:
             [statelessfw.make_data([], actionname)]
         )
     
+    def removev4FWentry(self, _service_path_index, _service_index, _src_addr, _dst_addr, _src_mask, _dst_mask, _nxt_hdr, _priority, _is_drop):
+        statelessfw = self.bfrtinfo.table_get('SwitchIngress.StatelessFirewallv4')
+        statelessfw.info.key_field_annotation_add('hdr.ipv4_h.src_addr', 'ipv4')
+        statelessfw.info.key_field_annotation_add('hdr.ipv4_h.dst_addr', 'ipv4')
+        actionname = 'SwitchIngress.hit_permit_v4'
+        if _is_drop == True:
+            actionname = 'SwitchIngress.hit_drop_v4'
+        statelessfw.entry_del(
+            self.target,
+            [statelessfw.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index),
+                client.KeyTuple("hdr.ipv4_h.src_addr", _src_addr, _src_mask),
+                client.KeyTuple("hdr.ipv4_h.dst_addr", _dst_addr, _dst_mask),
+                client.KeyTuple("hdr.ipv4_h.nxt_hdr", _nxt_hdr, 255),
+                client.KeyTuple("$MATCH_PRIORITY", _priority)
+            ])],
+            [statelessfw.make_data([], actionname)]
+        )
+
     def addv6FWentry(self, _service_path_index, _service_index, _src_addr, _dst_addr, _src_mask, _dst_mask, _nxt_hdr, _priority, _is_drop):
         statelessfw = self.bfrtinfo.table_get('SwitchIngress.StatelessFirewallv6')
         statelessfw.info.key_field_annotation_add('hdr.ipv6_h.src_addr', 'ipv6')
@@ -112,26 +173,39 @@ class P4Agent:
             [statelessfw.make_data([], actionname)]
         )
     
-    def syncWithHardware(self):
-        tablesync = self.bfrtinfo.table_get('SwitchIngress.CounterIngress')
-        tablesync.operations_execute(self.target, 'SyncCounters')
-        tablesync = self.bfrtinfo.table_get('SwitchIngress.FlowMonitor')
-        tablesync.operations_execute(self.target, 'SyncCounters')
-        tablesync = self.bfrtinfo.table_get('SwitchIngress.StatelessFirewallv4')
-        tablesync.operations_execute(self.target, 'SyncCounters')
-        tablesync = self.bfrtinfo.table_get('SwitchIngress.StatelessFirewallv6')
-        tablesync.operations_execute(self.target, 'SyncCounters')
-        tablesync = self.bfrtinfo.table_get('SwitchIngress.CounterEgress')
-        tablesync.operations_execute(self.target, 'SyncCounters')
-    
-    def queryMonitor(self):
+    def removev6FWentry(self, _service_path_index, _service_index, _src_addr, _dst_addr, _src_mask, _dst_mask, _nxt_hdr, _priority, _is_drop):
+        statelessfw = self.bfrtinfo.table_get('SwitchIngress.StatelessFirewallv6')
+        statelessfw.info.key_field_annotation_add('hdr.ipv6_h.src_addr', 'ipv6')
+        statelessfw.info.key_field_annotation_add('hdr.ipv6_h.dst_addr', 'ipv6')
+        actionname = 'SwitchIngress.hit_permit_v6'
+        if _is_drop == True:
+            actionname = 'SwitchIngress.hit_drop_v6'
+        statelessfw.entry_del(
+            self.target,
+            [statelessfw.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index),
+                client.KeyTuple("hdr.ipv6_h.src_addr", _src_addr, _src_mask),
+                client.KeyTuple("hdr.ipv6_h.dst_addr", _dst_addr, _dst_mask),
+                client.KeyTuple("hdr.ipv6_h.nxt_hdr", _nxt_hdr, 255),
+                client.KeyTuple("$MATCH_PRIORITY", _priority)
+            ])],
+            [statelessfw.make_data([], actionname)]
+        )
+
+    def queryIndex(self, _service_path_index, _service_index, _index_val):
+        # currently not supported
+        pass
+
+    def queryMonitor(self, _service_path_index, _service_index, _hash_val):
         # currently not supported
         pass
     
-    def queryIOrate(self):
-        # currently not supported
-        pass
+    def queryIOamount(self, _service_path_index, _service_index):
+        tableingress = self.bfrtinfo.table_get('SwitchIngress.CounterIngress')
+        tableegress = self.bfrtinfo.table_get('SwitchIngress.CounterEgress')
+        return ipkt, ibyte, epkt, ebyte
     
-    def queryFWentry(self):
+    def queryFWentry(self, _service_path_index, _service_index, _src_addr, _dst_addr, _src_mask, _dst_mask, _nxt_hdr, _priority, _is_drop):
         # currently not supported
         pass

@@ -28,9 +28,10 @@ const bit<8> ICMP_ECHO_REQUEST = 8;
 const bit<8> ICMP_ECHO_REPLY = 0;
 const bit<32> NF_ADDR = 0xc0a86404;
 
-#define MAX_NFS 512
-#define MAX_MN_RULES 327680
-#define MAX_FW_RULES 3072
+#define MAX_NFS 1024
+#define MAX_MN_RULES 262144
+#define MAX_INDEX_RULES 1024
+#define MAX_FW_RULES 2048
 
 header nsh_hdr {
     bit<2> version;
@@ -108,6 +109,7 @@ struct ig_header_t {
 
 struct ig_metadata_t {
     //bit<16> icmp_checksum_tmp;
+    bit<8> index_val;
     bit<16> hash_val;
     bit<8> color;
     bit<32> src_tag;
@@ -188,7 +190,8 @@ parser SwitchIngressParser(
 
     state parse_ipv4 {
         pkt.extract(hdr.ipv4_h);
-        ig_md.hash_val = hdr.ipv4_h.dst_addr[31:16];
+        ig_md.index_val = hdr.ipv4_h.src_addr[31:24];
+        ig_md.hash_val = hdr.ipv4_h.src_addr[31:16];
         ig_md.src_tag = hdr.ipv4_h.src_addr;
         ig_md.dst_tag = hdr.ipv4_h.dst_addr;
         transition accept;
@@ -196,7 +199,8 @@ parser SwitchIngressParser(
 
     state parse_ipv6 {
         pkt.extract(hdr.ipv6_h);
-        ig_md.hash_val = hdr.ipv6_h.dst_addr[127:112];
+        ig_md.index_val = hdr.ipv6_h.src_addr[127:120];
+        ig_md.hash_val = hdr.ipv6_h.src_addr[127:112];
         ig_md.src_tag = hdr.ipv6_h.src_addr[127:96];
         ig_md.dst_tag = hdr.ipv6_h.dst_addr[127:96];
         transition accept;
@@ -246,8 +250,9 @@ control SwitchIngress(
     DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_ingress;
     DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_egress;
     DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_monitor;
-    DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_firewall_v4;
-    DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_firewall_v6;
+    DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_index;
+    //DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_firewall_v4;
+    //DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_firewall_v6;
     DirectMeter(MeterType_t.BYTES) direct_meter;
     DirectRegister<pair>() direct_register_monitor;
     
@@ -278,6 +283,25 @@ control SwitchIngress(
         size = MAX_NFS;
     }
 
+    action hit_index() {
+        direct_counter_index.count();
+    }
+
+    table MonitorIndex {
+        key = {
+            hdr.nsh_h.service_path_index: exact;
+            hdr.nsh_h.service_index: exact;
+            ig_md.index_val: exact;
+        }
+        actions = {
+            hit_index;
+            @defaultonly nop;
+        }
+        const default_action = nop;
+        counters = direct_counter_index;
+        size = MAX_INDEX_RULES;
+    }
+
     action hit_monitor() {
         direct_counter_monitor.count();
         direct_register_monitor_action.execute();
@@ -300,21 +324,21 @@ control SwitchIngress(
     }
 
     action hit_drop_v4() {
-        direct_counter_firewall_v4.count();
+        //direct_counter_firewall_v4.count();
         ig_intr_dprsr_md.drop_ctl = 0x1;
     }
 
     action hit_permit_v4() {
-        direct_counter_firewall_v4.count();
+        //direct_counter_firewall_v4.count();
     }
 
     action hit_drop_v6() {
-        direct_counter_firewall_v6.count();
+        //direct_counter_firewall_v6.count();
         ig_intr_dprsr_md.drop_ctl = 0x1;
     }
 
     action hit_permit_v6() {
-        direct_counter_firewall_v6.count();
+        //direct_counter_firewall_v6.count();
     }
 
     table StatelessFirewallv4 {
@@ -331,7 +355,7 @@ control SwitchIngress(
             @defaultonly nop;
         }
         const default_action = nop;
-        counters = direct_counter_firewall_v4;
+        //counters = direct_counter_firewall_v4;
         size = MAX_FW_RULES;
     }
 
@@ -349,7 +373,7 @@ control SwitchIngress(
             @defaultonly nop;
         }
         const default_action = nop;
-        counters = direct_counter_firewall_v6;
+        //counters = direct_counter_firewall_v6;
         size = MAX_FW_RULES;
     }
 
@@ -371,8 +395,9 @@ control SwitchIngress(
         size = MAX_NFS;
     }
 
-    action hit_egress() {
+    action hit_egress(PortId_t portnum) {
         direct_counter_egress.count();
+        ig_intr_tm_md.ucast_egress_port = portnum;
     }
 
     table CounterEgress {
@@ -394,6 +419,7 @@ control SwitchIngress(
         ig_intr_tm_md.ucast_egress_port = EGRESS_PORT;
         if(hdr.nsh_h.isValid()) {
             CounterIngress.apply();
+            MonitorIndex.apply();
             FlowMonitor.apply();
             if(hdr.ipv4_h.isValid()) StatelessFirewallv4.apply();
             if(hdr.ipv6_h.isValid()) StatelessFirewallv6.apply();
