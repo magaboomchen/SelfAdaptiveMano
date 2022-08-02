@@ -9,7 +9,7 @@ from sam.base.slo import SLO
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, RoutingMorphic
 from sam.base.messageAgent import SIMULATOR_ZONE
 from sam.base.sfc import SFC, SFC_DIRECTION_0, SFC_DIRECTION_1, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
-from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, ForwardingPathSet
+from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, ForwardingPathSet
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNF_TYPE_FW, VNF_TYPE_MONITOR, VNFI,  \
@@ -371,7 +371,7 @@ class TestSimulatorBase(TestBase):
             d1FP = self.reverseForwardingPath(d0FP)
         else:
             raise ValueError("Unimplement sfci length!")
-        primaryForwardingPath = {DIRECTION1_PATHID_OFFSET:d0FP, DIRECTION2_PATHID_OFFSET:d0FP}   
+        primaryForwardingPath = {DIRECTION0_PATHID_OFFSET:d0FP, DIRECTION1_PATHID_OFFSET:d0FP}   
         mappingType = MAPPING_TYPE_MMLPSFC # This is your mapping algorithm type
         backupForwardingPath = {}   # you don't need to care about backupForwardingPath
         return ForwardingPathSet(primaryForwardingPath, mappingType,

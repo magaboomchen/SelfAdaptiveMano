@@ -7,7 +7,7 @@ import uuid
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, MSG_TYPE_REQUEST, SAMMessage
-from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
+from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI, Request
 from sam.base.sfc import AUTO_RECOVERY, STATE_ACTIVE, STATE_DELETED, STATE_INACTIVE, STATE_RECOVER_MODE
 
@@ -141,7 +141,7 @@ class CommandHandler(object):
                 else:
                     recoveryTaskState = RECOVERY_TASK_STATE_READY
                 sfci = sfciTuple[4]
-                for pathIDOffset in [DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET]:
+                for pathIDOffset in [DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET]:
                     fPathList = []
                     if pathIDOffset in sfci.forwardingPathSet.primaryForwardingPath:
                         fPathList.append(sfci.forwardingPathSet.primaryForwardingPath[pathIDOffset])

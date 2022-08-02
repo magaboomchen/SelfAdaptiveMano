@@ -77,11 +77,11 @@ class VNF(object):
 class VNFI(object):
     def __init__(self, vnfID=None, vnfType=None, vnfiID=None,
                     config=None, node=None, vnfiStatus=None):
-        self.vnfID = vnfID  # equal to the vnfType
+        self.vnfID = vnfID              # equal to the vnfType
         self.vnfType = vnfType
         self.vnfiID = vnfiID
         self.config = config
-        self.node = node # server or switch
+        self.node = node                # type: Union[Server, Switch]
         self.vnfiStatus = vnfiStatus    # type: VNFIStatus
         self.minCPUNum = 1
         self.maxCPUNum = 2  # CPU core number

@@ -3,8 +3,8 @@
 
 from typing import Union
 
-DIRECTION1_PATHID_OFFSET = 1
-DIRECTION2_PATHID_OFFSET = 128
+DIRECTION0_PATHID_OFFSET = 1
+DIRECTION1_PATHID_OFFSET = 128
 
 PATHID_LENGTH = 8  # DO NOT MODIFY THIS VALUE, otherwise BESS will incurr error
 
@@ -29,12 +29,12 @@ MAPPING_TYPE_NETSOLVER_ILP = "MAPPING_TYPE_NETSOLVER_ILP"
 class ForwardingPathSet(object):
     def __init__(self, primaryForwardingPath,
                 mappingType, backupForwardingPath):
-        self.primaryForwardingPath = primaryForwardingPath  # type: dict[Union[DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET], list(tuple[int, int])]
-        # direction0's pathID is DIRECTION1_PATHID_OFFSET
-        # direction1's pathID is DIRECTION2_PATHID_OFFSET
+        self.primaryForwardingPath = primaryForwardingPath  # type: dict[Union[DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET], list(tuple[int, int])]
+        # direction0's pathID is DIRECTION0_PATHID_OFFSET
+        # direction1's pathID is DIRECTION1_PATHID_OFFSET
         # {
-        #   DIRECTION1_PATHID_OFFSET:forwardingPath,
-        #   DIRECTION2_PATHID_OFFSET: forwardingPath
+        #   DIRECTION0_PATHID_OFFSET: forwardingPath,
+        #   DIRECTION1_PATHID_OFFSET: forwardingPath
         # }
 
         self.mappingType = mappingType  # MAPPING_TYPE_NONE, MAPPING_TYPE_UFRR, etc

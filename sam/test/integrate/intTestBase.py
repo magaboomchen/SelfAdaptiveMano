@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import time
-import logging
 import uuid
 
 from sam.base.compatibility import screenInput

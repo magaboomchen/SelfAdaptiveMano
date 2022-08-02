@@ -222,3 +222,13 @@ class PathServerFiller(object):
                     dividedPath[currentIndex].append(stageNode)
         self.logger.debug("new dividedPath:{0}".format(dividedPath))
         return dividedPath
+
+    def reverseForwardingPath(self, d0FP):
+        d1FP = []
+        rD0FP = list(reversed(d0FP))
+        for idx, segPath in enumerate(rD0FP):
+            d1FP.append([])
+            rSegPath = list(reversed(segPath))
+            for segNodeTuple in rSegPath:
+                d1FP[-1].append((idx, segNodeTuple[1]))
+        return d1FP

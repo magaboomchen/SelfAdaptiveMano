@@ -1,17 +1,35 @@
 # Command
 每个command/commandReply都有一个attributes属性，里面存储了命令的重要信息，以下是部分命令的attributes属性（你可以打印pytest中的command来查看其属性）：
 
+## CMD_TYPE_ADD_SFC
+* sfc = attributes['sfc'] # type: class SFC
+* 将双向的acl表项部署到turbonet中指定的ingress switch上(一般是DCN_GATEWAY)
+* 调用wrh提供的下发分类器规则的API;
+    * ingress：下发direction['match]，action是封装一个NSH header
+    * egress: 下发一个规则match NSH header(SPI,SI), action是解封装
+
+## CMD_TYPE_ADD_SFCI
+* sfc = attributes['sfc'] # type: class SFC
+* sfci = attributes['sfci'] # type: class SFCI
+* 调用wrh提供的下发NSH路由规则的API
+
+## CMD_TYPE_DEL_SFCI
+* sfc = attributes['sfc'] # type: class SFC
+* sfci = attributes['sfci'] # type: class SFCI
+* 调用wrh提供的删除NSH路由规则的API
+
+## CMD_TYPE_DEL_SFC
+* sfc = attributes['sfc'] # type: class SFC
+* 将双向的acl表项部署到turbonet中指定的ingress switch上(一般是DCN_GATEWAY)
+* 调用wrh提供的删除分类器规则的API
+
 ## CMD_TYPE_GET_SFCI_STATE
 ```
 attributes = {
     "sfcisDict": sfcisDict={sfciID:sfci},   # see sfc.py, store state in sfci.sloRealTimeValue
-    'zone': SIMULATOR_ZONE
+    'zone': TURBONET_ZONE
 }
 ```
-
-## CMD_TYPE_ADD_SFC
-* 将双向的acl表项部署到turbonet中指定的ingress switch上(一般是DCN_GATEWAY)
-
 
 # 测试用例
 

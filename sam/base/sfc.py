@@ -46,8 +46,8 @@ SFC_DIRECTION_1 = 1
 class SFCI(object):
     def __init__(self, sfciID, vnfiSequence=None, sloRealTimeValue=None,
                     forwardingPathSet=None, routingMorphic=None):
-        self.sfciID = sfciID               # not uuid! It's a integer
-        self.vnfiSequence = vnfiSequence  # only show the direction0    # [[VNFI()],[VNFI()]]
+        self.sfciID = sfciID               # type: int
+        self.vnfiSequence = vnfiSequence  # type: list[list[VNFI]]  # only show the direction0
         self.sloRealTimeValue = sloRealTimeValue
         self.forwardingPathSet = forwardingPathSet
         self.routingMorphic = routingMorphic

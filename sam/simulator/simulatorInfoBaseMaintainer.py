@@ -10,7 +10,7 @@ import random
 
 import numpy as np
 
-from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
+from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.pickleIO import PickleIO
 from sam.base.sfc import SFC, SFCI
 from sam.base.slo import SLO
@@ -179,9 +179,9 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
             for direction in directions:
                 dirID = direction['ID']
                 if dirID == 0:
-                    pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+                    pathlist = primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
                 else:
-                    pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
+                    pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
                 if len(sfci['traffics'][dirID]) == 0:
                     bw = 0
                 else:
@@ -204,9 +204,9 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
             for direction in directions:
                 dirID = direction['ID']
                 if dirID == 0:
-                    pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+                    pathlist = primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
                 else:
-                    pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
+                    pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
                 dropRate = 0
                 for stage, path in enumerate(pathlist):
                     for hop, (_, srcID) in enumerate(path):

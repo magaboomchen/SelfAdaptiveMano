@@ -11,6 +11,7 @@ To add more mapping algorithms, you need add code in following functions:
 import uuid
 import copy
 from typing import Union
+from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
 
 from sam.base.vnf import VNFI
 from sam.base.switch import Switch
@@ -87,6 +88,9 @@ class OSFCAdder(object):
     def _mapIngressEgress(self):
         self.logger.info("_mapIngressEgress start!")
         for direction in self.sfc.directions:
+            directionID = direction['ID']
+            if directionID != SFC_DIRECTION_0:
+                continue
             source = direction['source']
             if source['node'] == None:
                 nodeIP = source['IPv4']
@@ -112,6 +116,8 @@ class OSFCAdder(object):
                         dcnGatewaySwitch = self._selectDCNGateWaySwitch()
                         destination['node'] = dcnGatewaySwitch
             direction['egress'] = self._selectClassifierByNode(destination['node'])
+        if len(self.sfc.directions) == 2:
+            self.mirrorDirectionsInfo()
         self.logger.info("_mapIngressEgress finish!")
 
     def _selectDCNGateWaySwitch(self):
@@ -134,6 +140,24 @@ class OSFCAdder(object):
                 return server
         else:
             raise ValueError("Unknown node type: {0}".format(type(node)))
+
+    def mirrorDirectionsInfo(self):
+        direction0 = None
+        for direction in self.sfc.directions:
+            directionID = direction['ID']
+            if directionID != SFC_DIRECTION_0:
+                continue
+            direction0 = direction
+
+        for direction in self.sfc.directions:
+            directionID = direction['ID']
+            if directionID != SFC_DIRECTION_1:
+                continue
+            direction['source'] = direction0['destination']
+            direction['ingress'] = direction0['egress']
+            direction['egress'] = direction0['ingress']
+            direction['destination'] = direction0['source']
+        self.logger.info("mirrored direcitons {0}".format(self.sfc.directions))
 
     # def _selectDCNGatewaySwitchInputPort(self, switch):
     #     rndIdx = random.randint(0, len(switch.gatewayPortLists)-1)

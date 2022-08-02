@@ -15,7 +15,6 @@ Usage of this unit test:
     python -m pytest ./sam/simulator/test/test_getSFCIStatus.py -s --disable-warnings
 '''
 
-import logging
 from time import sleep
 
 import pytest

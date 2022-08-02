@@ -11,7 +11,7 @@ import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
 from sam.serverController.bessControlPlane import BessControlPlane
 from sam.serverController.classifierController.classifierInitializer import ClassifierInitializer
 from sam.serverController.classifierController.classifierSFCAdder import ClassifierSFCAdder
-from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
+from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 
 
 class ClassifierSFCIAdder(BessControlPlane):
@@ -73,10 +73,10 @@ class ClassifierSFCIAdder(BessControlPlane):
             tunnelSrcIP = self._sc.aton(classifier.getDatapathNICIP())
             if direction['ID'] == 0:
                 vnfID = sfc.vNFTypeSequence[0]
-                pathID = DIRECTION1_PATHID_OFFSET
+                pathID = DIRECTION0_PATHID_OFFSET
             else:
                 vnfID = sfc.vNFTypeSequence[0]
-                pathID = DIRECTION2_PATHID_OFFSET
+                pathID = DIRECTION1_PATHID_OFFSET
             tunnelDstIP = self._sc.aton(self._genIP4SVPIDs(sfciID,vnfID,pathID))
             arg = module_msg_pb2.SetMetadataArg(attrs=[
                 {'name':"ip_src", 'size':4, 'value_bin':tunnelSrcIP},

@@ -5,7 +5,7 @@ import random
 from sam.base.command import Command, CMD_TYPE_ADD_SFC, CMD_TYPE_DEL_SFC, CMD_TYPE_ADD_SFCI, \
     CMD_TYPE_DEL_SFCI, CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_GET_FLOW_SET
 from sam.base.flow import Flow
-from sam.base.path import DIRECTION2_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
+from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION0_PATHID_OFFSET
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.sfc import SFC, SFCI
 from sam.base.switch import Switch, SWITCH_TYPE_DCNGATEWAY
@@ -59,7 +59,7 @@ def remove_sfci(sfc, sfci, sib):
     # server core, switch tcam, switch nextHop, (server)link usedBy
     direction = directions[0]  # [d for d in directions if d['ID']==0][0]
     dirID = 0
-    pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+    pathlist = primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
     for stage, path in enumerate(pathlist):
         if stage != len(pathlist) - 1:  # dst is vnfi
             serverID = path[-1][1]
@@ -75,9 +75,9 @@ def remove_sfci(sfc, sfci, sib):
     for direction in directions:
         dirID = direction['ID']
         if dirID == 0:
-            pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+            pathlist = primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
         elif dirID == 1:
-            pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
+            pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
         for stage, path in enumerate(pathlist):
             for hop, (_, switchID) in enumerate(path):
                 if switchID in sib.switches and hop < len(path) - 1:  # switchID is a switch, not server
@@ -152,9 +152,9 @@ def add_sfci_handler(cmd, sib):
     for direction in directions:
         dirID = direction['ID']
         if dirID == 0:
-            pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+            pathlist = primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
         elif dirID == 1:
-            pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
+            pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
         else:
             raise ValueError('unknown dirID')
         loopbacks = []
@@ -211,7 +211,7 @@ def add_sfci_handler(cmd, sib):
     # server core, switch tcam, switch nextHop, (server)link usedBy
     direction = directions[0]  # [d for d in directions if d['ID']==0][0]
     dirID = 0
-    pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+    pathlist = primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
     for stage, path in enumerate(pathlist):
         if stage != len(pathlist) - 1:  # dst is vnfi
             serverID = path[-1][1]
@@ -226,9 +226,9 @@ def add_sfci_handler(cmd, sib):
     for direction in directions:
         dirID = direction['ID']
         if dirID == 0:
-            pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+            pathlist = primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
         else:
-            pathlist = primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
+            pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
         for stage, path in enumerate(pathlist):
             for hop, (_, switchID) in enumerate(path):
                 if switchID in sib.switches and hop < len(path) - 1:  # switchID is a switch, not server
@@ -339,7 +339,7 @@ def get_flow_set_handler(cmd, sib):
 
         if 0 in traffics_by_dir:  # forward
             traffic_forward = list(traffics_by_dir[0])
-            pathlist = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+            pathlist = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
             path = pathlist[0]
             for i, (_, nodeID) in path:
                 if nodeID in sib.servers and not sib.servers[nodeID]['Active']:
@@ -359,7 +359,7 @@ def get_flow_set_handler(cmd, sib):
 
         if 1 in traffics_by_dir:  # backward
             traffic_backward = list(traffics_by_dir[1])
-            pathlist = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
+            pathlist = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
             path = pathlist[0]
             for i, (_, nodeID) in path:
                 if nodeID in sib.servers and not sib.servers[nodeID]['Active']:
@@ -384,7 +384,7 @@ def get_flow_set_handler(cmd, sib):
         # target = NF(sfci.vnfiSequence[0][0].vnfType, sib.flows[traffics[0]]['pkt_size'],
         #             4000000)  # no information about flow_count
         # serverID = sfci.vnfiSequence[0][0].node.getServerID()
-        # switchID = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET][0][-2][
+        # switchID = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET][0][-2][
         #     1]  # last switch on path ingress->vnfi
         # serverInfo = sib.servers[serverID]
         # server = serverInfo['Server']
@@ -400,7 +400,7 @@ def get_flow_set_handler(cmd, sib):
         #         c_traffics_by_dir = c_sfciInfo['traffics']
         #         if 0 in c_traffics_by_dir:  # forward
         #             c_traffic_forward = list(c_traffics_by_dir[0])
-        #             c_pathlist = c_sfci.forwardingPathSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+        #             c_pathlist = c_sfci.forwardingPathSet.primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
         #             c_path = c_pathlist[0]
         #             for i, (_, nodeID) in c_path:
         #                 if i == 0 or i == len(c_path) - 1:  # ingress server and vnfi server
@@ -422,7 +422,7 @@ def get_flow_set_handler(cmd, sib):
         #
         #         if 1 in c_traffics_by_dir:  # backward
         #             c_traffic_backward = list(c_traffics_by_dir[1])
-        #             c_pathlist = c_sfci.forwardingPathSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
+        #             c_pathlist = c_sfci.forwardingPathSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
         #             c_path = c_pathlist[0]
         #             for i, (_, nodeID) in c_path:
         #                 if i == 0 or i == len(c_path) - 1:  # ingress server and vnfi server
@@ -469,7 +469,7 @@ def get_flow_set_handler(cmd, sib):
 
         no_traffic_fw = False
         if 0 in traffics_by_dir:  # forward
-            pathlist = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+            pathlist = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
             path = pathlist[1]
             for i, (_, nodeID) in path:
                 if nodeID in sib.servers and not sib.servers[nodeID]['Active']:
@@ -489,7 +489,7 @@ def get_flow_set_handler(cmd, sib):
 
         no_traffic_bw = False
         if 1 in traffics_by_dir:  # backward
-            pathlist = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION2_PATHID_OFFSET]
+            pathlist = sfci.forwardingPathSet.primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
             path = pathlist[1]
             for i, (_, nodeID) in path:
                 if nodeID in sib.servers and not sib.servers[nodeID]['Active']:

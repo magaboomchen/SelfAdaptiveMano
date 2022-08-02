@@ -3,7 +3,7 @@
 
 import copy
 
-from sam.base.path import ForwardingPathSet, MAPPING_TYPE_UFRR
+from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, ForwardingPathSet, MAPPING_TYPE_UFRR
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.request import Request
@@ -80,18 +80,34 @@ class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
 
             primaryPathDictCopy = copy.deepcopy(self.primaryPathDict)
             primaryPathDictCopy[rIndex] = path
+            rPath = self.reverseForwardingPath(path)
             if self._isPathsMeetLatencySLA(self._initDib, primaryPathDictCopy,
                                             self.requestList):
                 self.primaryPathDict[rIndex] = path
                 self._allocateResource(path)
+                self._allocateResource(rPath)
             else:
                 raise ValueError(
                     "Can't find valid primary path for request {0}".format(
                         rIndex))
 
-            mappingType = MAPPING_TYPE_UFRR
-            self.forwardingPathSetsDict[rIndex] = ForwardingPathSet(
-                {1:path}, mappingType, {1:{}})
+            mappingType = MAPPING_TYPE_MMLPSFC
+            directionsNum = len(sfc.directions)
+            if directionsNum == 1:
+                fPS = ForwardingPathSet({DIRECTION0_PATHID_OFFSET:path},
+                                        mappingType,
+                                        {DIRECTION0_PATHID_OFFSET:{},
+                                        DIRECTION1_PATHID_OFFSET:{}})
+            elif directionsNum == 2:
+                fPS = ForwardingPathSet({DIRECTION0_PATHID_OFFSET:path,
+                                        DIRECTION1_PATHID_OFFSET:rPath},
+                                        mappingType,
+                                        {DIRECTION0_PATHID_OFFSET:{}})
+            else:
+                raise ValueError("Unknown directions" \
+                                " number {0}".format(directionsNum))
+
+            self.forwardingPathSetsDict[rIndex] = fPS
 
     def _isPathsMeetLatencySLA(self, dib, pathDict, requestList):
         for rIndex in pathDict.keys():

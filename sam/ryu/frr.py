@@ -16,7 +16,7 @@ from sam.ryu.datapathStateSynchronizer import DatapathStateSynchronizer
 from sam.ryu.baseApp import BaseApp
 from sam.ryu.conf.ryuConf import DCNGATEWAY_INBOUND_PORT, ARP_TIMEOUT
 from sam.base.command import CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
-from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION2_PATHID_OFFSET
+from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.server import Server
 from sam.base.socketConverter import SocketConverter
 from sam.base.vnf import VNF_TYPE_CLASSIFIER
@@ -97,9 +97,9 @@ class FRR(BaseApp):
         primaryForwardingPath = forwardingPathSet.primaryForwardingPath
         directionID = direction["ID"]
         if directionID == 0:
-            firstPath = primaryForwardingPath[DIRECTION1_PATHID_OFFSET][0]
+            firstPath = primaryForwardingPath[DIRECTION0_PATHID_OFFSET][0]
         else:
-            firstPath = primaryForwardingPath[DIRECTION2_PATHID_OFFSET][0]
+            firstPath = primaryForwardingPath[DIRECTION1_PATHID_OFFSET][0]
         firstSwitchID = firstPath[1]
         # the first node is a server, the second node is a switch
         return firstSwitchID
@@ -172,9 +172,9 @@ class FRR(BaseApp):
 
     def _getPathID(self, directionID):
         if directionID == 0:
-            pathID = DIRECTION1_PATHID_OFFSET
+            pathID = DIRECTION0_PATHID_OFFSET
         else:
-            pathID = DIRECTION2_PATHID_OFFSET
+            pathID = DIRECTION1_PATHID_OFFSET
         return pathID
 
     def _getPrimaryPath(self, sfci, primaryPathID):
