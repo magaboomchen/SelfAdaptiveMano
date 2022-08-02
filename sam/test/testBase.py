@@ -495,12 +495,12 @@ class TestBase(object):
         del tmpMessageAgent
 
     def sendCmdByRPC(self, dstIP, dstPort, msgType, cmd):
-        tmpMessageAgent = MessageAgent()
-        oSP = tmpMessageAgent.getOpenSocketPort()
-        tmpMessageAgent.startMsgReceiverRPCServer("localhost", oSP)
+        # tmpMessageAgent = MessageAgent()
+        # oSP = tmpMessageAgent.getOpenSocketPort()
+        # tmpMessageAgent.startMsgReceiverRPCServer("localhost", oSP)
         msg = SAMMessage(msgType, cmd)
-        tmpMessageAgent.sendMsgByRPC(dstIP, dstPort, msg)
-        del tmpMessageAgent
+        self.tmpMessageAgent.sendMsgByRPC(dstIP, dstPort, msg)
+        # del self.tmpMessageAgent
 
     def sendCmdRply(self, queue, msgType, cmdRply):
         tmpMessageAgent = MessageAgent()

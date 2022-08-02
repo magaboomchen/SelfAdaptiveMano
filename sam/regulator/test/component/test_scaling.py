@@ -19,7 +19,7 @@ import pytest
 from sam.base.command import CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, Command
 from sam.base.compatibility import screenInput
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, SIMULATOR_ZONE
-from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, MEASURER_PORT
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, MEASURER_PORT, TEST_PORT
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
@@ -81,6 +81,7 @@ class TestScalingClass(TestBase):
         self.dispatcherStub = DispatcherStub()
         self.logger.info("runMeasurerStub")
         self.runMeasurerStub()
+        self.startMsgAgentRPCReciever("localhost", TEST_PORT)
         self.addSFCI2MeasurerStub(self.sfci)
 
         yield

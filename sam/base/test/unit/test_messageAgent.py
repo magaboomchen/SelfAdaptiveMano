@@ -5,6 +5,7 @@ import time
 import logging
 
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT
 from sam.test.testBase import TestBase
 from sam.base.messageAgent import TEST_QUEUE, MessageAgent, SAMMessage
 
@@ -41,14 +42,14 @@ class TestMessageAgentClass(TestBase):
     #     assert self.mA.isCommandReply(body) == False
 
     def test_requestMsgByRPC(self):
-        self.mARecv.startMsgReceiverRPCServer("127.0.0.1", "49998")
+        self.mARecv.startMsgReceiverRPCServer("127.0.0.1", 49998)
         msg = {"a":1,"b":2,"c":3,"d":4}
         samMsg = SAMMessage("Test", msg)
-        self.mASend.startMsgReceiverRPCServer("127.0.0.1", "49999")
+        self.mASend.startMsgReceiverRPCServer("127.0.0.1", TEST_PORT)
         time.sleep(2)
         t1 = time.time()
-        self.mASend.sendMsgByRPC("127.0.0.1", "49998", samMsg)
-        newMsg = self.mARecv.getMsgByRPC("127.0.0.1", "49998")
+        self.mASend.sendMsgByRPC("127.0.0.1", 49998, samMsg)
+        newMsg = self.mARecv.getMsgByRPC("127.0.0.1", 49998)
         t2 = time.time()
         self.logger.info("time is {0}".format(t2-t1))
         assert newMsg.getbody() == samMsg.getbody()
