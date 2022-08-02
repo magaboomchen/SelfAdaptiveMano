@@ -5,8 +5,6 @@ import logging
 
 from sam.ryu.L2 import L2
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestL2Class(object):
     @classmethod

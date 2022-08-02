@@ -22,7 +22,6 @@ from sam.base.messageAgent import MessageAgent
 class BaseApp(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(BaseApp, self).__init__(*args, **kwargs)
-        logging.getLogger("pika").setLevel(logging.WARNING)
         logConfigur = LoggerConfigurator(__name__, './log',
                                             'baseApp.log', level='info')
         self.logger = logConfigur.getLogger()

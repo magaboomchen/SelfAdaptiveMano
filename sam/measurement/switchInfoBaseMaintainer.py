@@ -3,7 +3,9 @@
 
 import random
 
-from sam.base.switch import SWITCH_TYPE_DCNGATEWAY
+from sam.base.acl import ACLTable
+from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, Switch
+from sam.base.vnf import VNF, VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 
 
@@ -133,6 +135,7 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
             return False
 
     def getSwitch(self, switchID, zoneName):
+        # type: (int, str) -> Switch
         return self._switches[zoneName][switchID]['switch']
 
     def reserveSwitchResource(self, switchID, reservedTcamUsage, zoneName):
@@ -186,8 +189,28 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
         else:
             return False
 
+    def hasEnoughP4SwitchResources(self, switchID, vnf, zoneName):
+        # type: (int, VNF, str) -> bool
+        switch = self.getSwitch(switchID, zoneName)
+        vnfType = vnf.vnfType
+        p4NFUsage = switch.p4NFUsage
+        if vnfType == VNF_TYPE_FW:
+            aclTable = vnf.config # type: ACLTable
+            v4RulesNum = aclTable.getIPv4RulesNum()
+            v6RulesNum = aclTable.get128BitsRulesNum()
+            condition0 = p4NFUsage.hasEnoughV4FirewallResource(v4RulesNum)
+            condition1 = p4NFUsage.hasEnoughV6FirewallResource(v6RulesNum)
+            return condition0 and condition1
+        elif vnfType == VNF_TYPE_MONITOR:
+            return p4NFUsage.hasEnoughMonitorResource(1)
+        elif vnfType == VNF_TYPE_RATELIMITER:
+            return p4NFUsage.hasEnoughRatelimiterResource(1)
+        else:
+            return p4NFUsage.hasEnoughSFCINumResource(1)
+
     def randomSelectDCNGateWaySwitch(self, zoneName):
-        switchList = self.getSpecificTypeOfSwitchByZone(zoneName, SWITCH_TYPE_DCNGATEWAY)
+        switchList = self.getSpecificTypeOfSwitchByZone(zoneName,
+                                            SWITCH_TYPE_DCNGATEWAY)
         rndIdx = random.randint(0, len(switchList)-1)
         return switchList[rndIdx]
 

@@ -1,7 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import sys
 import logging
+
+from sam.base.loggerConfigurator import LoggerConfigurator
 try:
     set
 except NameError:
@@ -11,12 +14,14 @@ import pytest
 
 from sam.ryu.ufrrIBMaintainer import UFRRIBMaintainer
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestORTCClass(object):
     @pytest.fixture(scope="function")
     def setup_addRuleSet1(self):
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'testORTCClass.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.urm = UFRRIBMaintainer()
         self.urm.addSFCIUFRRFlowTableEntry(dpid=1, sfciID=1, vnfID=1, pathID=1,
                                             actions={"output nodeID": 1})
@@ -34,7 +39,7 @@ class TestORTCClass(object):
 
     @pytest.mark.skip(reason='Temporarly')
     def test_v6Compression(self, setup_addRuleSet1):
-        logging.info(self.urm.switchesUFRRTable.keys())
+        self.logger.info(self.urm.switchesUFRRTable.keys())
         self.urm.initialBinaryTrieForAllSwitches(v6=True)
         self.urm.countSwitchCompressedFlowTableOfORTC(dpid=1, v6=True)
         self.urm.compressAllSwitchesUFRRTableByORTC(v6=True)

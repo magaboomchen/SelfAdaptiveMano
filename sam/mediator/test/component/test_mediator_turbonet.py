@@ -4,6 +4,7 @@
 import logging
 
 import pytest
+from sam.base.loggerConfigurator import LoggerConfigurator
 
 from sam.base.messageAgent import MSG_TYPE_MEDIATOR_CMD, P4CONTROLLER_QUEUE, \
     SERVER_CLASSIFIER_CONTROLLER_QUEUE, SFF_CONTROLLER_QUEUE, \
@@ -23,14 +24,16 @@ MANUAL_TEST = True
 # TODO: CMD_TYPE_ADD_SFC_SUCCESSFUL, CMD_TYPE_ADD_SFC_FAIL
 # need to be test
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestMediatorClass(TestBase):
     def setup_method(self, method):
         """ setup any state tied to the execution of the given method in a
         class.  setup_method is invoked for every test method of a class.
         """
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'testMediatorClass.log', level='warning')
+        self.logger = logConfigur.getLogger()
+
         self.clearQueue()
         self.killAllModule()
         self.cleanLog()
@@ -70,13 +73,13 @@ class TestMediatorClass(TestBase):
 
         p4ControllerQueueName = self.mA.genQueueName(P4CONTROLLER_QUEUE,
                                                             TURBONET_ZONE)
-        logging.info("listen on {0}".format(p4ControllerQueueName))
+        self.logger.info("listen on {0}".format(p4ControllerQueueName))
         recvCmdP4Ctl = self.recvCmd(p4ControllerQueueName)
         assert recvCmdP4Ctl.cmdType == CMD_TYPE_ADD_SFCI
         sffControllerQueueName = self.mA.genQueueName(SFF_CONTROLLER_QUEUE,
                                                             TURBONET_ZONE)
 
-        logging.info("listen on {0}".format(sffControllerQueueName))
+        self.logger.info("listen on {0}".format(sffControllerQueueName))
         recvCmdSFFCtl = self.recvCmd(sffControllerQueueName)
         assert recvCmdSFFCtl.cmdType == CMD_TYPE_ADD_SFCI
 
@@ -94,7 +97,7 @@ class TestMediatorClass(TestBase):
         # VNFController recv command
         vnfControllerQueueName = self.mA.genQueueName(VNF_CONTROLLER_QUEUE,
                                                             TURBONET_ZONE)
-        logging.info("listen on {0}".format(vnfControllerQueueName))
+        self.logger.info("listen on {0}".format(vnfControllerQueueName))
         recvCmdVNFCtl = self.recvCmd(vnfControllerQueueName)
         assert recvCmdVNFCtl.cmdType == CMD_TYPE_ADD_SFCI
 
@@ -104,7 +107,7 @@ class TestMediatorClass(TestBase):
         self.sMS.sendCmdRply(recvCmdVNFCtlRply)
 
         # orchestration recv command reply
-        logging.info("listen on {0}".format(ORCHESTRATOR_QUEUE))
+        self.logger.info("listen on {0}".format(ORCHESTRATOR_QUEUE))
         recvCmdRply = self.recvCmdRply(ORCHESTRATOR_QUEUE)
         assert recvCmdRply.cmdID == addSFCICmd.cmdID
         assert recvCmdRply.cmdState == CMD_STATE_SUCCESSFUL
@@ -119,13 +122,13 @@ class TestMediatorClass(TestBase):
 
         p4ControllerQueueName = self.mA.genQueueName(P4CONTROLLER_QUEUE,
                                                             TURBONET_ZONE)
-        logging.info("listen on {0}".format(p4ControllerQueueName))
+        self.logger.info("listen on {0}".format(p4ControllerQueueName))
         recvCmdP4Ctl = self.recvCmd(p4ControllerQueueName)
         assert recvCmdP4Ctl.cmdType == CMD_TYPE_ADD_SFCI
         sffControllerQueueName = self.mA.genQueueName(SFF_CONTROLLER_QUEUE,
                                                             TURBONET_ZONE)
 
-        logging.info("listen on {0}".format(sffControllerQueueName))
+        self.logger.info("listen on {0}".format(sffControllerQueueName))
         recvCmdSFFCtl = self.recvCmd(sffControllerQueueName)
         assert recvCmdSFFCtl.cmdType == CMD_TYPE_ADD_SFCI
 
@@ -143,7 +146,7 @@ class TestMediatorClass(TestBase):
         # VNFController recv command
         vnfControllerQueueName = self.mA.genQueueName(VNF_CONTROLLER_QUEUE,
                                                             TURBONET_ZONE)
-        logging.info("listen on {0}".format(vnfControllerQueueName))
+        self.logger.info("listen on {0}".format(vnfControllerQueueName))
         recvCmdVNFCtl = self.recvCmd(vnfControllerQueueName)
         assert recvCmdVNFCtl.cmdType == CMD_TYPE_ADD_SFCI
 
@@ -153,7 +156,7 @@ class TestMediatorClass(TestBase):
         self.sMS.sendCmdRply(recvCmdVNFCtlRply)
 
         # orchestration recv command reply
-        logging.info("listen on {0}".format(ORCHESTRATOR_QUEUE))
+        self.logger.info("listen on {0}".format(ORCHESTRATOR_QUEUE))
         recvCmdRply = self.recvCmdRply(ORCHESTRATOR_QUEUE)
         assert recvCmdRply.cmdID == addSFCICmd.cmdID
         assert recvCmdRply.cmdState == CMD_STATE_FAIL

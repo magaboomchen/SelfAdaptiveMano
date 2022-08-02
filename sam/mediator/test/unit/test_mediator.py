@@ -15,8 +15,6 @@ from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestMediatorClass(TestBase):
     def setup_method(self, method):

@@ -8,8 +8,6 @@ from ryu.controller import dpset
 from sam.ryu.baseApp import BaseApp
 from sam.ryu.topoCollector import TopoCollector
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestBaseAppClass(object):
     @classmethod

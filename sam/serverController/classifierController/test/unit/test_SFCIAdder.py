@@ -9,6 +9,7 @@ from scapy.layers.l2 import Ether, ARP
 from scapy.layers.inet import IP, TCP
 
 from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
     MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, MEDIATOR_QUEUE
 from sam.base.shellProcessor import ShellProcessor
@@ -22,14 +23,14 @@ MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "192.168.123.1"
 TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("pika").setLevel(logging.WARNING)
-
 
 class TestSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addSFCI(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'testSFCIAdderClass.log', level='debug')
+        self.logger = logConfigur.getLogger()
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier)
         self.sfci = self.genBiDirection10BackupSFCI()
@@ -63,7 +64,7 @@ class TestSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath + " -dip " + requestIP)
 
     def _checkArpRespond(self,inIntf):
-        logging.info("_checkArpRespond: wait for packet")
+        self.logger.info("_checkArpRespond: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()) +
             " and arp",iface=inIntf, prn=self.frame_callback,count=1,store=0)
 
@@ -82,7 +83,7 @@ class TestSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
-        logging.info("_checkEncapsulatedTraffic: wait for packet")
+        self.logger.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         sniff(filter=filterRE,
             iface=inIntf, prn=self.encap_callback,count=1,store=0)
@@ -106,7 +107,7 @@ class TestSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
-        logging.info("_checkDecapsulatedTraffic: wait for packet")
+        self.logger.info("_checkDecapsulatedTraffic: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback,count=1,store=0)
 

@@ -13,7 +13,6 @@ Usage of this unit test:
     python -m pytest ./sam/simulator/test/test_addDelSFCI.py -s --disable-warnings
 '''
 
-import logging
 from time import sleep
 
 import pytest
@@ -36,7 +35,6 @@ class TestAddSFCIClass(TestSimulatorBase):
                                             'testAddSFCIClass.log',
                                             level='debug')
         self.logger = logConfigur.getLogger()
-        self.logger.setLevel(logging.DEBUG)
 
         # setup
         self.sP = ShellProcessor()
@@ -81,7 +79,7 @@ class TestAddSFCIClass(TestSimulatorBase):
     def test_addOneSFCIWithVNFIOnAServer(self,
                                         setup_addOneSFCIWithVNFIOnAServer):
         for idx in [0,1,2]:
-            logging.info("test idx {0}".format(idx))
+            self.logger.info("test idx {0}".format(idx))
             # exercise
             self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfcList[idx])
             self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
@@ -115,6 +113,66 @@ class TestAddSFCIClass(TestSimulatorBase):
 
 
 
+    @pytest.fixture(scope="function")
+    def setup_addOneBiDirectionSFCIWithVNFIOnAServer(self):
+        self.common_setup()
+
+        # you can overwrite following function to test different sfc/sfci
+        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP,
+                            serverBasedClassifier=self.serverBasedClassifier)
+        for sfcLength in [1,2,3]:
+            sfc = self.genBiDirectionSFC(classifier, sfcLength=sfcLength)
+            self.sfcList.append(sfc)
+            sfci = self.genBiDirection10BackupServerNFVISFCI(
+                                sfcLength=sfcLength,
+                    serverBasedClassifier=self.serverBasedClassifier)
+            self.sfciList.append(sfci)
+
+        self.sP.runPythonScript(simulator.__file__)
+        sleep(1)
+        yield
+        self.sP.killPythonScript(simulator.__file__)
+        # teardown
+        self.clearQueue()
+        self.killAllModule()
+
+    # @pytest.mark.skip(reason='Skip temporarily')
+    def test_addOneBiDirectionSFCIWithVNFIOnAServer(self,
+                                setup_addOneBiDirectionSFCIWithVNFIOnAServer):
+        for idx in [0,1,2]:
+            self.logger.info("test idx {0}".format(idx))
+            # exercise
+            self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfcList[idx])
+            self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
+                                                    self.addSFCCmd)
+
+            # verify
+            self.verifyAddSFCCmdRply()
+
+            # exercise
+            self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfcList[idx],
+                                                        self.sfciList[idx])
+            self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,
+                                                    self.addSFCICmd)
+
+            # verify
+            self.verifyAddSFCICmdRply()
+
+    def verifyAddSFCCmdRply(self):
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.addSFCCmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == SIMULATOR_ZONE
+
+    def verifyAddSFCICmdRply(self):
+        cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
+        assert cmdRply.cmdID == self.addSFCICmd.cmdID
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
+        assert cmdRply.attributes['zone'] == SIMULATOR_ZONE
+
+
+
+
 
     @pytest.fixture(scope="function")
     def setup_addOneSFCIWithP4VNFIOnASwitch(self):
@@ -142,7 +200,7 @@ class TestAddSFCIClass(TestSimulatorBase):
     def test_addOneSFCIWithP4VNFIOnASwitch(self, 
                                         setup_addOneSFCIWithP4VNFIOnASwitch):
         for idx in [0,1,2]:
-            logging.info("test idx {0}".format(idx))
+            self.logger.info("test idx {0}".format(idx))
             # exercise
             self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfcList[idx])
             self.sendCmd(SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD,

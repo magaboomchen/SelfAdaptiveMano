@@ -10,6 +10,7 @@ from scapy.all import sniff
 from scapy.layers.inet import IP
 
 from sam import base
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
 from sam.base.vnf import VNFI, VNF_TYPE_LB, VNF_TYPE_MONITOR
@@ -18,6 +19,7 @@ from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.lb import LBTuple
 from sam.base.shellProcessor import ShellProcessor
+from sam.serverController.sffController.test.component.testConfig import TESTER_DATAPATH_INTF
 from sam.serverController.vnfController.test.SMPInVM.puffer.test_vnfControllerAddVPN import TESTER_DATAPATH_INTERFACE
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.testBase import TestBase, WEBSITE_REAL_IP, OUTTER_CLIENT_IP, \
@@ -33,12 +35,15 @@ SFF0_DATAPATH_MAC = "52:54:00:5a:14:f0"
 SFF0_CONTROLNIC_IP = "192.168.0.201"
 SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 
-logging.basicConfig(level=logging.INFO)
 
 class TestVNFAddMON(TestBase):
     @pytest.fixture(scope="function")
     def setup_addMON(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'testVNFAddMON.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
@@ -83,7 +88,7 @@ class TestVNFAddMON(TestBase):
         return vnfiSequence
 
     def addSFCI2SFF(self):
-        logging.info("setup add SFCI to sff")
+        self.logger.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
             MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
@@ -93,22 +98,22 @@ class TestVNFAddMON(TestBase):
 
     '''
     def addVNFI2Server(self):
-        logging.info("setup add SFCI to server")
+        self.logger.info("setup add SFCI to server")
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "t1@netlab325", "192.168.0.156",
                 self.sfci.vnfiSequence[0][0].vnfiID)
-            logging.info(
+            self.logger.info(
                 "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
                 shellCmdRply['stderr'].read().decode('utf-8')))
         except:
-            logging.info("If raise IOError: reading from stdin while output is captured")
-            logging.info("Then pytest should use -s option!")
+            self.logger.info("If raise IOError: reading from stdin while output is captured")
+            self.logger.info("Then pytest should use -s option!")
     '''
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFII")
+        self.logger.warning("Deleting VNFII")
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
@@ -118,7 +123,7 @@ class TestVNFAddMON(TestBase):
 
     def test_addMON(self, setup_addMON):
         # exercise
-        logging.info("exercise")
+        self.logger.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE,
             MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
@@ -140,7 +145,7 @@ class TestVNFAddMON(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
-        logging.info("_checkEncapsulatedTraffic: wait for packet")
+        self.logger.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         sniff(filter=filterRE,
             iface=inIntf, prn=self.encap_callback,count=1,store=0)
@@ -164,7 +169,7 @@ class TestVNFAddMON(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
-        logging.info("_checkDecapsulatedTraffic: wait for packet")
+        self.logger.info("_checkDecapsulatedTraffic: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback,count=1,store=0)
 

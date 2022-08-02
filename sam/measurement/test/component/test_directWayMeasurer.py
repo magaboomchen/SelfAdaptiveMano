@@ -19,13 +19,15 @@ from sam.test.fixtures.sffControllerStub import SFFControllerStub
 from sam.test.fixtures.simulatorStub import SimulatorStub
 from sam.test.testBase import TestBase
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestMeasurerClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_collectDCNInfo(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'testMeasurerClass.log', level='warning')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
 
         self.sS = SimulatorStub()
@@ -36,13 +38,13 @@ class TestMeasurerClass(TestBase):
         self.cleanLog()
         self.initZone()
         self.runMeasurer()
-        # logging.info("Please start measurer. " \
+        # self.logger.info("Please start measurer. " \
         #     "and then press any key to continue.")
         # screenInput("Type here: ")
 
         yield
         # teardown
-        logging.info("Teardown")
+        self.logger.info("Teardown")
         self.killAllModule()
 
     @pytest.mark.skip(reason='Temporarly')
@@ -50,14 +52,14 @@ class TestMeasurerClass(TestBase):
         # exercise
         self.sS.recvCmdFromMeasurer()
         # verify
-        logging.info("Please check measurer's log, " \
+        self.logger.info("Please check measurer's log, " \
             "and then press any key to continue.")
         screenInput("Type here: ")
         assert 1 == 1
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_requestHandler(self, setup_collectDCNInfo):
-        logging.info("test_requestHanler")
+        self.logger.info("test_requestHanler")
         # exercise
         self.sS.recvCmdFromMeasurer()
         self.sffS.recvCmdFromMeasurer()
@@ -72,8 +74,8 @@ class TestMeasurerClass(TestBase):
         oDCNIR = ODCNInfoRetriever(dib, self.logger)
         oDCNIR.getDCNInfo()
 
-        logging.info(dib)
-        logging.info("Please check dib output, " \
+        self.logger.info(dib)
+        self.logger.info("Please check dib output, " \
             "and then press any key to continue.")
         screenInput("Type here: ")
         assert 1 == 1

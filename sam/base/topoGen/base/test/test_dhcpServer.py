@@ -7,8 +7,6 @@ from sam.base.topoGen.base.dhcpServer import DHCPServer
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestDHCPServerClass(object):
     def setup_method(self, method):

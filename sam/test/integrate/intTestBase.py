@@ -18,28 +18,26 @@ from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
 from sam.base.test.fixtures.roceV1MorphicDict import roceV1MorphicDictTemplate
 from sam.base.sfc import APP_TYPE_BEST_EFFORT, APP_TYPE_HIGH_AVA, \
                         APP_TYPE_LARGE_BANDWIDTH, APP_TYPE_LARGE_CONNECTION, \
-                        APP_TYPE_LOW_LATENCY, SFC, SFCI
+                        APP_TYPE_LOW_LATENCY, SFC, SFC_DIRECTION_0, SFC_DIRECTION_1, SFCI
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.slo import SLO
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, VNF, VNF_TYPE_FW, \
         PREFERRED_DEVICE_TYPE_SERVER, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, \
         VNFI_RESOURCE_QUOTA_SMALL
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
-from sam.test.testBase import APP1_REAL_IPV6, APP2_REAL_IP, APP3_REAL_GID, \
+from sam.test.testBase import APP1_REAL_IP, APP1_REAL_IPV6, APP2_REAL_IP, APP3_REAL_GID, APP3_REAL_IP, APP4_REAL_IP, \
                                 APP4_REAL_IPV6, APP5_REAL_IP, TestBase
 
 
 class IntTestBaseClass(TestBase):
     MAXSFCIID = 0
     sfciCounter = 0
-    logging.getLogger("pika").setLevel(logging.WARNING)
 
     def common_setup(self):
         logConfigur = LoggerConfigurator(__name__, './log',
                                             'testBaseClass.log',
                                             level='debug')
         self.logger = logConfigur.getLogger()
-        self.logger.setLevel(logging.DEBUG)
 
         # setup
         self.sP = ShellProcessor()
@@ -51,7 +49,7 @@ class IntTestBaseClass(TestBase):
         time.sleep(3)
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             False)
-        logging.info("Please start dispatcher, mediator and simulator!"\
+        self.logger.info("Please start dispatcher, mediator and simulator!"\
                         " Then press Any key to continue!")
         screenInput()
 
@@ -77,30 +75,35 @@ class IntTestBaseClass(TestBase):
         routingMorphic = RoutingMorphic()
         routingMorphic.from_dict(srv6MorphicDictTemplate)
         direction0 = {
-            'ID': 0,
-            'source': {'node': None, 'IPv6':"*"},
+            'ID': SFC_DIRECTION_0,
+            'source': {'node': None, 'IPv4':"*", 'IPv6':"*"},
             'ingress': classifier,
             'match': {'srcIP': "*",'dstIP':APP1_REAL_IPV6,
                 'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
-            'destination': {'node': None, 'IPv6':APP1_REAL_IPV6}
+            'destination': {'node': None, 'IPv4':APP1_REAL_IP,
+                                          'IPv6':APP1_REAL_IPV6}
         }
         direction1 ={
-            'ID': 0,
-            'source': {'node': None, 'IPv6':"*"},
+            'ID': SFC_DIRECTION_1,
+            'source': {'node': None, 'IPv4':APP1_REAL_IP, 
+                                     'IPv6':APP1_REAL_IPV6},
             'ingress': classifier,
             'match': {'srcIP': APP1_REAL_IPV6,'dstIP':"*",
                 'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
-            'destination': {'node': None, 'IPv6':APP1_REAL_IPV6}
+            'destination': {'node': None, 'IPv4':"*",
+                                          'IPv6':"*"}
         }
         directions = [direction0, direction1]
+        # directions = [direction0]
         slo = SLO(throughput=10, latency=100, availability=0.999, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions,
-            {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
+                    backupInstanceNumber, applicationType, directions,
+                    {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
+                    vnfSequence=vnfSequence,
+                    vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genHighAvaSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
@@ -114,7 +117,7 @@ class IntTestBaseClass(TestBase):
         routingMorphic = RoutingMorphic()
         routingMorphic.from_dict(ipv4MorphicDictTemplate)
         direction0 = {
-            'ID': 0,
+            'ID': SFC_DIRECTION_0,
             'source': {'node': None, 'IPv4':"*"},
             'ingress': classifier,
             'match': {'srcIP': "*",'dstIP':APP2_REAL_IP,
@@ -126,9 +129,12 @@ class IntTestBaseClass(TestBase):
         slo = SLO(throughput=1, latency=100, availability=0.9995, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions,
-            {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
+                    backupInstanceNumber, applicationType, 
+                    directions = directions,
+                    attributes={'zone': zone}, slo=slo,
+                    routingMorphic=routingMorphic,
+                    vnfSequence=vnfSequence, 
+                    vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genLowLatencySFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
@@ -141,21 +147,22 @@ class IntTestBaseClass(TestBase):
         routingMorphic = RoutingMorphic()
         routingMorphic.from_dict(roceV1MorphicDictTemplate)
         direction0 = {
-            'ID': 0,
-            'source': {'node': None, 'RoceV1':"*"},
+            'ID': SFC_DIRECTION_0,
+            'source': {'node': None, 'IPv4':"*", 'RoceV1':"*"},
             'ingress': classifier,
             'match': {'srcIP': "*",'dstIP':APP3_REAL_GID,
                 'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
-            'destination': {'node': None, 'RoceV1':APP3_REAL_GID}
+            'destination': {'node': None, 'IPv4':APP3_REAL_IP, 'RoceV1':APP3_REAL_GID}
         }
         directions = [direction0]
         slo = SLO(throughput=1, latency=10, availability=0.999, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions,
-            {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
+                    backupInstanceNumber, applicationType, directions,
+                    {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
+                    vnfSequence=vnfSequence, 
+                    vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genLargeConnectionSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
@@ -171,21 +178,23 @@ class IntTestBaseClass(TestBase):
         routingMorphic = RoutingMorphic()
         routingMorphic.from_dict(ipv6MorphicDictTemplate)
         direction0 = {
-            'ID': 0,
-            'source': {'node': None, 'IPv6':"*"},
+            'ID': SFC_DIRECTION_0,
+            'source': {'node': None, 'IPv4':"*", 'IPv6':"*"},
             'ingress': classifier,
             'match': {'srcIP': "*",'dstIP':APP4_REAL_IPV6,
                 'srcPort': "*",'dstPort': "*",'proto': "*"},
             'egress': classifier,
-            'destination': {'node': None, 'IPv6':APP4_REAL_IPV6}
+            'destination': {'node': None, 'IPv4':APP4_REAL_IP,
+                                          'IPv6':APP4_REAL_IPV6}
         }
         directions = [direction0]
         slo = SLO(throughput=1, latency=100, availability=0.999, \
                     connections=10000)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions,
-            {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
+                    backupInstanceNumber, applicationType, directions,
+                    {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
+                    vnfSequence=vnfSequence, 
+                    vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genBestEffortSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
@@ -199,7 +208,7 @@ class IntTestBaseClass(TestBase):
         routingMorphic = RoutingMorphic()
         routingMorphic.from_dict(ipv4MorphicDictTemplate)
         direction0 = {
-            'ID': 0,
+            'ID': SFC_DIRECTION_0,
             'source': {'node': None, 'IPv4':"*"},
             'ingress': classifier,
             'match': {'srcIP': "*",'dstIP':APP5_REAL_IP,
@@ -211,9 +220,10 @@ class IntTestBaseClass(TestBase):
         slo = SLO(throughput=0.1, latency=200, availability=0.99, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions,
-            {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
+                    backupInstanceNumber, applicationType, directions,
+                    {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
+                    vnfSequence=vnfSequence, 
+                    vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genSFCITemplate(self):
         vnfiSequence = None

@@ -9,7 +9,6 @@ from sam.orchestration.algorithms.base.mappingAlgorithmBase import MappingAlgori
 from sam.test.testBase import TestBase
 
 MANUAL_TEST = True
-logging.basicConfig(level=logging.INFO)
 
 
 class TestMappingAlgorithmBaseClass(TestBase):

@@ -10,6 +10,7 @@ import uuid
 import logging
 
 import pytest
+from sam.base.loggerConfigurator import LoggerConfigurator
 
 from sam.base.sfc import SFCI
 from sam.base.compatibility import screenInput
@@ -23,13 +24,16 @@ from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.fixtures.vnfControllerStub import VNFControllerStub
 from sam.test.FRR.testFRR import TestFRR
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestNotViaAndReMappingClass(TestFRR):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__, './log',
+                                            'testNotViaAndReMappingClass.log',
+                                            level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
         self.clearQueue()
 
@@ -108,7 +112,7 @@ class TestNotViaAndReMappingClass(TestFRR):
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_addUniSFCI(self, setup_addUniSFCI):
-        logging.info("You need start ryu-manager and mininet manually!"
+        self.logger.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
         screenInput()
         # exercise: mapping SFCI
@@ -118,25 +122,25 @@ class TestNotViaAndReMappingClass(TestFRR):
             self.addSFCICmd)
 
         # verify
-        logging.info("Start listening on mediator queue")
+        self.logger.info("Start listening on mediator queue")
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
         # exercise: remapping SFCI
-        logging.info("Start listening on MININET_TESTER_QUEUE"
+        self.logger.info("Start listening on MININET_TESTER_QUEUE"
             "Please run mode 1 in mininet test2.py")
         cmd = self.recvCmd(MININET_TESTER_QUEUE)
         if cmd.cmdType == CMD_TYPE_TESTER_REMAP_SFCI:
             # exercise
-            logging.info("Start remapping the sfci")
+            self.logger.info("Start remapping the sfci")
             self.delSFCICmd.cmdID = uuid.uuid1()
             self.sendCmd(NETWORK_CONTROLLER_QUEUE,
                 MSG_TYPE_NETWORK_CONTROLLER_CMD,
                 self.delSFCICmd)
 
             # verify
-            logging.info("Start listening on mediator queue")
+            self.logger.info("Start listening on mediator queue")
             cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
             assert cmdRply.cmdID == self.delSFCICmd.cmdID
             assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
@@ -148,12 +152,12 @@ class TestNotViaAndReMappingClass(TestFRR):
                 self.reAddSFCICmd)
 
             # verify
-            logging.info("Start listening on mediator queue")
+            self.logger.info("Start listening on mediator queue")
             cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
             assert cmdRply.cmdID == self.reAddSFCICmd.cmdID
             assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
         else:
-            logging.info("cmdType:{0}".format(cmd.cmdType))
+            self.logger.info("cmdType:{0}".format(cmd.cmdType))
 
-        logging.info("Press any key to quit!")
+        self.logger.info("Press any key to quit!")
         screenInput()

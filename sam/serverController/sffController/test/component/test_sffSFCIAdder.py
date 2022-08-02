@@ -39,8 +39,6 @@ from sam.serverController.sffController.test.component.fixtures.sendDirection1Tr
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestSFFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
@@ -83,7 +81,7 @@ class TestSFFSFCIAdderClass(TestBase):
         # verify
         self.verifyCmdRply()
         time.sleep(2)
-        logging.info("Press Any key to test data path!")
+        self.logger.info("Press Any key to test data path!")
         screenInput()
         self.verifyArpResponder()
 
@@ -92,14 +90,14 @@ class TestSFFSFCIAdderClass(TestBase):
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF(BESS_SERVER_USER, BESS_SERVER_USER_PASSWORD, 
                 SFF1_CONTROLNIC_IP, self.sfci.vnfiSequence[0][0].vnfiID, PRIVATE_KEY_FILE_PATH)
-            logging.info(
+            self.logger.info(
                 "Error command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
                 shellCmdRply['stderr'].read().decode('utf-8')))
         except Exception as ex:
-            logging.info("If raise IOError: reading from stdin while output is captured")
-            logging.info("Then pytest should use -s option!")
+            self.logger.info("If raise IOError: reading from stdin while output is captured")
+            self.logger.info("Then pytest should use -s option!")
             ExceptionProcessor(self.logger).logException(ex)
 
         # verify again
@@ -121,10 +119,10 @@ class TestSFFSFCIAdderClass(TestBase):
             + " -smac " + srcMAC)
 
     def _checkArpRespond(self,inIntf):
-        logging.info("_checkArpRespond: wait for packet")
+        self.logger.info("_checkArpRespond: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()) +
             " and arp",iface=inIntf, prn=self.frame_callback,count=1,store=0)
-        logging.info("Check arp response successfully!")
+        self.logger.info("Check arp response successfully!")
 
     def frame_callback(self,frame):
         frame.show()
@@ -147,7 +145,7 @@ class TestSFFSFCIAdderClass(TestBase):
         sendDirection0Traffic()
 
     def _checkEncapsulatedTraffic(self,inIntf):
-        logging.info("_checkEncapsulatedTraffic: wait for packet")
+        self.logger.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         aSniffer = AsyncSniffer(filter=filterRE,
             iface=inIntf, prn=self.encap_callback,count=1,store=0)
@@ -157,7 +155,7 @@ class TestSFFSFCIAdderClass(TestBase):
         return aSniffer
 
     def encap_callback(self,frame):
-        logging.info("Get encap back packet!")
+        self.logger.info("Get encap back packet!")
         frame.show()
         if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
             condition = (frame[IP].src == SFF1_DATAPATH_IP \
@@ -192,14 +190,14 @@ class TestSFFSFCIAdderClass(TestBase):
         sendDirection1Traffic()
 
     def _checkDecapsulatedTraffic(self,inIntf):
-        logging.info("_checkDecapsulatedTraffic: wait for packet")
+        self.logger.info("_checkDecapsulatedTraffic: wait for packet")
         aSniffer = AsyncSniffer(filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback,count=1,store=0)
         aSniffer.start()
         return aSniffer
 
     def decap_callback(self,frame):
-        logging.info("Get decap back packet!")
+        self.logger.info("Get decap back packet!")
         frame.show()
         if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
             condition = (frame[IP].src == SFF1_DATAPATH_IP and \
@@ -220,4 +218,4 @@ class TestSFFSFCIAdderClass(TestBase):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-        logging.info("Verify cmy rply successfully!")
+        self.logger.info("Verify cmy rply successfully!")

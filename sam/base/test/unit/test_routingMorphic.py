@@ -12,8 +12,6 @@ from sam.base.test.fixtures.geoMorphicDict import geoMorphicDictTemplate
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestRoutingMorphicClass(TestBase):
     def setup_method(self, method):

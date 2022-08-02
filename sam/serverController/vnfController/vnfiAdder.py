@@ -97,7 +97,6 @@ class VNFIAdder(object):
             ports = {'%d/tcp' % vcConfig.CLICK_CONTROLL_SOCKET_PORT: None}
             container = dockerClient.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
                 volumes=volumes, detach=True, ports=ports)
-            # logging.info(container.logs())
             self.logger.info("container's logs: {0}".format(container.logs()))
         except Exception as e:
             # free allocated CPU and virtioID
@@ -184,7 +183,7 @@ class VNFIAdder(object):
                 else:
                     raise ValueError("Unknown chain type {0}".format(DEFAULT_CHAIN_TYPE))
                 command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
-                #logging.info(command)
+                self.logger.info(command)
                 volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
                 #ulimit = docker.types.Ulimit(name='stack', soft=268435456, hard=268435456)
             else:
@@ -397,7 +396,7 @@ class VNFIAdder(object):
             command = 'sed -i \"1i\\%s\" %s' % (declLine, vcConfig.NAT_APP_CLICK)
             command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.NAT_APP_CLICK)
             command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
-            #logging.info(command)
+            self.logger.info(command)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
             ports = {'%d/tcp' % vcConfig.CLICK_CONTROLL_SOCKET_PORT: None}
             container = dockerClient.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
@@ -454,7 +453,7 @@ class VNFIAdder(object):
             ports = {'%d/tcp' % vcConfig.CLICK_CONTROLL_SOCKET_PORT: None}
             container = dockerClient.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
                 volumes=volumes, detach=True, ports=ports)
-            #logging.info(container.logs())
+            self.logger.info(container.logs())
         except Exception as e:
             # free allocated CPU and virtioID
             cpuAllo.freeCPU(cpus)

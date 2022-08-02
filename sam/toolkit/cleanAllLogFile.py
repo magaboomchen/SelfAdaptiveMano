@@ -45,7 +45,7 @@ def cleanAllLogFile():
     for filePath in fileList:
         try:
             directoryPath = getFileDirectory(filePath)
-            logging.info("clean logs:" + directoryPath + "/log/")
+            logger.info("clean logs:" + directoryPath + "/log/")
             logDirectory = "{0}/log/".format(directoryPath)
             delDirectory(logDirectory)
         except Exception as ex:
@@ -53,7 +53,7 @@ def cleanAllLogFile():
 
     try:
         directoryPath = getFileDirectory(orchestrator.__file__)
-        logging.info("clean logs:" + directoryPath + "/test/integrate/log")
+        logger.info("clean logs:" + directoryPath + "/test/integrate/log")
         logDirectory = "{0}/test/integrate/log".format(directoryPath)
         delDirectory(logDirectory)
     except Exception as ex:

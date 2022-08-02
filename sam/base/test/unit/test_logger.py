@@ -10,8 +10,6 @@ from sam.base.messageAgent import MessageAgent, SAMMessage
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.DEBUG)
-
 
 class TestLoggerClass(TestBase):
     def setup_method(self, method):

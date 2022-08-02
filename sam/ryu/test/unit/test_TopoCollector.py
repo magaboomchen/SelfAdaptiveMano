@@ -3,8 +3,6 @@
 
 import logging
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestTopoCollectorClass(object):
     @classmethod

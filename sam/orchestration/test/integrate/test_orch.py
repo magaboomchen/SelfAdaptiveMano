@@ -13,8 +13,6 @@ from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.testBase import TestBase
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestOrchestratorClass(TestBase):
     @pytest.fixture(scope="function")

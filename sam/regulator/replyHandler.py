@@ -12,7 +12,7 @@ from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI, \
 from sam.base.sfc import AUTO_SCALE, REGULATOR_SFCIID_ALLOCATED_RANGE, STATE_ACTIVE, STATE_DELETED, \
                     STATE_SCALING_IN_MODE, SFC, SFCI, STATE_SCALING_OUT_MODE
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.base.vnf import VNFIStatus
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, PREFERRED_DEVICE_TYPE_SERVER, VNFIStatus
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 from sam.regulator.config import ENABLE_SCALING, MAX_OVER_LOAD_NUM_THRESHOLD, \
                                     MAX_UNDER_LOAD_NUM_THRESHOLD
@@ -145,13 +145,16 @@ class ReplyHandler(object):
         vNFTypeSequence = sfc.vNFTypeSequence
         maxExpCPU = 0
         maxExpMem = 0
-        maxExpBW = 0
-        for vnfType in vNFTypeSequence:
-            (expCPU, expMem, expBW) = self.pM.getExpectedServerResource(
-                                        vnfType, sumSFCITrafficBandwidth)
-            maxExpCPU = max(maxExpCPU, expCPU)
-            maxExpMem = max(maxExpMem, expMem)
-            maxExpBW = max(maxExpBW, expBW)
+        for idx,vnfType in enumerate(vNFTypeSequence):
+            pDT = sfc.vnfSequence[idx].preferredDeviceType
+            if pDT == PREFERRED_DEVICE_TYPE_P4:
+                maxExpCPU = 0
+                maxExpMem = 0
+            elif pDT == PREFERRED_DEVICE_TYPE_SERVER:
+                (expCPU, expMem, expBW) = self.pM.getExpectedServerResource(
+                                            vnfType, sumSFCITrafficBandwidth)
+                maxExpCPU = max(maxExpCPU, expCPU)
+                maxExpMem = max(maxExpMem, expMem)
         vnfiResourceQuota = sfc.vnfiResourceQuota
         quotaCPU = vnfiResourceQuota["cpu"]
         quotaMem = vnfiResourceQuota["mem"]

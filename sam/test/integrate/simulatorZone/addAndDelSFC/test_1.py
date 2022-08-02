@@ -7,11 +7,10 @@ The work flow:
     * generate 1 addSFC and 1 addSFCI command to dispatcher
 
 Usage of this unit test:
-    sudo python -m pytest ./test_1.py -s --disable-warnings
+    python -m pytest ./test_1.py -s --disable-warnings
 '''
 
 import uuid
-import logging
 
 import pytest
 
@@ -48,13 +47,13 @@ class TestAddSFCClass(IntTestBaseClass):
             })
         self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        logging.info("Please check orchestrator if recv a command reply?"\
+        self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()
 
         # exercise
         sfcInDB = self.getSFCFromDB(self.sfc.sfcUUID)
-        logging.info("sfcInDB is {0}".format(sfcInDB))
+        self.logger.info("sfcInDB is {0}".format(sfcInDB))
         rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
             attributes={
                 "sfc": sfcInDB,
@@ -63,7 +62,7 @@ class TestAddSFCClass(IntTestBaseClass):
             })
         self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        logging.info("Please check orchestrator if recv a command reply?"\
+        self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()
 
@@ -76,7 +75,7 @@ class TestAddSFCClass(IntTestBaseClass):
             })
         self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        logging.info("Please check orchestrator if recv a command reply?"\
+        self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()
 
@@ -88,6 +87,6 @@ class TestAddSFCClass(IntTestBaseClass):
             })
         self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        logging.info("Please check orchestrator if recv a command reply?"\
+        self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()

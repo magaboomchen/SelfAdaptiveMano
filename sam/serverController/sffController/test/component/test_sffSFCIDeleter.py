@@ -22,8 +22,6 @@ from sam.serverController.sffController.test.component.testConfig import TESTER_
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestSFFSFCIDeleterClass(TestBase):
     @pytest.fixture(scope="function")
@@ -66,7 +64,7 @@ class TestSFFSFCIDeleterClass(TestBase):
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_delSFCI(self, setup_delSFCI):
         # exercise
-        logging.info("Press Any key to test data path!")
+        self.logger.info("Press Any key to test data path!")
         screenInput()
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(self.queueName,

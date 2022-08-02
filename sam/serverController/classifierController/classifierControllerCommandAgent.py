@@ -26,7 +26,6 @@ class ClassifierControllerCommandAgent(object):
             'classifierController.log', level='debug')
         self.logger = logConfigur.getLogger()
         self.logger.info("Initialize classifier controller command agent.")
-        self.logger.setLevel(logging.DEBUG)
         self._commandsInfo = {}
 
         self.cibms = CIBMS()

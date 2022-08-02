@@ -8,7 +8,7 @@ The work flow:
     * generate 1 server failure using simulator, check whether regulator enable failover of the corresponding SFCI
 
 Usage of this unit test:
-    sudo python -m pytest ./test_3.py -s --disable-warnings
+    python -m pytest ./test_3.py -s --disable-warnings
 '''
 
 import uuid
@@ -70,7 +70,7 @@ class TestAddSFCClass(IntTestBaseClass):
                 })
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        logging.info("Please check orchestrator if recv a command reply?"\
+        self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()
 
@@ -83,15 +83,15 @@ class TestAddSFCClass(IntTestBaseClass):
                     "sfci": sfci,
                     "zone": SIMULATOR_ZONE
                 })
-            logging.info("sfc is {0}".format(sfc))
+            self.logger.info("sfc is {0}".format(sfc))
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        logging.info("Please check orchestrator if recv a command reply?"\
+        self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()
 
         # exercise
-        logging.info("Please input abnormal serverID!")
+        self.logger.info("Please input abnormal serverID!")
         abnServerID = int(screenInput())
         cmd = self.genAbnormalServerHandleCommand(abnServerID)
         self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
@@ -106,7 +106,7 @@ class TestAddSFCClass(IntTestBaseClass):
                 })
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        logging.info("Please check orchestrator if recv a command reply?"\
+        self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()
 
@@ -119,7 +119,7 @@ class TestAddSFCClass(IntTestBaseClass):
                 })
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        logging.info("Please check orchestrator if recv a command reply?"\
+        self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()
 

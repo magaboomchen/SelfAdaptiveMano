@@ -8,6 +8,7 @@ import logging
 import pytest
 
 from sam.base.compatibility import screenInput
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.messageAgent import MessageAgent, NETWORK_CONTROLLER_QUEUE, \
@@ -17,14 +18,16 @@ from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.fixtures.vnfControllerStub import VNFControllerStub
 from sam.test.FRR.testFRR import TestFRR
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("pika").setLevel(logging.WARNING)
-
 
 class TestUFRRClass(TestFRR):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__, './log',
+                                            'testUFRRClass.log',
+                                            level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
@@ -62,21 +65,21 @@ class TestUFRRClass(TestFRR):
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_UFRRAddUniSFCI(self, setup_addUniSFCI):
-        logging.info("You need start ryu-manager and mininet manually!"
+        self.logger.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
         screenInput()
 
         self._deploySFC()
         self._deploySFCI()
 
-        logging.info("Please input any key to test "
+        self.logger.info("Please input any key to test "
             "server software failure\n"
             "After the test, "
             "Press any key to quit!")
         screenInput()
         self.sendHandleServerSoftwareFailureCmd()
 
-        logging.info("Please input mode 0 into mininet\n"
+        self.logger.info("Please input mode 0 into mininet\n"
             "After the test, "
             "Press any key to quit!")
         screenInput()
@@ -89,7 +92,7 @@ class TestUFRRClass(TestFRR):
             self.addSFCCmd)
 
         # verify
-        logging.info("Start listening on mediator queue")
+        self.logger.info("Start listening on mediator queue")
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCCmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
@@ -102,12 +105,12 @@ class TestUFRRClass(TestFRR):
             self.addSFCICmd)
 
         # verify
-        logging.info("Start listening on mediator queue")
+        self.logger.info("Start listening on mediator queue")
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-        logging.info("Please input mode 0 into mininet\n"
+        self.logger.info("Please input mode 0 into mininet\n"
             "After the test, "
             "Press any key to quit!")
         screenInput()

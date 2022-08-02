@@ -12,6 +12,7 @@ import uuid
 import logging
 
 import pytest
+from sam.base.loggerConfigurator import LoggerConfigurator
 
 from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
@@ -39,14 +40,15 @@ NAT_PIP = "8.0.8.8"
 NAT_MIN_PORT = 2048
 NAT_MAX_PORT = 65530
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("pika").setLevel(logging.WARNING)
-
 
 class TestVNFAddNAT(TestBase):
     @pytest.fixture(scope="function")
     def setup_addNAT(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'testVNFAddNAT.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
@@ -90,7 +92,7 @@ class TestVNFAddNAT(TestBase):
         return vnfiSequence
 
     def addSFCI2SFF(self):
-        logging.info("setup add SFCI to sff")
+        self.logger.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
             MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
@@ -99,7 +101,7 @@ class TestVNFAddNAT(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
+        self.logger.warning("Deleting VNFI")
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
@@ -108,14 +110,14 @@ class TestVNFAddNAT(TestBase):
 
     def test_addNAT(self, setup_addNAT):
         # exercise
-        logging.info("exercise")
+        self.logger.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE,
             MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
 
         # verifiy
         self.verifyCmdRply()
-        logging.info("please start performance profiling" \
+        self.logger.info("please start performance profiling" \
             "after profiling, press any key to quit.")
         screenInput()
 

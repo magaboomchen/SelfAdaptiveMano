@@ -6,6 +6,7 @@ import random
 import logging
 
 import pytest
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL
 
 from sam.base.vnf import VNFI, VNF_TYPE_FW
@@ -32,14 +33,15 @@ SFF0_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
 # fast click doesn't support NUMA architecture!
 MAX_SFCI = 5
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("pika").setLevel(logging.WARNING)
-
 
 class TestVNFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addSFCI(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'testVNFSFCIAdder.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
@@ -75,12 +77,12 @@ class TestVNFSFCIAdderClass(TestBase):
         for sfciIndex in range(MAX_SFCI):
             sfci = self.sfciList[sfciIndex]
             addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, sfci)
-            logging.info("sfci id: {0}".format(sfci.sfciID))
+            self.logger.info("sfci id: {0}".format(sfci.sfciID))
             self.addSFCICmdList.append(addSFCICmd)
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
-        logging.info("use override function")
+        self.logger.info("use override function")
         vnfiSequence = []
         for index in range(SFCLength):
             vnfiSequence.append([])
@@ -113,17 +115,17 @@ class TestVNFSFCIAdderClass(TestBase):
 
     def test_addSFCI(self, setup_addSFCI):
         # exercise
-        logging.info("exercise")
+        self.logger.info("exercise")
         self.addSFCI2SFF()
         self.addVNFI2Server()
 
         # verifiy
-        logging.info("please start performance profiling" \
+        self.logger.info("please start performance profiling" \
             "after profiling, press any key to quit.")
         screenInput()
 
     def addSFCI2SFF(self):
-        logging.info("setup add SFCI to sff")
+        self.logger.info("setup add SFCI to sff")
         for sfciIndex in range(MAX_SFCI):
             addSFCICmd = self.addSFCICmdList[sfciIndex]
             addSFCICmd.cmdID = uuid.uuid1()
@@ -144,7 +146,7 @@ class TestVNFSFCIAdderClass(TestBase):
             assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
+        self.logger.warning("Deleting VNFI")
         for sfciIndex in range(MAX_SFCI):
             sfci = self.sfciList[sfciIndex]
             delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, sfci)

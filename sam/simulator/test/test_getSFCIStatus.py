@@ -47,7 +47,6 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
                                         'testGetSFCIStatusClass.log',
                                         level='debug')
         self.logger = logConfigur.getLogger()
-        self.logger.setLevel(logging.DEBUG)
 
         # setup
         self.sP = ShellProcessor()
@@ -100,7 +99,7 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
             self.sfciList.append(sfci)
 
         for idx in [0,1,2]:
-            logging.info("test idx {0}".format(idx))
+            self.logger.info("test idx {0}".format(idx))
             # exercise
             self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfcList[idx],
                                                         self.sfciList[idx])

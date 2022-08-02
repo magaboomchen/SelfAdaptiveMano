@@ -53,8 +53,6 @@ from sam.serverController.vnfController.test.fixtures.sendDirection1Traffic impo
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestVNFAddMON(TestBase):
     @pytest.fixture(scope="function")
@@ -113,14 +111,14 @@ class TestVNFAddMON(TestBase):
         return vnfiSequence
 
     def addSFCI2SFF(self):
-        logging.info("setup add SFCI to sff")
+        self.logger.info("setup add SFCI to sff")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, TURBONET_ZONE)
         self.sendCmd(queueName, MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
         self.verifyCmdRply(MEDIATOR_QUEUE, self.addSFCICmd.cmdID)
 
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFII")
+        self.logger.warning("Deleting VNFII")
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, TURBONET_ZONE)
         self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
@@ -128,7 +126,7 @@ class TestVNFAddMON(TestBase):
 
     def test_addMON(self, setup_addMON):
         # exercise
-        logging.info("exercise")
+        self.logger.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, TURBONET_ZONE)
         self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD, self.addSFCICmd)
@@ -138,11 +136,11 @@ class TestVNFAddMON(TestBase):
         self.verifyDirection0Traffic()
         self.verifyDirection1Traffic()
 
-        # logging.info("please input any key to continue!")
+        # self.logger.info("please input any key to continue!")
         # screenInput()
 
         # exercise
-        logging.info("exercise")
+        self.logger.info("exercise")
         self.sP.runPythonScript(os.path.abspath(sendDirection0Traffic.__file__), cmdSuffix="")
         self.sP.runPythonScript(os.path.abspath(sendDirection1Traffic.__file__), cmdSuffix="")
         self.logger.info("Sending pkts")
@@ -163,7 +161,7 @@ class TestVNFAddMON(TestBase):
                 break
 
     def _checkEncapsulatedTraffic(self,inIntf):
-        logging.info("_checkEncapsulatedTraffic: wait for packet")
+        self.logger.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         # sniff(filter=filterRE,
         #     iface=inIntf, prn=self.encap_callback,count=1,store=0)
@@ -173,7 +171,7 @@ class TestVNFAddMON(TestBase):
         return aSniffer
 
     def encap_callback(self,frame):
-        logging.info("Get encap back packet!")
+        self.logger.info("Get encap back packet!")
         frame.show()
         if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
             condition = (frame[IP].src == SFF1_DATAPATH_IP \
@@ -213,7 +211,7 @@ class TestVNFAddMON(TestBase):
                 break
 
     def _checkDecapsulatedTraffic(self,inIntf):
-        logging.info("_checkDecapsulatedTraffic: wait for packet")
+        self.logger.info("_checkDecapsulatedTraffic: wait for packet")
         # sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
         #     iface=inIntf, prn=self.decap_callback,count=1,store=0)
         aSniffer = AsyncSniffer(filter="ether dst " + str(self.server.getDatapathNICMac()),
@@ -222,7 +220,7 @@ class TestVNFAddMON(TestBase):
         return aSniffer
 
     def decap_callback(self,frame):
-        logging.info("Get decap back packet!")
+        self.logger.info("Get decap back packet!")
         frame.show()
         if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
             condition = (frame[IP].src == SFF1_DATAPATH_IP and \
@@ -257,7 +255,7 @@ class TestVNFAddMON(TestBase):
         assert cmdRply.cmdID == cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
         assert cmdRply.attributes['zone'] == TURBONET_ZONE
-        logging.info("Verify cmy rply successfully!")
+        self.logger.info("Verify cmy rply successfully!")
 
     def verifyGetSFCIStateCmdRply(self, queueName, cmdID):
         cmdRply = self.recvCmdRply(queueName)
@@ -294,4 +292,4 @@ class TestVNFAddMON(TestBase):
                         else:
                             raise ValueError("Unknown vnf type {0}".format(vnfType))
 
-        logging.info("Verify cmy rply successfully!")
+        self.logger.info("Verify cmy rply successfully!")

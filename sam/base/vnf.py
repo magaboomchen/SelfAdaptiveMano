@@ -51,7 +51,8 @@ PREFERRED_DEVICE_TYPE_SERVER = "DEVICE_TYPE_SERVER"
 
 VNFI_RESOURCE_QUOTA_SMALL = {
     "cpu": 1,
-    "mem": 1    # 1 GiB hugepage
+    "mem": 1,    # 1 GiB hugepage
+    "fwRules": 100
 }
 
 

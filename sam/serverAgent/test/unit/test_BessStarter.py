@@ -7,8 +7,6 @@ import subprocess
 
 from sam.serverAgent.bessStarter import BessStarter
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestBessStarterClass(object):
     @classmethod

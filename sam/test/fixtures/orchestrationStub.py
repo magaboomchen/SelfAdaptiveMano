@@ -2,8 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
 
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import TURBONET_ZONE, MessageAgent, ORCHESTRATOR_QUEUE
 from sam.base.command import Command, CMD_TYPE_GET_SERVER_SET,\
     CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_GET_TOPOLOGY, \
@@ -12,6 +12,10 @@ from sam.base.command import Command, CMD_TYPE_GET_SERVER_SET,\
 
 class OrchestrationStub(object):
     def __init__(self):
+        logConfigur = LoggerConfigurator(__name__, './log',
+                                            'orchestratorStub.log',
+                                            level='debug')
+        self.logger = logConfigur.getLogger()
         self.mA = MessageAgent()
 
     def genCMDAddSFCI(self,sfc,sfci,source=None,zone=TURBONET_ZONE):
@@ -55,7 +59,7 @@ class OrchestrationStub(object):
             else:
                 body = msg.getbody()
                 if self.mA.isCommandReply(body):
-                    logging.info("OrchestrationStub: recvCmdRply")
+                    self.logger.info("OrchestrationStub: recvCmdRply")
                     return body
                 else:
-                    logging.error("Unknown massage body")
+                    self.logger.error("Unknown massage body")

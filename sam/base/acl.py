@@ -148,6 +148,12 @@ class ACLTable(object):
         else:
             raise ValueError("Unknown route protocol {0}".format(routeProtocol))
 
+    def getIPv4RulesNum(self):
+        return len(self.ipv4RulesList)
+    
+    def get128BitsRulesNum(self):
+        return len(self.ipv6RulesList) + len(self.srv6RulesList) + len(self.rocev1RulesList)
+
     def getRulesList(self, routeProtocol):
         # type: (Union[IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL]) -> list(ACLTuple)
         if routeProtocol == IPV4_ROUTE_PROTOCOL:

@@ -9,6 +9,7 @@ from scapy.all import sniff
 from scapy.layers.inet import IP
 
 from sam import base
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
 from sam.base.vnf import VNFI, VNF_TYPE_FORWARD
@@ -30,13 +31,15 @@ SFF0_DATAPATH_MAC = "52:54:00:5a:14:f0"
 SFF0_CONTROLNIC_IP = "192.168.0.201"
 SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestVNFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addSFCI(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'testVNFSFCIAdder.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
@@ -85,7 +88,7 @@ class TestVNFSFCIAdderClass(TestBase):
 
     def test_addSFCIReassignVNFI(self, setup_addSFCI):
         # exercise
-        logging.info("exercise")
+        self.logger.info("exercise")
         self.addSFCI1()
         self.addSFCI2()
 
@@ -119,7 +122,7 @@ class TestVNFSFCIAdderClass(TestBase):
 
     def verifyCmd2Rply(self):
         # verify cmd2
-        logging.info("verify cmd2")
+        self.logger.info("verify cmd2")
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCI2Cmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
@@ -133,7 +136,7 @@ class TestVNFSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
-        logging.info("_checkEncapsulatedTraffic: wait for packet")
+        self.logger.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         sniff(filter=filterRE,
             iface=inIntf, prn=self.encap_callback,count=1,store=0)
@@ -157,7 +160,7 @@ class TestVNFSFCIAdderClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self,inIntf):
-        logging.info("_checkDecapsulatedTraffic: wait for packet")
+        self.logger.info("_checkDecapsulatedTraffic: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback,count=1,store=0)
 
@@ -172,7 +175,7 @@ class TestVNFSFCIAdderClass(TestBase):
         assert innerPkt[IP].src == WEBSITE_REAL_IP
 
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFII")
+        self.logger.warning("Deleting VNFII")
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc1, self.sfci1)
         self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)

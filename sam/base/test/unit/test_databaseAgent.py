@@ -9,7 +9,6 @@ from sam.base.databaseAgent import DatabaseAgent
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 MANUAL_TEST = True
-logging.basicConfig(level=logging.DEBUG)
 
 
 class TestDatabaseAgentClass(object):

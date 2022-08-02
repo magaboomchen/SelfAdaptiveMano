@@ -1,11 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
 from sam.serverAgent.systemChecker import SystemChecker
-
-logging.basicConfig(level=logging.INFO)
 
 
 class TestSystemCheckerClass(object):

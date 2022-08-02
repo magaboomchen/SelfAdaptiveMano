@@ -8,6 +8,7 @@ import logging
 import pytest
 
 from sam import base
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
 from sam.base.vnf import VNFI, VNF_TYPE_FORWARD
@@ -26,13 +27,17 @@ SFF0_DATAPATH_IP = "2.2.0.200"
 SFF0_DATAPATH_MAC = "52:54:00:5a:14:f0"
 SFF0_CONTROLNIC_IP = "192.168.0.201"
 SFF0_CONTROLNIC_MAC = "52:54:00:1f:51:12"
-logging.basicConfig(level=logging.INFO)
 
 
 class TestVNFSFCIDeleterClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_delSFCI(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'testVNFSFCIDeleterClass.log',
+            level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
@@ -70,7 +75,7 @@ class TestVNFSFCIDeleterClass(TestBase):
         return vnfiSequence
 
     def addSFCI2SFF(self):
-        logging.info("setup add SFCI to sff")
+        self.logger.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
             MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
@@ -80,7 +85,7 @@ class TestVNFSFCIDeleterClass(TestBase):
 
     def test_delSFCI(self, setup_delSFCI):
         # exercise
-        logging.info("exercise")
+        self.logger.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE,
             MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
@@ -88,11 +93,11 @@ class TestVNFSFCIDeleterClass(TestBase):
         assert addCmdRply.cmdID == self.addSFCICmd.cmdID
         assert addCmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-        logging.info("Finish adding sfci.")
-        logging.info("Wait for deleting sfci.")
+        self.logger.info("Finish adding sfci.")
+        self.logger.info("Wait for deleting sfci.")
 
         time.sleep(10)
-        logging.info("Deleting sfci.")
+        self.logger.info("Deleting sfci.")
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE,
             MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)

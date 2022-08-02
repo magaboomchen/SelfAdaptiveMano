@@ -448,34 +448,31 @@ class MessageAgent(object):
         return self.pIO.pickle2Obj(message)
 
     def __del__(self):
-        # Can't run file logger when call __del__() methods
-        if sys.version < '3':
-            self.logger.info("Delete MessageAgent.")
+        self.logConfigur = LoggerConfigurator(__name__, None,
+            None, level='info')
+        self.logger = self.logConfigur.getLogger()
+        self.logger.info("Delete MessageAgent.")
         for srcQueueName, thread in self._threadSet.items():
-            if sys.version < '3':
-                self.logger.debug("check thread is alive?")
+            self.logger.debug("check thread is alive?")
             if version.parse(sys.version.split(' ')[0]) \
                                     >= version.parse('3.9'):
                 threadLiveness = thread.is_alive()
             else:
                 threadLiveness = thread.isAlive()
             if threadLiveness:
-                if sys.version < '3':
-                    self.logger.info("Kill thread: %d" %thread.ident)
+                self.logger.info("Kill thread: %d" %thread.ident)
                 self._async_raise(thread.ident, KeyboardInterrupt)
                 thread.join()
 
-        if sys.version < '3':
-            self.logger.info("Disconnect from RabbiMQServer.")
+        self.logger.info("Disconnect from RabbiMQServer.")
         self._disConnectRabbiMQServer()
 
-        if sys.version < '3':
-            self.logger.info("close gRPC channel")
+        self.logger.info("close gRPC channel")
         if self.gRPCChannel != None:
             self.gRPCChannel.close()
 
         if sys.version > '3':
-            print("Bugs: Unimplement gRPC server " \
+            self.logger.info("Bugs: Unimplement gRPC server " \
                 "stop function because of the unlimited wait time.")
             # for server in self.gRPCServersList:
             #     server.stop(None)

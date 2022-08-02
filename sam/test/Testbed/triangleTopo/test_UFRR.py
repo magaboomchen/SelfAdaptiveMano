@@ -12,20 +12,23 @@ import pytest
 
 from sam import base
 from sam.base.compatibility import screenInput
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.messageAgent import MessageAgent
 from sam.test.testBase import CLASSIFIER_DATAPATH_IP
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.Testbed.triangleTopo.testbedFRR import TestbedFRR
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("pika").setLevel(logging.WARNING)
-
 
 class TestUFRRClass(TestbedFRR):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__, './log',
+                                            'testUFRRClass.log',
+                                            level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.resetRabbitMQConf(
             base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.json",
             "192.168.0.194", "mq", "123456")
@@ -64,14 +67,14 @@ class TestUFRRClass(TestbedFRR):
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_UFRRAddUniSFCI(self, setup_addUniSFCI):
-        logging.info("You need start ryu-manager and mininet manually!"
+        self.logger.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
         screenInput() 
 
         self.addSFC2NetworkController()
         self.addSFCI2NetworkController()
 
-        logging.info("Please input any key to test "
+        self.logger.info("Please input any key to test "
             "server software failure\n"
             "After the test, "
             "Press any key to quit!")
@@ -79,7 +82,7 @@ class TestUFRRClass(TestbedFRR):
         self.sendHandleServerSoftwareFailureCmd()
         # TODO: kill serverAgent to test server failure protection
 
-        logging.info("Please input mode 0 into mininet\n"
+        self.logger.info("Please input mode 0 into mininet\n"
             "After the test, "
             "Press any key to quit!")
         screenInput() 

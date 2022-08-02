@@ -38,7 +38,6 @@ class TestGetServerSetClass(TestSimulatorBase):
                                         'testGetServerSetClass.log',
                                         level='debug')
         self.logger = logConfigur.getLogger()
-        self.logger.setLevel(logging.DEBUG)
 
         # setup
         self.sP = ShellProcessor()

@@ -3,6 +3,7 @@
 
 import logging
 import time
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import SAMMessage, MessageAgent, \
     MSG_TYPE_STRING
 
@@ -11,18 +12,21 @@ from sam.base.messageAgent import SAMMessage, MessageAgent, \
 
 class SAMMessageTester(object):
     def __init__(self):
-        samMsg = SAMMessage(MSG_TYPE_STRING,"apple")
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'samMessageTester.log', level='warning')
+        self.logger = logConfigur.getLogger()
+        samMsg = SAMMessage(MSG_TYPE_STRING, "apple")
         self._test(samMsg)
 
     def _test(self,samMsg):
         msgType = samMsg.getMessageType()
-        logging.info(msgType)
+        self.logger.info(msgType)
 
         msgID = samMsg.getMessageID()
-        logging.info(msgID)
+        self.logger.info(msgID)
 
         msgBody = samMsg.getbody()
-        logging.info(msgBody)
+        self.logger.info(msgBody)
 
 class MessageAgentTester(object):
     def __init__(self):
@@ -42,7 +46,6 @@ class MessageAgentTester(object):
         print("Finish!")
 
 if __name__=="__main__":
-    logging.basicConfig(level=logging.INFO)
     SAMMessageTester()
     time.sleep(2)
     MessageAgentTester()

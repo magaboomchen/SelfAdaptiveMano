@@ -1,13 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
 import subprocess
 
 from sam.serverAgent.dpdkConfigurator import DPDKConfigurator, \
     UNBIND, BIND_IGB_UIO
-
-logging.basicConfig(level=logging.INFO)
 
 
 class TestDPDKConfiguratorClass(object):

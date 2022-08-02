@@ -24,7 +24,6 @@ class Simulator(object):
         logConfigur = LoggerConfigurator(__name__, './log',
             'simulator.log', level='debug')
         self.logger = logConfigur.getLogger()
-        self.logger.setLevel(logging.DEBUG)
         self.logger.info("Init simulator.")
 
         self._cm = CommandMaintainer()

@@ -19,7 +19,9 @@ import pytest
 from sam.base.compatibility import screenInput
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, REGULATOR_QUEUE, SIMULATOR_ZONE, TURBONET_ZONE
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
+from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
+from sam.base.routingMorphic import RoutingMorphic
 from sam.base.server import SERVER_TYPE_NFVI, Server
 from sam.base.sfc import APP_TYPE_LARGE_BANDWIDTH, SFC, SFCI, STATE_ACTIVE, STATE_DELETED, STATE_MANUAL, STATE_RECOVER_MODE
 from sam.base.shellProcessor import ShellProcessor
@@ -28,11 +30,15 @@ from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, Switch
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
-from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNFI_RESOURCE_QUOTA_SMALL
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNFI_RESOURCE_QUOTA_SMALL
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.base.messageAgent import DISPATCHER_QUEUE, REGULATOR_QUEUE, \
                                     SIMULATOR_ZONE
+from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
+from sam.base.test.fixtures.ipv6MorphicDict import ipv6MorphicDictTemplate
+from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
+from sam.base.test.fixtures.roceV1MorphicDict import roceV1MorphicDictTemplate
 from sam.simulator.test.testSimulatorBase import SFF1_CONTROLNIC_IP, \
     SFF1_CONTROLNIC_MAC, SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC, SFF1_SERVERID
 from sam.test.Testbed.triangleTopo.testbedFRR import SFF2_DATAPATH_IP
@@ -49,7 +55,6 @@ class TestNoticeClass(TestBase):
                                             'testNoticeClass.log',
                                             level='debug')
         self.logger = logConfigur.getLogger()
-        self.logger.setLevel(logging.DEBUG)
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             True)
 
@@ -85,9 +90,16 @@ class TestNoticeClass(TestBase):
     def genLargeBandwidthSFC(self, classifier):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER]
+        vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_MONITOR,
+                            None, PREFERRED_DEVICE_TYPE_SERVER),
+                        VNF(uuid.uuid1(), VNF_TYPE_RATELIMITER,
+                            RateLimiterConfig(maxMbps=100),
+                            PREFERRED_DEVICE_TYPE_SERVER)]
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_LARGE_BANDWIDTH
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(ipv4MorphicDictTemplate)
         direction0 = {
             'ID': 0,
             'source': {'node': None, 'IPv4':"*"},
@@ -101,8 +113,11 @@ class TestNoticeClass(TestBase):
         slo = SLO(throughput=10, latency=100, availability=0.999, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions,
-            {'zone': SIMULATOR_ZONE}, slo=slo, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
+                    backupInstanceNumber, applicationType, directions,
+                    {'zone': SIMULATOR_ZONE}, slo=slo, 
+                    routingMorphic= routingMorphic,
+                    vnfSequence = vnfSequence,
+                    vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genUniDirection10BackupSFCI(self):
         vnfiSequence = self.genLargeBandwidthVNFISequence()

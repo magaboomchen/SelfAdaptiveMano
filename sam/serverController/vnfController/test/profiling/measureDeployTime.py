@@ -31,9 +31,6 @@ SFF0_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
 # May be BESS doesn't support NUMA architecture!
 MAX_SFCI = 5
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("pika").setLevel(logging.WARNING)
-
 
 class TestVNFSFCIAdderClass(TestBase):
     def __init__(self):
@@ -103,7 +100,7 @@ class TestVNFSFCIAdderClass(TestBase):
         self.msgSendAgent.sendMsg(queue, msg)
 
     def addSFCI2SFF(self, sfciNum=MAX_SFCI):
-        logging.info("setup add SFCI to sff")
+        self.logger.info("setup add SFCI to sff")
         for sfciIndex in range(sfciNum):
             addSFCICmd = self.addSFCICmdList[sfciIndex]
             addSFCICmd.cmdID = uuid.uuid1()
@@ -129,7 +126,7 @@ class TestVNFSFCIAdderClass(TestBase):
                 assert True == False
 
     def delVNFI4Server(self, sfciNum=MAX_SFCI):
-        logging.warning("Deleting VNFI")
+        self.logger.warning("Deleting VNFI")
         for sfciIndex in range(sfciNum):
             sfci = self.sfciList[sfciIndex]
             delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, sfci)
@@ -147,10 +144,10 @@ class TestVNFSFCIAdderClass(TestBase):
             else:
                 body = msg.getbody()
                 if self.mediatorRcvAgent.isCommandReply(body):
-                    logging.info("mediator:recvCmdRply")
+                    self.logger.info("mediator:recvCmdRply")
                     return body
                 else:
-                    logging.error("Unknown massage body")
+                    self.logger.error("Unknown massage body")
 
     def genSFCIList(self):
         self.sfciList = []
@@ -163,12 +160,12 @@ class TestVNFSFCIAdderClass(TestBase):
         for sfciIndex in range(MAX_SFCI):
             sfci = self.sfciList[sfciIndex]
             addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, sfci)
-            logging.info("sfci id: {0}".format(sfci.sfciID))
+            self.logger.info("sfci id: {0}".format(sfci.sfciID))
             self.addSFCICmdList.append(addSFCICmd)
 
     def gen10BackupVNFISequence(self, SFCLength=1):
         # hard-code function
-        logging.info("use override function")
+        self.logger.info("use override function")
         vnfiSequence = []
         for index in range(SFCLength):
             vnfiSequence.append([])

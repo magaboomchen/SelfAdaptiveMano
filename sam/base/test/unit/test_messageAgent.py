@@ -4,12 +4,11 @@
 import time
 import logging
 
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.testBase import TestBase
 from sam.base.messageAgent import TEST_QUEUE, MessageAgent, SAMMessage
 
 MANUAL_TEST = True
-
-logging.basicConfig(level=logging.INFO)
 
 
 class TestMessageAgentClass(TestBase):
@@ -19,6 +18,10 @@ class TestMessageAgentClass(TestBase):
         """
         self.mARecv = MessageAgent()
         self.mASend = MessageAgent()
+
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'databaseAgent.log', level='warning')
+        self.logger = logConfigur.getLogger()
 
     def teardown_method(self, method):
         """ teardown any state that was previously setup with a setup_method
@@ -47,7 +50,7 @@ class TestMessageAgentClass(TestBase):
         self.mASend.sendMsgByRPC("127.0.0.1", "49998", samMsg)
         newMsg = self.mARecv.getMsgByRPC("127.0.0.1", "49998")
         t2 = time.time()
-        logging.info("time is {0}".format(t2-t1))
+        self.logger.info("time is {0}".format(t2-t1))
         assert newMsg.getbody() == samMsg.getbody()
 
     def test_requestMsgByRabbitMQ(self):
@@ -62,6 +65,6 @@ class TestMessageAgentClass(TestBase):
             newMsg = self.mARecv.getMsg("TEST_RECV_QUEUE")
             if newMsg!=None:
                 t2 = time.time()
-                logging.info("time is {0}".format(t2-t1))
+                self.logger.info("time is {0}".format(t2-t1))
                 assert newMsg.getbody() == samMsg.getbody()
                 break

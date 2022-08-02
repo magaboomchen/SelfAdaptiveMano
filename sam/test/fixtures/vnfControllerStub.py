@@ -63,7 +63,7 @@ class VNFControllerStub(object):
             + "--file-prefix=virtio --log-level=8 -- " \
             + "--txqflags=0xf00 --disable-hw-vlan --forward-mode=io --port-topology=chained --total-num-mbufs=2048 -a"
         self.vnfBase[remoteIP][vnfiID] = {"name":name}
-        logging.info(command)
+        self.logger.info(command)
         return command
 
     def genVNFName(self,remoteIP):
@@ -83,7 +83,7 @@ class VNFControllerStub(object):
             self.sshA.connectSSHWithRSA(sshUsrname, privateKeyFilePath, remoteIP)
             self.sshA.passwd = sshPassword
         shellCmdRply = self.sshA.runShellCommandWithSudo(command,None)
-        # logging.info(
+        # self.logger.info(
         #     "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
         #     None,
         #     shellCmdRply['stdout'].read().decode('utf-8'),
@@ -94,7 +94,7 @@ class VNFControllerStub(object):
     def genVNFUninstallationCommand(self,remoteIP,vnfiID):
         name = self.getVNFName(remoteIP,vnfiID)
         command = "sudo -S docker stop "+name
-        logging.info(command)
+        self.logger.info(command)
         return command
 
     def recvCmdFromMeasurer(self):

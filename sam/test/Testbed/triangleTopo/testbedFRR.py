@@ -3,9 +3,10 @@
 
 import uuid
 import logging
+from sam.base.routingMorphic import RoutingMorphic
 
 from sam.base.slo import SLO
-from sam.base.vnf import VNFI, VNF_TYPE_FORWARD, VNFI_RESOURCE_QUOTA_SMALL
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, VNF_TYPE_FORWARD, VNFI_RESOURCE_QUOTA_SMALL
 from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.command import Command, CMD_STATE_SUCCESSFUL, \
     CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE
@@ -15,6 +16,7 @@ from sam.base.messageAgent import SAMMessage, SERVER_CLASSIFIER_CONTROLLER_QUEUE
     MSG_TYPE_SFF_CONTROLLER_CMD, VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, WEBSITE_REAL_IP
+from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 
 TESTER_SERVER_DATAPATH_MAC = "18:66:da:85:f9:ed"
 OUTTER_CLIENT_IP = "1.1.1.2"
@@ -46,7 +48,7 @@ SFF3_SERVERID = 10005
 
 class TestbedFRR(TestBase):
     def addSFCI2Classifier(self):
-        logging.info("setup add SFCI to classifier")
+        self.logger.info("setup add SFCI to classifier")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SERVER_CLASSIFIER_CONTROLLER_QUEUE,
                         MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, self.addSFCICmd)
@@ -55,7 +57,7 @@ class TestbedFRR(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delSFCI2Classifier(self):
-        logging.info("teardown delete SFCI to classifier")
+        self.logger.info("teardown delete SFCI to classifier")
         self.delSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SERVER_CLASSIFIER_CONTROLLER_QUEUE,
                         MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, self.delSFCICmd)
@@ -64,7 +66,7 @@ class TestbedFRR(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def addSFCI2SFF(self):
-        logging.info("setup add SFCI to sff")
+        self.logger.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
                         MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
@@ -73,7 +75,7 @@ class TestbedFRR(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delSFCI2SFF(self):
-        logging.info("teardown delete SFCI to sff")
+        self.logger.info("teardown delete SFCI to sff")
         self.delSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
                         MSG_TYPE_SFF_CONTROLLER_CMD, self.delSFCICmd)
@@ -82,7 +84,7 @@ class TestbedFRR(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     # def sendHandleServerSoftwareFailureCmd(self):
-    #     logging.info("sendHandleServerFailureCmd")
+    #     self.logger.info("sendHandleServerFailureCmd")
     #     server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
     #     server.setServerID(SFF1_SERVERID)
     #     server.setControlNICIP(SFF1_CONTROLNIC_IP)
@@ -106,7 +108,7 @@ class TestbedFRR(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
+        self.logger.warning("Deleting VNFI")
         self.delSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(VNF_CONTROLLER_QUEUE,
                         MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
@@ -120,7 +122,7 @@ class TestbedFRR(TestBase):
                     MSG_TYPE_NETWORK_CONTROLLER_CMD,
                     self.addSFCCmd)
         # verify
-        logging.info("Start listening on mediator queue")
+        self.logger.info("Start listening on mediator queue")
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCCmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
@@ -131,7 +133,7 @@ class TestbedFRR(TestBase):
                         MSG_TYPE_NETWORK_CONTROLLER_CMD,
                         self.addSFCICmd)
         # verify
-        logging.info("Start listening on mediator queue")
+        self.logger.info("Start listening on mediator queue")
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
@@ -148,9 +150,13 @@ class TestbedFRR(TestBase):
     def genUniDirectionSFC(self, classifier):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_FORWARD]
+        vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_FORWARD,
+                            None, PREFERRED_DEVICE_TYPE_SERVER)]
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(ipv4MorphicDictTemplate)
         direction0 = {
             'ID': 0,
             'source': {"IPv4":"*", "node":None},
@@ -164,7 +170,10 @@ class TestbedFRR(TestBase):
         slo = SLO(latency=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
                     backupInstanceNumber, applicationType, directions,
-                    slo=slo, vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
+                    slo=slo, 
+                    routingMorphic = routingMorphic,
+                    vnfSequence = vnfSequence,
+                    vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genUniDirection12BackupSFCI(self):
         vnfiSequence = self.gen12BackupVNFISequence()
@@ -210,7 +219,7 @@ class TestbedFRR(TestBase):
         return vnfiSequence
 
     def sendHandleServerSoftwareFailureCmd(self):
-        logging.info("sendHandleServerFailureCmd")
+        self.logger.info("sendHandleServerFailureCmd")
         server = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
         server.setServerID(SFF1_SERVERID)
         server.setControlNICIP(SFF1_CONTROLNIC_IP)

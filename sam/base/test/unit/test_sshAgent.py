@@ -3,19 +3,21 @@
 
 import logging
 
-import pytest
-
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.sshAgent import SSHAgent
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.INFO)
 
 class TestSSHAgentClass(object):
     def setup_method(self, method):
         """ setup any state tied to the execution of the given method in a
         class.  setup_method is invoked for every test method of a class.
         """
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'databaseAgent.log', level='warning')
+        self.logger = logConfigur.getLogger()
+
         self.sshA = SSHAgent()
         self.sshA.connectSSH("t1", "123", "127.0.0.1", remoteSSHPort=22)
 
@@ -25,7 +27,7 @@ class TestSSHAgentClass(object):
         """
         name = "name1"
         command = "sudo -S docker stop "+name
-        logging.info(command)
+        self.logger.info(command)
         shellCmdRply = self.sshA.runShellCommandWithSudo(command,1)
         self.sshA.disconnectSSH()
 
@@ -34,7 +36,7 @@ class TestSSHAgentClass(object):
         stdin = shellCmdRply['stdin']
         stdout = shellCmdRply['stdout']
         stderr = shellCmdRply['stderr']
-        logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
+        self.logger.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
             None,
             stdout.read().decode('utf-8'),
             stderr.read().decode('utf-8')))
@@ -55,7 +57,7 @@ class TestSSHAgentClass(object):
             stdin = shellCmdRply['stdin']
             stdout = shellCmdRply['stdout']
             stderr = shellCmdRply['stderr']
-            logging.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
+            self.logger.info("command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 stdout.read().decode('utf-8'),
                 stderr.read().decode('utf-8')))

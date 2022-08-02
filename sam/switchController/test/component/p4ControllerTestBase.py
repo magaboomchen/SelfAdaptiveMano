@@ -36,14 +36,12 @@ SWITCH_SFF2_LANIP = "2.2.3.0" # prefix length is /27
 class TestP4ControllerBase(IntTestBaseClass):
     MAXSFCIID = 0
     sfciCounter = 0
-    logging.getLogger("pika").setLevel(logging.WARNING)
 
     def common_setup(self):
         logConfigur = LoggerConfigurator(__name__, './log',
                                             'testP4ControllerBase.log',
                                             level='debug')
         self.logger = logConfigur.getLogger()
-        self.logger.setLevel(logging.DEBUG)
 
         # setup
         self.sP = ShellProcessor()
@@ -126,7 +124,7 @@ class TestP4ControllerBase(IntTestBaseClass):
 
     def exerciseAddSFCAndSFCI(self):
         for idx in [0,1,2]:
-            logging.info("test idx {0}".format(idx))
+            self.logger.info("test idx {0}".format(idx))
             # exercise
             self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfcList[idx])
             self.sendCmd(P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD,

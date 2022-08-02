@@ -8,11 +8,10 @@ The work flow:
     * get dcn info from measurer and print interest info
 
 Usage of this unit test:
-    sudo python -m pytest ./test_2.py -s --disable-warnings
+    python -m pytest ./test_2.py -s --disable-warnings
 '''
 
 import uuid
-import logging
 
 import pytest
 
@@ -69,7 +68,7 @@ class TestAddSFCClass(IntTestBaseClass):
                 })
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        logging.info("Please check orchestrator if recv a command reply?"\
+        self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()
 
@@ -82,12 +81,12 @@ class TestAddSFCClass(IntTestBaseClass):
                     "sfci": sfci,
                     "zone": SIMULATOR_ZONE
                 })
-            logging.info("sfc is {0}".format(sfc))
+            self.logger.info("sfc is {0}".format(sfc))
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
-            logging.info("Please check orchestrator if recv a command reply?"\
-                            "Then press andy key to continue!")
-            screenInput()
+        self.logger.info("Please check orchestrator if recv a command reply?"\
+                        "Then press andy key to continue!")
+        screenInput()
 
         # exercise
         for idx, sfci in enumerate(self.sfciList):
@@ -99,7 +98,7 @@ class TestAddSFCClass(IntTestBaseClass):
                 })
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        logging.info("Please check orchestrator if recv a command reply?"\
+        self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()
 
@@ -112,6 +111,6 @@ class TestAddSFCClass(IntTestBaseClass):
                 })
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        logging.info("Please check orchestrator if recv a command reply?"\
+        self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()

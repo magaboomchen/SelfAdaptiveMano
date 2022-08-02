@@ -19,8 +19,6 @@ from sam.test.testBase import TestBase
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestVNFAddFW(TestBase):
     @pytest.fixture(scope="function")

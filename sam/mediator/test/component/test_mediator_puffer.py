@@ -25,8 +25,6 @@ MANUAL_TEST = True
 # TODO: CMD_TYPE_GET_SFCI_STATE, CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_DEL_SFCI
 # need to be test
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestMediatorClass(TestBase):
     def setup_method(self, method):

@@ -1,15 +1,16 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import DISPATCHER_QUEUE, MessageAgent
-from sam.base.command import Command, CMD_TYPE_GET_SERVER_SET, \
-    CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_GET_SFCI_STATE
 
 
 class DispatcherStub(object):
     def __init__(self):
+        logConfigur = LoggerConfigurator(__name__, './log',
+                                            'despatcherStub.log',
+                                            level='debug')
+        self.logger = logConfigur.getLogger()
         self.mA = MessageAgent()
 
     def startRecv(self):
@@ -24,7 +25,7 @@ class DispatcherStub(object):
             else:
                 body = msg.getbody()
                 if self.mA.isCommand(body):
-                    logging.info("DispatcherStub: recvCmd")
+                    self.logger.info("DispatcherStub: recvCmd")
                     return body
                 else:
-                    logging.error("Unknown massage body")
+                    self.logger.error("Unknown massage body")

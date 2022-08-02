@@ -216,7 +216,6 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                             orchTime,
                             zoneName
                         )
-            logging.info("{0} -> {1}".format(fields, dataTuple))
             self.dbA.insert("SFCI", fields, dataTuple)
 
     @reConnectionDecorator

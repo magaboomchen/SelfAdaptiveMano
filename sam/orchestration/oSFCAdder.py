@@ -8,9 +8,9 @@ To add more mapping algorithms, you need add code in following functions:
 * YOUR_MAPPING_ALGOTIYHM()
 '''
 
-
 import uuid
 import copy
+from typing import Union
 
 from sam.base.vnf import VNFI
 from sam.base.switch import Switch
@@ -24,6 +24,7 @@ from sam.base.command import Command, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_ADD_SFC, \
     REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI
 from sam.base.socketConverter import SocketConverter
+from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.orchestration.oConfig import DEFAULT_MAPPING_TYPE
 from sam.orchestration.vnfiIDAssigner import VNFIIDAssigner
 from sam.orchestration.algorithms.pSFC.pSFC import PSFC
@@ -40,7 +41,7 @@ from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 class OSFCAdder(object):
     def __init__(self, dib, logger, podNum=None, minPodIdx=None,
                     maxPodIdx=None, topoType="fat-tree", zoneName=None):
-        self._dib = dib
+        self._dib = dib # type: DCNInfoBaseMaintainer
         self.logger = logger
         self._via = VNFIIDAssigner()
         self._sc = SocketConverter()
@@ -117,6 +118,7 @@ class OSFCAdder(object):
         return self._dib.randomSelectDCNGateWaySwitch(self.zoneName)
 
     def _selectClassifierByNode(self, node):
+        # type: (Union[Switch, Server]) -> Union[Switch, Server]
         if type(node) == Server:
             switch = self._dib.getConnectedSwitch(node.getServerID(), self.zoneName)
             if switch.programmable == True:

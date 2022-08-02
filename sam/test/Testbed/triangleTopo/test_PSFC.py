@@ -7,6 +7,7 @@ import pytest
 
 from sam import base
 from sam.base.compatibility import screenInput
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NOTVIA_PSFC
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.messageAgent import MessageAgent
@@ -14,14 +15,16 @@ from sam.test.testBase import CLASSIFIER_DATAPATH_IP
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.Testbed.triangleTopo.testbedFRR import TestbedFRR
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("pika").setLevel(logging.WARNING)
-
 
 class TestPSFCClass(TestbedFRR):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__, './log',
+                                            'testPSFCClass.log',
+                                            level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.resetRabbitMQConf(
             base.__file__[:base.__file__.rfind("/")] + "/rabbitMQConf.json",
             "192.168.0.194", "mq", "123456")
@@ -74,14 +77,14 @@ class TestPSFCClass(TestbedFRR):
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_addUniSFCI(self, setup_addUniSFCI):
-        logging.info("You need start ryu-manager and mininet manually!"
+        self.logger.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
         screenInput() 
 
         self.addSFC2NetworkController()
         self.addSFCI2NetworkController()
 
-        logging.info("Please input 'ssf' to test "
+        self.logger.info("Please input 'ssf' to test "
             "server software failure\n"
             "After the test, "
             "Press any key to continue!")
@@ -89,6 +92,6 @@ class TestPSFCClass(TestbedFRR):
         if self.testName == "ssf":
             self.sendHandleServerSoftwareFailureCmd()
 
-        logging.info("Please input 'ovs-vsctl del-br br1' to disable switch s2. "
+        self.logger.info("Please input 'ovs-vsctl del-br br1' to disable switch s2. "
             "After the test, Press any key to quit!")
         screenInput() 

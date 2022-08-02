@@ -17,7 +17,6 @@ class CLIThread(threading.Thread):
         logConfigur = LoggerConfigurator(__name__,
             './log', 'cliThread.log', level='debug')
         self.logger = logConfigur.getLogger()
-        self.logger.setLevel(logging.DEBUG)
         self.logger.info("Init cliThread.")
 
     def run(self):

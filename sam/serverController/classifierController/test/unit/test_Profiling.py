@@ -10,8 +10,11 @@ from scapy.layers.l2 import ARP
 from scapy.layers.inet import IP
 
 from sam.base.compatibility import screenInput
+from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.routingMorphic import RoutingMorphic
 from sam.base.sfc import SFC, APP_TYPE_NORTHSOUTH_WEBSITE
-from sam.base.vnf import VNF_TYPE_FORWARD
+from sam.base.slo import SLO
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.messageAgent import DEFAULT_ZONE, SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
@@ -22,6 +25,7 @@ from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, CLASSIFIER_SERVE
     SFCI1_0_EGRESS_IP, OUTTER_CLIENT_IP, VNFI1_0_IP
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.fixtures import sendArpRequest, sendInboundTraffic, sendOutSFCDomainTraffic
+from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 
 
 MANUAL_TEST = True
@@ -41,9 +45,6 @@ CLASSIFIER_CONTROL_IP = "192.168.0.173"
 
 WEBSITE_REAL_IP = "2.2.2.2"
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("pika").setLevel(logging.WARNING)
-
 # run scripts on dut 192.168.0.173
 # python ./serverAgent.py 0000:04:00.0 eno1 classifier 2.2.0.36
 # python ./serverAgent.py 0000:05:00.0 eno1 classifier 2.2.0.36
@@ -53,6 +54,9 @@ class TestSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addSFCI(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'testSFCIAdderClass.log', level='debug')
+        self.logger = logConfigur.getLogger()
         classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
         self.sfc = self.genBiDirectionSFC(classifier)
         self.sfci = self.genBiDirection10BackupSFCI()
@@ -78,9 +82,13 @@ class TestSFCIAdderClass(TestBase):
     def genBiDirectionSFC(self, classifier, vnfTypeSeq=[VNF_TYPE_FORWARD]):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = vnfTypeSeq
+        vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_FORWARD,
+                            None, PREFERRED_DEVICE_TYPE_SERVER)]
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(ipv4MorphicDictTemplate)
         direction0 = {
             'ID': 0,
             'source': {"IPv4":"*", "node":None},
@@ -100,8 +108,12 @@ class TestSFCIAdderClass(TestBase):
             'destination': {"IPv4":"*", "node":None}
         }
         directions = [direction0, direction1]
+        slo = SLO(latency=35, throughput=0.1)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions, {'zone':DEFAULT_ZONE})
+                    backupInstanceNumber, applicationType, directions, 
+                    {'zone':DEFAULT_ZONE}, slo = slo,
+                    routingMorphic= routingMorphic, vnfSequence= vnfSequence
+                    )
 
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_addSFCI(self, setup_addSFCI):
@@ -114,7 +126,7 @@ class TestSFCIAdderClass(TestBase):
         self.verifyArpResponder()
         self.verifyInboundTraffic()
         self.verifyOutSFCDomainTraffic()
-        logging.info("please start performance profiling" \
+        self.logger.info("please start performance profiling" \
             "after profiling, press any key to quit.")
         screenInput()
 
@@ -130,7 +142,7 @@ class TestSFCIAdderClass(TestBase):
             + requestIP + " -smac " + TESTER_SERVER_DATAPATH_MAC)
 
     def _checkArpRespond(self,inIntf):
-        logging.info("_checkArpRespond: wait for packet")
+        self.logger.info("_checkArpRespond: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()) +
             " and arp",iface=inIntf, prn=self.frame_callback,count=1, store=0)
 
@@ -154,7 +166,7 @@ class TestSFCIAdderClass(TestBase):
             )
 
     def _checkEncapsulatedTraffic(self,inIntf):
-        logging.info("_checkEncapsulatedTraffic: wait for packet")
+        self.logger.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         sniff(filter=filterRE,
             iface=inIntf, prn=self.encap_callback,count=1, store=0)
@@ -184,7 +196,7 @@ class TestSFCIAdderClass(TestBase):
         )
 
     def _checkDecapsulatedTraffic(self,inIntf):
-        logging.info("_checkDecapsulatedTraffic: wait for packet")
+        self.logger.info("_checkDecapsulatedTraffic: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback,count=1, store=0)
 

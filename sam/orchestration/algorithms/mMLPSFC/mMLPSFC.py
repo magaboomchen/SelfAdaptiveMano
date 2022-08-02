@@ -6,6 +6,8 @@ import copy
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_UFRR
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.base.request import Request
+from sam.base.sfc import SFC
 from sam.orchestration.algorithms.base.multiLayerGraph import MultiLayerGraph, \
     WEIGHT_TYPE_DELAY_MODEL
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
@@ -44,8 +46,8 @@ class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
         self.forwardingPathSetsDict = {}
         self.primaryPathDict = {}
         for rIndex in range(len(self.requestList)):
-            self.request = self.requestList[rIndex]
-            sfc = self.request.attributes['sfc']
+            self.request = self.requestList[rIndex] # type: Request
+            sfc = self.request.attributes['sfc']    # type: SFC
             c = sfc.getSFCLength()
 
             capacityAwareFlag = True

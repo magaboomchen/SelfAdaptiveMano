@@ -15,6 +15,7 @@ import pytest
 
 from sam.base import server
 from sam.base.compatibility import screenInput
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
 from sam.base.vnf import VNFI, VNF_TYPE_MONITOR
@@ -36,21 +37,22 @@ SFF0_DATAPATH_MAC = "00:1b:21:c0:8f:98"
 SFF0_CONTROLNIC_IP = "192.168.0.173"
 SFF0_CONTROLNIC_MAC = "18:66:da:85:1c:c3"
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("pika").setLevel(logging.WARNING)
-
 
 class TestVNFAddMON(TestBase):
     @pytest.fixture(scope="function")
     def setup_addMON(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'testVNFAddMON.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
 
         rabbitMQFilePath = server.__file__.split("server.py")[0] \
             + "rabbitMQConf.json"
-        logging.info(rabbitMQFilePath)
+        self.logger.info(rabbitMQFilePath)
         self.resetRabbitMQConf(rabbitMQFilePath, "192.168.0.194",
             "mq", "123456")
 
@@ -94,7 +96,7 @@ class TestVNFAddMON(TestBase):
         return vnfiSequence
 
     def addSFCI2SFF(self):
-        logging.info("setup add SFCI to sff")
+        self.logger.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
             MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
@@ -103,7 +105,7 @@ class TestVNFAddMON(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
+        self.logger.warning("Deleting VNFI")
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
@@ -113,14 +115,14 @@ class TestVNFAddMON(TestBase):
 
     def test_addMON(self, setup_addMON):
         # exercise
-        logging.info("exercise")
+        self.logger.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE,
             MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
 
         # verifiy
         self.verifyCmdRply()
-        logging.info("please start performance profiling" \
+        self.logger.info("please start performance profiling" \
             "after profiling, press any key to quit.")
         screenInput()
 

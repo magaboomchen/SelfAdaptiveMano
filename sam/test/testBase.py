@@ -6,7 +6,7 @@ import random
 import logging
 
 from sam.base.acl import ACL_ACTION_ALLOW, ACL_PROTO_UDP, ACLTable, ACLTuple
-from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
+from sam.base.sfc import SFC, SFC_DIRECTION_0, SFC_DIRECTION_1, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, VNF_TYPE_FORWARD, VNF_TYPE_MAX, VNFI_RESOURCE_QUOTA_SMALL
 from sam.base.slo import SLO
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI, \
@@ -108,8 +108,6 @@ DIRECTION0_TRAFFIC_SI = 1
 DIRECTION1_TRAFFIC_SPI = 0x800001
 DIRECTION1_TRAFFIC_SI = 1
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestBase(object):
     MAXSFCIID = 0
@@ -205,6 +203,8 @@ class TestBase(object):
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(ipv4MorphicDictTemplate)
         direction0 = {
             'ID': 0,
             'source': {"IPv4":"*", "node": None},
@@ -217,9 +217,10 @@ class TestBase(object):
         directions = [direction0]
         slo = SLO(latency=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions,
-            {'zone':zone}, slo=slo, vnfSequence=vnfSequence,
-            vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
+                    backupInstanceNumber, applicationType, directions,
+                    {'zone':zone}, slo=slo, vnfSequence=vnfSequence,
+                    routingMorphic = routingMorphic,
+                    vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genBiDirectionSFC(self, classifier, vnfTypeSeq=None,
                             routingMorphicTemplate=ipv4MorphicDictTemplate,
@@ -237,8 +238,10 @@ class TestBase(object):
         maxScalingInstanceNumber = 1
         backupInstanceNumber = 0
         applicationType = APP_TYPE_NORTHSOUTH_WEBSITE
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(ipv4MorphicDictTemplate)
         direction0 = {
-            'ID': 0,
+            'ID': SFC_DIRECTION_0,
             'source': {"IPv4":"*", "node": None},
             'ingress': classifier,
             'match': {'srcIP': "*",'dstIP': WEBSITE_REAL_IP,
@@ -247,7 +250,7 @@ class TestBase(object):
             'destination': {"IPv4": WEBSITE_REAL_IP, "node": None}
         }
         direction1 = {
-            'ID': 1,
+            'ID': SFC_DIRECTION_1,
             'source': {"IPv4": WEBSITE_REAL_IP, "node": None},
             'ingress': classifier,
             'match': {'srcIP': WEBSITE_REAL_IP,'dstIP': "*",
@@ -260,12 +263,13 @@ class TestBase(object):
         routingMorphic.from_dict(routingMorphicTemplate)
         slo = SLO(latency=35, throughput=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-            backupInstanceNumber, applicationType, directions=directions,
-            attributes={'zone':zone},
-            routingMorphic=routingMorphic,
-            vnfSequence=vnfSequence, slo=slo,
-            vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL
-            )
+                        backupInstanceNumber, applicationType,
+                        directions=directions,
+                        attributes={'zone':zone},
+                        routingMorphic=routingMorphic,
+                        vnfSequence=vnfSequence, slo=slo,
+                        vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL
+                        )
 
     def genUniDirection10BackupSFCI(self):
         vnfiSequence = self.gen10BackupVNFISequence()
@@ -677,3 +681,12 @@ class TestBase(object):
         _oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             True)
         del _oib
+
+    def reverseForwardingPath(self, d0FP):
+        d1FP = []
+        rD0FP = list(reversed(d0FP))
+        for idx, segPath in enumerate(rD0FP):
+            d1FP.append([])
+            for segNodeTuple in segPath:
+                d1FP[-1].append((idx, segNodeTuple[1]))
+        return d1FP

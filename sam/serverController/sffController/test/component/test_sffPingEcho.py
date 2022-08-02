@@ -40,8 +40,6 @@ from sam.serverController.sffController.test.component.fixtures.sendDirection1Tr
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestSFFSFCIAdderClass(TestBase):
     @pytest.fixture(scope="function")
@@ -86,7 +84,7 @@ class TestSFFSFCIAdderClass(TestBase):
         # verify
         self.verifyCmdRply()
         time.sleep(2)
-        logging.info("Press Any key to test data path!")
+        self.logger.info("Press Any key to test data path!")
         screenInput()
         self.verifyArpResponder()
         self.verifyPingEcho()
@@ -95,7 +93,7 @@ class TestSFFSFCIAdderClass(TestBase):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
-        logging.info("Verify cmy rply successfully!")
+        self.logger.info("Verify cmy rply successfully!")
 
     def verifyArpResponder(self):
         self._sendArpRequest(interface=TESTER_DATAPATH_INTF, requestIP=SFF1_DATAPATH_IP)
@@ -111,10 +109,10 @@ class TestSFFSFCIAdderClass(TestBase):
             + " -smac " + srcMAC)
 
     def _checkArpRespond(self,inIntf):
-        logging.info("_checkArpRespond: wait for packet")
+        self.logger.info("_checkArpRespond: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()) +
             " and arp",iface=inIntf, prn=self.arpFrameCallback,count=1,store=0)
-        logging.info("Check arp response successfully!")
+        self.logger.info("Check arp response successfully!")
 
     def arpFrameCallback(self,frame):
         frame.show()
@@ -143,10 +141,10 @@ class TestSFFSFCIAdderClass(TestBase):
             + " -dmac " + dstMAC)
 
     def _checkPingEchoRespond(self, inIntf):
-        logging.info("_checkPingEchoRespond: wait for packet")
+        self.logger.info("_checkPingEchoRespond: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()) +
             " and icmp",iface=inIntf, prn=self.pingEchoFrameCallback,count=1,store=0)
-        logging.info("Check ping echo successfully!")
+        self.logger.info("Check ping echo successfully!")
 
     def pingEchoFrameCallback(self, frame):
         frame.show()

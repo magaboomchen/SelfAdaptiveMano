@@ -39,7 +39,7 @@ class Command(object):
     def __init__(self, cmdType, cmdID, attributes={}):
         self.cmdType = cmdType
         self.cmdID = cmdID
-        self.attributes = attributes    # {'sfcUUID':sfcUUID,'sfci':SFCI(), 'sfc':SFC(), 'classifier':classifier}
+        self.attributes = attributes    # {'sfcUUID':sfcUUID,'sfci':SFCI, 'sfc':SFC, 'classifier':classifier}
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

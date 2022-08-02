@@ -7,7 +7,6 @@ from sam.base.socketConverter import SocketConverter
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.INFO)
 
 class TestSocketConverterClass(object):
     def setup_method(self, method):

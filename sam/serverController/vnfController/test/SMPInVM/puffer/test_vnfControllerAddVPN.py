@@ -10,6 +10,7 @@ from scapy.layers.l2 import Ether
 from scapy.layers.inet import IP
 
 from sam import base
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
 from sam.base.vnf import VNFI, VNF_TYPE_VPN
@@ -44,14 +45,15 @@ VPN_TunnelDstIP = "4.4.4.4"
 VPN_EncryptKey = "11FF0183A9471ABE01FFFA04103BB102"
 VPN_AuthKey = "11FF0183A9471ABE01FFFA04103BB202"
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("pika").setLevel(logging.WARNING)
-
 
 class TestVNFAddVPN(TestBase):
     @pytest.fixture(scope="function")
     def setup_addVPN(self):
-        logging.debug("{0}".format(base.__file__))
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'testVNFAddVPN.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
+        self.logger.debug("{0}".format(base.__file__))
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
@@ -96,7 +98,7 @@ class TestVNFAddVPN(TestBase):
         return vnfiSequence
 
     def addSFCI2SFF(self):
-        logging.info("setup add SFCI to sff")
+        self.logger.info("setup add SFCI to sff")
         self.addSFCICmd.cmdID = uuid.uuid1()
         self.sendCmd(SFF_CONTROLLER_QUEUE,
             MSG_TYPE_SFF_CONTROLLER_CMD , self.addSFCICmd)
@@ -105,7 +107,7 @@ class TestVNFAddVPN(TestBase):
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
     def delVNFI4Server(self):
-        logging.warning("Deleting VNFI")
+        self.logger.warning("Deleting VNFI")
         self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD,
             self.delSFCICmd)
@@ -115,7 +117,7 @@ class TestVNFAddVPN(TestBase):
 
     def test_addVPN(self, setup_addVPN):
         # exercise
-        logging.info("exercise")
+        self.logger.info("exercise")
         self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
         self.sendCmd(VNF_CONTROLLER_QUEUE,
             MSG_TYPE_VNF_CONTROLLER_CMD , self.addSFCICmd)
@@ -143,7 +145,7 @@ class TestVNFAddVPN(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self,inIntf):
-        logging.info("_checkEncapsulatedTraffic: wait for packet")
+        self.logger.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         sniff(filter=filterRE,
             iface=inIntf, prn=self.encap_callback,count=1,store=0)
@@ -177,7 +179,7 @@ class TestVNFAddVPN(TestBase):
         sendp(self.reverseTraffic, iface=TESTER_DATAPATH_INTERFACE)
 
     def _checkDecapsulatedTraffic(self,inIntf):
-        logging.info("_checkDecapsulatedTraffic: wait for packet")
+        self.logger.info("_checkDecapsulatedTraffic: wait for packet")
         sniff(filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback,count=1,store=0)
 

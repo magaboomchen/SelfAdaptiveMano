@@ -1,12 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from multiprocessing.sharedctypes import Value
 import time
 import uuid
-import pytest
-import logging
 
+import pytest
+
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.switch import Switch, SWITCH_TYPE_NPOP
 from sam.base.server import Server, SERVER_TYPE_NORMAL
 from sam.base.request import Request, REQUEST_STATE_SUCCESSFUL, \
@@ -19,13 +19,15 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.measurement import measurer
 from sam.test.testBase import TestBase
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestMeasurerClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_collectDCNInfo(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'databaseAgent.log', level='warning')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
         # self.cleanLog()
         self.clearQueue()
@@ -51,7 +53,7 @@ class TestMeasurerClass(TestBase):
 
     def replyGetTopologyCmd(self, cmd):
         if cmd.cmdType == CMD_TYPE_GET_TOPOLOGY:
-            logging.info("Get topology command")
+            self.logger.info("Get topology command")
             self.attr = self.genTopoAttr()
             cmdRply = CommandReply(cmd.cmdID, CMD_STATE_SUCCESSFUL,
                 attributes=self.attr)
@@ -81,7 +83,7 @@ class TestMeasurerClass(TestBase):
 
     def runMeasurer(self):
         filePath = measurer.__file__
-        logging.error(filePath)
+        self.logger.error(filePath)
         self.sP.runPythonScript(filePath)
 
     def killMeasurer(self):
@@ -90,7 +92,7 @@ class TestMeasurerClass(TestBase):
 
     @pytest.fixture(scope="function")
     def setup_handleRequest(self):
-        logging.info("setup_handleRequest")
+        self.logger.info("setup_handleRequest")
         # setup
         self.sP = ShellProcessor()
         self.clearQueue()
@@ -106,9 +108,9 @@ class TestMeasurerClass(TestBase):
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_requestHandler(self, setup_handleRequest):
-        raise Value("Deprecated methods, please use directWayMeasurer.py")
+        raise ValueError("Deprecated methods, please use directWayMeasurer.py")
 
-        logging.info("test_requestHanler")
+        self.logger.info("test_requestHanler")
         # exercise
         request = self.genGetDCNInfoRequest(ORCHESTRATOR_QUEUE)
         self.sendRequest(MEASURER_QUEUE, request)
@@ -119,10 +121,10 @@ class TestMeasurerClass(TestBase):
         assert reply.requestState == REQUEST_STATE_SUCCESSFUL
 
         for key,values in reply.attributes.items():
-            logging.info("{0},{1}".format(key, values))
+            self.logger.info("{0},{1}".format(key, values))
             # if type(values) == list:
             #     for item in values:
-            #         logging.info(item)
+            #         self.logger.info(item)
 
     def genGetDCNInfoRequest(self, srcQueue):
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_GET_DCN_INFO,

@@ -4,7 +4,6 @@
 raise ValueError("Haven't refactor!")
 
 import time
-import logging
 
 import pytest
 from scapy.all import sniff
@@ -12,6 +11,7 @@ from scapy.layers.l2 import  ARP
 from scapy.layers.inet import IP
 
 from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import SFF_CONTROLLER_QUEUE, MEDIATOR_QUEUE, \
     MSG_TYPE_SFF_CONTROLLER_CMD
 from sam.base.shellProcessor import ShellProcessor
@@ -33,13 +33,15 @@ TESTER_SERVER_DATAPATH_MAC = "90:e2:ba:b1:4d:0f"
 SFCI2_0_EGRESS_IP = "10.0.2.1"
 SFCI2_1_EGRESS_IP = "10.0.2.128"
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestSFFSFCIAdderReassignVNFIClass(TestBase):
     @pytest.fixture(scope="function")
     def setup_addTwoSFCIs(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__,
+            './log', 'cliThread.log', level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
@@ -90,14 +92,14 @@ class TestSFFSFCIAdderReassignVNFIClass(TestBase):
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF("t1", "123", "192.168.122.134",
                 self.sfci1.vnfiSequence[0][0].vnfiID)
-            logging.info(
+            self.logger.info(
                 "command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
                 shellCmdRply['stdout'].read().decode('utf-8'),
                 shellCmdRply['stderr'].read().decode('utf-8')))
         except:
-            logging.info("If raise IOError: reading from stdin while output is captured")
-            logging.info("Then pytest should use -s option!")
+            self.logger.info("If raise IOError: reading from stdin while output is captured")
+            self.logger.info("Then pytest should use -s option!")
 
         # verify again
         time.sleep(5)
@@ -125,7 +127,7 @@ class TestSFFSFCIAdderReassignVNFIClass(TestBase):
             + " -dip " + requestIP)
 
     def _checkArpRespond(self,inIntf):
-        logging.info("_checkArpRespond: wait for packet")
+        self.logger.info("_checkArpRespond: wait for packet")
         sniff(
             filter="ether dst " + str(self.server.getDatapathNICMac()) +
             " and arp",iface=inIntf, prn=self.frame_callback,count=1,store=0)
@@ -149,7 +151,7 @@ class TestSFFSFCIAdderReassignVNFIClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic(self, inIntf):
-        logging.info("_checkEncapsulatedTraffic: wait for packet")
+        self.logger.info("_checkEncapsulatedTraffic: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         sniff(
             filter=filterRE,
@@ -170,7 +172,7 @@ class TestSFFSFCIAdderReassignVNFIClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkEncapsulatedTraffic4sfci2(self, inIntf):
-        logging.info("_checkEncapsulatedTraffic for sfci2: wait for packet")
+        self.logger.info("_checkEncapsulatedTraffic for sfci2: wait for packet")
         filterRE = "ether dst " + str(self.server.getDatapathNICMac())
         sniff(
             filter=filterRE, iface=inIntf, prn=self.encap_callback4sfci2,
@@ -204,7 +206,7 @@ class TestSFFSFCIAdderReassignVNFIClass(TestBase):
         self.sP.runPythonScript(filePath)
 
     def _checkDecapsulatedTraffic(self, inIntf):
-        logging.info("_checkDecapsulatedTraffic: wait for packet")
+        self.logger.info("_checkDecapsulatedTraffic: wait for packet")
         sniff(
             filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback,count=1,store=0)
@@ -220,7 +222,7 @@ class TestSFFSFCIAdderReassignVNFIClass(TestBase):
         assert innerPkt[IP].src == WEBSITE_REAL_IP
 
     def _checkDecapsulatedTraffic4sfci2(self, inIntf):
-        logging.info("_checkDecapsulatedTraffic: wait for packet")
+        self.logger.info("_checkDecapsulatedTraffic: wait for packet")
         sniff(
             filter="ether dst " + str(self.server.getDatapathNICMac()),
             iface=inIntf, prn=self.decap_callback4sfci2,count=1,store=0)

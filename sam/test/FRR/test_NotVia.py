@@ -7,6 +7,7 @@ import logging
 import pytest
 
 from sam.base.compatibility import screenInput
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_NOTVIA_PSFC
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.command import CMD_STATE_SUCCESSFUL
@@ -17,13 +18,16 @@ from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.fixtures.vnfControllerStub import VNFControllerStub
 from sam.test.FRR.testFRR import TestFRR
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestNotViaClass(TestFRR):
     @pytest.fixture(scope="function")
     def setup_addUniSFCI(self):
         # setup
+        logConfigur = LoggerConfigurator(__name__, './log',
+                                            'testNotViaClass.log',
+                                            level='debug')
+        self.logger = logConfigur.getLogger()
+
         self.sP = ShellProcessor()
         self.clearQueue()
         self.killAllModule()
@@ -77,14 +81,14 @@ class TestNotViaClass(TestFRR):
 
     # @pytest.mark.skip(reason='Temporarly')
     def test_addUniSFCI(self, setup_addUniSFCI):
-        logging.info("You need start ryu-manager and mininet manually!"
+        self.logger.info("You need start ryu-manager and mininet manually!"
             "Then press any key to continue!")
         screenInput()
 
         self._deploySFC()
         self._deploySFCI()
 
-        logging.info("Press any key to quit!")
+        self.logger.info("Press any key to quit!")
         screenInput()
 
     def _deploySFC(self):
@@ -95,7 +99,7 @@ class TestNotViaClass(TestFRR):
             self.addSFCCmd)
 
         # verify
-        logging.info("Start listening on mediator queue")
+        self.logger.info("Start listening on mediator queue")
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCCmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
@@ -108,10 +112,10 @@ class TestNotViaClass(TestFRR):
             self.addSFCICmd)
 
         # verify
-        logging.info("Start listening on mediator queue")
+        self.logger.info("Start listening on mediator queue")
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)
         assert cmdRply.cmdID == self.addSFCICmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
 
-        logging.info("Press any key to quit!")
+        self.logger.info("Press any key to quit!")
         screenInput()

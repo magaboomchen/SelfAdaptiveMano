@@ -12,6 +12,7 @@ from typing import List
 
 from sam.base.link import Link
 from sam.base.mkdirs import mkdirs
+from sam.base.p4NFUsage import P4NFUsage
 from sam.base.pickleIO import PickleIO
 from sam.base.switch import Switch, SWITCH_TYPE_DCNGATEWAY, \
     SWITCH_TYPE_NPOP, SWITCH_TYPE_FORWARD
@@ -207,7 +208,8 @@ class Topology(object):
                     'switch': Switch(srcNodeID,
                                      self._getSwitchType(srcNodeID),
                                      self._dhcp.genLanNet(srcNodeID),
-                                     self._isSwitchProgrammable(srcNodeID)),
+                                     self._isSwitchProgrammable(srcNodeID),
+                                     p4NFUsage=P4NFUsage()),
                     'Active': True,
                     'Status': None}
             if dstNodeID not in self.switches.keys():
@@ -215,7 +217,8 @@ class Topology(object):
                     'switch': Switch(dstNodeID,
                                      self._getSwitchType(dstNodeID),
                                      self._dhcp.genLanNet(dstNodeID),
-                                     self._isSwitchProgrammable(dstNodeID)),
+                                     self._isSwitchProgrammable(dstNodeID),
+                                     p4NFUsage=P4NFUsage()),
                     'Active': True,
                     'Status': None}
 
@@ -231,7 +234,8 @@ class Topology(object):
                     'switch': Switch(nodeID,
                                      self._getSwitchType(nodeID),
                                      self._dhcp.genLanNet(nodeID),
-                                     self._isSwitchProgrammable(nodeID)),
+                                     self._isSwitchProgrammable(nodeID),
+                                     p4NFUsage=P4NFUsage()),
                     'Active': True,
                     'Status': None}
         self.logger.debug("nodes:{0}".format(self.switches))
@@ -242,7 +246,8 @@ class Topology(object):
             switch = Switch(nodeID,
                             SWITCH_TYPE_FORWARD,
                             self._dhcp.genLanNet(nodeID),
-                            programmable=True)
+                            programmable=True,
+                            p4NFUsage=P4NFUsage())
             switch.supportNF = list(range(1,17))
             self.switches[nodeID] = {
                         'switch': switch,

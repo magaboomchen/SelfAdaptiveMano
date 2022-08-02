@@ -3,15 +3,18 @@
 
 import copy
 import random
+from typing import Union
 
 import networkx as nx
 
 from sam.base.link import Link
+from sam.base.sfc import SFC, SFCI
 from sam.base.switch import Switch
 from sam.base.server import Server
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, PREFERRED_DEVICE_TYPE_SERVER
+from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 
 WEIGHT_TYPE_CONST = "WEIGHT_TYPE_CONST"
@@ -31,12 +34,12 @@ class MultiLayerGraph(object):
 
     def loadInstance4dibAndRequest(self, dib, request, weightType,
                                     connectingLinkWeightType=WEIGHT_TYPE_CONST):
-        self._dib = dib
+        self._dib = dib # type: DCNInfoBaseMaintainer
         self.request = request
-        self.sfc = request.attributes['sfc']
-        self.sfcLength = self.sfc.getSFCLength()
-        self.zoneName = self.sfc.attributes['zone']
-        self.sfci = request.attributes['sfci']
+        self.sfc = request.attributes['sfc']    # type: SFC
+        self.sfcLength = self.sfc.getSFCLength()    # type: int
+        self.zoneName = self.sfc.attributes['zone'] # type: str
+        self.sfci = request.attributes['sfci']  # type: SFCI
         self.weightType = weightType
         self.connectingLinkWeightType = connectingLinkWeightType
         self.abandonNodeIDList = []
@@ -44,9 +47,10 @@ class MultiLayerGraph(object):
 
     def addAbandonNodeIDs(self, nodeIDList):
         for nodeID in nodeIDList:
-            self.abandonNodeIDList = self.abandonNodeIDList + nodeIDList
+            self.abandonNodeIDList = self.abandonNodeIDList.append(nodeID)
 
     def addAbandonNodes(self, nodeList):
+        # type: (list(Union[Switch, Server])) -> None
         for node in nodeList:
             if type(node) == Server:
                 nodeID = node.getServerID()
@@ -197,39 +201,58 @@ class MultiLayerGraph(object):
             self._connectLayer(mLG, stage, stage+1)
 
     def _connectLayer(self, mLG, layer1Num, layer2Num):
-        switches = self._getSupportVNFSwitchesOfLayer(layer1Num)
+        # type: (MultiLayerGraph, int, int) -> None
+        switches = self._getSupportNFAndVNFSwitchesOfLayer(layer1Num)
         # self.logger.debug("switches:{0}".format(switches))
         # self.logger.debug("connect layer")
         for switch in switches:
             nodeID = switch.switchID
-            (expectedCores, expectedMemory, expectedBandwidth) \
-                = self._getExpectedServerResource(layer1Num)
-            # self.logger.debug(
-            #     "expected Cores:{0}, Memory:{1}, bandwdith:{2}".format(
-            #         expectedCores, expectedMemory, expectedBandwidth
-            # ))
             srcLayerNodeID = self._genLayerNodeID(nodeID, layer1Num)
             dstLayerNodeID = self._genLayerNodeID(nodeID, layer2Num)
             link = Link(srcLayerNodeID, dstLayerNodeID)
-            if self._dib.hasEnoughNPoPServersResources(
-                    nodeID, expectedCores, expectedMemory, expectedBandwidth,
-                        self.zoneName, self.abandonNodeIDList):
-                weight = self.getLinkWeight(link, isConnectingLink=True)
-                # self.logger.debug("weight:{0}".format(weight))
-                mLG.add_edge(srcLayerNodeID, dstLayerNodeID, weight=weight)
+            pDT = self._getPreferredDeviceTypeOfIdxVNF(self.sfc, layer1Num)
+            if (self.enablePreferredDeviceSelection
+                    and pDT == PREFERRED_DEVICE_TYPE_P4):
+                vnf = self.sfc.vnfSequence[layer1Num]
+                if self._dib.hasEnoughP4SwitchResources(
+                            nodeID, vnf, self.zoneName):
+                    weight = self.getLinkWeight(link, isConnectingLink=True)
+                    mLG.add_edge(srcLayerNodeID, dstLayerNodeID, weight=weight)
+                else:
+                    self.logger.warning(
+                        "P4 switch {0} hasn't enough server resource.".format(
+                            nodeID
+                        ))
+            elif ((not self.enablePreferredDeviceSelection)
+                    or pDT == PREFERRED_DEVICE_TYPE_SERVER):
+                (expectedCores, expectedMemory, expectedBandwidth) \
+                    = self._getExpectedServerResource(layer1Num)
+                # self.logger.debug(
+                #     "expected Cores:{0}, Memory:{1}, bandwdith:{2}".format(
+                #         expectedCores, expectedMemory, expectedBandwidth
+                # ))
+                if self._dib.hasEnoughNPoPServersResources(
+                        nodeID, expectedCores, expectedMemory, expectedBandwidth,
+                            self.zoneName, self.abandonNodeIDList):
+                    weight = self.getLinkWeight(link, isConnectingLink=True)
+                    # self.logger.debug("weight:{0}".format(weight))
+                    mLG.add_edge(srcLayerNodeID, dstLayerNodeID, weight=weight)
+                else:
+                    self.logger.warning(
+                        "NPoP {0} hasn't enough server resource.".format(
+                            nodeID
+                        ))
             else:
-                self.logger.warning(
-                    "NPoP {0} hasn't enough server resource.".format(
-                        nodeID
-                    ))
+                raise ValueError("Unknown preferred device")
 
-    def _getSupportVNFSwitchesOfLayer(self, layerNum):
+    def _getSupportNFAndVNFSwitchesOfLayer(self, layerNum):
+        # type: (int) -> list(Switch)
         switches = []
-        if self.enablePreferredDeviceSelection:
-            vnfType = self.sfc.vNFTypeSequence[layerNum]
-            for switchID,switchInfoDict in self._dib.getSwitchesByZone(self.zoneName, 
-                                                    pruneInactiveSwitches=True).items():
-                switch = switchInfoDict['switch']
+        vnfType = self.sfc.vNFTypeSequence[layerNum]
+        for switchInfoDict in self._dib.getSwitchesByZone(self.zoneName, 
+                                    pruneInactiveSwitches=True).values():
+            switch = switchInfoDict['switch']
+            if self.enablePreferredDeviceSelection:
                 pDT = self._getPreferredDeviceTypeOfIdxVNF(self.sfc, layerNum)
                 if pDT == PREFERRED_DEVICE_TYPE_P4:
                     if vnfType in switch.supportNF:
@@ -239,16 +262,13 @@ class MultiLayerGraph(object):
                         switches.append(switch)
                 else:
                     pass
-        else:
-            vnfType = self.sfc.vNFTypeSequence[layerNum]
-            for switchID,switchInfoDict in self._dib.getSwitchesByZone(self.zoneName,
-                                                    pruneInactiveSwitches=True).items():
-                switch = switchInfoDict['switch']
+            else:
                 if vnfType in switch.supportVNF:
                     switches.append(switch)
         return switches
 
     def _getPreferredDeviceTypeOfIdxVNF(self, sfc, idx):
+        # type: (SFC, int) -> str
         pDT = sfc.vnfSequence[idx].preferredDeviceType
         return pDT
 

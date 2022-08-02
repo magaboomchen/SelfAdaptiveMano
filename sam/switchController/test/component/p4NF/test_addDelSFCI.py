@@ -29,7 +29,7 @@ class TestAddSFCIClass(TestP4ControllerBase):
     def setup_addSFCIWithP4VNFIOnASwitch(self):
         self.common_setup()
 
-        logging.info("Please start P4Controller," \
+        self.logger.info("Please start P4Controller," \
                     "Then press any key to continue!")
         sleep(1)
 
@@ -49,7 +49,7 @@ class TestAddSFCIClass(TestP4ControllerBase):
     def setup_delSFCIWithVNFIOnAServer(self):
         self.common_setup()
 
-        logging.info("Please start P4Controller," \
+        self.logger.info("Please start P4Controller," \
                     "Then press any key to continue!")
         sleep(1)
 
@@ -73,7 +73,7 @@ class TestAddSFCIClass(TestP4ControllerBase):
 
     def exerciseDelSFCAndSFCI(self):
         for idx in [0,1,2]:
-            logging.info("test idx {0}".format(idx))
+            self.logger.info("test idx {0}".format(idx))
             # exercise
             self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfcList[idx],
                                                         self.sfciList[idx])

@@ -15,8 +15,6 @@ MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "192.168.124.1"
 TESTER_SERVER_DATAPATH_MAC = "fe:54:00:42:26:44"
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestSFC2JsonClass(TestBase):
     @pytest.fixture(scope="function")

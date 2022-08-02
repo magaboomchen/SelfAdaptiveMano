@@ -13,7 +13,6 @@ from sam.orchestration import orchestrator
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.INFO)
 
 class TestShellProcessorClass(object):
     def setup_method(self, method):

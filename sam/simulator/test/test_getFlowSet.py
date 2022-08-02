@@ -38,7 +38,6 @@ class TestGetFlowSetClass(TestSimulatorBase):
                                         'testGetFlowSetClass.log',
                                         level='debug')
         self.logger = logConfigur.getLogger()
-        self.logger.setLevel(logging.DEBUG)
 
         # setup
         self.sP = ShellProcessor()

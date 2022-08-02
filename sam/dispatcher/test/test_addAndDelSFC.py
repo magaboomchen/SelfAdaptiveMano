@@ -10,7 +10,7 @@ The work flow:
     PS2: Class TestBase and TestSimulatorBase has many useful function;
 
 Usage of this unit test:
-    sudo python -m pytest ./test_addDelSFCI.py -s --disable-warnings
+    python -m pytest ./test_addDelSFCI.py -s --disable-warnings
 '''
 
 import logging
@@ -38,8 +38,9 @@ class TestAddSFCClass(TestSimulatorBase):
         logConfigur = LoggerConfigurator(__name__, './log',
                                             'testAddSFCClass.log',
                                             level='debug')
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'testAddSFCClass.log', level='info')
         self.logger = logConfigur.getLogger()
-        self.logger.setLevel(logging.DEBUG)
 
         # setup
         self.sP = ShellProcessor()
@@ -48,7 +49,7 @@ class TestAddSFCClass(TestSimulatorBase):
         self.killAllModule()
         time.sleep(3)
         self.mediator = MediatorStub()
-        logging.info("Please start dispatcher! Then press Any key to continue!")
+        self.logger.info("Please start dispatcher! Then press Any key to continue!")
         screenInput()
 
     @pytest.fixture(scope="function")

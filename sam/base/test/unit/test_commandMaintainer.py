@@ -13,8 +13,6 @@ from sam.base.messageAgent import MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, MSG_TYPE_S
 
 MANUAL_TEST = True
 
-logging.basicConfig(level=logging.INFO)
-
 
 class TestCommandMaintainerClass(object):
     def setup_method(self, method):

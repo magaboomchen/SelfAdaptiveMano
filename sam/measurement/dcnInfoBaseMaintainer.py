@@ -4,7 +4,8 @@
 from sam.base.link import Link
 from sam.base.socketConverter import SocketConverter
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.server import SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
+from sam.base.server import SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI, Server
+from sam.base.switch import Switch
 from sam.measurement.serverInfoBaseMaintainer import ServerInfoBaseMaintainer
 from sam.measurement.sfciInfoBaseMaintainer import SFCIInfoBaseMaintainer
 from sam.measurement.switchInfoBaseMaintainer import SwitchInfoBaseMaintainer
@@ -73,6 +74,7 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
             return False
 
     def getConnectedSwitch(self, serverID, zoneName):
+        # type: (int, str) -> Switch
         for switchID,switchInfoDict in self._switches[zoneName].items():
             switch = switchInfoDict['switch']
             if self.isServerConnectSwitch(switchID, serverID, zoneName):
@@ -212,6 +214,7 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
         self.updateVnfisInAllZone(newDib.getVnfisInAllZone())
 
     def getClassifierBySwitch(self, switch, zoneName):
+        # type: (Switch, str) -> Server
         for serverInfoDict in self.getServersByZone(zoneName).values():
             server = serverInfoDict['server']
             ip = server.getDatapathNICIP()
