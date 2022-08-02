@@ -73,7 +73,6 @@ class P4Agent:
         )
 
     def addRateLimiter(self, _service_path_index, _service_index):
-        self.addIEGress(_service_path_index, _service_index)
         ratelimiter = self.bfrtinfo.table_get('SwitchIngress.RateLimiter')
         ratelimiter.entry_add(
             self.target,
@@ -102,7 +101,6 @@ class P4Agent:
         )
 
     def removeRateLimiter(self, _service_path_index, _service_index):
-        self.addIEGress(_service_path_index, _service_index)
         ratelimiter = self.bfrtinfo.table_get('SwitchIngress.RateLimiter')
         ratelimiter.entry_del(
             self.target,
@@ -205,7 +203,3 @@ class P4Agent:
         tableingress = self.bfrtinfo.table_get('SwitchIngress.CounterIngress')
         tableegress = self.bfrtinfo.table_get('SwitchIngress.CounterEgress')
         return ipkt, ibyte, epkt, ebyte
-    
-    def queryFWentry(self, _service_path_index, _service_index, _src_addr, _dst_addr, _src_mask, _dst_mask, _nxt_hdr, _priority, _is_drop):
-        # currently not supported
-        pass
