@@ -3,7 +3,8 @@
 import random
 
 from sam.base.command import Command, CMD_TYPE_ADD_SFC, CMD_TYPE_DEL_SFC, CMD_TYPE_ADD_SFCI, \
-    CMD_TYPE_DEL_SFCI, CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_GET_FLOW_SET
+    CMD_TYPE_DEL_SFCI, CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_GET_FLOW_SET, CMD_TYPE_GET_SFCI_STATE, \
+    CMD_TYPE_GET_VNFI_STATE
 from sam.base.flow import Flow
 from sam.base.path import DIRECTION1_PATHID_OFFSET, DIRECTION0_PATHID_OFFSET
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
@@ -329,6 +330,7 @@ def get_topology_handler(cmd, sib):
 @add_command_handler(CMD_TYPE_GET_FLOW_SET)
 def get_flow_set_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
+    sib.updateLinkUtilization()
     result = []
     for sfciID, sfciInfo in sib.sfcis.items():
         sfci = sfciInfo['sfci']
@@ -519,3 +521,33 @@ def get_flow_set_handler(cmd, sib):
                                    response_ratio * pps_in / 1e6 * 8 * sib.flows[trafficID]['pkt_size']))
 
     return {'flows': result}
+
+
+@add_command_handler(CMD_TYPE_GET_SFCI_STATE)
+def get_sfci_state(cmd, sib):
+    # type: (Command, SimulatorInfoBaseMaintainer) -> dict
+    sib.updateLinkUtilization()
+    result = {}
+    for sfciID, sfci in sib.sfcis.items():
+        result[sfciID] = sfci['sfci']
+    return {'sfcisDict': result}
+
+
+@add_command_handler(CMD_TYPE_GET_VNFI_STATE)
+def get_vnfi_state(cmd, sib):
+    # type: (Command, SimulatorInfoBaseMaintainer) -> dict
+    sib.updateLinkUtilization()
+    result = {}
+    for vnfis in sib.vnfis.values():
+        for vnfiDict in vnfis:
+            vnfi = vnfiDict['vnfi']
+            result[vnfi.vnfiID] = {
+                'vnfType': vnfi.vnfType,
+                "rateLimitition": 1,
+                "FWRulesNum": 2,
+                "FlowStatisticsDict": {
+                    "1.1.1.1": 100,  # unit: Mbps
+                    "2.2.2.2": 50  # 生成这些数据即可，仅用于演示
+                }
+            }
+    return {'vnfisStateDict': result}
