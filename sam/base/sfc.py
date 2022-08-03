@@ -1,6 +1,15 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from uuid import uuid1
+from typing import Any, Union
+
+# from sam.base.path import ForwardingPathSet
+# from sam.base.slo import SLO
+# from sam.base.vnf import VNF, VNF_TYPE_FW, VNF_TYPE_LB, VNFI, VNFI_RESOURCE_QUOTA_LARGE, VNFI_RESOURCE_QUOTA_SMALL
+# from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, RoutingMorphic
+
+
 SFC_DOMAIN_PREFIX = "10.0.0.0"
 SFC_DOMAIN_PREFIX_LENGTH = 8  # DO NOT MODIFY THIS VALUE,
 # otherwise BESS will incurr error
@@ -44,10 +53,14 @@ SFC_DIRECTION_1 = 1
 
 
 class SFCI(object):
-    def __init__(self, sfciID, vnfiSequence=None, sloRealTimeValue=None,
-                    forwardingPathSet=None, routingMorphic=None):
-        self.sfciID = sfciID               # type: int
-        self.vnfiSequence = vnfiSequence  # type: list[list[VNFI]]  # only show the direction0
+    def __init__(self, sfciID,          # type: int
+                vnfiSequence=None,      # type: list[list[VNFI]]
+                sloRealTimeValue=None,  # type: SLO
+                forwardingPathSet=None, # type: ForwardingPathSet
+                routingMorphic=None     # type: RoutingMorphic
+                ):   
+        self.sfciID = sfciID
+        self.vnfiSequence = vnfiSequence  # only show the direction0
         self.sloRealTimeValue = sloRealTimeValue
         self.forwardingPathSet = forwardingPathSet
         self.routingMorphic = routingMorphic
@@ -85,12 +98,21 @@ class SFCI(object):
 
 
 class SFC(object):
-    def __init__(self, sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
-                 backupInstanceNumber, applicationType, directions=None,
-                 attributes=None, slo=None, 
-                 scalingMode=AUTO_SCALE, routingMorphic=None,
-                 protectionMode=WITHOUT_PROTECTION, recoveryMode=AUTO_RECOVERY,
-                 vnfSequence=None, vnfiResourceQuota=None):
+    def __init__(self, sfcUUID,     # type: uuid1
+                vNFTypeSequence,    # type: list(Union[VNF_TYPE_FW, VNF_TYPE_LB])
+                maxScalingInstanceNumber,   # type: int
+                backupInstanceNumber,       # type: int
+                applicationType,            # type: Union[APP_TYPE_NORTHSOUTH_WEBSITE, APP_TYPE_LARGE_BANDWIDTH]
+                directions=None,            # type: dict[str, Any]
+                attributes=None,            # type: dict[str, Any]
+                slo=None,                   # type: SLO
+                scalingMode=AUTO_SCALE,     # type: Union[AUTO_SCALE, MANUAL_SCALE]
+                routingMorphic=None,        # type: Union[IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL]
+                protectionMode=WITHOUT_PROTECTION,  # type:  Union[WITHOUT_PROTECTION, WITH_PROTECTION]
+                recoveryMode=AUTO_RECOVERY, # type: Union[AUTO_RECOVERY, MANUAL_RECOVERY]
+                vnfSequence=None,           # type: list[VNF]
+                vnfiResourceQuota=None      # type: Union[VNFI_RESOURCE_QUOTA_SMALL, VNFI_RESOURCE_QUOTA_LARGE]
+                ):
         self.sfcUUID = sfcUUID
         self.vNFTypeSequence = vNFTypeSequence  # [FW, LB]
         self.vnfSequence = vnfSequence

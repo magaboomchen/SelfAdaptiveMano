@@ -32,5 +32,5 @@ python ./measurer.py
 ## Terminal 6 (for test3)
 '''
 cd ~/Projects/SelfAdaptiveMano/sam/regulator
-python ./sam/simulator/regulator.py
+python ./regulator.py
 '''

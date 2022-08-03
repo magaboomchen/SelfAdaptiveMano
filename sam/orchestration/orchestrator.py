@@ -424,17 +424,17 @@ class Orchestrator(object):
             switchIDList = equipmentDict["switchIDList"]
             for switchID in switchIDList:
                 if self._dib.hasSwitch(switchID, self.zoneName):
-                    self._dib.updateSwitchState(switchID, self.zoneName, active = STATE_INACTIVE)
+                    self._dib.updateSwitchState(switchID, self.zoneName, state = STATE_INACTIVE)
 
             serverIDList = equipmentDict["serverIDList"]
             for serverID in serverIDList:
                 if self._dib.hasServer(serverID, self.zoneName):
-                    self._dib.updateServerState(serverID, self.zoneName, active = STATE_INACTIVE)
+                    self._dib.updateServerState(serverID, self.zoneName, state = STATE_INACTIVE)
 
             linkIDList = equipmentDict["linkIDList"]
             for linkID in linkIDList:
                 if self._dib.hasLink(linkID[0], linkID[1], self.zoneName):
-                    self._dib.updateLinkState(linkID, self.zoneName, active = STATE_INACTIVE)
+                    self._dib.updateLinkState(linkID, self.zoneName, state = STATE_INACTIVE)
 
 
 if __name__=="__main__":

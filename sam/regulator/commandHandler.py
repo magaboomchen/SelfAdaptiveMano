@@ -10,6 +10,7 @@ from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, MSG_
 from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI, Request
 from sam.base.sfc import AUTO_RECOVERY, STATE_ACTIVE, STATE_DELETED, STATE_INACTIVE, STATE_RECOVER_MODE
+from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 RECOVERY_TASK_STATE_READY = "RECOVERY_TASK_STATE_READY"
 RECOVERY_TASK_STATE_DELETING = "RECOVERY_TASK_STATE_DELETING"
@@ -21,7 +22,7 @@ class CommandHandler(object):
     def __init__(self, logger, msgAgent, oib):
         self.logger = logger
         self._messageAgent = msgAgent
-        self._oib = oib
+        self._oib = oib # type: OrchInfoBaseMaintainer
         self.recoveryTaskDict = {}  # dict[sfcUUID, dict[SFCIID, taskState]]
 
     def handle(self, cmd):
@@ -94,13 +95,15 @@ class CommandHandler(object):
                         self.updateRecoveryTask(sfc, sfci, 
                                 recoveryTaskState=RECOVERY_TASK_STATE_READY)
                 elif recoveryTaskState == RECOVERY_TASK_STATE_READY:
-                    req = self._genDelSFCIRequest(sfci)
+                    zoneName = self._oib.getSFCZone4DB(sfcUUID)
+                    req = self._genDelSFCIRequest(sfc, sfci, zoneName)
                     self._sendRequest2Dispatcher(req)
                     self.updateRecoveryTask(sfc, sfci, 
                                 recoveryTaskState=RECOVERY_TASK_STATE_DELETING)
                 elif recoveryTaskState == RECOVERY_TASK_STATE_DELETING:
                     if sfciState == STATE_DELETED:
-                        req = self._genAddSFCIRequest(sfc, sfci)
+                        zoneName = self._oib.getSFCZone4DB(sfcUUID)
+                        req = self._genAddSFCIRequest(sfc, sfci, zoneName)
                         self._sendRequest2Dispatcher(req)
                         self.updateRecoveryTask(sfc, sfci, 
                                     recoveryTaskState=RECOVERY_TASK_STATE_ADDING)
@@ -149,11 +152,13 @@ class CommandHandler(object):
                         fPathList.append(sfci.forwardingPathSet.backupForwardingPath[pathIDOffset])
                     for forwardingPath in fPathList:
                         for segPath in forwardingPath:
-                            for stage, nodeID in segPath:
+                            for stageNum, nodeID in segPath:
                                 if self.isNodeIDInDetectionDict(nodeID, detectionDict):
                                     infSFCIAndSFCTupleList.append((sfci, sfc, recoveryTaskState))
-                            for stage, nodeID in segPath[:-2]:
-                                linkID = (nodeID, segPath[stage+1])
+                            self.logger.info("segPath is {0}".format(segPath))
+                            for stageNum, nodeID in segPath[:-2]:
+                                self.logger.info("stageNum is {0}".format(stageNum))
+                                linkID = (nodeID, segPath[stageNum][1])
                                 if self.isLinkIDInDetectionDict(linkID, detectionDict):
                                     infSFCIAndSFCTupleList.append((sfci, sfc, recoveryTaskState))
             else:
@@ -190,18 +195,21 @@ class CommandHandler(object):
         infSFCIAndSFCTupleList.sort(reverse=True, key=lambda x:x[1].slo.availability)
         return infSFCIAndSFCTupleList
 
-    def _genDelSFCIRequest(self, sfci):
+    def _genDelSFCIRequest(self, sfc, sfci, zoneName):
         req = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFCI, 
                         attributes={
-                            "sfci": sfci
+                            "sfc": sfc,
+                            "sfci": sfci,
+                            "zone": zoneName
                     })
         return req
 
-    def _genAddSFCIRequest(self, sfc, sfci):
+    def _genAddSFCIRequest(self, sfc, sfci, zoneName):
         req = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFCI, 
                         attributes={
                             "sfc": sfc,
-                            "sfci": sfci
+                            "sfci": sfci,
+                            "zone": zoneName
                     })
         return req
 

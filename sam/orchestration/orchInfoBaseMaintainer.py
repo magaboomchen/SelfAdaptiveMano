@@ -521,6 +521,16 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         return sfc
 
     @reConnectionDecorator
+    def getSFCZone4DB(self, sfcUUID):
+        results = self.dbA.query("SFC", " ZONE_NAME ", 
+            " SFC_UUID = '{0}' ".format(sfcUUID))
+        if results != ():
+            zoneName = results[0][0]
+        else:
+            zoneName = None
+        return zoneName
+
+    @reConnectionDecorator
     def getSFCCorrespondingSFCIID4DB(self, sfcUUID):
         results = self.dbA.query("SFC", " SFCIID_LIST ", 
             " SFC_UUID = '{0}' ".format(sfcUUID))

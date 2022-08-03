@@ -55,6 +55,12 @@ VNFI_RESOURCE_QUOTA_SMALL = {
     "fwRules": 100
 }
 
+VNFI_RESOURCE_QUOTA_LARGE = {
+    "cpu": 4,
+    "mem": 2,    # 1 GiB hugepage
+    "fwRules": 200
+}
+
 
 class VNF(object):
     def __init__(self, vnfUUID= None, vnfType=None, config=None, 

@@ -23,6 +23,7 @@ from sam.base.slo import SLO
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, VNF, VNF_TYPE_FW, \
         PREFERRED_DEVICE_TYPE_SERVER, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, \
         VNFI_RESOURCE_QUOTA_SMALL
+from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.test.testBase import APP1_REAL_IP, APP1_REAL_IPV6, APP2_REAL_IP, APP3_REAL_GID, APP3_REAL_IP, APP4_REAL_IP, \
                                 APP4_REAL_IPV6, APP5_REAL_IP, TestBase
@@ -46,6 +47,7 @@ class IntTestBaseClass(TestBase):
         self.dropRequestAndSFCAndSFCITableInDB()
         self.initZone()
         time.sleep(3)
+        self._dib = DCNInfoBaseMaintainer()
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             False)
         self.logger.info("Please start dispatcher, mediator and simulator!"\
@@ -59,6 +61,9 @@ class IntTestBaseClass(TestBase):
     def getSFCFromDB(self, sfcUUID):
         self.sfcInDB = self._oib.getSFC4DB(sfcUUID)
         return self.sfcInDB
+
+    def getSFCIFromDB(self, sfciID):
+        return self._oib.getSFCI4DB(sfciID)
 
     def genLargeBandwidthSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()

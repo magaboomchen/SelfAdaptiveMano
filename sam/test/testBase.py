@@ -6,21 +6,27 @@ import random
 import logging
 
 from sam.base.acl import ACL_ACTION_ALLOW, ACL_PROTO_UDP, ACLTable, ACLTuple
-from sam.base.sfc import SFC, SFC_DIRECTION_0, SFC_DIRECTION_1, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
-from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, VNF_TYPE_FORWARD, VNF_TYPE_MAX, VNFI_RESOURCE_QUOTA_SMALL
+from sam.base.sfc import SFC, SFC_DIRECTION_0, SFC_DIRECTION_1, SFCI, \
+                                            APP_TYPE_NORTHSOUTH_WEBSITE
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, \
+            VNF_TYPE_FORWARD, VNF_TYPE_MAX, VNFI_RESOURCE_QUOTA_SMALL
 from sam.base.slo import SLO
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI, \
     SERVER_TYPE_TESTER
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_UFRR, MAPPING_TYPE_E2EP
 from sam.base.switch import Switch
-from sam.base.request import Request, REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
-    REQUEST_STATE_INITIAL, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI
-from sam.base.messageAgent import DEFAULT_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, SAMMessage, MessageAgent, MSG_TYPE_REQUEST, \
-    REQUEST_PROCESSOR_QUEUE
-from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL, RoutingMorphic
+from sam.base.request import Request, REQUEST_TYPE_ADD_SFC, \
+                            REQUEST_TYPE_ADD_SFCI,  REQUEST_STATE_INITIAL, \
+                            REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI
+from sam.base.messageAgent import DEFAULT_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, \
+                                SAMMessage, MessageAgent, MSG_TYPE_REQUEST, \
+                                REQUEST_PROCESSOR_QUEUE
+from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, \
+                    ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL, RoutingMorphic
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
 from sam.measurement.mConfig import SIMULATOR_ZONE_ONLY
+from sam.orchestration.algorithms.base.pathServerFiller import PathServerFiller
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.regulator import regulator
 from sam.toolkit.cleanAllLogFile import cleanAllLogFile
@@ -683,10 +689,4 @@ class TestBase(object):
         del _oib
 
     def reverseForwardingPath(self, d0FP):
-        d1FP = []
-        rD0FP = list(reversed(d0FP))
-        for idx, segPath in enumerate(rD0FP):
-            d1FP.append([])
-            for segNodeTuple in segPath:
-                d1FP[-1].append((idx, segNodeTuple[1]))
-        return d1FP
+        return PathServerFiller().reverseForwardingPath(d0FP)

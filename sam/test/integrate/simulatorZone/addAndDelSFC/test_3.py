@@ -12,15 +12,16 @@ Usage of this unit test:
 '''
 
 import uuid
-import logging
 
 import pytest
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 
 from sam.base.compatibility import screenInput
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, REGULATOR_QUEUE, SIMULATOR_ZONE
+from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
                         REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
+from sam.base.sfc import SFCI
 from sam.test.integrate.intTestBase import IntTestBaseClass
 
 MANUAL_TEST = True
@@ -91,7 +92,11 @@ class TestAddSFCClass(IntTestBaseClass):
         screenInput()
 
         # exercise
-        self.logger.info("Please input abnormal serverID!")
+        serverIDList = []
+        for sfci in self.sfciList:
+            updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
+            serverIDList.extend(self.getAllServerIDFromSFCI(updatedSFCI))
+        self.logger.info("Please input abnormal serverID from {0}".format(serverIDList))
         abnServerID = int(screenInput())
         cmd = self.genAbnormalServerHandleCommand(abnServerID)
         self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
@@ -122,6 +127,41 @@ class TestAddSFCClass(IntTestBaseClass):
         self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
         screenInput()
+
+    def getAllSwitchIDFromSFCI(self, sfci):
+        # type: (SFCI) -> list(int)
+        switchDict = {}
+        pFP = sfci.forwardingPathSet.primaryForwardingPath
+        for pathIDOffset in [DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET]:
+            uniPFP = pFP[pathIDOffset]
+            for segPath in uniPFP:
+                for segNodeID in segPath:
+                    nodeID = segNodeID[1]
+                    self.logger.info("nodeID is {0}".format(nodeID))
+                    if self.isSwitchID(nodeID):
+                        switchDict[nodeID] = 1
+        return list(switchDict.keys())
+
+    def getAllServerIDFromSFCI(self, sfci):
+        # type: (SFCI) -> list(int)
+        serverDict = {}
+        pFP = sfci.forwardingPathSet.primaryForwardingPath
+        for pathIDOffset in [DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET]:
+            if pathIDOffset in pFP.keys():
+                uniPFP = pFP[pathIDOffset]
+                for segPath in uniPFP:
+                    for segNodeID in segPath:
+                        nodeID = segNodeID[1]
+                        self.logger.info("nodeID is {0}".format(nodeID))
+                        if self.isServerID(nodeID):
+                            serverDict[nodeID] = 1
+        return list(serverDict.keys())
+
+    def isServerID(self, nodeID):
+        return nodeID > 10000
+    
+    def isSwitchID(self, nodeID):
+        return nodeID <= 10000
 
     def genAbnormalServerHandleCommand(self, serverID):
         detectionDict = {
