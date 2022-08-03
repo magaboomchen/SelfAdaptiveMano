@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
 from functools import wraps
+import logging
 
 from sam.base.sfc import STATE_IN_PROCESSING, STATE_ACTIVE, \
     STATE_DELETED, STATE_INACTIVE, STATE_INIT_FAILED, STATE_MANUAL, STATE_UNDELETED
@@ -31,6 +31,12 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     def reConnectionDecorator(f):
         @wraps(f)
         def decorated(self, *args, **kwargs):
+            # if self.dbA.isConnectingDB():
+            #     self.dbA.disconnect()
+            # self.dbA.connectDB(db = "Orchestrator")
+            # f(self, *args, **kwargs)
+            # self.dbA.disconnect()
+
             self.reConnection()
             return f(self, *args, **kwargs)
         return decorated
@@ -46,25 +52,25 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     def _initRequestTable(self):
         if self.reInitialTable:
             self.dbA.dropTable("Request")
-        if not self.dbA.hasTable("Orchestrator", "Request"):
-            self.dbA.createTable("Request",
-                """
-                ID INT UNSIGNED AUTO_INCREMENT,
-                REQUEST_UUID VARCHAR(36) NOT NULL,
-                REQUEST_TYPE VARCHAR(36) NOT NULL,
-                SFC_UUID VARCHAR(36),
-                SFCIID SMALLINT,
-                CMD_UUID VARCHAR(36),
-                STATE TEXT NOT NULL,
-                PICKLE BLOB,
-                RETRY_CNT SMALLINT,
-                submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY ( ID ),
-                INDEX SFC_UUID_INDEX (SFC_UUID(36)),
-                INDEX SFCIID_INDEX (SFCIID),
-                INDEX CMD_UUID_INDEX (CMD_UUID(36))
-                """
-                )
+            if not self.dbA.hasTable("Orchestrator", "Request"):
+                self.dbA.createTable("Request",
+                    """
+                    ID INT UNSIGNED AUTO_INCREMENT,
+                    REQUEST_UUID VARCHAR(36) NOT NULL,
+                    REQUEST_TYPE VARCHAR(36) NOT NULL,
+                    SFC_UUID VARCHAR(36),
+                    SFCIID SMALLINT,
+                    CMD_UUID VARCHAR(36),
+                    STATE TEXT NOT NULL,
+                    PICKLE BLOB,
+                    RETRY_CNT SMALLINT,
+                    submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY ( ID ),
+                    INDEX SFC_UUID_INDEX (SFC_UUID(36)),
+                    INDEX SFCIID_INDEX (SFCIID),
+                    INDEX CMD_UUID_INDEX (CMD_UUID(36))
+                    """
+                    )
 
     @reConnectionDecorator
     def addRequest(self, request, sfcUUID=-1, sfciID=-1, cmdUUID=-1, retryCnt=0):
@@ -83,23 +89,23 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     @reConnectionDecorator
     def updateRequest(self, request, sfcUUID=None, sfciID=None, cmdUUID=None, retryCnt=None):
         if self.hasRequest(request.requestID):
-            fieldsValues = " REQUEST_TYPE = {0}, STATE = {1}, PICKLE = '{2}'".format(
+            fieldsValues = " `REQUEST_TYPE` = ({0}), `STATE` = ({1}), `PICKLE` = ('{2}') ".format(
                                                 request.requestType,
                                                 request.requestState,
                                                 self.pIO.obj2Pickle(request).decode()
                                                 )
             if sfcUUID != None:
-                fieldsValues += ", SFC_UUID = {0}".format(sfcUUID)
+                fieldsValues += ", `SFC_UUID` = ({0})".format(sfcUUID)
             if sfciID != None:
-                fieldsValues += ", SFCIID = {0}".format(sfciID)
+                fieldsValues += ", `SFCIID` = ({0})".format(sfciID)
             if cmdUUID != None:
-                fieldsValues += ", CMD_UUID = {0}".format(cmdUUID)
+                fieldsValues += ", `CMD_UUID` = ({0})".format(cmdUUID)
             if retryCnt != None:
-                fieldsValues += ", RETRY_CNT = {0}".format(retryCnt)
+                fieldsValues += ", `RETRY_CNT` = ({0})".format(retryCnt)
 
-            self.dbA.update("Request", 
+            self.dbA.update("`Request`", 
                 fieldsValues,
-                " REQUEST_UUID = {0} ".format(
+                " `REQUEST_UUID` = ({0}) ".format(
                     request.requestID)
                 )
 
@@ -143,19 +149,19 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     def _initSFCTable(self):
         if self.reInitialTable:
             self.dbA.dropTable("SFC")
-        if not self.dbA.hasTable("Orchestrator", "SFC"):
-            self.dbA.createTable("SFC",
-                """
-                ID INT UNSIGNED AUTO_INCREMENT,
-                ZONE_NAME VARCHAR(100) NOT NULL,
-                SFC_UUID VARCHAR(36) NOT NULL,
-                SFCIID_LIST BLOB,
-                STATE TEXT NOT NULL,
-                PICKLE BLOB,
-                submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY ( ID )
-                """
-                )
+            if not self.dbA.hasTable("Orchestrator", "SFC"):
+                self.dbA.createTable("SFC",
+                    """
+                    ID INT UNSIGNED AUTO_INCREMENT,
+                    ZONE_NAME VARCHAR(100) NOT NULL,
+                    SFC_UUID VARCHAR(36) NOT NULL,
+                    SFCIID_LIST BLOB,
+                    STATE TEXT NOT NULL,
+                    PICKLE BLOB,
+                    submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY ( ID )
+                    """
+                    )
 
     @reConnectionDecorator
     def hasSFC(self, sfcUUID):
@@ -187,21 +193,21 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     def _initSFCITable(self):
         if self.reInitialTable:
             self.dbA.dropTable("SFCI")
-        if not self.dbA.hasTable("Orchestrator", "SFCI"):
-            self.dbA.createTable("SFCI",
-                """
-                ID INT UNSIGNED AUTO_INCREMENT,
-                SFCIID SMALLINT,
-                SFC_UUID VARCHAR(36) NOT NULL,
-                VNFI_LIST BLOB,
-                STATE TEXT NOT NULL,
-                PICKLE BLOB,
-                ORCHESTRATION_TIME FLOAT,
-                ZONE_NAME VARCHAR(100) NOT NULL,
-                submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY ( ID )
-                """
-                )
+            if not self.dbA.hasTable("Orchestrator", "SFCI"):
+                self.dbA.createTable("SFCI",
+                    """
+                    ID INT UNSIGNED AUTO_INCREMENT,
+                    SFCIID SMALLINT,
+                    SFC_UUID VARCHAR(36) NOT NULL,
+                    VNFI_LIST BLOB,
+                    STATE TEXT NOT NULL,
+                    PICKLE BLOB,
+                    ORCHESTRATION_TIME FLOAT,
+                    ZONE_NAME VARCHAR(100) NOT NULL,
+                    submission_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY ( ID )
+                    """
+                    )
 
     @reConnectionDecorator
     def addSFCI2DB(self, sfci, sfcUUID, zoneName, state=STATE_IN_PROCESSING, orchTime=-1):
@@ -221,22 +227,22 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     @reConnectionDecorator
     def updateSFCI2DB(self, sfci, sfcUUID=None, zoneName=None, state=None, orchTime=None):
         if self.hasSFCI(sfci.sfciID):
-            fieldsValues = " VNFI_LIST = {0}, PICKLE = '{1}'".format(
+            fieldsValues = " `VNFI_LIST` = ('{0}'), `PICKLE` = ('{1}')".format(
                         self.pIO.obj2Pickle(sfci.vnfiSequence).decode(),       
                         self.pIO.obj2Pickle(sfci).decode()
                         )
             if sfcUUID != None:
-                fieldsValues += ", SFC_UUID = {0}".format(sfcUUID)
+                fieldsValues += ", `SFC_UUID` = ('{0}')".format(sfcUUID)
             if zoneName != None:
-                fieldsValues += ", ZONE_NAME = {0}".format(zoneName)
+                fieldsValues += ", `ZONE_NAME` = ('{0}')".format(zoneName)
             if state != None:
-                fieldsValues += ", STATE = {0}".format(state)
+                fieldsValues += ", `STATE` = ('{0}')".format(state)
             if orchTime != None:
-                fieldsValues += ", ORCHESTRATION_TIME = {0}".format(orchTime)
+                fieldsValues += ", `ORCHESTRATION_TIME` = ({0})".format(orchTime)
 
-            self.dbA.update("SFCI", 
+            self.dbA.update("`SFCI`", 
                 fieldsValues,
-                " SFCIID = {0} ".format(
+                " `SFCIID` = ({0}) ".format(
                     sfci.sfciID)
                 )
 
@@ -313,7 +319,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         if self.hasSFCI(sfci.sfciID):
             sfciState = self.getSFCIState(sfci.sfciID)
             if sfciState in [STATE_DELETED, STATE_INIT_FAILED]:
-                self.updateSFCI2DB(sfci, sfc.sfcUUID, zoneName)
+                self.updateSFCI2DB(sfci, sfc.sfcUUID, zoneName, STATE_IN_PROCESSING)
             else:
                 request.requestState = REQUEST_STATE_FAILED
         else:
@@ -494,15 +500,15 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     @reConnectionDecorator
     def updateSFC2DB(self, sfc, sfciIDList=None, state=STATE_IN_PROCESSING):
         if self.hasSFC(sfc.sfcUUID):
-            self.dbA.update("SFCI", 
-                " ZONE_NAME = {0}, SFCIID_LIST = {1}," \
-                " STATE = {2}, PICKLE = '{3}' ".format(
+            self.dbA.update("`SFCI`", 
+                " `ZONE_NAME` = ({0}), `SFCIID_LIST` = ('{1}')," \
+                " `STATE` = ({2}), `PICKLE` = ('{3}') ".format(
                             sfc.attributes["zone"],
                             self.pIO.obj2Pickle(sfciIDList),
                             state,
                             self.pIO.obj2Pickle(sfc)
                 ),
-                " SFC_UUID = {0} ".format(
+                " `SFC_UUID` = ({0}) ".format(
                     sfc.sfcUUID)
                 )
 
@@ -558,7 +564,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     @reConnectionDecorator
     def _addSFCI2SFCInDB(self, sfcUUID, sfciID):
         results = self.dbA.query("SFC", " SFCIID_LIST ",
-            " SFC_UUID = '{0}' ".format(sfcUUID))
+            " SFC_UUID = ('{0}') ".format(sfcUUID))
         sfciIDList = self.pIO.pickle2Obj(results[0][0])
         sfciIDList.append(sfciID)
         sfciIDListPickle = self.pIO.obj2Pickle(sfciIDList)
@@ -568,7 +574,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     @reConnectionDecorator
     def _delSFCI4SFCInDB(self, sfcUUID, sfciID):
         results = self.dbA.query("SFC", " SFCIID_LIST ",
-            " SFC_UUID = '{0}' ".format(sfcUUID))
+            " SFC_UUID = ('{0}') ".format(sfcUUID))
         sfciIDList = self.pIO.pickle2Obj(results[0][0])
         sfciIDList.remove(sfciID)
         sfciIDListPickle = self.pIO.obj2Pickle(sfciIDList)

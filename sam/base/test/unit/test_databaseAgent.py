@@ -72,7 +72,7 @@ class TestDatabaseAgentClass(object):
         assert self._decodePickle2Object(results[0][7]) == self.testObject
 
     def test_update1(self):
-        self.dbA.update("Request", "AGE = 10", " SEX = 'M'")
+        self.dbA.update("Request", "AGE = (10)", " SEX = 'M'")
         results = self.dbA.query("Request", "*")
         assert results[0][:-2] == (1, 'Mac', 'Mohan', 10, 'M', 2000.0,
             str(self.REQUEST_UUID))
@@ -82,7 +82,7 @@ class TestDatabaseAgentClass(object):
     def test_update2(self):
         request = {"requestID":1}
         self.dbA.update("Request",
-                        "AGE = 10",
+                        "AGE = (10)",
                         " REQUEST_UUID = '{0}' ".format(self.REQUEST_UUID))
         results = self.dbA.query("Request", "*")
         assert results[0][:-2] == (1, 'Mac', 'Mohan', 10, 'M', 2000.0,
@@ -93,7 +93,7 @@ class TestDatabaseAgentClass(object):
     def test_update3(self):
         request = {"requestID":1}
         self.dbA.update("Request",
-                        " PICKLE = '{0}' ".format(self._encodeObject2Pickle(request).decode()),
+                        " PICKLE = ('{0}') ".format(self._encodeObject2Pickle(request).decode()),
                         " REQUEST_UUID = '{0}' ".format(self.REQUEST_UUID))
         results = self.dbA.query("Request", "*")
         assert results[0][:-2] == (1, 'Mac', 'Mohan', 10, 'M', 2000.0,
@@ -103,7 +103,7 @@ class TestDatabaseAgentClass(object):
 
     def test_update4(self):
         request = {"requestID":1}
-        self.dbA.update("Request", "AGE = 10, FIRST_NAME = 'Mike'", " SEX = 'M'")
+        self.dbA.update("Request", "AGE = (10), FIRST_NAME = ('Mike')", " SEX = 'M'")
         results = self.dbA.query("Request", "*")
         assert results[0][:-2] == (1, 'Mike', 'Mohan', 10, 'M', 2000.0,
             str(self.REQUEST_UUID))

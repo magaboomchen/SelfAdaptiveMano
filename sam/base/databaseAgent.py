@@ -30,7 +30,19 @@ class DatabaseAgent(object):
         self.db = None
 
     def isConnectingDB(self):
-        return self.db != None
+        if self.db != None:
+            if sys.version > '3':
+                try:
+                    self.db.ping(reconnect=False)
+                except Exception as ex:
+                    # ExceptionProcessor(self.logger).logException(ex)
+                    self.logger.debug("Unconnection.")
+                    return False
+                return True
+            else:
+                return self.db.is_connected()
+        else:
+            return False
 
     def connectDB(self, db):
         if sys.version > '3':
@@ -104,6 +116,7 @@ class DatabaseAgent(object):
         if condition != None:
             sql = sql + " WHERE {0} ".format(condition)
         try:
+            self.logger.debug("db update sql is {0}".format(sql))
             self.cursor.execute(sql)
             self.db.commit()
         except Exception as ex:

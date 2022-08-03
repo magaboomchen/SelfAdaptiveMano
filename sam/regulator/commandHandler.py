@@ -91,6 +91,7 @@ class CommandHandler(object):
                 sfci = self._oib.getSFCI4DB(sfciID)
                 if recoveryTaskState == RECOVERY_TASK_STATE_WAITING:
                     if self.isReadyToRecover(sfcState, sfciState):
+                        self.logger.info("ready to recover.")
                         self.updateSFCIAndSFCState2RecoveryMode(sfci, sfc)
                         self.updateRecoveryTask(sfc, sfci, 
                                 recoveryTaskState=RECOVERY_TASK_STATE_READY)
@@ -139,10 +140,11 @@ class CommandHandler(object):
                 sfc = self._oib.getSFC4DB(sfcUUID)
                 sfcState = self._oib.getSFCState(sfcUUID)
                 sfciState = sfciTuple[3]
-                if self.isReadyToRecover(sfcState, sfciState):
-                    recoveryTaskState = RECOVERY_TASK_STATE_WAITING
-                else:
-                    recoveryTaskState = RECOVERY_TASK_STATE_READY
+                # if self.isReadyToRecover(sfcState, sfciState):
+                #     recoveryTaskState = RECOVERY_TASK_STATE_WAITING
+                # else:
+                #     recoveryTaskState = RECOVERY_TASK_STATE_READY
+                recoveryTaskState = RECOVERY_TASK_STATE_WAITING
                 sfci = sfciTuple[4]
                 for pathIDOffset in [DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET]:
                     fPathList = []

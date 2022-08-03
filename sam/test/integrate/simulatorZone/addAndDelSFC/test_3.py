@@ -17,7 +17,7 @@ import pytest
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 
 from sam.base.compatibility import screenInput
-from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, REGULATOR_QUEUE, SIMULATOR_ZONE
+from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, REGULATOR_QUEUE, SIMULATOR_ZONE, TURBONET_ZONE
 from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
                         REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
@@ -96,10 +96,15 @@ class TestAddSFCClass(IntTestBaseClass):
         for sfci in self.sfciList:
             updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
             serverIDList.extend(self.getAllServerIDFromSFCI(updatedSFCI))
-        self.logger.info("Please input abnormal serverID from {0}".format(serverIDList))
+        self.logger.info("Please input abnormal serverID from "
+                            "candidate server list {0}".format(serverIDList))
         abnServerID = int(screenInput())
         cmd = self.genAbnormalServerHandleCommand(abnServerID)
         self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
+
+        self.logger.info("Please check regulator if affected SFCI recovered?"\
+                        "Then press andy key to continue!")
+        screenInput()
 
         # exercise
         for idx, sfci in enumerate(self.sfciList):
@@ -176,7 +181,7 @@ class TestAddSFCClass(IntTestBaseClass):
                 "linkIDList":[]
             }
         }
-        allZoneDetectionDict={SIMULATOR_ZONE: detectionDict,  SIMULATOR_ZONE: detectionDict}
+        allZoneDetectionDict={SIMULATOR_ZONE: detectionDict}
         attr = {
             "allZoneDetectionDict": allZoneDetectionDict
         }

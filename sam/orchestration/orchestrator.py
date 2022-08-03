@@ -119,33 +119,12 @@ class Orchestrator(object):
                 if self._batchMode == False:
                     raise ValueError("Deprecated function: genAddSFCICmd"
                         "Please use batch mode!")
-                    # self._odir.getDCNInfo()
-                    # cmd = self._osa.genAddSFCICmd(request)
-                    # self._cm.addCmd(cmd)
-                    # self._oib.addSFCIRequestHandler(request, cmd)
-                    # self.sendCmd(cmd)
                 else:
                     self._requestBatchQueue.put(request)
                     self.logger.debug("put req into requestBatchQueue")
                     if (self._requestBatchQueue.qsize() >= self._batchSize \
                                             and self.runningState == True):
                         self.processAllAddSFCIRequests()
-                        # self.requestCnt += self._requestBatchQueue.qsize()
-                        # self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
-
-                        # self.logger.info("Trigger batch process.")
-                        # # self._odir.getDCNInfo()
-                        # self.processInvalidAddSFCIRequests(self._requestBatchQueue)
-                        # reqCmdTupleList = self._osa.genABatchOfRequestAndAddSFCICmds(
-                        #     self._requestBatchQueue)
-                        # self.logger.info("After mapping, there are {0} request in queue".format(self._requestBatchQueue.qsize()))
-                        # for (request, cmd) in reqCmdTupleList:
-                        #     self._cm.addCmd(cmd)
-                        #     if ENABLE_OIB:
-                        #         self._oib.addSFCIRequestHandler(request, cmd)
-                        #     self.sendCmd(cmd)
-                        # self.logger.info("Batch process finish")
-                        # self.batchLastTime = time.time()
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 cmd = self._osd.genDelSFCICmd(request)
                 if self._oib._isDelSFCIValidState(cmd):
@@ -241,26 +220,12 @@ class Orchestrator(object):
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)
                 if ENABLE_OIB:
+                    sfci = cmd.attributes['sfci']
+                    self.logger.info("sfciID is {0}".format(sfci.sfciID))
                     self._oib.addSFCIRequestHandler(request, cmd)
             self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
             self.logger.info("Batch process finish")
             self.batchLastTime = time.time()
-
-            # self.requestCnt += self._requestBatchQueue.qsize()
-            # self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
-            # self.logger.info("Trigger batch process.")
-            # # self._odir.getDCNInfo()
-            # self.processInvalidAddSFCIRequests(self._requestBatchQueue)
-            # reqCmdTupleList = self._osa.genABatchOfRequestAndAddSFCICmds(
-            #     self._requestBatchQueue)
-            # self.logger.info("After mapping, there are {0} request in queue".format(self._requestBatchQueue.qsize()))
-            # for (request, cmd) in reqCmdTupleList:
-            #     self._cm.addCmd(cmd)
-            #     if ENABLE_OIB:
-            #         self._oib.addSFCIRequestHandler(request, cmd)
-            #     self.sendCmd(cmd)
-            # self.logger.info("Batch process finish")
-            # self.batchLastTime = time.time()
 
     def sendCmd(self, cmd):
         msg = SAMMessage(MSG_TYPE_ORCHESTRATOR_CMD, cmd)
