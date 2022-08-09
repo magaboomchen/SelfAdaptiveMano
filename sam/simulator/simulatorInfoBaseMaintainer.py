@@ -155,7 +155,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
 
         for serverID, processes in serverProcesses.items():
             server = self.servers[serverID]['server']  # type: Server
-            cpu = reduce(lambda x, y: x + y, [process['cpu'] for process in processes])
+            cpu = reduce(lambda x, y: x + y, [process['cpu'] for process in processes], 0)
             distribution = server.getCoreNUMADistribution()
             utilization = [0] * len(server.getCpuUtil())
             for singleCpu in distribution:
@@ -169,7 +169,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
 
             pageSize = server.getHugepagesSize()
             pageUsage = reduce(lambda x, y: x + y,
-                               [int(math.ceil(process['mem'] * 1024 / pageSize)) for process in processes])
+                               [int(math.ceil(process['mem'] * 1024 / pageSize)) for process in processes], 0)
             hugePagesTotal = server.getHugepagesTotal()
             for i, hugePage in enumerate(hugePagesTotal):
                 if hugePage < pageUsage:
