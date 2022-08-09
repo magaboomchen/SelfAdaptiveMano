@@ -16,6 +16,9 @@ from sam.base.rateLimiter import RateLimiterConfig
 
 P4CONTROLLER_P4_SWITCH_ID_1 = 20
 P4CONTROLLER_P4_SWITCH_ID_2 = 21
+LOOP_PORT = 192
+DIRECTION_MASK_0 = 8388607
+DIRECTION_MASK_1 = 8388608
 
 class P4Controller:
     def __init__(self, _zonename):
@@ -65,15 +68,15 @@ class P4Controller:
                     success, resdict = self._getstate(cmd)
                 else:
                     self.logger.error("Unsupported cmd type for P4 controller: %s." % cmd.cmdType)
+                '''
                 if success:
                     self._commandresults[cmd.cmdID] = CMD_STATE_SUCCESSFUL
                 else:
                     self._commandresults[cmd.cmdID] = CMD_STATE_FAIL
-                '''
                 cmdreply = CommandReply(cmd.cmdID, self._commandresults[cmd.cmdID])
-                cmdreply.attributes["zone"] = self.zonename
+                cmdreply.attributes["zone"] = TURBONET_ZONE
                 cmdreply.attributes.update(resdict)
-                replymessage = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, cmdreply)
+                replymessage = SAMMessage(MSG_TYPE_P4CONTROLLER_CMD_REPLY, cmdreply)
                 self._messageAgent.sendMsg(MEDIATOR_QUEUE, replymessage)
             else:
                 self.logger.error('Unsupported msg type for P4 controller: %s.' % msg.getMessageType())
@@ -84,9 +87,23 @@ class P4Controller:
     
     def _addsfci(self, _cmd):
         sfci = _cmd.attributes['sfci']
+        hasdir0 = False
+        hasdir1 = False
+        directions = _cmd.attributes['sfc'].directions
+        if directions[0]['ID'] == 0:
+            hasdir0 = True
+        else:
+            hasdir1 = True
+        if len(directions) == 2:
+            if directions[1]['ID'] == 0:
+                hasdir0 = True
+            else:
+                hasdir1 = True
         sfciID = sfci.sfciID
         self.logger.info('Adding sfci %s.' % sfciID)
         nfseq = sfci.vnfiSequence
+        si = len(nfseq)
+        spi = sfciID
         for nf in nfseq:
             for nfi in nf:
                 if isinstance(nfi.node, Switch):
@@ -98,15 +115,42 @@ class P4Controller:
                     else:
                         continue
                     if nfi.vnfType == VNF_TYPE_FW:
-                        self._p4agent[p4id].addIEGress()
+                        if hasdir0:
+                            self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si)
+                        if hasdir1:
+                            self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si)
                     elif nfi.vnfType == VNF_TYPE_RATELIMITER:
-                        self._p4agent[p4id].addIEGress()
-                        self._p4agent[p4id].addRateLimiter()
+                        ratelim = nfi.config.maxMbps * 1024
+                        if hasdir0:
+                            self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si)
+                            self._p4agent[p4id].addRateLimiter(
+                                _service_path_index = (spi & DIRECTION_MASK_0),
+                                _service_index = si,
+                                _cir = ratelim,
+                                _cbs = ratelim,
+                                _pir = ratelim,
+                                _pbs = ratelim
+                            )
+                        if hasdir1:
+                            self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si)
+                            self._p4agent[p4id].addRateLimiter(
+                                _service_path_index = (spi | DIRECTION_MASK_1),
+                                _service_index = si,
+                                _cir = ratelim,
+                                _cbs = ratelim,
+                                _pir = ratelim,
+                                _pbs = ratelim
+                            )
                     elif nfi.vnfType == VNF_TYPE_MONITOR:
-                        self._p4agent[p4id].addIEGress()
-                        self._p4agent[p4id].addMonitor()
+                        if hasdir0:
+                            self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si)
+                            self._p4agent[p4id].addMonitor(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si)
+                        if hasdir1:
+                            self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si)
+                            self._p4agent[p4id].addMonitor(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si)
                     else:
                         return False
+            si = si - 1
         return True
     
     def _getstate(self, _cmd):
@@ -120,29 +164,8 @@ class P4Controller:
         sfci = _cmd.attributes['sfci']
         sfciID = sfci.sfciID
         self.logger.info('Deleting sfci %s.' % sfciID)
-        nfseq = sfci.vnfiSequence
-        for nf in nfseq:
-            for nfi in nf:
-                if isinstance(nfi.node, Switch):
-                    p4id = -1
-                    if nfi.node.switchID == P4CONTROLLER_P4_SWITCH_ID_1:
-                        p4id = 0
-                    elif nfi.node.switchID == P4CONTROLLER_P4_SWITCH_ID_2:
-                        p4id = 1
-                    else:
-                        continue
-                    if nfi.vnfType == VNF_TYPE_FW:
-                        self._p4agent[p4id].removeIEGress()
-                    elif nfi.vnfType == VNF_TYPE_RATELIMITER:
-                        self._p4agent[p4id].removeIEGress()
-                        self._p4agent[p4id].removeRateLimiter()
-                    elif nfi.vnfType == VNF_TYPE_MONITOR:
-                        self._p4agent[p4id].removeIEGress()
-                        self._p4agent[p4id].removeMonitor()
-                    else:
-                        return False
         return True
 
 if __name__ == '__main__':
-    p4ctl = P4Controller(TURBONET_ZONE)
+    p4ctl = P4Controller('')
     p4ctl.run()
