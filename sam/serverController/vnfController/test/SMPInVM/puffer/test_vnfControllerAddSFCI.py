@@ -2,13 +2,11 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
 
 import pytest
 from scapy.all import sniff
 from scapy.layers.inet import IP
 
-from sam import base
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE
@@ -21,7 +19,6 @@ from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, \
     SFCI1_0_EGRESS_IP, WEBSITE_REAL_IP, SFCI1_1_EGRESS_IP
 
-MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.199"
 TESTER_SERVER_DATAPATH_MAC = "52:54:00:a8:b0:a1"
 

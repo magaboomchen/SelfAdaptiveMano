@@ -2,24 +2,25 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
-from sam.base.command import CMD_STATE_SUCCESSFUL
+from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL
+from sam.base.server import SERVER_TYPE_NFVI, Server
 
-from sam.base.messageAgent import MEDIATOR_QUEUE, MSG_TYPE_P4CONTROLLER_CMD, P4CONTROLLER_QUEUE, TURBONET_ZONE
+from sam.base.sfc import SFC, SFCI
+from sam.test.testBase import DCN_GATEWAY_IP
+from sam.base.command import CMD_STATE_SUCCESSFUL, CMD_TYPE_ADD_CLASSIFIER_ENTRY, CMD_TYPE_ADD_NSH_ROUTE
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.sfc import SFCI
-from sam.base.path import MAPPING_TYPE_MMLPSFC, ForwardingPathSet
-from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
-from sam.base.vnf import VNF_TYPE_RATELIMITER, VNFI, VNF_TYPE_FORWARD
-from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, SWITCH_TYPE_NPOP, Switch
 from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.integrate.intTestBase import IntTestBaseClass
-from sam.test.testBase import DCN_GATEWAY_IP
+from sam.base.path import MAPPING_TYPE_MMLPSFC, ForwardingPathSet
+from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, PREFERRED_DEVICE_TYPE_SERVER, VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNF_TYPE_FORWARD
+from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, SWITCH_TYPE_NPOP, Switch
+from sam.switchController.test.component.fixtures.turbonetControllerStub import TurbonetControllerStub
+from sam.base.messageAgent import MEDIATOR_QUEUE, MSG_TYPE_P4CONTROLLER_CMD, P4CONTROLLER_QUEUE, TURBONET_ZONE
 
-MANUAL_TEST = True
 
 SFF1_DATAPATH_IP = "2.2.1.193"
 SFF1_DATAPATH_MAC = "b8:ca:3a:65:f7:fa" # ignore this
@@ -50,6 +51,7 @@ class TestP4ControllerBase(IntTestBaseClass):
         self.killAllModule()
         self.mediator = MediatorStub()
         self.measurer = MeasurementStub()
+        self.turbonetControllerStub = TurbonetControllerStub()
 
         self.sfcList = []
         self.sfciList = []
@@ -58,26 +60,39 @@ class TestP4ControllerBase(IntTestBaseClass):
                                                     programmable=True)
 
         sfc1 = self.genLargeBandwidthSFC(classifier, zone=TURBONET_ZONE)
-        sfci1 = self.genUniDirection10BackupP4NFVISFCI(sfcLength=2)    # genLargeBandwidthSFCI()
+        rM = sfc1.routingMorphic
+        sfci1 = self.genUniDirection10BackupP4NFVISFCI(sfcLength=2, 
+                                                       routingMorphic=rM)    # genLargeBandwidthSFCI()
 
         sfc3 = self.genLowLatencySFC(classifier, zone=TURBONET_ZONE)
-        sfci3 = self.genUniDirection10BackupP4NFVISFCI(sfcLength=1)    # genLowLatencySFCI()
+        rM = sfc3.routingMorphic
+        sfci3 = self.genUniDirection10BackupP4NFVISFCI(sfcLength=1, 
+                                                       routingMorphic=rM)    # genLowLatencySFCI()
 
         sfc4 = self.genLargeConnectionSFC(classifier, zone=TURBONET_ZONE)
-        sfci4 = self.genUniDirection10BackupP4NFVISFCI(sfcLength=1)     # genLargeConnectionSFCI()
+        rM = sfc4.routingMorphic
+        sfci4 = self.genUniDirection10BackupP4NFVISFCI(sfcLength=1, 
+                                                       routingMorphic=rM)     # genLargeConnectionSFCI()
 
-        self.sfcList = [sfc1, sfc3, sfc4]
-        self.sfciList = [sfci1, sfci3, sfci4]
+        sfc6 = self.genMixEuipmentSFC(classifier, zone=TURBONET_ZONE)
+        rM = sfc6.routingMorphic
+        sfci6 = self.genUniDirection10BackupP4ServerNFVISFCI(sfc6, 
+                                                       routingMorphic=rM)
 
-    def genUniDirection10BackupP4NFVISFCI(self, mappedVNFISeq=True, sfcLength=1):
+        self.sfcList = [sfc1, sfc3, sfc4, sfc6]
+        self.sfciList = [sfci1, sfci3, sfci4, sfci6]
+
+    def genUniDirection10BackupP4NFVISFCI(self, mappedVNFISeq=True, sfcLength=1, routingMorphic=None):
         if mappedVNFISeq:
             vnfiSequence = self.gen10BackupP4VNFISequence(sfcLength)
         else:
             vnfiSequence = None
         return SFCI(self.assignSFCIID(), vnfiSequence, None,
-            self.genUniDirection10BackupP4BasedForwardingPathSet(sfcLength))
+            self.genUniDirection10BackupP4BasedForwardingPathSet(sfcLength),
+            routingMorphic)
 
     def gen10BackupP4VNFISequence(self, sfcLength=1):
+        # type: (int) -> list[list[VNFI]]
         # hard-code function
         vnfiSequence = []
         for index in range(sfcLength):
@@ -88,7 +103,7 @@ class TestP4ControllerBase(IntTestBaseClass):
                 vnfi = VNFI(VNF_TYPE_RATELIMITER, vnfType=VNF_TYPE_RATELIMITER,
                     vnfiID=uuid.uuid1(), config = RateLimiterConfig(maxMbps=100), node=switch)
                 vnfiSequence[index].append(vnfi)
-        return vnfiSequence # [[VNFI()],[VNFI()], ......]
+        return vnfiSequence
 
     def genUniDirection10BackupP4BasedForwardingPathSet(self, sfciLength=1):
         # please ref /sam/base/path.py
@@ -122,6 +137,106 @@ class TestP4ControllerBase(IntTestBaseClass):
         return ForwardingPathSet(primaryForwardingPath, mappingType,
                                     backupForwardingPath)
 
+    def genUniDirection10BackupP4ServerNFVISFCI(self, sfc, mappedVNFISeq=True, routingMorphic=None):
+        if mappedVNFISeq:
+            vnfiSequence = self.gen10BackupP4ServerVNFISequence(sfc)
+        else:
+            vnfiSequence = None
+        fPS = self.genUniDirection10BackupP4ServerBasedForwardingPathSet(sfc, vnfiSequence)
+        return SFCI(self.assignSFCIID(), vnfiSequence, None,
+                        fPS, routingMorphic)
+
+    def gen10BackupP4ServerVNFISequence(self, sfc):
+        # type: (SFC) -> list[list[VNFI]]
+        # hard-code function
+        vnfiSequence = []
+        for idx, vnf in enumerate(sfc.vnfSequence):
+            vnfiSequence.append([])
+            vnfType = vnf.vnfType
+            config = vnf.config
+            for iN in range(1):
+                if vnf.preferredDeviceType == PREFERRED_DEVICE_TYPE_P4:
+                    node = Switch(SWITCH_SFF1_SWITCHID, SWITCH_TYPE_NPOP, 
+                                        SWITCH_SFF1_LANIP, programmable=True)
+                elif vnf.preferredDeviceType == PREFERRED_DEVICE_TYPE_SERVER:
+                    node = Server("ens3", SFF1_DATAPATH_IP, SERVER_TYPE_NFVI)
+                    node.setServerID(SFF1_SERVERID)
+                    node.setControlNICIP(SFF1_CONTROLNIC_IP)
+                    node.setControlNICMAC(SFF1_CONTROLNIC_MAC)
+                    node.setDataPathNICMAC(SFF1_DATAPATH_MAC)
+                else:
+                    raise ValueError(
+                        "Unknown prefered device type {0}".format(
+                            vnf.preferredDeviceType))
+
+                vnfi = VNFI(vnfType, vnfType=vnfType,
+                    vnfiID=uuid.uuid1(), config = config, node=node)
+                vnfiSequence[idx].append(vnfi)
+        return vnfiSequence
+
+    def genUniDirection10BackupP4ServerBasedForwardingPathSet(self, sfc, vnfiSequence):
+        # type: (SFC, list[VNFI]) -> ForwardingPathSet
+        # please ref /sam/base/path.py
+        # This function generate a sfc forwarding path for sfc "ingress->L2Forwarding->egress"
+        # The primary forwarding path has two stage, the first stage is "ingress->L2Forwarding",
+        # the second stage is "L2Forwarding->egress".
+        # Each stage is a list of layeredNodeIDTuple which format is (stageIndex, nodeID)
+        d1FP = []
+        for idx, vnf in enumerate(sfc.vnfSequence):
+            if idx == 0:
+                srcNodeID = 0
+                dstNode = vnfiSequence[idx][0].node
+                dstNodeID = self.getNodeID(dstNode)
+            elif idx == len(sfc.vnfSequence)-1:
+                srcNode = vnfiSequence[idx-1][0].node
+                srcNodeID = self.getNodeID(srcNode)
+                dstNodeID = 0
+            else:
+                srcNode = vnfiSequence[idx-1][0].node
+                srcNodeID = self.getNodeID(srcNode)
+                dstNode = vnfiSequence[idx][0].node
+                dstNodeID = self.getNodeID(dstNode)
+            segPath = self.getSegPath(srcNodeID, dstNodeID, idx)
+            d1FP.append(segPath)
+
+        primaryForwardingPath = {0:d1FP}
+        mappingType = MAPPING_TYPE_MMLPSFC # This is your mapping algorithm type
+        backupForwardingPath = {}   # you don't need to care about backupForwardingPath
+        return ForwardingPathSet(primaryForwardingPath, mappingType,
+                                    backupForwardingPath)
+
+    def getNodeID(self, node):
+        if type(node) == Server:
+            nodeID = node.getServerID()
+        elif type(node) == Switch:
+            nodeID = node.getSwitchID()
+        else:
+            raise ValueError("Unknown node type {0}".format(type(node)))
+        return nodeID
+
+    def getSegPath(self, srcNodeID, dstNodeID, stageNum):
+        if srcNodeID == 0 and dstNodeID == SWITCH_SFF1_SWITCHID:
+            segPath = [(stageNum,0),(stageNum,8),(stageNum,16),(stageNum,SWITCH_SFF1_SWITCHID)]
+        elif dstNodeID == 0 and srcNodeID == SWITCH_SFF1_SWITCHID:
+            segPath = [(stageNum,SWITCH_SFF1_SWITCHID),(stageNum,16) ,(stageNum,8), (stageNum,0)]
+        elif srcNodeID == 0 and dstNodeID == SFF1_SERVERID:
+            segPath = [(stageNum,0),(stageNum,6),(stageNum,14),(stageNum,SFF1_SERVERID)]
+        elif dstNodeID == 0 and srcNodeID == SFF1_SERVERID:
+            segPath = [(stageNum,SFF1_SERVERID),(stageNum,14) ,(stageNum,6), (stageNum,0)]
+        elif srcNodeID == SWITCH_SFF1_SWITCHID and dstNodeID == SWITCH_SFF1_SWITCHID:
+            segPath = [(stageNum,SWITCH_SFF1_SWITCHID),(stageNum,SWITCH_SFF1_SWITCHID)]
+        elif srcNodeID == SFF1_SERVERID and dstNodeID == SFF1_SERVERID:
+            segPath = [(stageNum,SFF1_SERVERID),(stageNum,SFF1_SERVERID)]
+        elif srcNodeID == SFF1_SERVERID and dstNodeID == SFF1_SERVERID:
+            segPath = [(stageNum,SFF1_SERVERID),(stageNum,SFF1_SERVERID)]
+        elif srcNodeID == SWITCH_SFF1_SWITCHID and dstNodeID == SFF1_SERVERID:
+            segPath = [(stageNum,SWITCH_SFF1_SWITCHID),(stageNum,16),(stageNum,8),(stageNum,0),(stageNum,6),(stageNum,14),(stageNum,SFF1_SERVERID)]
+        elif srcNodeID == SWITCH_SFF1_SWITCHID and dstNodeID == SFF1_SERVERID:
+            segPath = [(stageNum,SFF1_SERVERID),(stageNum,14),(stageNum,6),(stageNum,0),(stageNum,8),(stageNum,16),(stageNum,SWITCH_SFF1_SWITCHID)]
+        else:
+            raise ValueError("Unknown implementation.")
+        return segPath
+
     def exerciseAddSFCAndSFCI(self):
         for idx in [0,1,2]:
             self.logger.info("test idx {0}".format(idx))
@@ -131,6 +246,7 @@ class TestP4ControllerBase(IntTestBaseClass):
                                                     self.addSFCCmd)
 
             # verify
+            self.verifyTurbonetRecvAddClassifierEntryCmd(self.sfcList[idx])
             self.verifyAddSFCCmdRply()
 
             # exercise
@@ -140,6 +256,7 @@ class TestP4ControllerBase(IntTestBaseClass):
                                                 self.addSFCICmd)
 
             # verify
+            self.verifyTurbonetRecvAddRouteEntryCmd(self.sfciList[idx])
             self.verifyAddSFCICmdRply()
 
     def verifyAddSFCCmdRply(self):
@@ -147,6 +264,28 @@ class TestP4ControllerBase(IntTestBaseClass):
         assert cmdRply.cmdID == self.addSFCCmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
         assert cmdRply.attributes['zone'] == TURBONET_ZONE
+
+    def verifyTurbonetRecvAddClassifierEntryCmd(self, sfc):
+        # type: (SFC) -> None
+        cmdNum = len(sfc.directions)
+        self.turbonetControllerStub.recvCmd([CMD_TYPE_ADD_CLASSIFIER_ENTRY], cmdNum)
+
+    def verifyTurbonetRecvAddRouteEntryCmd(self, sfci):
+        pFP = sfci.forwardingPathSet.primaryForwardingPath
+        maxCmdCnt = 0
+        for segPath in pFP:
+            if len(segPath) == 2:
+                continue
+            for idx, (stageNum, nodeID) in enumerate(segPath):
+                if self.isSwitchID(nodeID) and idx !=0 and idx !=len(segPath)-1:
+                    maxCmdCnt += 1
+        self.turbonetControllerStub.recvCmd([CMD_TYPE_ADD_NSH_ROUTE], maxCmdCnt)
+
+    def isSwitchID(self, nodeID):
+        return nodeID <= 10000
+    
+    def isServerID(self, nodeID):
+        return nodeID > 10000
 
     def verifyAddSFCICmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)

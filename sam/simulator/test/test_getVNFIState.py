@@ -4,17 +4,16 @@
 '''
 This is the component test for simulator (test _getVNFIStateHandler)
 The work flow:
-    * Mediator sends ‘GET_VNFI_STATE command’ to simulator;
+    * Mediator sends 'GET_VNFI_STATE command' to simulator;
     * Simulator processes the command and then send back a command reply to the mediator;
     * Cautions! You just need send back all VNFI objects in a dict, e.g. {"vnfiID": VNFI()}
-    PS1:The ‘GET_VNFI_STATE command’ and the corresponding ‘GET_VNFI_STATE command reply’ have same cmdID;
+    PS1:The 'GET_VNFI_STATE command' and the corresponding 'GET_VNFI_STATE command reply' have same cmdID;
     PS2: Class TestBase and TestSimulatorBase has many useful function;
 
 Usage of this unit test:
     python -m pytest ./sam/simulator/test/test_getVNFIState.py -s --disable-warnings
 '''
 
-import logging
 from time import sleep
 
 import pytest
@@ -31,8 +30,6 @@ from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.simulator.test.testSimulatorBase import TestSimulatorBase
 from sam.simulator import simulator
 from sam.test.testBase import CLASSIFIER_DATAPATH_IP
-
-MANUAL_TEST = True
 
 
 class TestGetVNFIStateClass(TestSimulatorBase):

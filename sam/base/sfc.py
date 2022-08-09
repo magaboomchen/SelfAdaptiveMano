@@ -107,7 +107,7 @@ class SFC(object):
                 attributes=None,            # type: dict[str, Any]
                 slo=None,                   # type: SLO
                 scalingMode=AUTO_SCALE,     # type: Union[AUTO_SCALE, MANUAL_SCALE]
-                routingMorphic=None,        # type: Union[IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL]
+                routingMorphic=None,        # type: RoutingMorphic
                 protectionMode=WITHOUT_PROTECTION,  # type:  Union[WITHOUT_PROTECTION, WITH_PROTECTION]
                 recoveryMode=AUTO_RECOVERY, # type: Union[AUTO_RECOVERY, MANUAL_RECOVERY]
                 vnfSequence=None,           # type: list[VNF]

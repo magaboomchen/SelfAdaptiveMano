@@ -1,10 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
-import pytest
-
 from sam.base.server import Server, SERVER_TYPE_NORMAL
 
 MANUAL_TEST = True

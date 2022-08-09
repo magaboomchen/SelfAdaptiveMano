@@ -30,7 +30,7 @@ ZONE_INFO_LIST = [
         "info":{
             "topoType": "fat-tree",
             "podNum":4,
-            "topoFilePath": "{0}/base/topoGen/instance/topology/fat-tree/0/fat-tree-k=4_V=2_M=100.M=100.pickle".format(SAM_MODULE_ABS_PATH)
+            "topoFilePath": "{0}/base/topoGen/instance/topology/fat-tree-turbonet/0/fat-tree-k=4_V=2_M=100.M=100.pickle".format(SAM_MODULE_ABS_PATH)
         }
     }
 ]

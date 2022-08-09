@@ -1,6 +1,9 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import uuid
+from typing import Any, Union
+
 CMD_STATE_WAITING = "CMD_STATE_WAITING"
 CMD_STATE_PROCESSING = "CMD_STATE_PROCESSING"
 CMD_STATE_SUCCESSFUL = "CMD_STATE_SUCCESSFUL"
@@ -36,10 +39,14 @@ CMD_TYPE_DEL_CLASSIFIER_ENTRY = "CMD_TYPE_DEL_CLASSIFIER"
 
 
 class Command(object):
-    def __init__(self, cmdType, cmdID, attributes={}):
+    def __init__(self, cmdType, cmdID, attributes=None):
+        # type: (Union[CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_DEL_SFC], uuid.uuid1, dict[str, Any]) -> None
         self.cmdType = cmdType
         self.cmdID = cmdID
-        self.attributes = attributes    # {'sfcUUID':sfcUUID,'sfci':SFCI, 'sfc':SFC, 'classifier':classifier}
+        if attributes == None:
+            self.attributes = {}    # {'sfcUUID':sfcUUID,'sfci':SFCI, 'sfc':SFC, 'classifier':classifier}
+        else:
+            self.attributes = attributes
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)
@@ -52,10 +59,14 @@ class Command(object):
 
 
 class CommandReply(object):
-    def __init__(self, cmdID, cmdState, attributes={}):
+    def __init__(self, cmdID, cmdState, attributes=None):
+        # type: (uuid.uuid1, Union[CMD_STATE_WAITING, CMD_STATE_PROCESSING, CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL], dict[str, Any]) -> None
         self.cmdID = cmdID
         self.cmdState = cmdState
-        self.attributes = attributes    # {'switches':{},'links':{},'servers':{},'vnfis':{}, "sfcisDict":{}}
+        if attributes == None:
+            self.attributes = {}    # {'switches':{},'links':{},'servers':{},'vnfis':{}, "sfcisDict":{}}
+        else:
+            self.attributes = attributes
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

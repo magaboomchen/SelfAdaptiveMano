@@ -26,7 +26,7 @@ from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, VNF, VNF_TYPE_FW, \
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.test.testBase import APP1_REAL_IP, APP1_REAL_IPV6, APP2_REAL_IP, APP3_REAL_GID, APP3_REAL_IP, APP4_REAL_IP, \
-                                APP4_REAL_IPV6, APP5_REAL_IP, TestBase
+                                APP4_REAL_IPV6, APP5_REAL_IP, APP6_REAL_IP, TestBase
 
 
 class IntTestBaseClass(TestBase):
@@ -229,6 +229,39 @@ class IntTestBaseClass(TestBase):
                     vnfSequence=vnfSequence, 
                     vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
-    def genSFCITemplate(self):
+    def genMixEuipmentSFC(self, classifier, zone=SIMULATOR_ZONE):
+        sfcUUID = uuid.uuid1()
+        vNFTypeSequence = [VNF_TYPE_RATELIMITER, VNF_TYPE_RATELIMITER]
+        vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_RATELIMITER,
+                            RateLimiterConfig(maxMbps=100),
+                            PREFERRED_DEVICE_TYPE_SERVER),
+                       VNF(uuid.uuid1(), VNF_TYPE_RATELIMITER,
+                            RateLimiterConfig(maxMbps=100),
+                            PREFERRED_DEVICE_TYPE_P4)]
+        maxScalingInstanceNumber = 1
+        backupInstanceNumber = 0
+        applicationType = APP_TYPE_BEST_EFFORT
+        routingMorphic = RoutingMorphic()
+        routingMorphic.from_dict(ipv4MorphicDictTemplate)
+        direction0 = {
+            'ID': SFC_DIRECTION_0,
+            'source': {'node': None, 'IPv4':"*"},
+            'ingress': classifier,
+            'match': {'srcIP': "*",'dstIP':APP6_REAL_IP,
+                'srcPort': "*",'dstPort': "*",'proto': "*"},
+            'egress': classifier,
+            'destination': {'node': None, 'IPv4':APP6_REAL_IP}
+        }
+        directions = [direction0]
+        slo = SLO(throughput=0.1, latency=200, availability=0.99, \
+                    connections=10)
+        return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
+                    backupInstanceNumber, applicationType, directions,
+                    {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
+                    vnfSequence=vnfSequence, 
+                    vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
+
+    def genSFCITemplate(self, routingMorphic=None):
         vnfiSequence = None
-        return SFCI(self.assignSFCIID(), vnfiSequence, None, None)
+        return SFCI(self.assignSFCIID(), vnfiSequence, None, None,
+                    routingMorphic)

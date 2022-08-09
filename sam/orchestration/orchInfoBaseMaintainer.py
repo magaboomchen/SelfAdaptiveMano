@@ -298,10 +298,9 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         sfc = cmd.attributes['sfc']
         self.addSFC2DB(sfc)
 
-    def _isAddSFCIValidState(self, cmd):
-        sfci = cmd.attributes['sfci']
-        if self.hasSFCI(sfci.sfciID):
-            sfciState = self.getSFCIState(sfci.sfciID)
+    def _isAddSFCIValidState(self, sfciID):
+        if self.hasSFCI(sfciID):
+            sfciState = self.getSFCIState(sfciID)
             if sfciState in [STATE_DELETED, STATE_INIT_FAILED]:
                 return True
             else:
@@ -327,10 +326,9 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
         self._addRequest2DB(request, cmd)
 
-    def _isDelSFCIValidState(self, cmd):
-        sfci = cmd.attributes['sfci']
-        if self.hasSFCI(sfci.sfciID):
-            sfciState = self.getSFCIState(sfci.sfciID)
+    def _isDelSFCIValidState(self, sfciID):
+        if self.hasSFCI(sfciID):
+            sfciState = self.getSFCIState(sfciID)
             if sfciState in [STATE_INACTIVE, STATE_ACTIVE, STATE_UNDELETED]:
                 return True
             else:
@@ -347,11 +345,10 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         sfciID = sfci.sfciID
         self.updateSFCIState(sfciID, STATE_IN_PROCESSING)
 
-    def _isDelSFCValidState(self, cmd):
-        sfc = cmd.attributes['sfc']
-        if self.hasSFC(sfc.sfcUUID):
-            sfcState = self.getSFCState(sfc.sfcUUID)
-            sfciIDList = self.getSFCCorrespondingSFCIID4DB(sfc.sfcUUID)
+    def _isDelSFCValidState(self, sfcUUID):
+        if self.hasSFC(sfcUUID):
+            sfcState = self.getSFCState(sfcUUID)
+            sfciIDList = self.getSFCCorrespondingSFCIID4DB(sfcUUID)
             if sfcState in [STATE_MANUAL]:
                 for sfciID in sfciIDList:
                     sfciState = self.getSFCIState(sfciID)

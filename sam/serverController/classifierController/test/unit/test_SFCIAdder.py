@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
 import pytest
 from scapy.all import Raw, sendp, sniff
 from scapy.layers.l2 import Ether, ARP
@@ -17,8 +15,6 @@ from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, WEBSITE_REAL_IP, \
     OUTTER_CLIENT_IP, VNFI1_0_IP, CLASSIFIER_DATAPATH_MAC
 from sam.test.fixtures import sendArpRequest, sendInboundTraffic, sendOutSFCDomainTraffic
-
-MANUAL_TEST = True
 
 TESTER_SERVER_DATAPATH_IP = "192.168.123.1"
 TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"

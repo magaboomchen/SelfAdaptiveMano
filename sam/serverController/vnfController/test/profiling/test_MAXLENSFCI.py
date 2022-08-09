@@ -2,8 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
-
 import pytest
 
 from sam.base.compatibility import screenInput
@@ -21,7 +19,6 @@ from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, WEBSITE_REAL_IP, \
     TESTER_SERVER_DATAPATH_MAC, OUTTER_CLIENT_IP
 
-MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
 TESTER_SERVER_DATAPATH_MAC = "f4:e9:d4:a3:53:a0"
 

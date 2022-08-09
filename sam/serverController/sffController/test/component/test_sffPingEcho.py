@@ -8,15 +8,12 @@ Usage:
         on the NFVI running bess.
 '''
 
-import logging
 import time
 
 import pytest
 from scapy.all import sniff
 from scapy.layers.l2 import ARP, Ether
 from scapy.layers.inet import IP, ICMP
-from scapy.all import Raw, sendp, AsyncSniffer
-from scapy.contrib.nsh import NSH
 
 from sam.base.compatibility import screenInput
 from sam.base.command import CMD_STATE_SUCCESSFUL
@@ -25,20 +22,13 @@ from sam.base.messageAgent import SFF_CONTROLLER_QUEUE, MEDIATOR_QUEUE, \
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.test.fixtures.vnfControllerStub import VNFControllerStub
-from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, TestBase, CLASSIFIER_DATAPATH_IP, SFF1_CONTROLNIC_IP, \
-    SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC, SFCI1_0_EGRESS_IP, WEBSITE_REAL_IP, SFCI1_1_EGRESS_IP
+from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP, \
+    SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC
 from sam.test.fixtures import sendArpRequest, sendPing
-from sam.serverController.sffController.test.component.testConfig import BESS_SERVER_DATAPATH_MAC, TESTER_SERVER_DATAPATH_IP, \
-    TESTER_SERVER_DATAPATH_MAC, TESTER_DATAPATH_INTF, PRIVATE_KEY_FILE_PATH, BESS_SERVER_USER, \
-    BESS_SERVER_USER_PASSWORD
-from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
+from sam.serverController.sffController.test.component.testConfig import BESS_SERVER_DATAPATH_MAC, \
+    TESTER_SERVER_DATAPATH_IP, TESTER_SERVER_DATAPATH_MAC, TESTER_DATAPATH_INTF
 from sam.serverController.sffController import sffControllerCommandAgent
-from sam.serverController.sffController.test.component.fixtures.sendDirection0Traffic import sendDirection0Traffic
-from sam.serverController.sffController.test.component.fixtures.sendDirection1Traffic import sendDirection1Traffic
-
-MANUAL_TEST = True
 
 
 class TestSFFSFCIAdderClass(TestBase):

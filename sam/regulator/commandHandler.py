@@ -72,7 +72,10 @@ class CommandHandler(object):
 
     def deleteRecoveryTask(self, sfc, sfci):
         if sfc.sfcUUID in self.recoveryTaskDict.keys():
-            del self.recoveryTaskDict[sfc.sfcUUID][sfci.sfciID]
+            if sfci != None:
+                del self.recoveryTaskDict[sfc.sfcUUID][sfci.sfciID]
+            else:
+                del self.recoveryTaskDict[sfc.sfcUUID]
 
     def isAllSFCIRecovered(self, sfcUUID):
         if len(self.recoveryTaskDict[sfcUUID]) == 0:
@@ -114,6 +117,7 @@ class CommandHandler(object):
                         self.deleteRecoveryTask(sfc, sfci)
                         if self.isAllSFCIRecovered(sfcUUID):
                             self._oib.updateSFCState(sfcUUID, STATE_ACTIVE)
+                            self.deleteRecoveryTask(sfc, None)
                 else:
                     raise ValueError("Unknown task state {0}".format(recoveryTaskState))
 
@@ -158,9 +162,11 @@ class CommandHandler(object):
                                 if self.isNodeIDInDetectionDict(nodeID, detectionDict):
                                     infSFCIAndSFCTupleList.append((sfci, sfc, recoveryTaskState))
                             self.logger.info("segPath is {0}".format(segPath))
-                            for stageNum, nodeID in segPath[:-2]:
+                            for idx in range(len(segPath)-1):
+                                stageNum, srcNodeID = segPath[idx]
+                                dstNodeID = segPath[idx+1][1]
                                 self.logger.info("stageNum is {0}".format(stageNum))
-                                linkID = (nodeID, segPath[stageNum][1])
+                                linkID = (srcNodeID, dstNodeID)
                                 if self.isLinkIDInDetectionDict(linkID, detectionDict):
                                     infSFCIAndSFCTupleList.append((sfci, sfc, recoveryTaskState))
             else:

@@ -1,14 +1,18 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REQUEST, SAMMessage
+from logging import Logger
+
+from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REQUEST, MessageAgent, SAMMessage
 from sam.base.request import REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_UPDATE_SFC_STATE
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.sfc import STATE_ACTIVE, STATE_MANUAL
+from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 
 class RequestHandler(object):
     def __init__(self, logger, msgAgent, oib):
+        # type: (Logger, MessageAgent, OrchInfoBaseMaintainer) -> None
         self.logger = logger
         self._messageAgent = msgAgent
         self._oib = oib
@@ -24,16 +28,18 @@ class RequestHandler(object):
             if request.requestType == REQUEST_TYPE_UPDATE_SFC_STATE:
                 sfc = request.attributes["sfc"]
                 sfcState = self._oib.getSFCState(sfc.sfcUUID)
+                newState = request.attributes["newState"]
                 if sfcState == STATE_ACTIVE:
-                    self._oib.updateSFCState(sfc.sfcUUID, STATE_MANUAL)
+                    self._oib.updateSFCState(sfc.sfcUUID, newState)
                     if request.requestID in self._taskDict[REQUEST_TYPE_UPDATE_SFC_STATE]:
                         del self._taskDict[REQUEST_TYPE_UPDATE_SFC_STATE]
                 else:
                     self._taskDict[REQUEST_TYPE_UPDATE_SFC_STATE][request.requestID] = request
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 sfc = request.attributes["sfc"]
+                sfci = request.attributes["sfci"]
                 sfcState = self._oib.getSFCState(sfc.sfcUUID)
-                if sfcState == STATE_MANUAL:
+                if self._isValidDelSFCIRequest(sfcState, sfci.sfciID):
                     self.sendRequest2Dispatcher(request)
                     if request.requestID in self._taskDict[REQUEST_TYPE_DEL_SFCI]:
                         del self._taskDict[REQUEST_TYPE_DEL_SFCI]
@@ -41,8 +47,7 @@ class RequestHandler(object):
                     self._taskDict[REQUEST_TYPE_DEL_SFCI][request.requestID] = request
             elif request.requestType == REQUEST_TYPE_DEL_SFC:
                 sfc = request.attributes["sfc"]
-                sfcState = self._oib.getSFCState(sfc.sfcUUID)
-                if sfcState == STATE_MANUAL:
+                if self._oib._isDelSFCValidState(sfc.sfcUUID):
                     self.sendRequest2Dispatcher(request)
                     if request.requestID in self._taskDict[REQUEST_TYPE_DEL_SFC]:
                         del self._taskDict[REQUEST_TYPE_DEL_SFC]
@@ -55,6 +60,9 @@ class RequestHandler(object):
                 "Regualtor request handler")
         finally:
             pass
+
+    def _isValidDelSFCIRequest(self, sfcState, sfciID):
+        return sfcState == STATE_MANUAL and self._oib._isDelSFCIValidState(sfciID)
 
     def sendRequest2Dispatcher(self, request):
         msg = SAMMessage(MSG_TYPE_REQUEST, request)

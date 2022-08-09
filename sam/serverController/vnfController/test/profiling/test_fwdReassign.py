@@ -13,7 +13,6 @@ sudo python ./sendSFCTraffic.py -i enp4s0 -smac 00:1b:21:c0:8f:ae -dmac 00:1b:21
 '''
 
 import uuid
-import logging
 
 import pytest
 
@@ -29,7 +28,6 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP
 
-MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
 TESTER_SERVER_DATAPATH_MAC = "f4:e9:d4:a3:53:a0"
 

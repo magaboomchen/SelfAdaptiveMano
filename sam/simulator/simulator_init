@@ -1,1 +1,1 @@
-load sam/simulator/topologyExamples/fat-tree-k=32_V=512_M=100.M=100.pickle
+load sam/base/topoGen/instance/topology/fat-tree/0/fat-tree-k=32_V=512_M=100.M=100.pickle

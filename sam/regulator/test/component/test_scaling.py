@@ -12,12 +12,9 @@ Usage of this unit test:
 
 import time
 import uuid
-import logging
-
 import pytest
 
 from sam.base.command import CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, Command
-from sam.base.compatibility import screenInput
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, SIMULATOR_ZONE
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, MEASURER_PORT, TEST_PORT
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
@@ -45,8 +42,6 @@ from sam.test.testBase import APP1_REAL_IP, SFF2_CONTROLNIC_IP, \
         SFF2_CONTROLNIC_MAC, SFF2_DATAPATH_MAC, SFF2_SERVERID, TestBase
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 
-MANUAL_TEST = True
-
 
 class TestScalingClass(TestBase):
     def common_setup(self):
@@ -71,7 +66,8 @@ class TestScalingClass(TestBase):
         # you can overwrite following function to test different sfc/sfci
         classifier = Switch(0, SWITCH_TYPE_DCNGATEWAY)
         self.sfc = self.genLargeBandwidthSFC(classifier)
-        self.sfci = self.genUniDirection10BackupSFCI()
+        rM = self.sfc.routingMorphic
+        self.sfci = self.genUniDirection10BackupSFCI(rM)
 
         self.storeSFC2DB(self.sfc)
         self.storeSFCI2DB(self.sfci, self.sfc.sfcUUID, 
@@ -147,10 +143,11 @@ class TestScalingClass(TestBase):
                     vnfSequence = vnfSequence,
                     vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
-    def genUniDirection10BackupSFCI(self):
+    def genUniDirection10BackupSFCI(self, routingMorphic=None):
         vnfiSequence = self.genLargeBandwidthVNFISequence()
         return SFCI(self.assignSFCIID(), vnfiSequence, None,
-            self.genUniDirection10BackupForwardingPathSet())
+            self.genUniDirection10BackupForwardingPathSet(),
+            routingMorphic)
 
     def genLargeBandwidthVNFISequence(self):
         # hard-code function

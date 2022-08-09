@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
 
 import pytest
 
@@ -12,8 +11,6 @@ from sam.base.command import CommandReply, CMD_STATE_SUCCESSFUL
 from sam.test.fixtures.orchestrationStub import OrchestrationStub
 from sam.mediator.mediator import Mediator
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP
-
-MANUAL_TEST = True
 
 
 class TestMediatorClass(TestBase):

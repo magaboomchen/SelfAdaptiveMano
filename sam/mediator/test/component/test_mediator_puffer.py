@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
 import pytest
 
 from sam.mediator import mediator
@@ -19,8 +17,6 @@ from sam.test.fixtures.orchestrationStub import OrchestrationStub
 from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.test.fixtures.serverManagerStub import ServerManagerStub
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP
-
-MANUAL_TEST = True
 
 # TODO: CMD_TYPE_GET_SFCI_STATE, CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_DEL_SFCI
 # need to be test

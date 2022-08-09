@@ -20,8 +20,6 @@ from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
                         REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
 from sam.test.integrate.intTestBase import IntTestBaseClass
 
-MANUAL_TEST = True
-
 
 class TestAddSFCClass(IntTestBaseClass):
     @pytest.fixture(scope="function")
@@ -31,7 +29,8 @@ class TestAddSFCClass(IntTestBaseClass):
         # you can overwrite following function to test different sfc/sfci
         classifier = None
         self.sfc = self.genLargeBandwidthSFC(classifier)
-        self.sfci = self.genSFCITemplate()
+        rM = self.sfc.routingMorphic
+        self.sfci = self.genSFCITemplate(rM)
 
         yield
 

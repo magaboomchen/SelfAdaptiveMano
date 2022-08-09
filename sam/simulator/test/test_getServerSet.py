@@ -4,9 +4,9 @@
 '''
 This is the component test for simulator (test _getServerSetHandler)
 The work flow:
-    * Mediator sends ‘GET_SERVER_SET command’ to simulator;
+    * Mediator sends 'GET_SERVER_SET command' to simulator;
     * Simulator processes the command and then send back a command reply to the mediator;
-    PS1:The ‘GET_SERVER_SET command’ and the corresponding ‘GET_SERVER_SET command reply’ have same cmdID;
+    PS1:The 'GET_SERVER_SET command' and the corresponding 'GET_SERVER_SET command reply' have same cmdID;
     PS2: Class TestBase and TestSimulatorBase has many useful function;
 
 Usage of this unit test:
@@ -14,7 +14,6 @@ Usage of this unit test:
 '''
 
 import time
-import logging
 from time import sleep
 
 import pytest
@@ -24,12 +23,9 @@ from sam.base.messageAgent import MSG_TYPE_SIMULATOR_CMD, SIMULATOR_ZONE
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT, SIMULATOR_PORT
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.simulator.test.testSimulatorBase import TestSimulatorBase
 from sam.simulator import simulator
-
-MANUAL_TEST = True
 
 
 class TestGetServerSetClass(TestSimulatorBase):

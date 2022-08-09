@@ -1,14 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
 import pytest
 
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import MappingAlgorithmBase
 from sam.test.testBase import TestBase
-
-MANUAL_TEST = True
 
 
 class TestMappingAlgorithmBaseClass(TestBase):

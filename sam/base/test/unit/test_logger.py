@@ -1,14 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import time
-import logging
 from sam.base.loggerConfigurator import LoggerConfigurator
-
 from sam.test.testBase import TestBase
-from sam.base.messageAgent import MessageAgent, SAMMessage
-
-MANUAL_TEST = True
 
 
 class TestLoggerClass(TestBase):

@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
 
 import pytest
 from scapy.all import sniff
@@ -27,8 +26,6 @@ from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.fixtures import sendArpRequest, sendInboundTraffic, sendOutSFCDomainTraffic
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 
-
-MANUAL_TEST = True
 
 TESTER_SERVER_DATAPATH_IP = "2.2.0.33"
 #TESTER_SERVER_DATAPATH_MAC = "f4:e9:d4:a3:53:a0"

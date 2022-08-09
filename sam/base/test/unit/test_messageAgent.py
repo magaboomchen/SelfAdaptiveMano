@@ -2,14 +2,11 @@
 # -*- coding: UTF-8 -*-
 
 import time
-import logging
 
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT
 from sam.test.testBase import TestBase
-from sam.base.messageAgent import TEST_QUEUE, MessageAgent, SAMMessage
-
-MANUAL_TEST = True
+from sam.base.messageAgent import MessageAgent, SAMMessage
 
 
 class TestMessageAgentClass(TestBase):

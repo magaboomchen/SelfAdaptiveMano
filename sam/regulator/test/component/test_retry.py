@@ -12,8 +12,6 @@ Usage of this unit test:
 
 from sam.test.testBase import TestBase
 
-MANUAL_TEST = True
-
 
 class TestNoticeClass(TestBase):
     # TODO

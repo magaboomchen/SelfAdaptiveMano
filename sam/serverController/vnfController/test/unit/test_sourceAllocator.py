@@ -9,15 +9,11 @@ Usage:
 '''
 
 import pytest
-import logging
 
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import MessageAgent
-from sam.serverController.vnfController.sourceAllocator import SocketPortAllocator, SourceAllocator
+from sam.serverController.vnfController.sourceAllocator import SourceAllocator
 from sam.test.testBase import TestBase
-
-
-MANUAL_TEST = True
 
 
 class TestVNFAddFW(TestBase):

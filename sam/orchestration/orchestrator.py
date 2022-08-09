@@ -10,16 +10,16 @@ import time
 import math
 
 from sam.base.link import Link
-from sam.base.sfc import STATE_INACTIVE
+from sam.base.sfc import SFC, SFCI, STATE_INACTIVE
 from sam.base.messageAgent import SAMMessage, MessageAgent, \
     MEDIATOR_QUEUE, ORCHESTRATOR_QUEUE, MSG_TYPE_ORCHESTRATOR_CMD
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_DEL_SFCI, \
-    REQUEST_TYPE_DEL_SFC, REQUEST_STATE_FAILED
+    REQUEST_TYPE_DEL_SFC, REQUEST_STATE_FAILED, Request
 from sam.base.command import CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, \
     CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
     CMD_TYPE_PUT_ORCHESTRATION_STATE, CMD_TYPE_GET_ORCHESTRATION_STATE, \
     CMD_TYPE_TURN_ORCHESTRATION_ON, CMD_TYPE_TURN_ORCHESTRATION_OFF, \
-    CMD_TYPE_KILL_ORCHESTRATION, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI
+    CMD_TYPE_KILL_ORCHESTRATION, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI, CommandReply
 from sam.base.commandMaintainer import CommandMaintainer
 from sam.orchestration.argParser import ArgParser
 from sam.base.request import REQUEST_TYPE_ADD_SFCI
@@ -75,6 +75,7 @@ class Orchestrator(object):
         self.recvKillCommand = False
 
         self.requestCnt = 0
+        self.requestWaitingQueue = Queue.Queue()
 
     def setRunningState(self, runningState):
         self.runningState = runningState
@@ -91,7 +92,10 @@ class Orchestrator(object):
             else:
                 body = msg.getbody()
                 if self._messageAgent.isRequest(body):
-                    self._requestHandler(body)
+                    if self.runningState == True:
+                        self._requestHandler(body)
+                    else:
+                        self.requestWaitingQueue.put(body)
                 elif self._messageAgent.isCommandReply(body):
                     self._commandReplyHandler(body)
                 elif self._messageAgent.isCommand(body):
@@ -103,8 +107,16 @@ class Orchestrator(object):
                 # self.logger.debug("self.batchLastTime: {0}, currentTime: {1}".format(self.batchLastTime, currentTime))
                 self.processAllAddSFCIRequests()
                 self.batchLastTime = time.time()
+            self.processAllWaitingRequest()
+
+    def processAllWaitingRequest(self):
+        if self.runningState == True:
+            while not self.requestWaitingQueue.empty():
+                request = self.requestWaitingQueue.get()
+                self._requestHandler(request)
 
     def _requestHandler(self, request):
+        # type: (Request) -> None
         try:
             if request.requestType == REQUEST_TYPE_ADD_SFC:
                 cmd = self._osa.genAddSFCCmd(request)
@@ -127,7 +139,8 @@ class Orchestrator(object):
                         self.processAllAddSFCIRequests()
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 cmd = self._osd.genDelSFCICmd(request)
-                if self._oib._isDelSFCIValidState(cmd):
+                sfci = cmd.attributes['sfci']
+                if self._oib._isDelSFCIValidState(sfci.sfciID):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     ingress = cmd.attributes['sfc'].directions[0]['ingress']
                     if type(ingress) == Server:
@@ -144,7 +157,8 @@ class Orchestrator(object):
                     self._oib.delSFCIRequestHandler(request, cmd)
             elif request.requestType == REQUEST_TYPE_DEL_SFC:
                 cmd = self._osd.genDelSFCCmd(request)
-                if self._oib._isDelSFCValidState(cmd):
+                sfc = cmd.attributes['sfc']
+                if self._oib._isDelSFCValidState(sfc.sfcUUID):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)
@@ -162,6 +176,7 @@ class Orchestrator(object):
             pass
 
     def processInvalidAddSFCIRequests(self, requestBatchQueue):
+        # type: (Queue.Queue) -> None
         self._validRequestBatchQueue = Queue.Queue()
         self._invalidRequestBatchQueue = Queue.Queue()
         while not requestBatchQueue.empty():
@@ -176,32 +191,23 @@ class Orchestrator(object):
         self._requestBatchQueue = self._validRequestBatchQueue
 
     def _isValidAddSFCIRequest(self, request):
-        # if request.requestType  == REQUEST_TYPE_ADD_SFCI or\
-        #         request.requestType  == REQUEST_TYPE_DEL_SFCI:
-        #     if 'sfc' not in request.attributes:
-        #         raise ValueError("Request missing sfc")
-        #     if 'sfci' not in request.attributes:
-        #         raise ValueError("Request missing sfci")
-        #     sfc = request.attributes['sfc']
-        #     if sfc.directions[0]["ingress"] == None \
-        #             or sfc.directions[0]["egress"] == None:
-        #         raise ValueError("Request missing sfc's ingress and egress!")
-        # elif request.requestType  == REQUEST_TYPE_ADD_SFC or\
-        #         request.requestType  == REQUEST_TYPE_DEL_SFC:
-        #     if 'sfc' not in request.attributes:
-        #         raise ValueError("Request missing sfc")
-        # else:
-        #     raise ValueError("Unknown request type.")
-        sfc = request.attributes['sfc']
-        for direction in sfc.directions:
-            self.logger.info("ingress is {0}, egress is {1}".format(
-                direction["ingress"], 
-                direction["egress"]))
-            if direction["ingress"] == None \
-                    or direction["egress"] == None:
-                return False
-            else:
-                return True
+        # type: (Request) -> bool
+        try:
+            assert 'sfc' in request.attributes
+            sfc = request.attributes['sfc'] # type: SFC
+            assert type(sfc) == SFC
+            for direction in sfc.directions:
+                self.logger.info("ingress is {0}, egress is {1}".format(
+                    direction["ingress"], 
+                    direction["egress"]))
+                assert direction["ingress"] != None
+                assert direction["egress"] != None
+            assert 'sfci' in request.attributes
+            sfci = request.attributes['sfci'] # type: SFCI
+            assert type(sfci) == SFCI
+        except Exception as ex:
+            return False
+        return True
 
     def processAllAddSFCIRequests(self):
         self.logger.debug("Batch time out.")
@@ -212,16 +218,17 @@ class Orchestrator(object):
             self.logger.info("Trigger batch process.")
             self.processInvalidAddSFCIRequests(self._requestBatchQueue)
             reqCmdTupleList = self._osa.genABatchOfRequestAndAddSFCICmds(
-                self._requestBatchQueue)
+                                                self._requestBatchQueue)
             self.logger.info("After mapping, there are {0} request in queue".format(self._requestBatchQueue.qsize()))
             for (request, cmd) in reqCmdTupleList:
-                if self._oib._isAddSFCIValidState(cmd):
+                sfci = cmd.attributes['sfci']   # type: SFCI
+                sfciID = sfci.sfciID
+                if self._oib._isAddSFCIValidState(sfciID):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)
                 if ENABLE_OIB:
-                    sfci = cmd.attributes['sfci']
-                    self.logger.info("sfciID is {0}".format(sfci.sfciID))
+                    self.logger.info("sfciID is {0}".format(sfciID))
                     self._oib.addSFCIRequestHandler(request, cmd)
             self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
             self.logger.info("Batch process finish")
@@ -232,6 +239,7 @@ class Orchestrator(object):
         self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
 
     def _commandReplyHandler(self, cmdRply):
+        # type: (CommandReply) -> None
         try:
             self.logger.info("Get a command reply")
             # update cmd state
@@ -270,7 +278,6 @@ class Orchestrator(object):
     def _commandHandler(self, cmd):
         try:
             self.logger.info("Get a command reply")
-            cmdID = cmd.cmdID
             if cmd.cmdType == CMD_TYPE_PUT_ORCHESTRATION_STATE:
                 self.logger.info("Get dib from dispatcher!")
                 newDib = self._pruneDib(cmd.attributes["dib"])

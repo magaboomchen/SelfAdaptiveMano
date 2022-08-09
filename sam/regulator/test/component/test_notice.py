@@ -12,18 +12,16 @@ Usage of this unit test:
 
 import time
 import uuid
-import logging
 
 import pytest
 
-from sam.base.compatibility import screenInput
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, REGULATOR_QUEUE, SIMULATOR_ZONE, TURBONET_ZONE
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
 from sam.base.routingMorphic import RoutingMorphic
 from sam.base.server import SERVER_TYPE_NFVI, Server
-from sam.base.sfc import APP_TYPE_LARGE_BANDWIDTH, SFC, SFCI, STATE_ACTIVE, STATE_DELETED, STATE_MANUAL, STATE_RECOVER_MODE
+from sam.base.sfc import APP_TYPE_LARGE_BANDWIDTH, SFC, SFCI, STATE_ACTIVE, STATE_DELETED, STATE_RECOVER_MODE
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.slo import SLO
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, Switch
@@ -45,8 +43,6 @@ from sam.test.Testbed.triangleTopo.testbedFRR import SFF2_DATAPATH_IP
 from sam.test.fixtures.dispatcherStub import DispatcherStub
 from sam.test.testBase import APP1_REAL_IP, SFF2_CONTROLNIC_IP, \
         SFF2_CONTROLNIC_MAC, SFF2_DATAPATH_MAC, SFF2_SERVERID, TestBase
-
-MANUAL_TEST = True
 
 
 class TestNoticeClass(TestBase):
@@ -73,7 +69,8 @@ class TestNoticeClass(TestBase):
         # you can overwrite following function to test different sfc/sfci
         classifier = Switch(0, SWITCH_TYPE_DCNGATEWAY)
         self.sfc = self.genLargeBandwidthSFC(classifier)
-        self.sfci = self.genUniDirection10BackupSFCI()
+        rM = self.sfc.routingMorphic
+        self.sfci = self.genUniDirection10BackupSFCI(rM)
 
         self.storeSFC2DB(self.sfc)
         self.storeSFCI2DB(self.sfci, self.sfc.sfcUUID, self.sfc.attributes["zone"])
@@ -119,10 +116,11 @@ class TestNoticeClass(TestBase):
                     vnfSequence = vnfSequence,
                     vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
-    def genUniDirection10BackupSFCI(self):
+    def genUniDirection10BackupSFCI(self, routingMorphic=None):
         vnfiSequence = self.genLargeBandwidthVNFISequence()
         return SFCI(self.assignSFCIID(), vnfiSequence, None,
-            self.genUniDirection10BackupForwardingPathSet())
+            self.genUniDirection10BackupForwardingPathSet(),
+            routingMorphic=routingMorphic)
 
     def genLargeBandwidthVNFISequence(self):
         # hard-code function

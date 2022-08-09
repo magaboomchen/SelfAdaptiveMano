@@ -2,8 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import random
-import logging
 
 import pytest
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -21,7 +19,6 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.testBase import TestBase, OUTTER_CLIENT_IP, WEBSITE_REAL_IP
 
-MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
 TESTER_SERVER_DATAPATH_MAC = "00:1b:21:c0:8f:ae"
 

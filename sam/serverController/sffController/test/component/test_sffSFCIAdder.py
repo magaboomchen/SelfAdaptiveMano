@@ -8,11 +8,10 @@ Usage:
         on the NFVI running bess.
 '''
 
-import logging
 import time
 
 import pytest
-from scapy.all import sniff, AsyncSniffer, Raw, sendp
+from scapy.all import sniff, AsyncSniffer
 from scapy.layers.l2 import ARP
 from scapy.layers.inet import IP
 from scapy.contrib.nsh import NSH
@@ -26,18 +25,17 @@ from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.test.fixtures.vnfControllerStub import VNFControllerStub
-from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, TestBase, CLASSIFIER_DATAPATH_IP, SFF1_CONTROLNIC_IP, \
-    SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC, SFCI1_0_EGRESS_IP, WEBSITE_REAL_IP, SFCI1_1_EGRESS_IP
+from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, \
+                        TestBase, CLASSIFIER_DATAPATH_IP, SFF1_CONTROLNIC_IP, \
+                        SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC, SFCI1_0_EGRESS_IP, \
+                        WEBSITE_REAL_IP, SFCI1_1_EGRESS_IP
 from sam.test.fixtures import sendArpRequest
 from sam.serverController.sffController.test.component.testConfig import TESTER_SERVER_DATAPATH_IP, \
     TESTER_SERVER_DATAPATH_MAC, TESTER_DATAPATH_INTF, PRIVATE_KEY_FILE_PATH, BESS_SERVER_USER, \
     BESS_SERVER_USER_PASSWORD
 from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
-from sam.serverController.sffController import sffControllerCommandAgent
 from sam.serverController.sffController.test.component.fixtures.sendDirection0Traffic import sendDirection0Traffic
 from sam.serverController.sffController.test.component.fixtures.sendDirection1Traffic import sendDirection1Traffic
-
-MANUAL_TEST = True
 
 
 class TestSFFSFCIAdderClass(TestBase):

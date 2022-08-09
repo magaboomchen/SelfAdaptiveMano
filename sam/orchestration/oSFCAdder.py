@@ -8,14 +8,19 @@ To add more mapping algorithms, you need add code in following functions:
 * YOUR_MAPPING_ALGOTIYHM()
 '''
 
+import sys
+if sys.version > '3':
+    import queue as Queue
+else:
+    import Queue
 import uuid
 import copy
 from typing import Union
-from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
 
 from sam.base.vnf import VNFI
 from sam.base.switch import Switch
 from sam.base.server import Server
+from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
 from sam.base.path import MAPPING_TYPE_MMLPSFC, ForwardingPathSet, \
                             MAPPING_TYPE_E2EP, MAPPING_TYPE_UFRR, \
                             MAPPING_TYPE_NOTVIA_PSFC, MAPPING_TYPE_NETPACK, \
@@ -23,7 +28,8 @@ from sam.base.path import MAPPING_TYPE_MMLPSFC, ForwardingPathSet, \
                             MAPPING_TYPE_NETSOLVER_ILP
 from sam.base.command import Command, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_ADD_SFC, \
-    REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI
+                                REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, \
+                                Request
 from sam.base.socketConverter import SocketConverter
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.orchestration.oConfig import DEFAULT_MAPPING_TYPE
@@ -187,6 +193,7 @@ class OSFCAdder(object):
     #             raise ValueError("Find ingress/egress failed")
 
     def genABatchOfRequestAndAddSFCICmds(self, requestBatchQueue):
+        # type: (Queue.Queue) -> list[tuple[Request, Command]]
         self.logger.info("oSFCAdder process batch size: {0}".format(requestBatchQueue.qsize()))
         # while not requestBatchQueue.empty():
         #     request = requestBatchQueue.get()

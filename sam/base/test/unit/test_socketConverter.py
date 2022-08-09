@@ -1,11 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
 from sam.base.socketConverter import SocketConverter
-
-MANUAL_TEST = True
 
 
 class TestSocketConverterClass(object):

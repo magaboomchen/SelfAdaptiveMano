@@ -237,7 +237,7 @@ def serverList(request,id = 0):
                 else:
                     sort_column = 'localdisks_size'
                 #     annotate 是注释的功能,localdisks_size前端传过来的是这个值，后端也必须这样写，Sum方法是django里面的，不是小写的sum方法，
-                # 两者的区别需要注意，Sum（'disk__capacity‘）表示对disk表下面的capacity进行加法计算，返回一个总值.
+                # 两者的区别需要注意，Sum（'disk__capacity'）表示对disk表下面的capacity进行加法计算，返回一个总值.
                 all_records = hostinfo.objects.all().annotate(localdisks_size=Sum('disk__capacity')).order_by(sort_column)
 
             elif sort_column in ['idc',]:

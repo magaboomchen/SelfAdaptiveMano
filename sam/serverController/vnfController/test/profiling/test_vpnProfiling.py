@@ -9,7 +9,6 @@ sudo python ./sendSFCTraffic.py -i enp4s0 -smac 00:1b:21:c0:8f:ae -dmac 00:1b:21
 '''
 
 import uuid
-import logging
 
 import pytest
 from scapy.all import Raw, sendp, sniff
@@ -32,7 +31,6 @@ from sam.test.testBase import TestBase, WEBSITE_REAL_IP, OUTTER_CLIENT_IP, \
     TESTER_SERVER_DATAPATH_MAC, CLASSIFIER_DATAPATH_IP, SFCI1_0_EGRESS_IP, \
     SFCI1_1_EGRESS_IP
 
-MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
 TESTER_SERVER_DATAPATH_MAC = "00:1b:21:c0:8f:ae"
 TESTER_DATAPATH_INTERFACE = "enp4s0"

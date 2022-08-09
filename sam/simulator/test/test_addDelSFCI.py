@@ -4,9 +4,9 @@
 '''
 This is the component test for simulator (test _addSFCIHandler)
 The work flow:
-    * Mediator sends ‘ADD_SFCI command’ to simulator;
+    * Mediator sends 'ADD_SFCI command' to simulator;
     * Simulator processes the command and then send back a command reply to the mediator;
-    PS1:The ‘ADD_SFCI command’ and the corresponding ‘ADD_SFCI command reply’ have same cmdID;
+    PS1:The 'ADD_SFCI command' and the corresponding 'ADD_SFCI command reply' have same cmdID;
     PS2: Class TestBase and TestSimulatorBase has many useful function;
 
 Usage of this unit test:
@@ -25,8 +25,6 @@ from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.simulator.test.testSimulatorBase import TestSimulatorBase, CLASSIFIER_DATAPATH_IP
 from sam.simulator import simulator
-
-MANUAL_TEST = True
 
 
 class TestAddSFCIClass(TestSimulatorBase):

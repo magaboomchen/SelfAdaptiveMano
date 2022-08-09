@@ -1,12 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.sshAgent import SSHAgent
-
-MANUAL_TEST = True
 
 
 class TestSSHAgentClass(object):

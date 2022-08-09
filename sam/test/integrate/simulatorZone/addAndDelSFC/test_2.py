@@ -21,8 +21,6 @@ from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
                         REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
 from sam.test.integrate.intTestBase import IntTestBaseClass
 
-MANUAL_TEST = True
-
 
 class TestAddSFCClass(IntTestBaseClass):
     @pytest.fixture(scope="function")
@@ -35,19 +33,24 @@ class TestAddSFCClass(IntTestBaseClass):
         # you can overwrite following function to test different sfc/sfci
         classifier = None
         sfc1 = self.genLargeBandwidthSFC(classifier)
-        sfci1 = self.genSFCITemplate()
+        rM = sfc1.routingMorphic
+        sfci1 = self.genSFCITemplate(rM)
 
         sfc2 = self.genHighAvaSFC(classifier)
-        sfci2 = self.genSFCITemplate()
+        rM = sfc2.routingMorphic
+        sfci2 = self.genSFCITemplate(rM)
 
         sfc3 = self.genLowLatencySFC(classifier)
-        sfci3 = self.genSFCITemplate()
+        rM = sfc3.routingMorphic
+        sfci3 = self.genSFCITemplate(rM)
 
         sfc4 = self.genLargeConnectionSFC(classifier)
-        sfci4 = self.genSFCITemplate()
+        rM = sfc4.routingMorphic
+        sfci4 = self.genSFCITemplate(rM)
 
         sfc5 = self.genBestEffortSFC(classifier)
-        sfci5 = self.genSFCITemplate()
+        rM = sfc5.routingMorphic
+        sfci5 = self.genSFCITemplate(rM)
 
         self.sfcList = [sfc1, sfc2, sfc3, sfc4, sfc5]
         self.sfciList = [sfci1, sfci2, sfci3, sfci4, sfci5]

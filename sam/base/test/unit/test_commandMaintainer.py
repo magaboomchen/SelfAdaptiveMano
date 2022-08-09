@@ -11,8 +11,6 @@ from sam.base.command import Command, CommandReply, CMD_TYPE_ADD_SFCI, \
 from sam.base.commandMaintainer import CommandMaintainer
 from sam.base.messageAgent import MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, MSG_TYPE_SERVER_MANAGER_CMD
 
-MANUAL_TEST = True
-
 
 class TestCommandMaintainerClass(object):
     def setup_method(self, method):

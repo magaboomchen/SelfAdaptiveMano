@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
 
 import pytest
 from scapy.all import sendp, sniff
@@ -24,7 +23,6 @@ from sam.test.testBase import TestBase, WEBSITE_REAL_IP, OUTTER_CLIENT_IP, \
     TESTER_SERVER_DATAPATH_MAC, CLASSIFIER_DATAPATH_IP, SFCI1_0_EGRESS_IP, \
     SFCI1_1_EGRESS_IP
 
-MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.199"
 TESTER_SERVER_DATAPATH_MAC = "52:54:00:a8:b0:a1"
 TESTER_DATAPATH_INTERFACE = "ens8"

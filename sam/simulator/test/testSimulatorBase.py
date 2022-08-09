@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
 from sam.base.rateLimiter import RateLimiterConfig
 
 from sam.base.slo import SLO
@@ -17,8 +16,6 @@ from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNF_TYPE_FW, VNF_TYP
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, SWITCH_TYPE_NPOP, Switch
 from sam.test.testBase import DCN_GATEWAY_IP, TestBase, WEBSITE_REAL_IP, CLASSIFIER_DATAPATH_IP
-
-MANUAL_TEST = True
 
 CLASSIFIER_DATAPATH_IP = "2.2.0.2"
 CLASSIFIER_DATAPATH_MAC = "00:1b:21:c0:8f:ae"   # ignore this

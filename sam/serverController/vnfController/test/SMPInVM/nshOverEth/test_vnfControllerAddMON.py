@@ -13,25 +13,23 @@ Usage:
 import os
 import time
 import uuid
-import logging
 
 import pytest
 from scapy.all import sniff, AsyncSniffer, Raw, sendp
 from scapy.layers.inet import IP, TCP
 from scapy.contrib.nsh import NSH
 from scapy.layers.inet6 import IPv6
-from scapy.contrib.roce import GRH
 
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.monitorStatistic import MonitorStatistics
 from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
-from sam.base.acl import ACLTable, ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP
+from sam.base.acl import ACLTable
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import TURBONET_ZONE, VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
     SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE, MessageAgent
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
 from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNF_TYPE_FW, VNFIStatus
-from sam.base.server import SERVER_TYPE_NFVI, Server, SERVER_TYPE_NORMAL
+from sam.base.server import SERVER_TYPE_NFVI, Server
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.compatibility import screenInput
@@ -40,18 +38,15 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
-from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, OUTTER_CLIENT_IPV6, SFF1_CONTROLNIC_INTERFACE, WEBSITE_REAL_IPV6, TestBase, WEBSITE_REAL_IP, OUTTER_CLIENT_IP, \
+from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, SFF1_CONTROLNIC_INTERFACE, WEBSITE_REAL_IPV6, TestBase, WEBSITE_REAL_IP, \
     CLASSIFIER_DATAPATH_IP, SFCI1_0_EGRESS_IP, SFCI1_1_EGRESS_IP, \
     SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC, SFF1_CONTROLNIC_IP, SFF1_CONTROLNIC_MAC
 from sam.serverController.sffController.test.component.testConfig import TESTER_SERVER_DATAPATH_IP, \
-    TESTER_SERVER_DATAPATH_MAC, TESTER_DATAPATH_INTF, PRIVATE_KEY_FILE_PATH, BESS_SERVER_USER, \
-    BESS_SERVER_USER_PASSWORD
+    TESTER_SERVER_DATAPATH_MAC, TESTER_DATAPATH_INTF
 from sam.serverController.vnfController.test.fixtures import sendDirection0Traffic
 from sam.serverController.vnfController.test.fixtures import sendDirection1Traffic
 from sam.serverController.vnfController.test.fixtures.sendDirection0Traffic import sendDirection0Traffic as sD0Traffic
 from sam.serverController.vnfController.test.fixtures.sendDirection1Traffic import sendDirection1Traffic as sD1Traffic
-
-MANUAL_TEST = True
 
 
 class TestVNFAddMON(TestBase):

@@ -33,8 +33,6 @@ from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP
 
-MANUAL_TEST = True
-
 
 class TestAddSFCIClass(TestBase):
     @pytest.fixture(scope="function")

@@ -1,11 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
 from sam.base.topoGen.base.dhcpServer import DHCPServer
-
-MANUAL_TEST = True
 
 
 class TestDHCPServerClass(object):

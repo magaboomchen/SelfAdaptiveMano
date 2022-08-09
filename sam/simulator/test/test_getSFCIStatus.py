@@ -4,11 +4,11 @@
 '''
 This is the component test for simulator (test _getSFCIStatusHandler)
 The work flow:
-    * Mediator sends ‘GET_SFCI_Status command’ to simulator;
+    * Mediator sends 'GET_SFCI_Status command' to simulator;
     * Simulator processes the command and then send back a command reply to the mediator;
     * Cautions! You just need send back all SFCI objects in a dict, e.g. {"sfciID": SFCI()}
     * We should check whether variable in SFCI object has been updated.
-    PS1:The ‘GET_SFCI_Status command’ and the corresponding ‘GET_SFCI_Status command reply’ have same cmdID;
+    PS1:The 'GET_SFCI_Status command' and the corresponding 'GET_SFCI_Status command reply' have same cmdID;
     PS2: Class TestBase and TestSimulatorBase has many useful function;
 
 Usage of this unit test:
@@ -36,8 +36,6 @@ from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.simulator.test.testSimulatorBase import TestSimulatorBase
 from sam.simulator import simulator
 from sam.test.testBase import CLASSIFIER_DATAPATH_IP
-
-MANUAL_TEST = True
 
 
 class TestGetSFCIStatusClass(TestSimulatorBase):

@@ -54,6 +54,7 @@ APP3_REAL_GID = "2222:1ce1:2::"
 APP4_REAL_IP = "7.7.7.7"
 APP4_REAL_IPV6 = "2233:1ce1:2::"
 APP5_REAL_IP = "8.8.8.8"
+APP6_REAL_IP = "9.9.9.9"
 
 TEST_SERVERID = 19999
 
@@ -501,12 +502,8 @@ class TestBase(object):
         del tmpMessageAgent
 
     def sendCmdByRPC(self, dstIP, dstPort, msgType, cmd):
-        # tmpMessageAgent = MessageAgent()
-        # oSP = tmpMessageAgent.getOpenSocketPort()
-        # tmpMessageAgent.startMsgReceiverRPCServer("localhost", oSP)
         msg = SAMMessage(msgType, cmd)
         self.tmpMessageAgent.sendMsgByRPC(dstIP, dstPort, msg)
-        # del self.tmpMessageAgent
 
     def sendCmdRply(self, queue, msgType, cmdRply):
         tmpMessageAgent = MessageAgent()

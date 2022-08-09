@@ -161,6 +161,7 @@ MSG_TYPE_REGULATOR_CMD = "MSG_TYPE_REGULATOR_CMD"
 
 MESSAGE_AGENT_MAX_QUEUE_SIZE = 99999
 MESSAGE_AGENT_GRPC_RETRY_WAIT_TIME = 1
+MESSAGE_AGENT_GRPC_ERROR_LOG_TIME_SLOT = 5
 
 
 class SAMMessage(object):
@@ -347,19 +348,20 @@ class MessageAgent(object):
         if self.listenIP == None or self.listenPort == None:
             raise ValueError("Unset listen IP and port.")
         self.logger.info("gRPC listen dstIP {0}, dstPort {1}".format(dstIP, dstPort))
-        self.gRPCChannel = grpc.insecure_channel(
-            '{0}:{1}'.format(dstIP, dstPort),
-            options=[
-                ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
-                ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH),
-            ],
-        )
 
-        stub = messageAgent_pb2_grpc.MessageStorageStub(channel=self.gRPCChannel)
-
-        cnt = 5
+        cnt = MESSAGE_AGENT_GRPC_ERROR_LOG_TIME_SLOT
         while True:
             try:
+                self.gRPCChannel = grpc.insecure_channel(
+                    '{0}:{1}'.format(dstIP, dstPort),
+                    options=[
+                        ('grpc.max_send_message_length', MAX_MESSAGE_LENGTH),
+                        ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH),
+                    ],
+                )
+
+                stub = messageAgent_pb2_grpc.MessageStorageStub(channel=self.gRPCChannel)
+ 
                 source = {"comType":"RPC",
                     "srcIP": self.listenIP,
                     "srcPort": self.listenPort
@@ -374,7 +376,7 @@ class MessageAgent(object):
                 if response.booly:
                     break
             except grpc.RpcError as e:
-                if cnt%5==0:
+                if cnt%MESSAGE_AGENT_GRPC_ERROR_LOG_TIME_SLOT==0:
                     # ouch!
                     # lets print the gRPC error message
                     # which is "Length of `Name` cannot be more than 10 characters"

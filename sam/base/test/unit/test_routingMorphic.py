@@ -10,8 +10,6 @@ from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 from sam.base.test.fixtures.ipv6MorphicDict import ipv6MorphicDictTemplate
 from sam.base.test.fixtures.geoMorphicDict import geoMorphicDictTemplate
 
-MANUAL_TEST = True
-
 
 class TestRoutingMorphicClass(TestBase):
     def setup_method(self, method):

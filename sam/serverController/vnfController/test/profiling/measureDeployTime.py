@@ -3,7 +3,6 @@
 
 import time
 import uuid
-import logging
 
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL
 from sam.base.vnf import VNFI, VNF_TYPE_FW
@@ -17,9 +16,8 @@ from sam.base.messageAgent import MessageAgent, SAMMessage, MEDIATOR_QUEUE, \
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.test.testBase import TestBase, WEBSITE_REAL_IP, OUTTER_CLIENT_IP
+from sam.test.testBase import TestBase
 
-MANUAL_TEST = True
 TESTER_SERVER_DATAPATH_IP = "2.2.0.36"
 TESTER_SERVER_DATAPATH_MAC = "00:1b:21:c0:8f:ae"
 

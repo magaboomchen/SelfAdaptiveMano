@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
 import pytest
 
 from sam.base.compatibility import screenInput
@@ -13,8 +11,6 @@ from sam.base.messageAgent import SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP
-
-MANUAL_TEST = True
 
 TESTER_SERVER_DATAPATH_IP = "192.168.123.1"
 TESTER_SERVER_DATAPATH_MAC = "fe:54:00:05:4d:7d"

@@ -1,25 +1,19 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
-
 import pytest
-from sam.base.loggerConfigurator import LoggerConfigurator
 
+from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import MSG_TYPE_MEDIATOR_CMD, P4CONTROLLER_QUEUE, \
-    SERVER_CLASSIFIER_CONTROLLER_QUEUE, SFF_CONTROLLER_QUEUE, \
-    NETWORK_CONTROLLER_QUEUE, MEDIATOR_QUEUE, \
+    SFF_CONTROLLER_QUEUE, MEDIATOR_QUEUE, \
     ORCHESTRATOR_QUEUE, TURBONET_ZONE, VNF_CONTROLLER_QUEUE, MessageAgent
 from sam.base.command import CommandReply, \
-    CMD_TYPE_ADD_SFCI, CMD_TYPE_GET_SERVER_SET, \
-    CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
+    CMD_TYPE_ADD_SFCI, CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.orchestrationStub import OrchestrationStub
 from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.test.fixtures.serverManagerStub import ServerManagerStub
 from sam.test.testBase import TestBase, CLASSIFIER_DATAPATH_IP
-
-MANUAL_TEST = True
 
 # TODO: CMD_TYPE_ADD_SFC_SUCCESSFUL, CMD_TYPE_ADD_SFC_FAIL
 # need to be test

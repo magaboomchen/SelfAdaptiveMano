@@ -75,8 +75,9 @@ class Regulator(object):
     def startRoutine(self):
         try:
             while True:
-                self.requestReplyHandlerRoutine()
-                self.commandHandlerRoutine()
+                # self.requestReplyHandlerRoutine()
+                # self.commandHandlerRoutine()
+                self.msgHandlerRoutine()
                 self.retryFailureRequestRoutine()
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex, 
@@ -121,8 +122,8 @@ class Regulator(object):
                 else:
                     raise ValueError("Unknown request type {0}".format(requestType))
 
-    def commandHandlerRoutine(self):
-        # Listen on command
+    def msgHandlerRoutine(self):
+        # Listen on message
         msg = self._messageAgent.getMsg(self.regulatorQueueName)
         msgType = msg.getMessageType()
         if msgType == None:
@@ -131,24 +132,13 @@ class Regulator(object):
             body = msg.getbody()
             if self._messageAgent.isCommand(body):
                 self.cmdHandler.handle(body)
-            else:
-                self.logger.error("Unknown massage body:{0}".format(body))
-        self.cmdHandler.processAllRecoveryTasks()
-
-    def requestReplyHandlerRoutine(self):
-        # Listen on request/reply
-        msg = self._messageAgent.getMsgByRPC(REGULATOR_IP, REGULATOR_PORT)
-        msgType = msg.getMessageType()
-        if msgType == None:
-            pass
-        else:
-            body = msg.getbody()
-            if self._messageAgent.isReply(body):
+            elif self._messageAgent.isReply(body):
                 self.replyHandler.handle(body)
             elif self._messageAgent.isRequest(body):
                 self.requestHandler.handle(body)
             else:
                 self.logger.error("Unknown massage body:{0}".format(body))
+        self.cmdHandler.processAllRecoveryTasks()
         self.replyHandler.processAllScalingTasks()
         self.requestHandler.processAllRequestTask()
 

@@ -25,8 +25,6 @@ from sam.serverController.sffController.test.unit.fixtures import sendDirection0
 from sam.serverController.sffController.test.unit.fixtures import sendDirection1Traffic
 from sam.serverController.sffController.test.unit.fixtures import sendDirection1Traffic4sfci2
 
-MANUAL_TEST = True
-
 TESTER_SERVER_DATAPATH_IP = "192.168.8.20"
 TESTER_SERVER_DATAPATH_MAC = "90:e2:ba:b1:4d:0f"
 

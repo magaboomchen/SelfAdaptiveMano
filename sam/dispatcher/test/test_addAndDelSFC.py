@@ -4,16 +4,15 @@
 '''
 This is an example for writing unit test for simulator (test _addSFCIHandler)
 The work flow:
-    * Mediator sends ‘ADD_SFCI command’ to simulator;
+    * Mediator sends 'ADD_SFCI command' to simulator;
     * Simulator processes the command and then send back a command reply to the mediator;
-    PS1:The ‘ADD_SFCI command’ and the corresponding ‘ADD_SFCI command reply’ have same cmdID;
+    PS1:The 'ADD_SFCI command' and the corresponding 'ADD_SFCI command reply' have same cmdID;
     PS2: Class TestBase and TestSimulatorBase has many useful function;
 
 Usage of this unit test:
     python -m pytest ./test_addDelSFCI.py -s --disable-warnings
 '''
 
-import logging
 import time
 import uuid
 
@@ -22,15 +21,16 @@ import pytest
 from sam.base.compatibility import screenInput
 from sam.base.messageAgent import DISPATCHER_QUEUE, \
     MEDIATOR_QUEUE, SIMULATOR_ZONE
-from sam.base.command import CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI
-from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
+from sam.base.command import CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
+                                CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI
+from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
+                                REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, \
+                                Request
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.simulator.test.testSimulatorBase import TestSimulatorBase
-
-MANUAL_TEST = True
 
 
 class TestAddSFCClass(TestSimulatorBase):

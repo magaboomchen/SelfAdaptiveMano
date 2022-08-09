@@ -8,8 +8,6 @@ from sam.base.pickleIO import PickleIO
 from sam.base.databaseAgent import DatabaseAgent
 from sam.base.loggerConfigurator import LoggerConfigurator
 
-MANUAL_TEST = True
-
 
 class TestDatabaseAgentClass(object):
     @classmethod

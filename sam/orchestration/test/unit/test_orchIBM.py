@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
 
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_UFRR
 from sam.base.command import Command, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
@@ -12,8 +11,6 @@ from sam.base.sfc import SFCI, STATE_IN_PROCESSING, STATE_INACTIVE, STATE_DELETE
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.test.testBase import TestBase
-
-MANUAL_TEST = True
 
 
 class TestOIBMClass(TestBase):
