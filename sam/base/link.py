@@ -8,7 +8,7 @@ class Link(object):
     def __init__(self, srcID, dstID, 
             bandwidth=LINK_DEFAULT_BANDWIDTH,
             linkLength=1, 
-            utilization=0,
+            utilization=0,  # type: float
             queueLatency=0):
         self.srcID = srcID  # link的起始端点交换机的switchID
         self.dstID = dstID  # link的终止端点交换机的switchID

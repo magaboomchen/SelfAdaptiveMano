@@ -27,9 +27,11 @@ MAPPING_TYPE_NETSOLVER_ILP = "MAPPING_TYPE_NETSOLVER_ILP"
 
 
 class ForwardingPathSet(object):
-    def __init__(self, primaryForwardingPath,
-                mappingType, backupForwardingPath):
-        self.primaryForwardingPath = primaryForwardingPath  # type: dict[Union[DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET], list(tuple[int, int])]
+    def __init__(self, primaryForwardingPath,   # type: dict[Union[DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET], list(tuple[int, int])]
+                mappingType, # type: Union[MAPPING_TYPE_MMLPSFC, MAPPING_TYPE_NETPACK, MAPPING_TYPE_NONE]
+                backupForwardingPath    # type: dict[Union[DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET], list(tuple[int, int])]
+                ):
+        self.primaryForwardingPath = primaryForwardingPath  
         # direction0's pathID is DIRECTION0_PATHID_OFFSET
         # direction1's pathID is DIRECTION1_PATHID_OFFSET
         # {

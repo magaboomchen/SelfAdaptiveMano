@@ -17,7 +17,7 @@ roceV1MorphicDictTemplate = {
             "headerOffsets": 14,
             "headerBits": 320,
             "etherType": 0x8915,
-            "nshProtocolNumber": 0x02,
+            "nshProtocolNumber": 0x6,
             "ipProto": 0x29,
             "metadataDict": {
                 "SGID": {

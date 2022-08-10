@@ -55,10 +55,16 @@ VNFI_RESOURCE_QUOTA_SMALL = {
     "fwRules": 100
 }
 
-VNFI_RESOURCE_QUOTA_LARGE = {
+VNFI_RESOURCE_QUOTA_MEDIUM = {
     "cpu": 4,
-    "mem": 2,    # 1 GiB hugepage
+    "mem": 2,    # 2 GiB hugepage
     "fwRules": 200
+}
+
+VNFI_RESOURCE_QUOTA_LARGE = {
+    "cpu": 8,
+    "mem": 4,    # 4 GiB hugepage
+    "fwRules": 400
 }
 
 

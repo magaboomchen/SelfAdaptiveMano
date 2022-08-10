@@ -14,8 +14,8 @@ Usage of this unit test:
 '''
 
 import pytest
-from sam.base.command import CMD_TYPE_DEL_CLASSIFIER_ENTRY, CMD_TYPE_DEL_NSH_ROUTE
 
+from sam.base.command import CMD_TYPE_DEL_CLASSIFIER_ENTRY, CMD_TYPE_DEL_NSH_ROUTE
 from sam.base.compatibility import screenInput
 from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD, P4CONTROLLER_QUEUE
 from sam.base.sfc import SFC, SFCI

@@ -18,7 +18,7 @@ class Switch(object):
                 switchType, # type: Union[SWITCH_TYPE_FORWARD, SWITCH_TYPE_NPOP, SWITCH_TYPE_DCNGATEWAY]
                 lanNet=None,    # type: str
                 programmable=False, # type: bool
-                tcamSize=SWITCH_DEFAULT_TCAM_SIZE,
+                tcamSize=SWITCH_DEFAULT_TCAM_SIZE,  # type: int
                 tcamUsage=0,    # type: int
                 p4NFUsage=None  # type: P4NFUsage
                 ):

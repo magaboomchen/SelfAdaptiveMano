@@ -22,6 +22,7 @@ class TurbonetControllerStub(object):
                                                      TURBONET_CONTROLLER_PORT)
 
     def recvCmd(self, cmdTypeList, maxCmdCnt):
+        # type: (list[str], int) -> None
         try:
             cnt = 0
             while True:
