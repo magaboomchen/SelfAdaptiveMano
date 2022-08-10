@@ -1,14 +1,17 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from typing import Union
+
 from sam.base.vnf import VNFIStatus
 from sam.base.xibMaintainer import XInfoBaseMaintainer
+from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE
 
 
 class SFCIInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self):
         super(SFCIInfoBaseMaintainer, self).__init__()
-        self._sfcis = {}    # [sfciID]: sfci
+        self._sfcis = {}    # type: dict[Union[TURBONET_ZONE, SIMULATOR_ZONE], dict[int, SFCI]]
         self._sfcisReservedResources = {}
 
     def updateSFCIsInAllZone(self, sfcis):

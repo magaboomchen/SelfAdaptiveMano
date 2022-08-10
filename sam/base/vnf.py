@@ -2,8 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 from typing import Union
-from sam.base.acl import ACLTable
 
+from sam.base.acl import ACLTable
 from sam.base.monitorStatistic import MonitorStatistics
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.server import Server
@@ -90,7 +90,7 @@ class VNFI(object):
         self.node = node                # type: Union[Server, Switch]
         self.vnfiStatus = vnfiStatus    # type: VNFIStatus
         self.minCPUNum = 1
-        self.maxCPUNum = 2  # CPU core number
+        self.maxCPUNum = 1  # CPU core number: 100%
         self.cpuCoreDistribution = []  # place vnfi on specific core
         # e.g. [1,2,3,4] allocates core 1,2,3,4 for this vnfi
         self.minMem = 1024

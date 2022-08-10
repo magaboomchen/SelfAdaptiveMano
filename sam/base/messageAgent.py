@@ -8,7 +8,9 @@ Usage:
                                         DEFINABLE_MEASURER_QUEUE, ABNORMAL_DETECTOR_QUEUE
 
 Use case 1 - abnormal detector:
-    # Thread 1
+    # Thread 1 (main)
+    mA = MessageAgent()
+    mA.startMsgReceiverRPCServer(ABNORMAL_DETECTOR_IP, ABNORMAL_DETECTOR_PORT)
     # send Request to definable measurer to get datacenter infomation
     while True:
         time.sleep(3)
@@ -19,9 +21,14 @@ Use case 1 - abnormal detector:
 
     # Thread 2
     # recv message in a While loop from a grpc socket: 
-    mA.startMsgReceiverRPCServer(ABNORMAL_DETECTOR_IP, ABNORMAL_DETECTOR_PORT)
     while True:
         msg = mA.getMsgByRPC(ABNORMAL_DETECTOR_IP, ABNORMAL_DETECTOR_PORT)
+        msgType = msg.getMessageType() # Maybe reply from definable measurer
+        source = msg.getSource()
+        if msgType == MSG_TYPE_REPLY:
+            pass
+        else:
+            pass
 
     # send "abnormal handle command" to REGULATOR_QUEUE (PS: regulator can handle abnormal and failure)
     queueName = REGULATOR_QUEUE
@@ -33,7 +40,9 @@ Use case 1 - abnormal detector:
     mA.sendMsg(queueName, msg)
 
 Use case 2 - definable measurer:
-    # Thread 1
+    # Thread 1 (main)
+    mA = MessageAgent()
+    mA.startMsgReceiverRPCServer(DEFINABLE_MEASURER_IP, DEFINABLE_MEASURER_PORT)
     # send Request to measurer to get datacenter infomation
     while True:
         time.sleep(3)
@@ -44,14 +53,27 @@ Use case 2 - definable measurer:
 
     # Thread 2
     # recv message in a While loop from a grpc socket: 
-    mA.startMsgReceiverRPCServer(DEFINABLE_MEASURER_IP, DEFINABLE_MEASURER_PORT)
     while True:
         msg = mA.getMsgByRPC(DEFINABLE_MEASURER_IP, DEFINABLE_MEASURER_PORT)
-        msgType = msg.getMessageType() # Maybe request from abnormal detector, or dcn info from measurer
+        msgType = msg.getMessageType() # Maybe request from abnormal detector, or reply (dcn info) from measurer
+        source = msg.getSource()
+        if msgType == MSG_TYPE_REPLY:
+            pass
+            # from chen hao
+            reply = msg.getbody()   #  type: CommandReply
+            attributes = reply.attributes
+        elif msgType == MSG_TYPE_REQUEST:
+            pass
+            # from wang xuan run
+        else:
+            pass
 
     # send message to abnormal detector
-    msg = SAMMessage(msgType, cmd)
-    mA.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
+    attributes = self.getTopoAttributes()
+    rply = Reply(request.requestID,
+        REQUEST_STATE_SUCCESSFUL, attributes)
+    msg = SAMMessage(msgType, reply)
+    mA.sendMsgByRPC(ABNORMAL_DETECTOR_IP, ABNORMAL_DETECTOR_PORT, msg)
 
 Use case 3 - elastic orchestrator(regulator):
     # recv message in a While loop from REGULATOR_QUEUE
