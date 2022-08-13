@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from typing import Union, Any
+from typing import Dict, Union, Any
 
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE
@@ -10,7 +10,7 @@ from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE
 class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self):
         super(ServerInfoBaseMaintainer, self).__init__()
-        self._servers = {}  # type: dict[Union[TURBONET_ZONE, SIMULATOR_ZONE], dict[int, dict[str, Any]]]
+        self._servers = {}  # type: Dict[Union[TURBONET_ZONE, SIMULATOR_ZONE], Dict[int, Dict[str, Any]]]
         # [zoneName][serverID] = {'server':server, 'Active':True, 'timestamp':datetime, 'Status':none}
         self._serversReservedResources = {} # [zoneName][serverID] = {'bandwidth':bw, 'cores':cpu, 'memory':mem}
         self.isServerInfoInDB = False

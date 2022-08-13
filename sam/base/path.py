@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from typing import Union
+from typing import Dict, List, Tuple, Union
 
 DIRECTION0_PATHID_OFFSET = 1
 DIRECTION1_PATHID_OFFSET = 128
@@ -27,9 +27,9 @@ MAPPING_TYPE_NETSOLVER_ILP = "MAPPING_TYPE_NETSOLVER_ILP"
 
 
 class ForwardingPathSet(object):
-    def __init__(self, primaryForwardingPath,   # type: dict[Union[DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET], list(tuple[int, int])]
+    def __init__(self, primaryForwardingPath,   # type: Dict[Union[DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET], List(Tuple[int, int])]
                 mappingType, # type: Union[MAPPING_TYPE_MMLPSFC, MAPPING_TYPE_NETPACK, MAPPING_TYPE_NONE]
-                backupForwardingPath    # type: dict[Union[DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET], list(tuple[int, int])]
+                backupForwardingPath    # type: Dict[Union[DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET], List(Tuple[int, int])]
                 ):
         self.primaryForwardingPath = primaryForwardingPath  
         # direction0's pathID is DIRECTION0_PATHID_OFFSET

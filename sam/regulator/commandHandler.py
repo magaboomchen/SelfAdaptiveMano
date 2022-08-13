@@ -3,6 +3,7 @@
 
 import time
 import uuid
+from typing import Dict
 
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL
 from sam.base.exceptionProcessor import ExceptionProcessor
@@ -23,7 +24,7 @@ class CommandHandler(object):
         self.logger = logger
         self._messageAgent = msgAgent
         self._oib = oib # type: OrchInfoBaseMaintainer
-        self.recoveryTaskDict = {}  # dict[sfcUUID, dict[SFCIID, taskState]]
+        self.recoveryTaskDict = {}  # type: Dict[SFC.sfcUUID, Dict[SFCI.sfciID, str]]
 
     def handle(self, cmd):
         try:

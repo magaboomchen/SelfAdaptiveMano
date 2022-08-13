@@ -16,13 +16,13 @@ pip install paramiko enum34 psutil pika netifaces \
                     getmac pytest networkx numpy pandas \
                     tinyrpc==0.8 ruamel.yaml==0.15.52 matplotlib \
                     eventlet==0.30.2 scapy grpcio grpcio-tools \
-                    docker sklearn ryu MySQL-python \
+                    docker sklearn ryu MySQL-python==1.2.5
 ```
 
 ## python3
 ```
 pip3 uninstall tinyrpc enum
-pip3 install enum34 psutil pika netifaces \
+pip3 install enum34 psutil pika netifaces==0.11.0 \
                 getmac pytest networkx numpy pandas \
                 gurobipy tinyrpc==0.8 matplotlib \
                 scapy grpcio grpcio-tools docker \
@@ -161,6 +161,8 @@ sudo apt-get install python-mysqldb
 ```
 
 #### Ubuntu 20.04
+https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-20-04
+
 ```
 sudo apt-get install libmysqlclient-dev
 sudo wget https://raw.githubusercontent.com/paulfitz/mysql-connector-c/master/include/my_config.h -O /usr/include/mysql/my_config.h

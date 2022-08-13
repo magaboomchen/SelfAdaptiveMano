@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-from typing import Union
+from typing import List, Tuple, Union
 
 from sam.base.sfc import SFC, SFCI
 from sam.test.testBase import DCN_GATEWAY_IP
@@ -95,7 +95,7 @@ class TestP4ControllerBase(IntTestBaseClass):
                     routingMorphic)
 
     def gen10BackupP4VNFISequence(self, sfcLength=1):
-        # type: (int) -> list[list[VNFI]]
+        # type: (int) -> List[List[VNFI]]
         # hard-code function
         vnfiSequence = []
         for index in range(sfcLength):
@@ -159,7 +159,7 @@ class TestP4ControllerBase(IntTestBaseClass):
                     fPS, routingMorphic)
 
     def gen10BackupP4ServerVNFISequence(self, sfc):
-        # type: (SFC) -> list[list[VNFI]]
+        # type: (SFC) -> List[List[VNFI]]
         # hard-code function
         vnfiSequence = []
         for idx, vnf in enumerate(sfc.vnfSequence):
@@ -188,7 +188,7 @@ class TestP4ControllerBase(IntTestBaseClass):
 
     def genUniDirection10BackupP4ServerBasedForwardingPathSet(
             self, sfc, vnfiSequence):
-        # type: (SFC, list[VNFI]) -> ForwardingPathSet
+        # type: (SFC, List[VNFI]) -> ForwardingPathSet
         # please ref /sam/base/path.py
         # This function generate a sfc forwarding path for sfc "ingress->L2Forwarding->egress"
         # The primary forwarding path has two stage, the first stage is "ingress->L2Forwarding",
@@ -229,7 +229,7 @@ class TestP4ControllerBase(IntTestBaseClass):
         return nodeID
 
     def getSegPath(self, srcNodeID, dstNodeID, stageNum):
-        # type: (int, int, int) -> list[tuple(int, int)]
+        # type: (int, int, int) -> List[Tuple[int, int]]
         if srcNodeID == 0 and dstNodeID == SWITCH_SFF1_SWITCHID:
             segPath = [(stageNum, 0), (stageNum, 8), (stageNum, 16),
                        (stageNum, SWITCH_SFF1_SWITCHID)]

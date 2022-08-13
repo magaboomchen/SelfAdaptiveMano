@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from typing import List
+
 from sam.base.messageAgent import MessageAgent
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -22,7 +24,7 @@ class TurbonetControllerStub(object):
                                                      TURBONET_CONTROLLER_PORT)
 
     def recvCmd(self, cmdTypeList, maxCmdCnt):
-        # type: (list[str], int) -> None
+        # type: (List[str], int) -> None
         try:
             cnt = 0
             while True:

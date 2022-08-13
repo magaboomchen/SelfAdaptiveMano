@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 from uuid import uuid1
-from typing import Any, Union
+from typing import Any, Dict, List, Union
 
 # from sam.base.path import ForwardingPathSet
 # from sam.base.slo import SLO
@@ -54,7 +54,7 @@ SFC_DIRECTION_1 = 1
 
 class SFCI(object):
     def __init__(self, sfciID,          # type: int
-                vnfiSequence=None,      # type: list[list[VNFI]]
+                vnfiSequence=None,      # type: List[List[VNFI]]
                 sloRealTimeValue=None,  # type: SLO
                 forwardingPathSet=None, # type: ForwardingPathSet
                 routingMorphic=None     # type: RoutingMorphic
@@ -103,14 +103,14 @@ class SFC(object):
                 maxScalingInstanceNumber,   # type: int
                 backupInstanceNumber,       # type: int
                 applicationType,            # type: Union[APP_TYPE_NORTHSOUTH_WEBSITE, APP_TYPE_LARGE_BANDWIDTH]
-                directions=None,            # type: dict[str, Any]
-                attributes=None,            # type: dict[str, Any]
+                directions=None,            # type: Dict[str, Any]
+                attributes=None,            # type: Dict[str, Any]
                 slo=None,                   # type: SLO
                 scalingMode=AUTO_SCALE,     # type: Union[AUTO_SCALE, MANUAL_SCALE]
                 routingMorphic=None,        # type: RoutingMorphic
                 protectionMode=WITHOUT_PROTECTION,  # type:  Union[WITHOUT_PROTECTION, WITH_PROTECTION]
                 recoveryMode=AUTO_RECOVERY, # type: Union[AUTO_RECOVERY, MANUAL_RECOVERY]
-                vnfSequence=None,           # type: list[VNF]
+                vnfSequence=None,           # type: List[VNF]
                 vnfiResourceQuota=None      # type: Union[VNFI_RESOURCE_QUOTA_SMALL, VNFI_RESOURCE_QUOTA_LARGE]
                 ):
         self.sfcUUID = sfcUUID

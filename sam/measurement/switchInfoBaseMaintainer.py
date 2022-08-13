@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import random
-from typing import Any, Union
+from typing import Any, Dict, Union
 
 from sam.base.acl import ACLTable
 from sam.base.xibMaintainer import XInfoBaseMaintainer
@@ -14,7 +14,7 @@ from sam.base.vnf import VNF, VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITE
 class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self):
         super(SwitchInfoBaseMaintainer, self).__init__()
-        self._switches = {}     # type: dict[Union[TURBONET_ZONE, SIMULATOR_ZONE], dict[int, dict[str, Any]]]
+        self._switches = {}     # type: Dict[Union[TURBONET_ZONE, SIMULATOR_ZONE], Dict[int, Dict[str, Any]]]
         # [zoneName][switchID] = {'switch':switch, 'Active':True, 'Status':none}
         self._switchesReservedResources = {}
         self._gatewaySwitchIDDict = {}

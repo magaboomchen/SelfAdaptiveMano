@@ -15,7 +15,7 @@ else:
     import Queue
 import uuid
 import copy
-from typing import Union
+from typing import List, Tuple, Union
 
 from sam.base.vnf import VNFI
 from sam.base.switch import Switch
@@ -193,7 +193,7 @@ class OSFCAdder(object):
     #             raise ValueError("Find ingress/egress failed")
 
     def genABatchOfRequestAndAddSFCICmds(self, requestBatchQueue):
-        # type: (Queue.Queue) -> list[tuple[Request, Command]]
+        # type: (Queue.Queue) -> List[Tuple[Request, Command]]
         self.logger.info("oSFCAdder process batch size: {0}".format(requestBatchQueue.qsize()))
         # while not requestBatchQueue.empty():
         #     request = requestBatchQueue.get()

@@ -1,10 +1,11 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from typing import Dict
 from logging import Logger
 
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REQUEST, MessageAgent, SAMMessage
-from sam.base.request import REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_UPDATE_SFC_STATE
+from sam.base.request import REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_UPDATE_SFC_STATE, Request
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.sfc import STATE_ACTIVE, STATE_MANUAL
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
@@ -20,7 +21,7 @@ class RequestHandler(object):
             REQUEST_TYPE_UPDATE_SFC_STATE: {},
             REQUEST_TYPE_DEL_SFCI: {},
             REQUEST_TYPE_DEL_SFC: {}
-        }    # dict[requestType, dict[Request.requestID, Request]]
+        }    # type: Dict[Request.requestType, Dict[Request.requestID, Request]]
 
     def handle(self, request):
         try:

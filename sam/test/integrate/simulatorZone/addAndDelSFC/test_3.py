@@ -15,10 +15,11 @@ Usage of this unit test:
 '''
 
 import uuid
+from typing import Tuple
 
 import pytest
-from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 
+from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 from sam.base.compatibility import screenInput
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, REGULATOR_QUEUE, SIMULATOR_ZONE, TURBONET_ZONE
 from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
@@ -220,7 +221,7 @@ class TestAddSFCClass(IntTestBaseClass):
         return list(serverDict.keys())
 
     def getAllLinkIDFromSFCI(self, sfci):
-        # type: (SFCI) -> list(tuple(int, int))
+        # type: (SFCI) -> list(Tuple[int, int])
         linkDict = {}
         pFP = sfci.forwardingPathSet.primaryForwardingPath
         for pathIDOffset in [DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET]:

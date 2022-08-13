@@ -115,7 +115,7 @@ class Topology(object):
             self._postProcessTopology4FatTree(podNum, serverNum)
         elif topoType == "fat-tree-turbonet":
             self.addP4NFSwitch2Turbonet()
-            self.addNFVIs4FatTree(serverNum=2, nfviNum=2)
+            self.addNFVIs4FatTree(serverNum=1, nfviNum=1)
             self.patchLinks2Turbonet()
         elif topoType == "testbed_sw1":
             self.addNFVIs4Testbed_sw1(serverNum=1)

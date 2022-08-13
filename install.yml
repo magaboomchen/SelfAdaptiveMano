@@ -19,7 +19,7 @@
           - netifaces
           - getmac
           - pytest
-          - MySQL-python
+          - MySQL-python==1.2.5
           - networkx
           - numpy
           - pandas

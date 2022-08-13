@@ -7,6 +7,9 @@ import uuid
 import ctypes
 import inspect
 import threading
+from typing import Dict
+from logging import Logger
+from threading import Thread
 from packaging import version
 
 from sam.measurement.mConfig import MEASURE_TIME_SLOT, SIMULATOR_ZONE_ONLY
@@ -44,7 +47,7 @@ class Measurer(object):
         self._messageAgent = MessageAgent(self.logger)
         self._messageAgent.startMsgReceiverRPCServer(MEASURER_IP, MEASURER_PORT)
 
-        self._threadSet = {}
+        self._threadSet = {}    # type: Dict[int, Thread]
 
     def startMeasurer(self):
         self._collectTopology()
@@ -227,7 +230,11 @@ class Measurer(object):
 
 
 class MeasurerCommandSender(threading.Thread):
-    def __init__(self, threadID, messageAgent, logger, dashib):
+    def __init__(self, threadID,    # type: int
+                    messageAgent,   # type: MessageAgent
+                    logger,         # type: Logger
+                    dashib          # type: DashboardInfoBaseMaintainer
+                ):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self._messageAgent = messageAgent

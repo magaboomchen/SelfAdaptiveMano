@@ -15,6 +15,8 @@ Usage of this unit test:
     python -m pytest ./test_getSFCIStatus.py -s --disable-warnings
 '''
 
+from typing import Dict
+
 import pytest
 
 from sam.base.acl import ACLTable
@@ -64,7 +66,7 @@ class TestGetSFCIStatusClass(TestP4ControllerBase):
         assert len(cmdRply.attributes["sfcisDict"]) >= 0
         assert cmdRply.cmdStatus == CMD_STATE_SUCCESSFUL
         assert cmdRply.attributes['zone'] == TURBONET_ZONE
-        sfcisDict = cmdRply.attributes["sfcisDict"] # type: dict[int, SFCI]
+        sfcisDict = cmdRply.attributes["sfcisDict"] # type: Dict[int, SFCI]
         for sfciID,sfci in sfcisDict.items():
             assert sfci.sfciID == sfciID
 

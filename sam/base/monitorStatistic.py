@@ -6,7 +6,7 @@ This file defines the format of monitor's statistics
 '''
 
 import ipaddress
-from typing import Union
+from typing import Dict, Union
 
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL
 from sam.base.routingMorphic import IPV6_ROUTE_PROTOCOL
@@ -61,7 +61,7 @@ class MonitorStatistics(object):
             raise ValueError("Unknown route protocol {0}".format(routeProtocol))
 
     def getPktBytesRateStatisticDict(self, directionID, routeProtocol):
-        # type: (Union[SFC_DIRECTION_0,SFC_DIRECTION_1], Union[IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL]) -> dict[SrcDstPair, (int, int)]
+        # type: (Union[SFC_DIRECTION_0,SFC_DIRECTION_1], Union[IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL]) -> Dict[SrcDstPair, (int, int)]
         if routeProtocol == IPV4_ROUTE_PROTOCOL:
             return self.ipv4Direction[directionID]
         elif routeProtocol == IPV6_ROUTE_PROTOCOL:

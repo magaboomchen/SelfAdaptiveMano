@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from typing import Union
+from typing import Tuple, Union
 
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
 
@@ -22,7 +22,7 @@ In vnfi, rules are maintained as a list of ACLTuple in vnfi.config['ACL']
 
 class ACLTuple(object):
     def __init__(self, action, proto=None, srcAddr=None, dstAddr=None, srcPort=None, dstPort=None):
-        # type: (Union[ACL_ACTION_ALLOW, ACL_ACTION_DENY], Union[ACL_PROTO_TCP, ACL_PROTO_UDP], str, str, tuple[int, int], tuple[int, int]) -> None
+        # type: (Union[ACL_ACTION_ALLOW, ACL_ACTION_DENY], Union[ACL_PROTO_TCP, ACL_PROTO_UDP], str, str, Tuple[int, int], Tuple[int, int]) -> None
 
         self.action = action
 

@@ -3,6 +3,7 @@
 
 import math
 import time
+from typing import Dict, Union
 import uuid
 from logging import Logger
 
@@ -38,8 +39,8 @@ class ReplyHandler(object):
         self.sfciLoadDict = {}      # [sfciID] = [[sloRealTimeValue, timestamp, bandwidth]]
         self.maxLoadListLength = max(MAX_OVER_LOAD_NUM_THRESHOLD, MAX_UNDER_LOAD_NUM_THRESHOLD)
         self.pM = PerformanceModel()
-        self.scalingOutTaskDict = {}  # dict[sfcUUID, dict[sfciID, taskState]]
-        self.scalingInTaskDict = {}  # dict[sfcUUID, dict[sfciID, taskState]]
+        self.scalingOutTaskDict = {}  # type: Dict[SFC.sfcUUID, Dict[SFCI.sfciID, Union[OVERLOAD_STATE, UNDERLOAD_STATE, NORMALLOAD_STATE, STARTUP_STATE]]]
+        self.scalingInTaskDict = {}  # type: Dict[SFC.sfcUUID, Dict[SFCI.sfciID, Union[OVERLOAD_STATE, UNDERLOAD_STATE, NORMALLOAD_STATE, STARTUP_STATE]]]
         self.sfciIDAllocator = SFCIDAllocator(self._oib,
                                                 REGULATOR_SFCIID_ALLOCATED_RANGE[0],
                                                 REGULATOR_SFCIID_ALLOCATED_RANGE[1])

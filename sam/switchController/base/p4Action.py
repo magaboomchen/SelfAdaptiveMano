@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from typing import Union
+from typing import List, Union
 
 ACTION_TYPE_FORWARD = "ACTION_TYPE_FORWARD"
 ACTION_TYPE_ENCAPSULATION_NSH = "ACTION_TYPE_ENCAPSULATION_NSH"
@@ -27,7 +27,7 @@ class P4Action(object):
     def __init__(self,
                  actionType,   # type: Union[ACTION_TYPE_FORWARD, ACTION_TYPE_ENCAPSULATION_NSH, ACTION_TYPE_DECAPSULATION_NSH]
                  nextNodeID,   # type: int
-                 newFieldValueList=None     # type: list[FieldValuePair]
+                 newFieldValueList=None     # type: List[FieldValuePair]
                  ):
         self.actionType = actionType
         self.nextNodeID = nextNodeID

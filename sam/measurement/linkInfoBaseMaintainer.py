@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from typing import Any, Union
+from typing import Any, Dict, Tuple, Union
 
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE
@@ -10,7 +10,7 @@ from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE
 class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self):
         super(LinkInfoBaseMaintainer, self).__init__()
-        self._links = {}    # type: dict[Union[TURBONET_ZONE, SIMULATOR_ZONE], dict[tuple(int,int), dict[str, Any]]]
+        self._links = {}    # type: Dict[Union[TURBONET_ZONE, SIMULATOR_ZONE], Dict[Tuple(int,int), Dict[str, Any]]]
         # [zoneName][(srcID,dstID)] = {'link':link, 'Active':True, 'Status':none}
         self._linksReservedResources = {}
         self.isLinkInfoInDB = False

@@ -17,7 +17,12 @@ HEAT_BEAT_TIME = 10
 
 
 class ServerAgent(object):
-    def __init__(self,controlNICName, serverType, datapathNICIP, NICPCIAddress):
+    def __init__(self,controlNICName,   # type: str
+                    serverType,         # type: str
+                    datapathNICIP,      # type: str
+                    NICPCIAddress       # type: str
+                    serverID            # type: int
+                    ):
         logConfigur = LoggerConfigurator(__name__, './log',
             'serverAgent.log', level='info')
         self.logger = logConfigur.getLogger()
@@ -28,6 +33,7 @@ class ServerAgent(object):
         DockerConfigurator().configDockerListenPort()
 
         self._server = Server(controlNICName, datapathNICIP, serverType)
+        self._server.setServerID(serverID)
         self._server.updateControlNICMAC()
         self._server.updateIfSet()
 
@@ -60,6 +66,11 @@ if __name__=="__main__":
     controllNICName = argParser.getArgs()['controllNicName']   # example: ens3
     serverType = argParser.getArgs()['serverType']   # example: nfvi, classifier
     datapathNICIP = argParser.getArgs()['datapathNicIP']   # example: 2.2.0.38
+    serverID = argParser.getArgs()['serverID']   # example: 10001
 
-    serverAgent = ServerAgent(controllNICName, serverType, datapathNICIP, NICPCIAddress)
+    serverAgent = ServerAgent(controllNICName,
+                                serverType,
+                                datapathNICIP,
+                                NICPCIAddress,
+                                serverID)
     serverAgent.run()

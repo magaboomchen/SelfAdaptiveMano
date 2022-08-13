@@ -122,7 +122,7 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
         assert cmdRply.attributes['zone'] == SIMULATOR_ZONE
         sfcisDict = cmdRply.attributes["sfcisDict"]
         for sfciID,sfci in sfcisDict.items():
-            # type dict[int, SFCI]
+            # type: Dict[int, SFCI]
             assert sfci.sfciID == sfciID
 
             sloRealTimeValue = sfci.sloRealTimeValue

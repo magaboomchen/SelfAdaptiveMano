@@ -18,6 +18,8 @@ class ArgParser(ArgParserBase):
             help='type of server, e.g. nfvi , classifier, tester, normal')
         self.parser.add_argument('datapathNicIP', metavar='dni', type=str, 
             help='ip of datapath nic, e.g. 2.2.0.35')
+        self.parser.add_argument('serverID', metavar='sID', type=int, 
+            help='serverID, e.g. 10001') 
         self.parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
-                            help='Show this help message and exit. Example usage: python serverAgent.py 0000:00:08.0 ens3 classifier 2.2.0.34')
+                            help='Show this help message and exit. Example usage: python serverAgent.py 0000:00:08.0 ens3 classifier 2.2.0.34 serverID 10001')
         self.args = self.parser.parse_args()

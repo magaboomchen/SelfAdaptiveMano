@@ -1,13 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from typing import Union
+from typing import Dict, Union
 
 from sam.base.acl import ACLTable
-from sam.base.monitorStatistic import MonitorStatistics
-from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.server import Server
 from sam.base.switch import Switch
+from sam.base.rateLimiter import RateLimiterConfig
+from sam.base.monitorStatistic import MonitorStatistics
+from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
 
 VNF_TYPE_CLASSIFIER = 0
 VNF_TYPE_FORWARD = 1
@@ -143,11 +144,13 @@ class VNFI(object):
 
 
 class VNFIStatus(object):
-    def __init__(self, inputTrafficAmount=None, inputPacketAmount=None,
-                 outputTrafficAmount=None, outputPacketAmount=None,
-                 state=None):
-        # type: (dict[int,int], dict[int,int], dict[int,int], dict[int,int], Union[MonitorStatistics, RateLimiterConfig, ACLTable]) -> None
-        self.inputTrafficAmount = inputTrafficAmount  # dict[int, int]
+    def __init__(self, inputTrafficAmount=None, # type: Dict[Union[SFC_DIRECTION_0, SFC_DIRECTION_1], int]
+                 inputPacketAmount=None,        # type: Dict[Union[SFC_DIRECTION_0, SFC_DIRECTION_1], int]
+                 outputTrafficAmount=None,      # type: Dict[Union[SFC_DIRECTION_0, SFC_DIRECTION_1], int]
+                 outputPacketAmount=None,       # type: Dict[Union[SFC_DIRECTION_0, SFC_DIRECTION_1], int]
+                 state=None                     # type: Union[MonitorStatistics, RateLimiterConfig, ACLTable]
+                ):
+        self.inputTrafficAmount = inputTrafficAmount  # Dict[int, int]
         self.inputPacketAmount = inputPacketAmount
         self.outputTrafficAmount = outputTrafficAmount
         self.outputPacketAmount = outputPacketAmount
