@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
+from sam.dashboard.backup.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
 
 
 if __name__ == "__main__":

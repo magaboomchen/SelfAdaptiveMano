@@ -30,7 +30,7 @@ from sam.base.request import REQUEST_TYPE_GET_SFCI_STATE, Reply, \
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.measurement import measurerCommandSender
-from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
+from sam.dashboard.backup.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 
 

@@ -12,7 +12,7 @@ else:
     import Queue
 
 from sam.base.compatibility import screenInput
-from sam.base.messageAgentAuxillary.msgAgentRPCConf import SIMULATOR_PORT
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import SIMULATOR_PORT, SIMULATOR_IP
 from sam.base.command import CMD_STATE_FAIL, \
     CMD_STATE_SUCCESSFUL, CommandReply
 from sam.base.commandMaintainer import CommandMaintainer
@@ -46,7 +46,7 @@ class Simulator(object):
         # your rabbitmqServerUserCode is "123456"
         # self._messageAgent.setRabbitMqServer("192.168.5.124", "mq", "123456")
         self._messageAgent.startRecvMsg(SIMULATOR_QUEUE)
-        self._messageAgent.startMsgReceiverRPCServer("localhost", SIMULATOR_PORT)
+        self._messageAgent.startMsgReceiverRPCServer(SIMULATOR_IP, SIMULATOR_PORT)
 
         self.op_input = op_input  # type: Queue
 
@@ -85,7 +85,7 @@ class Simulator(object):
                     else:
                         raise ValueError("Unknown massage body")
 
-                msg = self._messageAgent.getMsgByRPC("localhost", SIMULATOR_PORT)
+                msg = self._messageAgent.getMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT)
                 msgType = msg.getMessageType()
                 if msgType == None:
                     pass

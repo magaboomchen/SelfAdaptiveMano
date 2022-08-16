@@ -26,7 +26,7 @@ from sam.base.messageAgent import DEFAULT_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, \
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, \
                     ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL, RoutingMorphic
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
-from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
+from sam.dashboard.backup.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
 from sam.measurement.mConfig import SIMULATOR_ZONE_ONLY
 from sam.orchestration.algorithms.base.pathServerFiller import PathServerFiller
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
