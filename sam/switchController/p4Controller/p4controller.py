@@ -83,6 +83,12 @@ class P4Controller:
     
     def _addsfc(self, _cmd):
         # send turbonet command
+        sfc = _cmd.attributes['sfc']
+        directions = sfc.directions
+        for diri in directions:
+            diri
+            # inbound
+            # outbound
         return True
     
     def _addsfci(self, _cmd):
@@ -105,6 +111,9 @@ class P4Controller:
         si = len(nfseq)
         spi = sfciID
         for nf in nfseq:
+            eport = 136
+            if si == 1:
+                eport = 128
             for nfi in nf:
                 if isinstance(nfi.node, Switch):
                     p4id = -1
@@ -116,13 +125,13 @@ class P4Controller:
                         continue
                     if nfi.vnfType == VNF_TYPE_FW:
                         if hasdir0:
-                            self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si)
+                            self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si, _outport = eport)
                         if hasdir1:
-                            self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si)
+                            self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si, _outport = eport)
                     elif nfi.vnfType == VNF_TYPE_RATELIMITER:
                         ratelim = nfi.config.maxMbps * 1024
                         if hasdir0:
-                            self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si)
+                            self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si, _outport = eport)
                             self._p4agent[p4id].addRateLimiter(
                                 _service_path_index = (spi & DIRECTION_MASK_0),
                                 _service_index = si,
@@ -132,7 +141,7 @@ class P4Controller:
                                 _pbs = ratelim
                             )
                         if hasdir1:
-                            self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si)
+                            self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si, _outport = eport)
                             self._p4agent[p4id].addRateLimiter(
                                 _service_path_index = (spi | DIRECTION_MASK_1),
                                 _service_index = si,
@@ -143,10 +152,10 @@ class P4Controller:
                             )
                     elif nfi.vnfType == VNF_TYPE_MONITOR:
                         if hasdir0:
-                            self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si)
+                            self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si, _outport = eport)
                             self._p4agent[p4id].addMonitor(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si)
                         if hasdir1:
-                            self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si)
+                            self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si, _outport = eport)
                             self._p4agent[p4id].addMonitor(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si)
                     else:
                         return False
@@ -154,7 +163,7 @@ class P4Controller:
         return True
     
     def _getstate(self, _cmd):
-        return False, {}
+        return True, {}
     
     def _delsfc(self, _cmd):
         # send turbonet command

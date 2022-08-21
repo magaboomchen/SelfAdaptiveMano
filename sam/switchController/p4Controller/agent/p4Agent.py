@@ -7,30 +7,71 @@ class P4Agent:
         self.target = client.Target(device_id = 0, pipe_id = 0xffff)
         self.interface.bind_pipeline_config('p4nf_sam')
         self.bfrtinfo = self.interface.bfrt_info_get()
-    
-    def addMonitor(self, _service_path_index, _service_index):
-        indextable = self.bfrtinfo.table_get('SwitchIngress.MonitorIndex')
-        for i in range(0, 256):
-            indextable.entry_add(
-                self.target,
-                [indextable.make_key([
-                    client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
-                    client.KeyTuple('hdr.nsh_h.service_index', _service_index),
-                    client.KeyTuple('ig_md.index_val', i)
-                ])],
-                [indextable.make_data([], 'SwitchIngress.hit_index')]
-            )
-        monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitor')
-        for i in range(0, 65536):
-            monitortable.entry_add(
-                self.target,
-                [monitortable.make_key([
-                    client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
-                    client.KeyTuple('hdr.nsh_h.service_index', _service_index),
-                    client.KeyTuple('ig_md.hash_val', i)
-                ])],
-                [monitortable.make_data([], 'SwitchIngress.hit_monitor')]
-            )
+        # perhaps add port managerment here
+        self.port_table = self.bfrtinfo.table_get("$PORT")
+        self.port_table.entry_add(
+            self.target,
+            [self.port_table.make_key([client.KeyTuple('$DEV_PORT', 128)])],
+            [self.port_table.make_data([
+                client.DataTuple('$SPEED', str_val="BF_SPEED_100G"),
+                client.DataTuple('$FEC', str_val="BF_FEC_TYP_NONE")
+            ])]
+        )
+        self.port_table.entry_mod(
+            self.target,
+            [self.port_table.make_key([client.KeyTuple('$DEV_PORT', 128)])],
+            [self.port_table.make_data([
+                client.DataTuple('$AUTO_NEGOTIATION', 2),
+                client.DataTuple('$PORT_ENABLE', bool_val=True)
+            ])]
+        )
+        self.port_table.entry_add(
+            self.target,
+            [self.port_table.make_key([client.KeyTuple('$DEV_PORT', 136)])],
+            [self.port_table.make_data([
+                client.DataTuple('$SPEED', str_val="BF_SPEED_100G"),
+                client.DataTuple('$FEC', str_val="BF_FEC_TYP_NONE")
+            ])]
+        )
+        self.port_table.entry_mod(
+            self.target,
+            [self.port_table.make_key([client.KeyTuple('$DEV_PORT', 136)])],
+            [self.port_table.make_data([
+                client.DataTuple('$LOOPBACK_MODE', str_val="BF_LPBK_MAC_NEAR"),
+                client.DataTuple('$AUTO_NEGOTIATION', 2),
+                client.DataTuple('$PORT_ENABLE', bool_val=True)
+            ])]
+        )
+
+    def addMonitorv4(self, _service_path_index, _service_index):
+        monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv4')
+        monitortable.info.key_field_annotation_add('hdr.ipv4_h.src_addr', 'ipv4')
+        monitortable.info.key_field_annotation_add('hdr.ipv4_h.dst_addr', 'ipv4')
+        monitortable.entry_add(
+            self.target,
+            [monitortable.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index),
+                client.KeyTuple('hdr.ipv4_h.dst_addr', '0.0.0.0', '0.0.0.0'),
+                client.KeyTuple('hdr.ipv4_h.src_addr', '0.0.0.0', '0.0.0.0')
+            ])],
+            [monitortable.make_data([], 'SwitchIngress.hit_digest_v4')]
+        )
+
+    def addMonitorv6(self, _service_path_index, _service_index):
+        monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv6')
+        monitortable.info.key_field_annotation_add('hdr.ipv6_h.src_addr', 'ipv6')
+        monitortable.info.key_field_annotation_add('hdr.ipv6_h.dst_addr', 'ipv6')
+        monitortable.entry_add(
+            self.target,
+            [monitortable.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index),
+                client.KeyTuple('hdr.ipv6_h.dst_addr', '::', '::'),
+                client.KeyTuple('hdr.ipv6_h.src_addr', '::', '::')
+            ])],
+            [monitortable.make_data([], 'SwitchIngress.hit_digest_v6')]
+        )
 
     def removeMonitor(self, _service_path_index, _service_index):
         indextable = self.bfrtinfo.table_get('SwitchIngress.MonitorIndex')
@@ -54,7 +95,7 @@ class P4Agent:
                 ])]
             )
 
-    def addIEGress(self, _service_path_index, _service_index, _outport = 64):
+    def addIEGress(self, _service_path_index, _service_index, _outport):
         ingresstable = self.bfrtinfo.table_get('SwitchIngress.CounterIngress')
         egresstable = self.bfrtinfo.table_get('SwitchIngress.CounterEgress')
         ingresstable.entry_add(
@@ -220,3 +261,15 @@ class P4Agent:
         tableingress = self.bfrtinfo.table_get('SwitchIngress.CounterIngress')
         tableegress = self.bfrtinfo.table_get('SwitchIngress.CounterEgress')
         return ipkt, ibyte, epkt, ebyte
+    
+    def waitForDigenst(self):
+        learn_filter = self.bfrtinfo.learn_get("digest")
+        #learn_filter.info.data_field_annotation_add("src_addr", "ipv6")
+        #learn_filter.info.data_field_annotation_add("dst_addr", "ipv6")
+        digest = self.interface.digest_get()
+        print(digest)
+        #data_list = learn_filter.make_data_list(digest)
+        #data_dict = data_list[0].to_dict()
+        #recv_src_addr = data_dict["src_addr"]
+        #recv_dst_addr = data_dict["dst_addr"]
+

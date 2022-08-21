@@ -1,7 +1,7 @@
 from p4Agent import P4Agent
 
 if __name__ == '__main__':
-    agent = P4Agent('192.168.100.4:50052')
+    agent = P4Agent('192.168.100.6:50052')
     spi = 0
     si = 0
     while True:
@@ -16,6 +16,8 @@ if __name__ == '__main__':
             spi += 1
             si += 1
             agent.addMonitor(spi, si)
+        elif opt == 'D':
+            agent.waitForDigenst()
         elif opt == 'F4':
             break
         elif opt == 'F6':

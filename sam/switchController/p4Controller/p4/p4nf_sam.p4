@@ -7,9 +7,11 @@
 
 // ---------------- headers ----------------
 
-struct pair {
-    bit<32>     first;
-    bit<32>     second;
+struct digest_t {
+    bit<24> service_path_index;
+    bit<8> service_index;
+    bit<128> dst_addr;
+    bit<128> src_addr;
 }
 
 header ethernet_hdr {
@@ -23,13 +25,15 @@ const bit<16> L16_8ONE = 0x0801;
 const bit<16> ETHERTYPE_IPV4 = 16w0x0800;
 const bit<16> ETHERTYPE_NSH = 16w0x894F;
 const bit<6> NSH_HEADER_LEN_WORD = 2;
-const PortId_t EGRESS_PORT = 64;
+const PortId_t EGRESS_PORT = 128;
 const bit<8> ICMP_ECHO_REQUEST = 8;
 const bit<8> ICMP_ECHO_REPLY = 0;
 const bit<32> NF_ADDR = 0xc0a86404;
+const bit<8> MINUS_ONE = 0x01;
+const bit<96> L96_ZERO = 0;
 
 #define MAX_NFS 1024
-#define MAX_MN_RULES 262144
+#define MAX_MN_RULES 2048
 #define MAX_INDEX_RULES 1024
 #define MAX_FW_RULES 2048
 
@@ -80,17 +84,6 @@ header ipv6_hdr {
     bit<128> dst_addr;
 }
 
-header ibgrh_hdr {
-    bit<4> version;
-    bit<8> traffic_class;
-    bit<20> flow_label;
-    bit<16> payload_len;
-    bit<8> next_hdr;
-    bit<8> hop_limit;
-    bit<128> sgid;
-    bit<128> dgid;
-}
-
 header icmp_hdr {
     bit<8> icmp_type;
     bit<8> icmp_code;
@@ -102,18 +95,14 @@ struct ig_header_t {
     nsh_hdr nsh_h;
     ipv4_hdr ipv4_h;
     ipv6_hdr ipv6_h;
-    ibgrh_hdr ibgrh_h;
     icmp_hdr icmp_h;
     nsh_context nsh_c;
 }
 
 struct ig_metadata_t {
-    //bit<16> icmp_checksum_tmp;
-    bit<8> index_val;
-    bit<16> hash_val;
     bit<8> color;
-    bit<32> src_tag;
-    bit<32> dst_tag;
+    bit<128> src_digest;
+    bit<128> dst_digest;
 }
 
 // ---------------- basic ----------------
@@ -148,14 +137,12 @@ parser SwitchIngressParser(
         out ingress_intrinsic_metadata_t ig_intr_md) {
 
     TofinoIngressParser() tofino_ingress_parser;
-    //Checksum() icmp_checksum;
 
     state start {
         tofino_ingress_parser.apply(pkt, ig_intr_md);
-        ig_md.hash_val = 0;
         ig_md.color = 0;
-        ig_md.src_tag = 0;
-        ig_md.dst_tag = 0;
+        ig_md.src_addr = 0;
+        ig_md.dst_addr = 0;
         transition parse_ethernet;
     }
 
@@ -171,9 +158,6 @@ parser SwitchIngressParser(
     state parse_icmp {
         pkt.extract(hdr.ipv4_h);
         pkt.extract(hdr.icmp_h);
-        //icmp_checksum.subtract((hdr.icmp_h.icmp_type ++ L8_ZEROS));
-        //icmp_checksum.subtract(hdr.icmp_h.hdr_checksum);
-        //ig_md.icmp_checksum_tmp = icmp_checksum.get();
         transition accept;
     }
 
@@ -190,19 +174,11 @@ parser SwitchIngressParser(
 
     state parse_ipv4 {
         pkt.extract(hdr.ipv4_h);
-        ig_md.index_val = hdr.ipv4_h.src_addr[31:24];
-        ig_md.hash_val = hdr.ipv4_h.src_addr[31:16];
-        ig_md.src_tag = hdr.ipv4_h.src_addr;
-        ig_md.dst_tag = hdr.ipv4_h.dst_addr;
         transition accept;
     }
 
     state parse_ipv6 {
         pkt.extract(hdr.ipv6_h);
-        ig_md.index_val = hdr.ipv6_h.src_addr[127:120];
-        ig_md.hash_val = hdr.ipv6_h.src_addr[127:112];
-        ig_md.src_tag = hdr.ipv6_h.src_addr[127:96];
-        ig_md.dst_tag = hdr.ipv6_h.dst_addr[127:96];
         transition accept;
     }
 
@@ -217,23 +193,17 @@ control SwitchIngressDeparser(
         inout ig_header_t hdr,
         in ig_metadata_t ig_md,
         in ingress_intrinsic_metadata_for_deparser_t ig_intr_dprsr_md) {
-
-    //Checksum() icmp_checksum;
-
+    Digest<digest_t>() digest;
     apply {
+        if (ig_intr_dprsr_md.digest_type == 1) {
+            digest.pack({hdr.nsh_h.service_path_index, hdr.nsh_h.service_index, ig_md.dst_addr, ig_md.src_addr});
+        }
         pkt.emit(hdr.eth_h);
         pkt.emit(hdr.nsh_h);
         pkt.emit(hdr.nsh_c);
         pkt.emit(hdr.ipv4_h);
         pkt.emit(hdr.ipv6_h);
-        //if(hdr.icmp_h.isValid()) {
-        //    hdr.icmp_h.hdr_checksum = icmp_checksum.update({
-        //        (hdr.icmp_h.icmp_type ++ L8_ZEROS),
-        //        ig_md.icmp_checksum_tmp
-        //    });
-        //}
         pkt.emit(hdr.icmp_h);
-        pkt.emit(hdr.ibgrh_h);
     }
 }
 
@@ -249,19 +219,10 @@ control SwitchIngress(
 
     DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_ingress;
     DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_egress;
-    DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_monitor;
+    DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_monitor_v4;
+    DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_monitor_v6;
     DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_index;
-    //DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_firewall_v4;
-    //DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_firewall_v6;
     DirectMeter(MeterType_t.BYTES) direct_meter;
-    DirectRegister<pair>() direct_register_monitor;
-    
-    DirectRegisterAction<pair, void>(direct_register_monitor) direct_register_monitor_action = {
-        void apply(inout pair value){
-            value.first = ig_md.src_tag;
-            value.second = ig_md.dst_tag;
-        }
-    };
 
     action nop() {}
 
@@ -283,63 +244,73 @@ control SwitchIngress(
         size = MAX_NFS;
     }
 
-    action hit_index() {
-        direct_counter_index.count();
+    action hit_monitor_v4() {
+        direct_counter_monitor_v4.count();
     }
 
-    table MonitorIndex {
+    action hit_monitor_v6() {
+        direct_counter_monitor_v6.count();
+    }
+
+    action hit_digest_v4() {
+        direct_counter_monitor_v4.count();
+        ig_intr_dprsr_md.digest_type = 1;
+        ig_md.src_addr = L96_ZERO ++ hdr.ipv4_h.src_addr;
+        ig_md.dst_addr = L96_ZERO ++ hdr.ipv4_h.dst_addr;
+    }
+
+    action hit_digest_v6() {
+        direct_counter_monitor_v6.count();
+        ig_intr_dprsr_md.digest_type = 1;
+        ig_md.src_addr = hdr.ipv6_h.src_addr;
+        ig_md.dst_addr = hdr.ipv6_h.dst_addr;
+    }
+
+    table FlowMonitorv4 {
         key = {
             hdr.nsh_h.service_path_index: exact;
             hdr.nsh_h.service_index: exact;
-            ig_md.index_val: exact;
+            hdr.ipv4_h.src_addr: ternary;
+            hdr.ipv4_h.dst_addr: ternary;
         }
         actions = {
-            hit_index;
+            hit_monitor_v4;
+            hit_digest_v4;
             @defaultonly nop;
         }
         const default_action = nop;
-        counters = direct_counter_index;
-        size = MAX_INDEX_RULES;
+        counters = direct_counter_monitor_v4;
+        size = MAX_MN_RULES;
     }
 
-    action hit_monitor() {
-        direct_counter_monitor.count();
-        direct_register_monitor_action.execute();
-    }
-
-    table FlowMonitor {
+    table FlowMonitorv6 {
         key = {
             hdr.nsh_h.service_path_index: exact;
             hdr.nsh_h.service_index: exact;
-            ig_md.hash_val: exact;
+            hdr.ipv6_h.src_addr: ternary;
+            hdr.ipv6_h.dst_addr: ternary;
         }
         actions = {
-            hit_monitor;
+            hit_monitor_v6;
+            hit_digest_v6;
             @defaultonly nop;
         }
         const default_action = nop;
-        counters = direct_counter_monitor;
-        registers = direct_register_monitor;
+        counters = direct_counter_monitor_v6;
         size = MAX_MN_RULES;
     }
 
     action hit_drop_v4() {
-        //direct_counter_firewall_v4.count();
         ig_intr_dprsr_md.drop_ctl = 0x1;
     }
 
-    action hit_permit_v4() {
-        //direct_counter_firewall_v4.count();
-    }
+    action hit_permit_v4() { }
 
     action hit_drop_v6() {
-        //direct_counter_firewall_v6.count();
         ig_intr_dprsr_md.drop_ctl = 0x1;
     }
 
-    action hit_permit_v6() {
-        //direct_counter_firewall_v6.count();
-    }
+    action hit_permit_v6() { }
 
     table StatelessFirewallv4 {
         key = {
@@ -355,7 +326,6 @@ control SwitchIngress(
             @defaultonly nop;
         }
         const default_action = nop;
-        //counters = direct_counter_firewall_v4;
         size = MAX_FW_RULES;
     }
 
@@ -373,7 +343,6 @@ control SwitchIngress(
             @defaultonly nop;
         }
         const default_action = nop;
-        //counters = direct_counter_firewall_v6;
         size = MAX_FW_RULES;
     }
 
@@ -415,19 +384,26 @@ control SwitchIngress(
     }
 
     apply {
+        ig_md.index_val = ig_md.src_tag[31:24] ^ ig_md.src_tag[15:8];
+        ig_md.hash_val = ig_md.src_tag[31:16] ^ ig_md.src_tag[15:0];
         ig_intr_tm_md.bypass_egress = 1w1;
         ig_intr_tm_md.ucast_egress_port = EGRESS_PORT;
         if(hdr.nsh_h.isValid()) {
             CounterIngress.apply();
-            MonitorIndex.apply();
-            FlowMonitor.apply();
-            if(hdr.ipv4_h.isValid()) StatelessFirewallv4.apply();
-            if(hdr.ipv6_h.isValid()) StatelessFirewallv6.apply();
+            if(hdr.ipv4_h.isValid()) {
+                FlowMonitorv4.apply();
+                StatelessFirewallv4.apply();
+            }
+            else if(hdr.ipv6_h.isValid()) {
+                FlowMonitorv6.apply();
+                StatelessFirewallv6.apply();
+            }
             RateLimiter.apply();
             if(ig_md.color != 0) {
                 ig_intr_dprsr_md.drop_ctl = 1;
             }
             else if(ig_intr_dprsr_md.drop_ctl == 0) {
+                hdr.nsh_h.service_index = hdr.nsh_h.service_index - MINUS_ONE;
                 CounterEgress.apply();
             }
         }
