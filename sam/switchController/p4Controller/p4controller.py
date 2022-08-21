@@ -1,11 +1,15 @@
 import sam
+import uuid
 
 from agent.p4Agent import P4Agent
 
 from sam.base.command import CMD_TYPE_GET_SFCI_STATE, CommandReply, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL, CMD_STATE_PROCESSING
+from sam.base.command import CMD_TYPE_DEL_CLASSIFIER_ENTRY, CMD_TYPE_DEL_NSH_ROUTE, Command, CMD_TYPE_ADD_NSH_ROUTE, CMD_TYPE_ADD_CLASSIFIER_ENTRY
 from sam.base.server import Server
 from sam.base.switch import Switch
 from sam.base.messageAgent import SAMMessage, MessageAgent, P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD, MSG_TYPE_P4CONTROLLER_CMD_REPLY, MEDIATOR_QUEUE, TURBONET_ZONE
+from sam.base.messageAgent import MSG_TYPE_TURBONET_CONTROLLER_CMD
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT, TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.vnf import VNFIStatus
@@ -13,6 +17,10 @@ from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, RO
 from sam.base.vnf import VNF_TYPE_FORWARD, VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_LB, VNF_TYPE_NAT, VNF_TYPE_RATELIMITER, VNF_TYPE_VPN
 from sam.base.acl import ACLTable, ACLTuple
 from sam.base.rateLimiter import RateLimiterConfig
+from sam.switchController.base.p4ClassifierEntry import P4ClassifierEntry
+from sam.switchController.base.p4Action import ACTION_TYPE_DECAPSULATION_NSH, ACTION_TYPE_ENCAPSULATION_NSH, ACTION_TYPE_FORWARD, FIELD_TYPE_ETHERTYPE, FIELD_TYPE_MDTYPE, FIELD_TYPE_NEXT_PROTOCOL, FIELD_TYPE_SI, FIELD_TYPE_SPI, P4Action, FieldValuePair
+from sam.switchController.base.p4Match import ETH_TYPE_IPV4, ETH_TYPE_NSH, P4Match, ETH_TYPE_IPV6, ETH_TYPE_ROCEV1
+from sam.switchController.base.p4RouteEntry import P4RouteEntry
 
 P4CONTROLLER_P4_SWITCH_ID_1 = 20
 P4CONTROLLER_P4_SWITCH_ID_2 = 21
@@ -57,13 +65,17 @@ class P4Controller:
                 success = True
                 '''
                 if cmd.cmdType == CMD_TYPE_ADD_SFC:
-                    success = self._addsfc(cmd)
+                    success = True
                 elif cmd.cmdType == CMD_TYPE_DEL_SFC:
-                    success = self._delsfc(cmd)
+                    success = True
                 elif cmd.cmdType == CMD_TYPE_ADD_SFCI:
-                    success = self._addsfci(cmd)
+                    success1 = self._addsfc(cmd)
+                    success2 = self._addsfci(cmd)
+                    success = success1 & success2
                 elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
-                    success = self._delsfci(cmd)
+                    success1 = self._delsfc(cmd)
+                    success2 = self._delsfci(cmd)
+                    success = success1 & success2
                 elif cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
                     success, resdict = self._getstate(cmd)
                 else:
@@ -86,9 +98,38 @@ class P4Controller:
         sfc = _cmd.attributes['sfc']
         directions = sfc.directions
         for diri in directions:
-            diri
+            direthertype = ETH_TYPE_IPV4
+            ignode = 0
+            egnode = 0
+            ignextnode = 0
+            egnextnode = 0
+            matchaddr = 0xF0FFFFFF
+            dirspi = 0xFF0
+            dirsi = 0xE
+            dirnxtproto = 0x01
             # inbound
+            p4M = P4Match(direthertype, src = None, dst = matchaddr)
+            fVPList = [
+                FieldValuePair(FIELD_TYPE_SPI, dirspi),
+                FieldValuePair(FIELD_TYPE_SI, dirsi),
+                FieldValuePair(FIELD_TYPE_NEXT_PROTOCOL, dirnxtproto),
+                FieldValuePair(FIELD_TYPE_MDTYPE, 0x1)
+            ]
+            p4A = P4Action(actionType = ACTION_TYPE_ENCAPSULATION_NSH, nextNodeID = ignextnode, newFieldValueList = fVPList)
+            p4CE = P4ClassifierEntry(nodeID = ignode, match = p4M, action = p4A)
+            classifiercmd = Command(CMD_TYPE_ADD_CLASSIFIER_ENTRY, uuid.uuid1(), attributes = p4CE)
+            classifiermsg = SAMMessage(MSG_TYPE_TURBONET_CONTROLLER_CMD, classifiercmd)
+            self._messageAgent.sendMsgByRPC(TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT, classifiermsg)
             # outbound
+            p4M = P4Match(ETH_TYPE_NSH, src = matchaddr, dst = None)
+            fVPList = [
+                FieldValuePair(FIELD_TYPE_ETHERTYPE, direthertype)
+            ]
+            p4A = P4Action(actionType = ACTION_TYPE_DECAPSULATION_NSH, nextNodeID = egnextnode, newFieldValueList = fVPList)
+            p4CE = P4ClassifierEntry(nodeID = egnode, match = p4M, action=p4A)
+            classifiercmd = Command(CMD_TYPE_ADD_CLASSIFIER_ENTRY, uuid.uuid1(), attributes = p4CE)
+            classifiermsg = SAMMessage(MSG_TYPE_TURBONET_CONTROLLER_CMD, classifiercmd)
+            self._messageAgent.sendMsgByRPC(TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT, classifiermsg)
         return True
     
     def _addsfci(self, _cmd):
