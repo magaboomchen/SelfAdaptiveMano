@@ -14,7 +14,7 @@ from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.test.integrate.intTestBase import IntTestBaseClass
 from sam.test.fixtures.measurementStub import MeasurementStub
-from sam.base.path import MAPPING_TYPE_MMLPSFC, ForwardingPathSet
+from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, ForwardingPathSet
 from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, SWITCH_TYPE_NPOP, Switch
 from sam.switchController.test.component.fixtures.turbonetControllerStub import TurbonetControllerStub
@@ -279,15 +279,15 @@ class TestP4ControllerBase(IntTestBaseClass):
             self.sendCmd(P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD,
                          self.addSFCCmd)
 
-            # verify
-            self.verifyTurbonetRecvAddClassifierEntryCmd(self.sfcList[idx])
-            self.verifyAddSFCCmdRply()
-
             # exercise
             self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfcList[idx],
                                                           self.sfciList[idx])
             self.sendCmd(P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD,
                          self.addSFCICmd)
+
+            # verify
+            self.verifyTurbonetRecvAddClassifierEntryCmd(self.sfcList[idx])
+            self.verifyAddSFCCmdRply()
 
             # verify
             self.verifyTurbonetRecvAddRouteEntryCmd(self.sfciList[idx])
@@ -307,14 +307,19 @@ class TestP4ControllerBase(IntTestBaseClass):
 
     def verifyTurbonetRecvAddRouteEntryCmd(self, sfci):
         # type: (SFCI) -> None
-        pFP = sfci.forwardingPathSet.primaryForwardingPath
+        pFPDict = sfci.forwardingPathSet.primaryForwardingPath
         maxCmdCnt = 0
-        for segPath in pFP:
-            if len(segPath) == 2:
-                continue
-            for idx, (stageNum, nodeID) in enumerate(segPath):
-                if self.isSwitchID(nodeID) and idx != 0 and idx != len(segPath)-1:
-                    maxCmdCnt += 1
+        for pathIdx in [DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET]:
+            if pathIdx in pFPDict:
+                pFP = pFPDict[pathIdx]
+                for segPath in pFP:
+                    if len(segPath) == 2:
+                        continue
+                    for idx, (stageNum, nodeID) in enumerate(segPath):
+                        if (self.isSwitchID(nodeID) 
+                                and idx != 0 
+                                and idx != len(segPath)-1):
+                            maxCmdCnt += 1
         self.turbonetControllerStub.recvCmd(
             [CMD_TYPE_ADD_NSH_ROUTE], maxCmdCnt)
 

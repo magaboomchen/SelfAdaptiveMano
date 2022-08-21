@@ -11,7 +11,7 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
     def __init__(self):
         super(LinkInfoBaseMaintainer, self).__init__()
         self._links = {}    # type: Dict[Union[TURBONET_ZONE, SIMULATOR_ZONE], Dict[Tuple(int,int), Dict[str, Any]]]
-        # [zoneName][(srcID,dstID)] = {'link':link, 'Active':True, 'Status':none}
+        # [zoneName][(srcID,dstID)] = {'link': Link, 'Active': True, 'Status': None}
         self._linksReservedResources = {}
         self.isLinkInfoInDB = False
 

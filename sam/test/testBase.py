@@ -5,6 +5,7 @@ import uuid
 import random
 import logging
 
+from sam.base.command import CommandReply
 from sam.base.acl import ACL_ACTION_ALLOW, ACL_PROTO_UDP, ACLTable, ACLTuple
 from sam.base.sfc import SFC, SFC_DIRECTION_0, SFC_DIRECTION_1, SFCI, \
                                             APP_TYPE_NORTHSOUTH_WEBSITE
@@ -462,6 +463,7 @@ class TestBase(object):
            del tmpMessageAgent
 
     def recvCmdRply(self, queue):
+        # type: (str) -> CommandReply
         tmpMessageAgent = MessageAgent()
         tmpMessageAgent.startRecvMsg(queue)
         while True:
