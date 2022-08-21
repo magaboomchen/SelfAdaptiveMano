@@ -15,10 +15,11 @@ Usage of this unit test:
 
 import pytest
 
-from sam.base.command import CMD_TYPE_DEL_CLASSIFIER_ENTRY, CMD_TYPE_DEL_NSH_ROUTE
-from sam.base.compatibility import screenInput
-from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD, P4CONTROLLER_QUEUE
 from sam.base.sfc import SFC, SFCI
+from sam.base.compatibility import screenInput
+from sam.base.command import CMD_TYPE_DEL_CLASSIFIER_ENTRY, CMD_TYPE_DEL_NSH_ROUTE
+from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD, P4CONTROLLER_QUEUE
+from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.switchController.test.component.p4ControllerTestBase import TestP4ControllerBase
 
 
@@ -84,6 +85,7 @@ class TestAddSFCIClass(TestP4ControllerBase):
 
             # verify
             self.verifyTurbonetRecvDelRouteEntryCmd(self.sfciList[idx])
+            self.verifyTurbonetRecvDelClassifierEntryCmd(self.sfcList[idx])
             self.verifyDelSFCICmdRply()
 
             # exercise
@@ -92,8 +94,6 @@ class TestAddSFCIClass(TestP4ControllerBase):
             self.sendCmd(P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD,
                                                 self.delSFCCmd)
 
-            # verify
-            self.verifyTurbonetRecvDelClassifierEntryCmd(self.sfcList[idx])
             self.verifyDelSFCCmdRply()
 
     def verifyTurbonetRecvDelClassifierEntryCmd(self, sfc):
@@ -103,12 +103,17 @@ class TestAddSFCIClass(TestP4ControllerBase):
 
     def verifyTurbonetRecvDelRouteEntryCmd(self, sfci):
         # type: (SFCI) -> None
-        pFP = sfci.forwardingPathSet.primaryForwardingPath
+        pFPDict = sfci.forwardingPathSet.primaryForwardingPath
         maxCmdCnt = 0
-        for segPath in pFP:
-            if len(segPath) == 2:
-                continue
-            for idx, (stageNum, nodeID) in enumerate(segPath):
-                if self.isSwitchID(nodeID) and idx !=0 and idx !=len(segPath)-1:
-                    maxCmdCnt += 1
-        self.turbonetControllerStub.recvCmd([CMD_TYPE_DEL_NSH_ROUTE], maxCmdCnt)
+        for pathIdx in [DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET]:
+            if pathIdx in pFPDict:
+                pFP = pFPDict[pathIdx]
+                for segPath in pFP:
+                    if len(segPath) == 2:
+                        continue
+                    for idx, (stageNum, nodeID) in enumerate(segPath):
+                        if (self.isSwitchID(nodeID) 
+                                and idx !=0 
+                                and idx !=len(segPath)-1):
+                            maxCmdCnt += 1
+                self.turbonetControllerStub.recvCmd([CMD_TYPE_DEL_NSH_ROUTE], maxCmdCnt)

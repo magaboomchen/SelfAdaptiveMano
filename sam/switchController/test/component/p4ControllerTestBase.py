@@ -140,7 +140,7 @@ class TestP4ControllerBase(IntTestBaseClass):
             ]
         else:
             raise ValueError("Unimplement sfci length!")
-        primaryForwardingPath = {0: d1FP}
+        primaryForwardingPath = {DIRECTION0_PATHID_OFFSET: d1FP}
         mappingType = MAPPING_TYPE_MMLPSFC  # This is your mapping algorithm type
         backupForwardingPath = {}   # you don't need to care about backupForwardingPath
         return ForwardingPathSet(primaryForwardingPath, mappingType,
@@ -212,7 +212,7 @@ class TestP4ControllerBase(IntTestBaseClass):
             segPath = self.getSegPath(srcNodeID, dstNodeID, idx)
             d1FP.append(segPath)
 
-        primaryForwardingPath = {0: d1FP}
+        primaryForwardingPath = {DIRECTION0_PATHID_OFFSET: d1FP}
         mappingType = MAPPING_TYPE_MMLPSFC  # This is your mapping algorithm type
         backupForwardingPath = {}   # you don't need to care about backupForwardingPath
         return ForwardingPathSet(primaryForwardingPath, mappingType,
@@ -278,6 +278,7 @@ class TestP4ControllerBase(IntTestBaseClass):
             self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfcList[idx])
             self.sendCmd(P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD,
                          self.addSFCCmd)
+            self.verifyAddSFCCmdRply()
 
             # exercise
             self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfcList[idx],
@@ -287,9 +288,6 @@ class TestP4ControllerBase(IntTestBaseClass):
 
             # verify
             self.verifyTurbonetRecvAddClassifierEntryCmd(self.sfcList[idx])
-            self.verifyAddSFCCmdRply()
-
-            # verify
             self.verifyTurbonetRecvAddRouteEntryCmd(self.sfciList[idx])
             self.verifyAddSFCICmdRply()
 
