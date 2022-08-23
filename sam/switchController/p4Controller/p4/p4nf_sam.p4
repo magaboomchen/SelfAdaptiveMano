@@ -183,7 +183,7 @@ parser SwitchIngressParser(
     }
 
     state parse_grh {
-        pkt.extract(hdr.ibgrh_h);
+        pkt.extract(hdr.ipv6_h);
         transition accept;
     }
 }
