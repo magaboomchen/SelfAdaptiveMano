@@ -51,6 +51,7 @@ class P4Controller:
                 elif msgType == MSG_TYPE_P4CONTROLLER_CMD:
                     self.logger.info('Got a command from rpc')
                     cmd = msg.getbody()
+                    source = msg.getSource()
                     self._commands[cmd.cmdID] = cmd
                     self._commandresults[cmd.cmdID] = CMD_STATE_PROCESSING
                     resdict = {}
@@ -63,7 +64,7 @@ class P4Controller:
                     cmdreply.attributes["zone"] = TURBONET_ZONE
                     cmdreply.attributes.update(resdict)
                     replymessage = SAMMessage(MSG_TYPE_P4CONTROLLER_CMD_REPLY, cmdreply)
-                    self._messageAgent.sendMsgByRPC(P4_CONTROLLER_IP, P4_CONTROLLER_PORT, replymessage)
+                    self._messageAgent.sendMsgByRPC(source['srcIP'], source['srcPort'], replymessage)
             elif msgType == MSG_TYPE_P4CONTROLLER_CMD:
                 self.logger.info('Got a command.')
                 cmd = msg.getbody()
