@@ -6,7 +6,7 @@ from sam.base.server import Server
 from sam.base.switch import Switch
 from sam.base.messageAgent import SAMMessage, MessageAgent, P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD, MSG_TYPE_P4CONTROLLER_CMD_REPLY, MEDIATOR_QUEUE, TURBONET_ZONE
 from sam.base.messageAgent import MSG_TYPE_TURBONET_CONTROLLER_CMD
-from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT, TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT, TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT, P4_CONTROLLER_PORT, P4_CONTROLLER_IP
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.vnf import VNFIStatus
@@ -44,7 +44,26 @@ class P4Controller:
             msg = self._messageAgent.getMsg(self.queueName)
             msgType = msg.getMessageType()
             if msgType == None:
-                pass
+                msg = self._messageAgent.getMsgByRPC(P4_CONTROLLER_IP, P4_CONTROLLER_PORT)
+                msgType = msg.getMessageType()
+                if msgType == None:
+                    pass
+                elif msgType == MSG_TYPE_P4CONTROLLER_CMD:
+                    self.logger.info('Got a command from rpc')
+                    cmd = msg.getbody()
+                    self._commands[cmd.cmdID] = cmd
+                    self._commandresults[cmd.cmdID] = CMD_STATE_PROCESSING
+                    resdict = {}
+                    success = True
+                    if success:
+                        self._commandresults[cmd.cmdID] = CMD_STATE_SUCCESSFUL
+                    else:
+                        self._commandresults[cmd.cmdID] = CMD_STATE_FAIL
+                    cmdreply = CommandReply(cmd.cmdID, self._commandresults[cmd.cmdID])
+                    cmdreply.attributes["zone"] = TURBONET_ZONE
+                    cmdreply.attributes.update(resdict)
+                    replymessage = SAMMessage(MSG_TYPE_P4CONTROLLER_CMD_REPLY, cmdreply)
+                    self._messageAgent.sendMsgByRPC(P4_CONTROLLER_IP, P4_CONTROLLER_PORT, replymessage)
             elif msgType == MSG_TYPE_P4CONTROLLER_CMD:
                 self.logger.info('Got a command.')
                 cmd = msg.getbody()

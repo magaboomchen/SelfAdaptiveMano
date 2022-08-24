@@ -15,7 +15,8 @@ if __name__ == '__main__':
         elif opt == 'M':
             spi += 1
             si += 1
-            agent.addMonitor(spi, si)
+            agent.addIEGress(spi, si, 128)
+            agent.addMonitorv4(spi, si)
         elif opt == 'D':
             agent.waitForDigenst()
         elif opt == 'F4':

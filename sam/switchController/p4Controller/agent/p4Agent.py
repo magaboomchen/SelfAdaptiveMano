@@ -264,12 +264,12 @@ class P4Agent:
     
     def waitForDigenst(self):
         learn_filter = self.bfrtinfo.learn_get("digest")
-        #learn_filter.info.data_field_annotation_add("src_addr", "ipv6")
-        #learn_filter.info.data_field_annotation_add("dst_addr", "ipv6")
+        learn_filter.info.data_field_annotation_add("src_addr", "ipv6")
+        learn_filter.info.data_field_annotation_add("dst_addr", "ipv6")
         digest = self.interface.digest_get()
         print(digest)
-        #data_list = learn_filter.make_data_list(digest)
-        #data_dict = data_list[0].to_dict()
-        #recv_src_addr = data_dict["src_addr"]
-        #recv_dst_addr = data_dict["dst_addr"]
+        data_list = learn_filter.make_data_list(digest)
+        print(data_list)
+        data_dict = data_list[0].to_dict()
+        print(data_dict)
 

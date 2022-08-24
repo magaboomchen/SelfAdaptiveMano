@@ -33,9 +33,9 @@ const bit<8> MINUS_ONE = 0x01;
 const bit<96> L96_ZERO = 0;
 
 #define MAX_NFS 1024
-#define MAX_MN_RULES 2048
+#define MAX_MN_RULES 3072
 #define MAX_INDEX_RULES 1024
-#define MAX_FW_RULES 2048
+#define MAX_FW_RULES 3072
 
 header nsh_hdr {
     bit<2> version;
@@ -141,8 +141,8 @@ parser SwitchIngressParser(
     state start {
         tofino_ingress_parser.apply(pkt, ig_intr_md);
         ig_md.color = 0;
-        ig_md.src_addr = 0;
-        ig_md.dst_addr = 0;
+        ig_md.src_digest = 0;
+        ig_md.dst_digest = 0;
         transition parse_ethernet;
     }
 
@@ -196,7 +196,7 @@ control SwitchIngressDeparser(
     Digest<digest_t>() digest;
     apply {
         if (ig_intr_dprsr_md.digest_type == 1) {
-            digest.pack({hdr.nsh_h.service_path_index, hdr.nsh_h.service_index, ig_md.dst_addr, ig_md.src_addr});
+            digest.pack({hdr.nsh_h.service_path_index, hdr.nsh_h.service_index, ig_md.dst_digest, ig_md.src_digest});
         }
         pkt.emit(hdr.eth_h);
         pkt.emit(hdr.nsh_h);
@@ -221,7 +221,6 @@ control SwitchIngress(
     DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_egress;
     DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_monitor_v4;
     DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_monitor_v6;
-    DirectCounter<bit<32>>(CounterType_t.PACKETS_AND_BYTES) direct_counter_index;
     DirectMeter(MeterType_t.BYTES) direct_meter;
 
     action nop() {}
@@ -255,15 +254,15 @@ control SwitchIngress(
     action hit_digest_v4() {
         direct_counter_monitor_v4.count();
         ig_intr_dprsr_md.digest_type = 1;
-        ig_md.src_addr = L96_ZERO ++ hdr.ipv4_h.src_addr;
-        ig_md.dst_addr = L96_ZERO ++ hdr.ipv4_h.dst_addr;
+        ig_md.src_digest = L96_ZERO ++ hdr.ipv4_h.src_addr;
+        ig_md.dst_digest = L96_ZERO ++ hdr.ipv4_h.dst_addr;
     }
 
     action hit_digest_v6() {
         direct_counter_monitor_v6.count();
         ig_intr_dprsr_md.digest_type = 1;
-        ig_md.src_addr = hdr.ipv6_h.src_addr;
-        ig_md.dst_addr = hdr.ipv6_h.dst_addr;
+        ig_md.src_digest = hdr.ipv6_h.src_addr;
+        ig_md.dst_digest = hdr.ipv6_h.dst_addr;
     }
 
     table FlowMonitorv4 {
@@ -384,8 +383,6 @@ control SwitchIngress(
     }
 
     apply {
-        ig_md.index_val = ig_md.src_tag[31:24] ^ ig_md.src_tag[15:8];
-        ig_md.hash_val = ig_md.src_tag[31:16] ^ ig_md.src_tag[15:0];
         ig_intr_tm_md.bypass_egress = 1w1;
         ig_intr_tm_md.ucast_egress_port = EGRESS_PORT;
         if(hdr.nsh_h.isValid()) {
