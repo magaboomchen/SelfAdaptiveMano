@@ -3,14 +3,16 @@
 
 import time
 
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import SERVER_AGENT_IP, \
+                    SERVER_AGENT_PORT, SERVER_MANAGER_IP, SERVER_MANAGER_PORT
 from sam.serverAgent.argParser import ArgParser
 from sam.serverAgent.systemChecker import SystemChecker
 from sam.serverAgent.bessStarter import BessStarter
 from sam.serverAgent.dockerConfigurator import DockerConfigurator
 from sam.serverAgent.dpdkConfigurator import DPDKConfigurator
 from sam.base.server import Server
-from sam.base.messageAgent import SAMMessage, MessageAgent, SERVER_MANAGER_QUEUE, \
-    MSG_TYPE_SERVER_REPLY
+from sam.base.messageAgent import SAMMessage, MessageAgent, \
+                    SERVER_MANAGER_QUEUE, MSG_TYPE_SERVER_REPLY
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 HEAT_BEAT_TIME = 10
@@ -20,7 +22,7 @@ class ServerAgent(object):
     def __init__(self,controlNICName,   # type: str
                     serverType,         # type: str
                     datapathNICIP,      # type: str
-                    NICPCIAddress       # type: str
+                    NICPCIAddress,      # type: str
                     serverID            # type: int
                     ):
         logConfigur = LoggerConfigurator(__name__, './log',
@@ -28,6 +30,7 @@ class ServerAgent(object):
         self.logger = logConfigur.getLogger()
         self.logger.info('Init ServerAgent')
         self._messageAgent = MessageAgent(self.logger)
+        self._messageAgent.startMsgReceiverRPCServer(SERVER_AGENT_IP, SERVER_AGENT_PORT)
 
         SystemChecker()
         DockerConfigurator().configDockerListenPort()
@@ -57,7 +60,8 @@ class ServerAgent(object):
     def _sendServerInfo(self):
         msg = SAMMessage(MSG_TYPE_SERVER_REPLY, self._server)
         self.logger.debug(msg.getMessageID())
-        self._messageAgent.sendMsg(SERVER_MANAGER_QUEUE ,msg)
+        # self._messageAgent.sendMsg(SERVER_MANAGER_QUEUE ,msg)
+        self._messageAgent.sendMsgByRPC(SERVER_MANAGER_IP, SERVER_MANAGER_PORT, msg)
 
 
 if __name__=="__main__":

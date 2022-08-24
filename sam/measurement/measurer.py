@@ -12,8 +12,8 @@ from logging import Logger
 from threading import Thread
 from packaging import version
 
-from sam.measurement.mConfig import MEASURE_TIME_SLOT, SIMULATOR_ZONE_ONLY
-from sam.base.messageAgent import PUFFER_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, \
+from sam.measurement.mConfig import MEASURE_TIME_SLOT, SIMULATOR_ZONE_ONLY, TURBONET_ZONE_ONLY
+from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD, MSG_TYPE_SERVER_MANAGER_CMD, MSG_TYPE_SFF_CONTROLLER_CMD, MSG_TYPE_SIMULATOR_CMD, MSG_TYPE_VNF_CONTROLLER_CMD, PUFFER_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, \
                                 SAMMessage, MessageAgent, \
                                 MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
@@ -248,6 +248,8 @@ class MeasurerCommandSender(threading.Thread):
                 zoneNameList = self._dashib.getAllZone()
                 if SIMULATOR_ZONE_ONLY:
                     zoneNameList = [SIMULATOR_ZONE]
+                if TURBONET_ZONE_ONLY:
+                    zoneNameList = [TURBONET_ZONE]
                 self.logger.debug("zoneNameList is {0}".format(zoneNameList))
                 for zoneName in zoneNameList:
                     self.logger.debug("zoneName: {0}".format(zoneName))
@@ -262,8 +264,8 @@ class MeasurerCommandSender(threading.Thread):
     def sendGetTopoCmd(self, zoneName):
         getTopoCmd = Command(CMD_TYPE_GET_TOPOLOGY, uuid.uuid1(),
             {"zone":zoneName})
-        msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getTopoCmd)
         if zoneName == SIMULATOR_ZONE:
+            msg = SAMMessage(MSG_TYPE_SIMULATOR_CMD, getTopoCmd)
             self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
         elif zoneName == TURBONET_ZONE:
             pass
@@ -273,11 +275,12 @@ class MeasurerCommandSender(threading.Thread):
     def sendGetServersCmd(self, zoneName):
         getServersCmd = Command(CMD_TYPE_GET_SERVER_SET, uuid.uuid1(),
             {"zone":zoneName})
-        msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getServersCmd)
         if zoneName == SIMULATOR_ZONE:
+            msg = SAMMessage(MSG_TYPE_SIMULATOR_CMD, getServersCmd)
             self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, \
                                             msg)
         elif zoneName == TURBONET_ZONE:
+            msg = SAMMessage(MSG_TYPE_SERVER_MANAGER_CMD, getServersCmd)
             self._messageAgent.sendMsgByRPC(SERVER_MANAGER_IP, \
                                             SERVER_MANAGER_PORT, msg)
         else:
@@ -286,32 +289,21 @@ class MeasurerCommandSender(threading.Thread):
     def sendGetSFCIStatusCmd(self, zoneName):
         getSFCIStateCmd = Command(CMD_TYPE_GET_SFCI_STATE, uuid.uuid1(),
             {"zone":zoneName})
-        msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getSFCIStateCmd)
         if zoneName == SIMULATOR_ZONE:
+            msg = SAMMessage(MSG_TYPE_SIMULATOR_CMD, getSFCIStateCmd)
             self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
         elif zoneName == TURBONET_ZONE:
+            msg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD, getSFCIStateCmd)
             self._messageAgent.sendMsgByRPC(SFF_CONTROLLER_IP, \
                                             SFF_CONTROLLER_PORT, msg)
+            msg = SAMMessage(MSG_TYPE_P4CONTROLLER_CMD, getSFCIStateCmd)
             self._messageAgent.sendMsgByRPC(P4_CONTROLLER_IP, \
                                             P4_CONTROLLER_PORT, msg)
+            msg = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD, getSFCIStateCmd)
             self._messageAgent.sendMsgByRPC(VNF_CONTROLLER_IP, \
                                             VNF_CONTROLLER_PORT, msg)
         else:
             raise ValueError("Unimplement zone {0}".format(zoneName))
-
-    # def sendGetVNFIStateCmd(self, zoneName):
-    #     getVNFIStateCmd = Command(CMD_TYPE_GET_VNFI_STATE, uuid.uuid1(),
-    #         {"zone":zoneName})
-    #     msg = SAMMessage(MSG_TYPE_MEDIATOR_CMD, getVNFIStateCmd)
-    #     if zoneName == SIMULATOR_ZONE:
-    #         self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
-    #     elif zoneName == TURBONET_ZONE:
-    #         self._messageAgent.sendMsgByRPC(VNF_CONTROLLER_IP, \
-    #                                         VNF_CONTROLLER_PORT, msg)
-    #         self._messageAgent.sendMsgByRPC(P4_CONTROLLER_IP, \
-    #                                         P4_CONTROLLER_PORT, msg)
-    #     else:
-    #         raise ValueError("Unimplement zone {0}".format(zoneName))
 
 
 if __name__=="__main__":

@@ -3,6 +3,7 @@
 
 from sam.base.command import CMD_TYPE_GET_SFCI_STATE, CommandReply, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, \
     CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL, CMD_STATE_PROCESSING
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
 from sam.base.server import Server
 from sam.base.messageAgent import SAMMessage, MessageAgent, VNF_CONTROLLER_QUEUE, \
     MSG_TYPE_VNF_CONTROLLER_CMD, MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, MEDIATOR_QUEUE
@@ -43,6 +44,7 @@ class VNFController(object):
         self._messageAgent = MessageAgent()
         self.queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, zoneName)
         self._messageAgent.startRecvMsg(self.queueName)
+        self._messageAgent.startMsgReceiverRPCServer(VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT)
 
     def startVNFController(self):
         while True:
@@ -67,14 +69,8 @@ class VNFController(object):
                         self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_SUCCESSFUL
                     else:
                         self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_FAIL
-                elif cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
-                    success, resDict = self._sfciStateMonitorHandler(cmd)
-                    if success:
-                        self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_SUCCESSFUL
-                    else:
-                        self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_FAIL
                 else:
-                    self.logger.error("Unsupported cmd type for vnf controller: %s." % cmd.cmdType)
+                    self.logger.error("Unsupported cmd type for vnf controller: {0}.".format(cmd.cmdType))
                     self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_FAIL
                 cmdRply = CommandReply(cmd.cmdID, self._commandsInfo[cmd.cmdID]['state'])
                 cmdRply.attributes["zone"] = self.zoneName
@@ -82,7 +78,37 @@ class VNFController(object):
                 rplyMsg = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, cmdRply)
                 self._messageAgent.sendMsg(MEDIATOR_QUEUE, rplyMsg)
             else:
-                self.logger.error('Unsupported msg type for vnf controller: %s.' % msg.getMessageType())
+                self.logger.error('Unsupported msg type for vnf controller: {0}.'.format(msg.getMessageType()))
+
+
+            msg = self._messageAgent.getMsgByRPC(VNF_CONTROLLER_IP, \
+                                                    VNF_CONTROLLER_PORT)
+            msgType = msg.getMessageType()
+            if msgType == None:
+                pass
+            elif msgType == MSG_TYPE_VNF_CONTROLLER_CMD:
+                self.logger.info('Got a command.')
+                cmd = msg.getbody()
+                source = msg.getSource()
+                self._commandsInfo[cmd.cmdID] = {'cmd':cmd, 'state':CMD_STATE_PROCESSING}
+                resDict = {}
+                if cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
+                    success, resDict = self._sfciStateMonitorHandler(cmd)
+                    if success:
+                        self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_SUCCESSFUL
+                    else:
+                        self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_FAIL
+                else:
+                    self.logger.error("Unsupported cmd type for vnf controller: {0}.".format(cmd.cmdType))
+                    self._commandsInfo[cmd.cmdID]['state'] = CMD_STATE_FAIL
+                cmdRply = CommandReply(cmd.cmdID, self._commandsInfo[cmd.cmdID]['state'])
+                cmdRply.attributes["zone"] = self.zoneName
+                cmdRply.attributes.update(resDict)
+                rplyMsg = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, cmdRply)
+                # self._messageAgent.sendMsg(MEDIATOR_QUEUE, rplyMsg)
+                self._messageAgent.sendMsgByRPC(source['srcIP'], source['srcPort'], rplyMsg)
+            else:
+                self.logger.error('Unsupported msg type for vnf controller: {0}.'.format(msg.getMessageType()))
 
     def _sfciStateMonitorHandler(self, cmd):
         success = True
@@ -107,7 +133,7 @@ class VNFController(object):
     def _sfciAddHandler(self, cmd):
         sfci = cmd.attributes['sfci']
         sfciID = sfci.sfciID
-        self.logger.info('Adding sfci %s.' % sfciID)
+        self.logger.info('Adding sfci {0}.'.format(sfciID))
         success = True
         if self._vnfiMaintainer.hasSFCI(sfciID):
             return success
@@ -117,7 +143,7 @@ class VNFController(object):
         for vnf in vnfSeq:
             for vnfi in vnf:
                 if isinstance(vnfi.node, Server):
-                    # self.logger.info('Adding vnfi %s.' % vnfi.vnfiID)
+                    # self.logger.info('Adding vnfi {0}.'.format(vnfi.vnfiID))
                     self.logger.info("Deploy vnfi {0} at node {1}".format(vnfi.vnfiID, vnfi.node.getServerID()))
                     if self._vnfiMaintainer.hasVNFI(vnfi):
                         # reassign an vnfi
@@ -146,7 +172,7 @@ class VNFController(object):
                         self._vnfiMaintainer.setVNFISocketPort(sfciID, vnfi, controlSocketPort)
                     except Exception as exp:
                         ExceptionProcessor(self.logger).logException(exp, "Error occurs when adding vnfi: ")
-                        self.logger.error('Error occurs when adding vnfi: %s' % exp)
+                        self.logger.error('Error occurs when adding vnfi: {0}'.format(exp))
                         self._vnfiMaintainer.setVNFIState(sfciID, vnfi, VNFI_STATE_FAILED)
                         self._vnfiMaintainer.setVNFIError(sfciID, vnfi, exp)    
                         success = False
@@ -155,12 +181,12 @@ class VNFController(object):
     def _sfciDeleteHandler(self, cmd):
         sfci = cmd.attributes['sfci']
         sfciID = sfci.sfciID
-        self.logger.info('Deleting sfci %s.' % sfciID)
+        self.logger.info('Deleting sfci {0}.'.format(sfciID))
         try:
             sfciState = self._vnfiMaintainer.getSFCI(sfciID)
         except Exception as e:
             ExceptionProcessor(self.logger).logException(e, "SFCI not maintained in vnf controller.")
-            self.logger.error('SFCI %s not maintained in vnf controller.' % sfciID)
+            self.logger.error('SFCI {0} not maintained in vnf controller.'.format(sfciID))
             return False
         success = True
         for vnfiID in list(sfciState.keys()):
@@ -173,7 +199,7 @@ class VNFController(object):
                 self._vnfiMaintainer.deleteVNFI(sfciID, vnfiID)
             except Exception as e:
                 ExceptionProcessor(self.logger).logException(e, "Error occurs when deleting vnfi:")
-                self.logger.error('Error occurs when deleting vnfi: %s' % e)
+                self.logger.error('Error occurs when deleting vnfi: {0}'.format(e))
                 success = False
         if success:
             self._vnfiMaintainer.deleteSFCI(sfci)

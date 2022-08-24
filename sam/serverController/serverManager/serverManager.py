@@ -3,6 +3,7 @@
 
 import sys
 import time
+from typing import Dict
 import uuid
 import ctypes
 import inspect
@@ -58,16 +59,18 @@ class SeverManager(object):
                                                     SERVER_MANAGER_PORT)
             # self.logger.debug("msgType:".format(msg.getMessageType()))
             time.sleep(0.1)
-            if msg.getMessageType() == MSG_TYPE_SERVER_REPLY:
+            msgType = msg.getMessageType()
+            source = msg.getSource()
+            if msgType == MSG_TYPE_SERVER_REPLY:
                 self._storeServerInfo(msg)
-            elif msg.getMessageType() == MSG_TYPE_SERVER_MANAGER_CMD:
+            elif msgType == MSG_TYPE_SERVER_MANAGER_CMD:
                 cmd = msg.getbody()
-                self._reportServerSet(cmd)
-            elif msg.getMessageType() == None:
+                self._reportServerSet(source, cmd)
+            elif msgType == None:
                 pass
                 # self._printServerSet()
             else:
-                self.logger.warning("Unknown msg type.")
+                self.logger.warning("Unknown msg type {0}".format(msgType))
 
     def _storeServerInfo(self, msg):
         # type: (SAMMessage) -> None
@@ -96,13 +99,15 @@ class SeverManager(object):
     def _getCurrentTime(self):
         return datetime.datetime.now()
 
-    def _reportServerSet(self, cmd):
-        # type: (Command) -> None
+    def _reportServerSet(self, source, cmd):
+        # type: (Dict, Command) -> None
         self.logger.info("Get command from mediator.")
         threadLock.acquire()
         cmdRply = self.genGetServersCmdReply(cmd)
-        msg = SAMMessage(MSG_TYPE_SERVER_MANAGER_CMD_REPLY, cmdRply)
-        self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
+        rplyMsg = SAMMessage(MSG_TYPE_SERVER_MANAGER_CMD_REPLY, cmdRply)
+        # self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
+        self._messageAgent.sendMsgByRPC(source["srcIP"],
+                                source["srcPort"], rplyMsg)
         threadLock.release()
 
     def genGetServersCmdReply(self, cmd):

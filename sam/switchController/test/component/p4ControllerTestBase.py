@@ -75,7 +75,7 @@ class TestP4ControllerBase(IntTestBaseClass):
         sfci4 = self.genUniDirection10BackupP4NFVISFCI(
             sfcLength=1, routingMorphic=rM)  # genLargeConnectionSFCI()
 
-        sfc6 = self.genMixEuipmentSFC(classifier, zone=TURBONET_ZONE)
+        sfc6 = self.genMixEquipmentSFC(classifier, zone=TURBONET_ZONE)
         rM = sfc6.routingMorphic
         sfci6 = self.genUniDirection10BackupP4ServerNFVISFCI(sfc6,
                                                              routingMorphic=rM)

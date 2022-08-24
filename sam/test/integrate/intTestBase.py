@@ -229,7 +229,7 @@ class IntTestBaseClass(TestBase):
                     vnfSequence=vnfSequence, 
                     vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
-    def genMixEuipmentSFC(self, classifier, zone=SIMULATOR_ZONE):
+    def genMixEquipmentSFC(self, classifier, zone=SIMULATOR_ZONE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_RATELIMITER, VNF_TYPE_RATELIMITER]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_RATELIMITER,

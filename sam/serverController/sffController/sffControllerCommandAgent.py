@@ -10,6 +10,7 @@ from sam.base.command import CommandReply, CMD_STATE_PROCESSING, CMD_TYPE_PAUSE_
     CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import SFF_CONTROLLER_IP, SFF_CONTROLLER_PORT
 
 from sam.serverController.sffController.sfcConfig import DEFAULT_CHAIN_TYPE
 from sam.serverController.sffController.sffSFCIAdder import SFFSFCIAdder
@@ -40,13 +41,15 @@ class SFFControllerCommandAgent(object):
 
         self._messageAgent = MessageAgent(self.logger)
         self.queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, zoneName)
+        self._messageAgent.startMsgReceiverRPCServer(SFF_CONTROLLER_IP, SFF_CONTROLLER_PORT)
         self.logger.info("Listen on {0}".format(self.queueName))
         self._messageAgent.startRecvMsg(self.queueName)
 
     def startSFFControllerCommandAgent(self):
         while True:
             msg = self._messageAgent.getMsg(self.queueName)
-            if msg.getMessageType() == MSG_TYPE_SFF_CONTROLLER_CMD:
+            msgType = msg.getMessageType() 
+            if msgType == MSG_TYPE_SFF_CONTROLLER_CMD:
                 self.logger.info("SFF controller get a command.")
                 cmd = msg.getbody()
                 self._commandsInfo[cmd.cmdID] = {"cmd":cmd,
@@ -77,8 +80,6 @@ class SFFControllerCommandAgent(object):
                         self.sffSFCIAdder.addSFCIHandler(cmd)
                     elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
                         self.sffSFCIDeleter.delSFCIHandler(cmd)
-                    elif cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
-                        resDict = self.sffMonitor.monitorSFCIHandler()
                     else:
                         self.logger.error("Unkonwn sff command type.")
                         raise ValueError("Unkonwn sff command type.")
@@ -102,10 +103,58 @@ class SFFControllerCommandAgent(object):
                     if cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
                         queueName = MEASURER_QUEUE
                     self._messageAgent.sendMsg(queueName, rplyMsg)
-            elif msg.getMessageType() == None:
+            elif msgType == None:
                 pass
             else:
-                self.logger.error("Unknown msg type.")
+                self.logger.error("Unknown msg type {0}".format(msgType))
+
+
+            msg = self._messageAgent.getMsgByRPC(SFF_CONTROLLER_IP, \
+                                                    SFF_CONTROLLER_PORT)
+            msgType = msg.getMessageType() 
+            if msgType == MSG_TYPE_SFF_CONTROLLER_CMD:
+                self.logger.info("SFF controller get a command.")
+                cmd = msg.getbody()
+                source = msg.getSource()
+                self._commandsInfo[cmd.cmdID] = {"cmd":cmd,
+                    "state":CMD_STATE_PROCESSING}
+
+                self.logger.info("cmdID: {0}".format(cmd.cmdID))
+
+                # common commands
+                try:
+                    resDict = {}
+                    if cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
+                        resDict = self.sffMonitor.monitorSFCIHandler()
+                    else:
+                        self.logger.error("Unkonwn sff command type.")
+                        raise ValueError("Unkonwn sff command type.")
+                    self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_SUCCESSFUL
+                except ValueError as err:
+                    self.logger.error('sff controller command processing error: ' +
+                        repr(err))
+                    self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
+                except Exception as ex:
+                    ExceptionProcessor(self.logger).logException(ex, "SFF Controller")
+                    self._commandsInfo[cmd.cmdID]["state"] = CMD_STATE_FAIL
+                finally:
+                    cmdRply = CommandReply(
+                        cmd.cmdID,self._commandsInfo[cmd.cmdID]["state"])
+                    cmdRply.attributes["source"] = {"sffController"}
+                    cmdRply.attributes["zone"] = self.zoneName
+                    cmdRply.attributes.update(resDict)
+                    rplyMsg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD_REPLY,
+                                                                    cmdRply)
+                    # queueName = MEDIATOR_QUEUE
+                    # if cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
+                    #     queueName = MEASURER_QUEUE
+                    # self._messageAgent.sendMsg(queueName, rplyMsg)
+                    self._messageAgent.sendMsgByRPC(source['srcIP'], source['srcPort'], rplyMsg)
+            elif msgType == None:
+                pass
+            else:
+                self.logger.error("Unknown msg type {0}".format(msgType))
+
 
 if __name__=="__main__":
     argParser = ArgParser()
