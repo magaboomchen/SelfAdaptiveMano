@@ -20,6 +20,7 @@ def killAllSAMPythonScripts():
     sP.killPythonScript("regulator.py")
     sP.killPythonScript("p4Controller.py")
     sP.killPythonScript("p4ControllerStub.py")
+    sP.killPythonScript("p4controller_stub.py")
 
 if __name__ == "__main__":
     killAllSAMPythonScripts()
