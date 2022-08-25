@@ -7,7 +7,6 @@ needs modify forwarding path set format
 '''
 
 import uuid
-import logging
 
 import pytest
 from sam.base.loggerConfigurator import LoggerConfigurator

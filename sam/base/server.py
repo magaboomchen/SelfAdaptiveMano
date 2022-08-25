@@ -28,12 +28,6 @@ class Server(object):
         self._serverDatapathNICMAC = None  # string, e.g. "18:66:da:86:4c:16"
         self._ifSet = {}  # self.updateIfSet()
 
-        self._routingTag = {}  # 4 type routing tag
-        # ['ip'] = ['ip1', 'ip2']
-        # ['identification'] = ['id1', 'id2']
-        # ['geo'] = ['geo1', 'geo2']
-        # ['content'] = ['c1', 'c2']
-
         self._supportVNFSet = []  # see vnf.py, e.g. [VNF_TYPE_FW, VNF_TYPE_IDS]
 
         self._memoryAccessMode = None  # "SMP", "NUMA"
@@ -43,10 +37,14 @@ class Server(object):
         self._numaNum = None  # int
         self._coreNUMADistribution = None  # list of list, e.g. [[0,2,4,6,8,10],[1,3,5,7,9,11]]
         self._coreUtilization = None  # list of float, e.g. [100.0, 0.0, ..., 100.0]
-        self._hugepagesTotal = None  # list of int, e.g. [14,13] for two numa nodes
-        self._hugepagesFree = None  # list of int, e.g. [10,13] for two numa nodes
-        self._hugepageSize = None  # unit: kB
-        self._nicBandwidth = 10  # unit: Gbps, default is 10 Gbps
+        self._hugepagesTotalNum = None  # list of int, e.g. [14,13] for two numa nodes
+        self._hugepagesFreeNum = None  # list of int, e.g. [10,13] for two numa nodes
+        self._sizePerHugepage = None  # unit: kB
+        self._sizeOfTotalHugepages = None    # unit: kB
+        self._dramCapacity = None   # unit: kB
+        self._dramUsageAmount = None    # unit: kB
+        self._dramUsagePercentage = None      # unit: % percentage
+        self._nicBandwidth = 40  # unit: Gbps
 
     def setServerID(self, serverID):
         self._serverID = serverID
@@ -59,9 +57,11 @@ class Server(object):
         self._ifSet[ifName]["IP"] = controlNICIP
 
     def setControlNICMAC(self, controlNICMAC):
+        # type: (str) -> None
         self._serverControlNICMAC = controlNICMAC.lower()
 
     def setDataPathNICMAC(self, datapathNICMAC):
+        # type: (str) -> None
         self._serverDatapathNICMAC = datapathNICMAC.lower()
 
     def getServerID(self):
@@ -101,9 +101,6 @@ class Server(object):
 
     def getDatapathNICMac(self):
         return self._serverDatapathNICMAC.lower()
-
-    # def getServerControlNICIP(self):
-    #     return self._serverControlNICIP
 
     def getControlNICIP(self):
         ifName = self._controlIfName
@@ -188,16 +185,16 @@ class Server(object):
         return self._coreUtilization
 
     def setHugepagesTotal(self, hugepagesTotal):
-        self._hugepagesTotal = hugepagesTotal
+        self._hugepagesTotalNum = hugepagesTotal
 
     def getHugepagesTotal(self):
-        return self._hugepagesTotal
+        return self._hugepagesTotalNum
 
     def getHugepagesFree(self):
-        return self._hugepagesFree
+        return self._hugepagesFreeNum
 
     def getHugepagesSize(self):
-        return self._hugepageSize
+        return self._sizePerHugepage
 
     def getMaxCores(self):
         coreNum = 0
@@ -219,9 +216,9 @@ class Server(object):
         self._numaNum = 2
         self._coreNUMADistribution = [12, 12]
         self._coreUtilization = [0] * 24
-        self._hugepagesTotal = [256, 256]
-        self._hugepagesFree = [256, 256]
-        self._hugepageSize = 1048576
+        self._hugepagesTotalNum = [256, 256]
+        self._hugepagesFreeNum = [256, 256]
+        self._sizePerHugepage = 1048576
 
     def updateResource(self):
         self._updateMemAccessMode()
@@ -233,6 +230,8 @@ class Server(object):
         self._updateHugepagesTotal()
         self._updateHugepagesFree()
         self._updateHugepagesSize()
+        self._updateMemoryFootprintOfTotalHugepages()
+        self._updateDRAMUsage()
 
     def _isSMP(self):
         rv = subprocess.check_output("lscpu | grep -i 'Socket(s)'", shell=True)
@@ -319,7 +318,7 @@ class Server(object):
         self._coreUtilization = psutil.cpu_percent(percpu=True)
 
     def _updateHugepagesTotal(self):
-        self._hugepagesTotal = []
+        self._hugepagesTotalNum = []
         if self._isSMP():
             return None
         for nodeIndex in range(self._socketNum):
@@ -328,15 +327,15 @@ class Server(object):
             rv = subprocess.check_output([cmd], shell=True)
             rv = x2str(rv)
             rv = int(rv.strip("\n").split(":")[1])
-            self._hugepagesTotal.append(rv)
+            self._hugepagesTotalNum.append(rv)
 
     def _updateHugepagesFree(self):
-        self._hugepagesFree = []
+        self._hugepagesFreeNum = []
         if self._isSMP():
             rv = subprocess.check_output(" grep Huge /proc/meminfo | grep 'HugePages_Free:' ", shell=True)
             rv = x2str(rv)
             rv = int(rv.split(":")[1].strip("\n'"))
-            self._hugepagesFree.append(rv)
+            self._hugepagesFreeNum.append(rv)
             return None
         for nodeIndex in range(self._socketNum):
             regexp = "'Node {0} HugePages_Free:'".format(nodeIndex)
@@ -344,12 +343,33 @@ class Server(object):
             rv = subprocess.check_output([cmd], shell=True)
             rv = x2str(rv)
             rv = int(rv.strip("\n").split(":")[1])
-            self._hugepagesFree.append(rv)
+            self._hugepagesFreeNum.append(rv)
+
+    def _updateMemoryFootprintOfTotalHugepages(self):
+        if (self._sizePerHugepage != None
+            and self._hugepagesTotalNum != None):
+            self._sizeOfTotalHugepages = self._sizePerHugepage * sum(self._hugepagesTotalNum)
+        else:
+            self._sizeOfTotalHugepages = 0
 
     def _updateHugepagesSize(self):
         out_bytes = subprocess.check_output(['grep Huge /proc/meminfo | grep Hugepagesize'], shell=True)
         out_bytes = x2str(out_bytes)
-        self._hugepageSize = int(out_bytes.split(':')[1].split('kB')[0])
+        self._sizePerHugepage = int(out_bytes.split(':')[1].split('kB')[0])
+
+    def _updateDRAMUsage(self):
+        self._dramCapacity = psutil.virtual_memory()[0] / 1024.0
+        self._dramUsagePercentage = psutil.virtual_memory()[2]
+        self._dramUsageAmount = psutil.virtual_memory()[3] / 1024.0
+
+    def getDRAMCapacity(self):
+        return self._dramCapacity
+
+    def getDRAMUsagePercentage(self):
+        return self._dramUsagePercentage
+
+    def getDRAMUsageAmount(self):
+        return self._dramUsageAmount
 
     def setNICBandwidth(self, bandwidth):
         self._nicBandwidth = bandwidth
@@ -361,7 +381,7 @@ class Server(object):
         self._coreUtilization = util
 
     def setHugePages(self, pages):
-        self._hugepagesFree = pages
+        self._hugepagesFreeNum = pages
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

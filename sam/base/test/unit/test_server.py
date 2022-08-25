@@ -102,18 +102,18 @@ class TestServerClass(object):
     def test_updateHugepagesTotal(self):
         self.server._updateSocketNum()
         self.server._updateHugepagesTotal()
-        assert self.server._hugepagesTotal == [6, 6]
+        assert self.server._hugepagesTotalNum == [6, 6]
 
     # @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
     def test_updateHugepagesFree(self):
         self.server._updateSocketNum()
         self.server._updateHugepagesFree()
-        assert self.server._hugepagesFree == [3, 4]
+        assert self.server._hugepagesFreeNum == [3, 4]
 
     # @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
     def test_updateHugepagesSize(self):
         self.server._updateHugepagesSize()
-        assert self.server._hugepageSize == 1048576
+        assert self.server._memoryFootprintPerHugepage == 1048576
 
     # @pytest.mark.skipif(MANUAL_TEST == True, reason='Manual testing is required')
     def test_updateMemAccessMode(self):

@@ -26,11 +26,12 @@ from sam.base.messageAgent import SIMULATOR_QUEUE, MSG_TYPE_SIMULATOR_CMD, \
     MEDIATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import SIMULATOR_PORT, TEST_PORT
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
-from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.vnf import VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFIStatus
+from sam.base.vnfiStatus import VNFIStatus
+from sam.base.vnf import VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.simulator.test.testSimulatorBase import TestSimulatorBase

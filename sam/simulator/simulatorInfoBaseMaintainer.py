@@ -18,9 +18,11 @@ from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.pickleIO import PickleIO
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL
-from sam.base.sfc import SFC, SFCI, SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.sfc import SFC, SFCI
+from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
 from sam.base.slo import SLO
-from sam.base.vnf import VNFIStatus, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNF_TYPE_FW
+from sam.base.vnfiStatus import VNFIStatus
+from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNF_TYPE_FW
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.base.link import Link
 from sam.base.socketConverter import SocketConverter

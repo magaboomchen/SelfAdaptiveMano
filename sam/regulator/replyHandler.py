@@ -11,10 +11,13 @@ from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REQUEST, MessageAge
                                      SAMMessage
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI, \
                             Request
-from sam.base.sfc import AUTO_SCALE, REGULATOR_SFCIID_ALLOCATED_RANGE, STATE_ACTIVE, STATE_DELETED, \
-                    STATE_SCALING_IN_MODE, SFC, SFCI, STATE_SCALING_OUT_MODE
+from sam.base.sfc import SFC, SFCI
+from sam.base.sfcConstant import AUTO_SCALE, REGULATOR_SFCIID_ALLOCATED_RANGE, \
+                    STATE_ACTIVE, STATE_DELETED, \
+                    STATE_SCALING_IN_MODE, STATE_SCALING_OUT_MODE
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, PREFERRED_DEVICE_TYPE_SERVER, VNFIStatus
+from sam.base.vnfiStatus import VNFIStatus
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, PREFERRED_DEVICE_TYPE_SERVER
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.regulator.config import ENABLE_SCALING, MAX_OVER_LOAD_NUM_THRESHOLD, \

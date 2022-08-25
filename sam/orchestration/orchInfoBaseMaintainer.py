@@ -2,9 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 from functools import wraps
-import logging
 
-from sam.base.sfc import STATE_IN_PROCESSING, STATE_ACTIVE, \
+from sam.base.sfcConstant import STATE_IN_PROCESSING, STATE_ACTIVE, \
     STATE_DELETED, STATE_INACTIVE, STATE_INIT_FAILED, STATE_MANUAL, STATE_UNDELETED
 from sam.base.command import CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL
 from sam.base.request import REQUEST_STATE_IN_PROCESSING, REQUEST_TYPE_ADD_SFC, \
@@ -475,7 +474,10 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     def updateRequestState2DB(self, request, state):
         request.requestState = state
         self.dbA.update("Request", 
-            " PICKLE = '{0}' ".format(self._encodeObject2Pickle(request).decode()),
+            " PICKLE = '{0}', STATE = '{1}' ".format(
+                self._encodeObject2Pickle(request).decode(),
+                state
+                ),
             " REQUEST_UUID = '{0}' ".format(request.requestID)
             )
 

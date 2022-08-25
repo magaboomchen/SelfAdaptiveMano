@@ -3,7 +3,7 @@
 
 from typing import Dict, Union
 
-from sam.base.vnf import VNFIStatus
+from sam.base.vnfiStatus import VNFIStatus
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE
 

@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import logging
 from sam.base.command import CMD_STATE_SUCCESSFUL, CommandReply
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -12,7 +11,8 @@ from sam.base.messageAgentAuxillary.msgAgentRPCConf import VNF_CONTROLLER_IP, VN
 from sam.base.sfc import SFCI
 from sam.base.slo import SLO
 from sam.base.sshAgent import SSHAgent
-from sam.base.vnf import VNF_TYPE_RATELIMITER, VNFI, VNFIStatus
+from sam.base.vnfiStatus import VNFIStatus
+from sam.base.vnf import VNF_TYPE_RATELIMITER, VNFI
 from sam.serverController.sffController.sibMaintainer import SIBMaintainer
 
 

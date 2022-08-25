@@ -16,9 +16,10 @@ import uuid
 import pytest
 
 from sam.base.compatibility import screenInput
-from sam.base.messageAgent import DISPATCHER_QUEUE, TURBONET_ZONE
+from sam.base.messageAgent import DISPATCHER_QUEUE, REGULATOR_QUEUE, TURBONET_ZONE
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
-                        REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
+                        REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_UPDATE_SFC_STATE, Request
+from sam.base.sfcConstant import MANUAL_SCALE, STATE_MANUAL
 from sam.test.integrate.intTestBase import IntTestBaseClass
 
 
@@ -32,23 +33,28 @@ class TestAddSFCClass(IntTestBaseClass):
 
         # you can overwrite following function to test different sfc/sfci
         classifier = None
-        sfc1 = self.genLargeBandwidthSFC(classifier)
+        sfc1 = self.genLargeBandwidthSFC(classifier, TURBONET_ZONE,
+                                                MANUAL_SCALE)
         rM = sfc1.routingMorphic
         sfci1 = self.genSFCITemplate(rM)
 
-        sfc2 = self.genHighAvaSFC(classifier)
+        sfc2 = self.genHighAvaSFC(classifier, TURBONET_ZONE,
+                                                MANUAL_SCALE)
         rM = sfc2.routingMorphic
         sfci2 = self.genSFCITemplate(rM)
 
-        sfc3 = self.genLowLatencySFC(classifier)
+        sfc3 = self.genLowLatencySFC(classifier, TURBONET_ZONE,
+                                                MANUAL_SCALE)
         rM = sfc3.routingMorphic
         sfci3 = self.genSFCITemplate(rM)
 
-        sfc4 = self.genLargeConnectionSFC(classifier)
+        sfc4 = self.genLargeConnectionSFC(classifier, TURBONET_ZONE,
+                                                MANUAL_SCALE)
         rM = sfc4.routingMorphic
         sfci4 = self.genSFCITemplate(rM)
 
-        sfc5 = self.genBestEffortSFC(classifier)
+        sfc5 = self.genBestEffortSFC(classifier, TURBONET_ZONE,
+                                                MANUAL_SCALE)
         rM = sfc5.routingMorphic
         sfci5 = self.genSFCITemplate(rM)
 
@@ -102,6 +108,21 @@ class TestAddSFCClass(IntTestBaseClass):
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
+                        "Then press andy key to continue!")
+        screenInput()
+
+        # setup
+        for idx, sfc in enumerate(self.sfcList):
+            rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_UPDATE_SFC_STATE,
+                attributes={
+                    "sfc": self.getSFCFromDB(self.sfcList[idx].sfcUUID),
+                    "newState": STATE_MANUAL,
+                    "zone": TURBONET_ZONE
+                })
+            self.sendRequest(REGULATOR_QUEUE, rq)
+
+        self.logger.info("Please check if regulator recvs requests? "\
+                        "And SFC state turn to STATE_MANUAL? " \
                         "Then press andy key to continue!")
         screenInput()
 

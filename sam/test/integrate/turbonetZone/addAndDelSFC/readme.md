@@ -2,7 +2,7 @@
 ## Terminal 1
 ```
 cd ~/Projects/SelfAdaptiveMano/sam/test/integrate/turbonetZone/addAndDelSFC
-python -m pytest ./test_1.py -s --disable-warnings
+python -m pytest ./test_2.py -s --disable-warnings
 ```
 
 ## Terminal 2 (dispatcher will initial orchestrator automatically)
@@ -19,8 +19,8 @@ python ./mediator.py
 
 ## Terminal 4
 ```
-cd ~/Projects/SelfAdaptiveMano/sam/measurement
-python ./measurer.py
+cd ~/Projects/SelfAdaptiveMano/sam/regulator
+python ./regulator.py
 ```
 
 ## Terminal 5
@@ -47,10 +47,10 @@ cd ~/Projects/SelfAdaptiveMano/sam/switchController/p4Controller
 python p4controller_stub.py TURBONET_ZONE
 ```
 
-## Terminal 9 (for test3)
+## Terminal 9
 ```
-cd ~/Projects/SelfAdaptiveMano/sam/regulator
-python ./regulator.py
+cd ~/Projects/SelfAdaptiveMano/sam/measurement
+python ./measurer.py
 ```
 
 ## Server 10001 (194)

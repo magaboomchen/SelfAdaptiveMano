@@ -2,12 +2,13 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
-from sam.base.routingMorphic import RoutingMorphic
 
 from sam.base.slo import SLO
-from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, VNF_TYPE_FORWARD, VNFI_RESOURCE_QUOTA_SMALL
-from sam.base.sfc import SFC, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
+from sam.base.sfc import SFC, SFCI
+from sam.base.routingMorphic import RoutingMorphic
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, \
+                            VNF_TYPE_FORWARD, VNFI_RESOURCE_QUOTA_SMALL
+from sam.base.sfcConstant import APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.command import Command, CMD_STATE_SUCCESSFUL, \
     CMD_TYPE_HANDLE_SERVER_STATUS_CHANGE
 from sam.base.messageAgent import SAMMessage, SERVER_CLASSIFIER_CONTROLLER_QUEUE, \

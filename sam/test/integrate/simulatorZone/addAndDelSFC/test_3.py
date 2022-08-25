@@ -21,11 +21,14 @@ import pytest
 
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 from sam.base.compatibility import screenInput
-from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, REGULATOR_QUEUE, SIMULATOR_ZONE, TURBONET_ZONE
+from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, \
+                                    REGULATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
-                        REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_UPDATE_SFC_STATE, Request
-from sam.base.sfc import SFCI, STATE_MANUAL
+                        REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, \
+                        REQUEST_TYPE_UPDATE_SFC_STATE, Request
+from sam.base.sfc import SFCI
+from sam.base.sfcConstant import STATE_MANUAL
 from sam.test.integrate.intTestBase import IntTestBaseClass
 
 

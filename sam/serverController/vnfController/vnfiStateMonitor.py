@@ -7,7 +7,7 @@ from sam.base.monitorStatistic import MonitorStatistics, SrcDstPair
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, \
                                     ROCEV1_ROUTE_PROTOCOL
 from sam.base.server import Server
-from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.vnf import VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER
 from sam.serverController.vnfController.click.ControlSocket.controlSocket import ControlSocket

@@ -23,7 +23,7 @@ from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.topoGen.base.common import SFC_REQUEST_NUM, VNF_NUM, SERVER_NUM
 from sam.base.topoGen.base.dhcpServer import DHCPServer
 
-SERVER_NUMA_CPU_DISTRIBUTION = [range(0, 24, 2), range(1, 25, 2)]
+SERVER_NUMA_CPU_DISTRIBUTION = [list(range(0, 24, 2)), list(range(1, 25, 2))]
 SERVER_NUMA_MEMORY_DISTRIBUTION = [256, 256]
 
 
@@ -115,8 +115,10 @@ class Topology(object):
             self._postProcessTopology4FatTree(podNum, serverNum)
         elif topoType == "fat-tree-turbonet":
             self.addP4NFSwitch2Turbonet()
-            self.addNFVIs4FatTree(serverNum=1, nfviNum=1)
+            # self.addNFVIs4FatTree(serverNum=1, nfviNum=1)
+            self.addNFVIs2TurbonetZone()
             self.patchLinks2Turbonet()
+            self.updateSwitchType2Turbonet()
         elif topoType == "testbed_sw1":
             self.addNFVIs4Testbed_sw1(serverNum=1)
         else:
@@ -278,6 +280,9 @@ class Topology(object):
                     'Active': True,
                     'Status': None}
 
+    def updateSwitchType2Turbonet(self):
+        self.switches[0]['switch'].programmable = True
+
     def _updateSwitchSupportVNF(self):
         for vnfType in self.vnfLocation.keys():
             for switchID in self.vnfLocation[vnfType]:
@@ -379,6 +384,48 @@ class Topology(object):
                 server.fastConstructResourceInfo()
                 server.setCoreNUMADistribution(SERVER_NUMA_CPU_DISTRIBUTION)
                 server.setHugepagesTotal(SERVER_NUMA_MEMORY_DISTRIBUTION)
+                self.servers[serverID] = {'Active': True,
+                                          'timestamp': datetime.datetime(2020, 10, 27, 0,
+                                                                         2, 39, 408596),
+                                          'server': server,
+                                          'Status': None}
+
+    def addNFVIs2TurbonetZone(self):
+        serverNum = 1
+        nfviNum = 1
+        serverCtrIPList = ["192.168.0.194", "192.168.0.173"]
+        serverCtrMACList = ["18:66:da:86:4c:15", "18:66:da:85:1c:c3"]
+        serverDpMACList = ["6c:b3:11:50:ec:3c", "6c:b3:11:50:ec:64"]
+        serverIdx = 0
+        nodeVNFSupportDict = self._getNodeVNFSupportDict()
+        for nodeID, vnfTypeList in nodeVNFSupportDict.items():
+            self.logger.debug("nodeID:{0} vnfTypeList:{1}".format(
+                nodeID, vnfTypeList))
+            for index in range(serverNum):
+                self.logger.info(
+                    "addServers connecting nodeID:{0}".format(nodeID))
+                serverID = self._assignServerID()
+                dpIP = self._dhcp.assignIP(nodeID)
+                self.logger.debug("serverID:{0} dpIP:{1}".format(serverID, dpIP))
+                if index < nfviNum:
+                    server = Server("eno1", dpIP, SERVER_TYPE_NFVI)
+                    for vnfType in vnfTypeList:
+                        server.addVNFSupport(vnfType)
+                else:
+                    server = Server("eno1", dpIP, SERVER_TYPE_NORMAL)
+                self.logger.info("serverType: {0}".format(server.getServerType()))
+                server.setControlNICIP(serverCtrIPList[serverIdx])
+                server.setControlNICMAC(serverCtrMACList[serverIdx])
+                server.setDataPathNICMAC(serverDpMACList[serverIdx])
+                serverIdx += 1
+                ctIP = server.getControlNICIP()
+                self.logger.debug(
+                    "addServers nodeID:{0}, dpIP:{1}, ctIP:{2}".format(
+                        nodeID, dpIP, ctIP))
+                server.setServerID(serverID)
+                server.fastConstructResourceInfo()
+                server.setCoreNUMADistribution([list(range(0, 12, 2)), list(range(1, 12, 2))])
+                server.setHugepagesTotal([12, 12])
                 self.servers[serverID] = {'Active': True,
                                           'timestamp': datetime.datetime(2020, 10, 27, 0,
                                                                          2, 39, 408596),

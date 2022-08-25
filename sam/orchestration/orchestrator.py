@@ -10,7 +10,8 @@ import time
 import math
 
 from sam.base.link import Link
-from sam.base.sfc import SFC, SFCI, STATE_INACTIVE
+from sam.base.sfc import SFC, SFCI
+from sam.base.sfcConstant import STATE_INACTIVE
 from sam.base.messageAgent import SAMMessage, MessageAgent, \
     MEDIATOR_QUEUE, ORCHESTRATOR_QUEUE, MSG_TYPE_ORCHESTRATOR_CMD
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_DEL_SFCI, \
@@ -125,6 +126,8 @@ class Orchestrator(object):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)
+                else:
+                    raise ValueError("Invalid add SFC state")
                 if ENABLE_OIB:
                     self._oib.addSFCRequestHandler(request, cmd)
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
@@ -153,6 +156,8 @@ class Orchestrator(object):
                         ))
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)
+                else:
+                    raise ValueError("Invalid del SFCI state")
                 if ENABLE_OIB:
                     self._oib.delSFCIRequestHandler(request, cmd)
             elif request.requestType == REQUEST_TYPE_DEL_SFC:
@@ -162,6 +167,8 @@ class Orchestrator(object):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)
+                else:
+                    raise ValueError("Invalid del SFC state")
                 if ENABLE_OIB:
                     self._oib.delSFCRequestHandler(request, cmd)
             else:
@@ -227,6 +234,8 @@ class Orchestrator(object):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)
+                else:
+                    raise ValueError("Invalid add SFCI state")
                 if ENABLE_OIB:
                     self.logger.info("sfciID is {0}".format(sfciID))
                     self._oib.addSFCIRequestHandler(request, cmd)

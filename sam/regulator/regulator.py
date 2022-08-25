@@ -28,7 +28,7 @@ from sam.base.request import REQUEST_STATE_FAILED, REQUEST_STATE_INITIAL, \
                                 REQUEST_TYPE_GET_DCN_INFO
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.regulator.argParser import ArgParser
-from sam.regulator.config import FAILURE_REQUEST_RETRY_TIMEOUT, MAX_RETRY_NUM
+from sam.regulator.config import ENABLE_REQUEST_RETRY, FAILURE_REQUEST_RETRY_TIMEOUT, MAX_RETRY_NUM
 from sam.regulator.regulatorRequestSender import RegulatorRequestSender
 from sam.regulator.replyHandler import ReplyHandler
 from sam.regulator.commandHandler import CommandHandler
@@ -49,7 +49,7 @@ class Regulator(object):
         self._messageAgent.startRecvMsg(self.regulatorQueueName)
         self._messageAgent.startMsgReceiverRPCServer(REGULATOR_IP,
                                                     REGULATOR_PORT)
-        self.enableRetryFailureRequest = False
+        self.enableRetryFailureRequest = ENABLE_REQUEST_RETRY
         self.prevTimestamp = time.time()
         self.cmdHandler = CommandHandler(self.logger, self._messageAgent,
                                             self._oib)
@@ -100,6 +100,7 @@ class Regulator(object):
             state = requestTuple[5]
             if state == REQUEST_STATE_FAILED:
                 requestUUID = requestTuple[0]
+                self.logger.info("Retry failed request {0}".format(requestUUID))
                 requestType = requestTuple[1]
                 request = requestTuple[6]
                 retryCnt = requestTuple[7]

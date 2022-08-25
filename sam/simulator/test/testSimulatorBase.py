@@ -7,7 +7,9 @@ from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.slo import SLO
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, RoutingMorphic
 from sam.base.messageAgent import SIMULATOR_ZONE
-from sam.base.sfc import SFC, SFC_DIRECTION_0, SFC_DIRECTION_1, SFCI, APP_TYPE_NORTHSOUTH_WEBSITE
+from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1, \
+                                    APP_TYPE_NORTHSOUTH_WEBSITE
+from sam.base.sfc import SFC, SFCI
 from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, ForwardingPathSet
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate

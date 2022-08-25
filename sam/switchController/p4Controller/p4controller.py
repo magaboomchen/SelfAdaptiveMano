@@ -13,7 +13,7 @@ from sam.base.messageAgent import MSG_TYPE_TURBONET_CONTROLLER_CMD
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT, TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT, P4_CONTROLLER_PORT, P4_CONTROLLER_IP
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.base.vnf import VNFIStatus
+from sam.base.vnfiStatus import VNFIStatus
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
 from sam.base.vnf import VNF_TYPE_FORWARD, VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_LB, VNF_TYPE_NAT, VNF_TYPE_RATELIMITER, VNF_TYPE_VPN
 from sam.base.acl import ACLTable, ACLTuple, ACL_ACTION_ALLOW, ACL_ACTION_DENY, ACL_PROTO_TCP, ACL_PROTO_ICMP, ACL_PROTO_IGMP, ACL_PROTO_IPIP, ACL_PROTO_UDP

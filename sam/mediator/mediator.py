@@ -35,8 +35,8 @@ class Mediator(object):
         self._messageAgent.startRecvMsg(MEDIATOR_QUEUE)
 
     def startMediator(self):
-        try:
-            while True:
+        while True:
+            try:        
                 msg = self._messageAgent.getMsg(MEDIATOR_QUEUE)
                 msgType = msg.getMessageType()
                 if msgType == None:
@@ -49,9 +49,9 @@ class Mediator(object):
                         self._commandReplyHandler(body)
                     else:
                         self.logger.error("Unknown massage body")
-        except Exception as ex:
-            ExceptionProcessor(self.logger).logException(ex,
-                "mediator")
+            except Exception as ex:
+                ExceptionProcessor(self.logger).logException(ex,
+                    "mediator")
 
     def _commandHandler(self, cmd):
         self.logger.debug("Get a command")
@@ -198,6 +198,7 @@ class Mediator(object):
         zoneName = cmd.attributes['zone']
         queueName = self._messageAgent.genQueueName(
             P4CONTROLLER_QUEUE, zoneName)
+        self.logger.debug("queueName is {0}".format(queueName))
         self.forwardCmd(cCmd, MSG_TYPE_P4CONTROLLER_CMD, queueName)
         self._cm.transitCmdState(cmd.cmdID, CMD_STATE_WAITING,
             CMD_STATE_PROCESSING)
@@ -467,11 +468,15 @@ class Mediator(object):
         for cmdRply in cCmdRplyList:
             if self._messageAgent.isCommandReply(cmdRply):
                 attr = cmdRply.attributes
-                for key in attr.keys():
-                    if not key in attributes.keys():
+                for key, value in attr.items():
+                    if key not in attributes.keys():
                         attributes[key] = attr[key]
                     else:
-                        self._MergeDict(attr[key],attributes[key])
+                        if type(value) == dict:
+                            self._MergeDict(value, attributes[key])
+                        else:
+                            assert value == attributes[key]
+                            self.logger.debug("attr value is {0}".format(value))
         return attributes
 
     def _MergeDict(self, dict1, dict2):

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from sam.base.sfc import STATE_DELETED, STATE_INIT_FAILED
+from sam.base.sfcConstant import STATE_DELETED, STATE_INIT_FAILED
 from sam.serverController.vnfController.sourceAllocator import SourceAllocator
 
 

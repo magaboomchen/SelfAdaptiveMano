@@ -9,7 +9,7 @@ from sam.base.messageAgent import SAMMessage, MessageAgent, VNF_CONTROLLER_QUEUE
     MSG_TYPE_VNF_CONTROLLER_CMD, MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, MEDIATOR_QUEUE
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.base.vnf import VNFIStatus
+from sam.base.vnfiStatus import VNFIStatus
 from sam.serverController.vnfController.vcConfig import vcConfig
 from sam.serverController.vnfController.vnfiAdder import VNFIAdder
 from sam.serverController.vnfController.vnfiDeleter import VNFIDeleter

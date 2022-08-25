@@ -1,13 +1,13 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from sam.base.vnfiStatus import VNFIStatus
 from sam.base.command import CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.messageAgent import SAMMessage, MessageAgent, MSG_TYPE_REPLY
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, MEASURER_PORT
 from sam.base.request import REQUEST_TYPE_GET_SFCI_STATE, Reply, REQUEST_STATE_SUCCESSFUL
-from sam.base.vnf import VNFIStatus
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
 

@@ -8,16 +8,17 @@ from sam.base.compatibility import screenInput
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import SIMULATOR_ZONE
 from sam.base.rateLimiter import RateLimiterConfig
-from sam.base.acl import ACL_ACTION_ALLOW, ACL_PROTO_UDP, ACLTuple
 from sam.base.routingMorphic import RoutingMorphic, IPV4_ROUTE_PROTOCOL, \
-            IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
+            IPV6_ROUTE_PROTOCOL
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
 from sam.base.test.fixtures.ipv6MorphicDict import ipv6MorphicDictTemplate
 from sam.base.test.fixtures.srv6MorphicDict import srv6MorphicDictTemplate
 from sam.base.test.fixtures.roceV1MorphicDict import roceV1MorphicDictTemplate
-from sam.base.sfc import APP_TYPE_BEST_EFFORT, APP_TYPE_HIGH_AVA, \
+from sam.base.sfc import SFC, SFCI
+from sam.base.sfcConstant import APP_TYPE_BEST_EFFORT, APP_TYPE_HIGH_AVA, \
                         APP_TYPE_LARGE_BANDWIDTH, APP_TYPE_LARGE_CONNECTION, \
-                        APP_TYPE_LOW_LATENCY, SFC, SFC_DIRECTION_0, SFC_DIRECTION_1, SFCI
+                        APP_TYPE_LOW_LATENCY, AUTO_SCALE, SFC_DIRECTION_0, \
+                        SFC_DIRECTION_1
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.slo import SLO
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, VNF, VNF_TYPE_FW, \
@@ -65,7 +66,8 @@ class IntTestBaseClass(TestBase):
     def getSFCIFromDB(self, sfciID):
         return self._oib.getSFCI4DB(sfciID)
 
-    def genLargeBandwidthSFC(self, classifier, zone=SIMULATOR_ZONE):
+    def genLargeBandwidthSFC(self, classifier, zone=SIMULATOR_ZONE,
+                                scalingMode=AUTO_SCALE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_MONITOR,
@@ -101,15 +103,16 @@ class IntTestBaseClass(TestBase):
         }
         directions = [direction0, direction1]
         # directions = [direction0]
-        slo = SLO(throughput=10, latency=100, availability=0.999, \
+        slo = SLO(throughput=5, latency=100, availability=0.999, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
                     backupInstanceNumber, applicationType, directions,
                     {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-                    vnfSequence=vnfSequence,
+                    vnfSequence=vnfSequence, scalingMode=scalingMode,
                     vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
-    def genHighAvaSFC(self, classifier, zone=SIMULATOR_ZONE):
+    def genHighAvaSFC(self, classifier, zone=SIMULATOR_ZONE,
+                        scalingMode=AUTO_SCALE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_FW]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_FW,
@@ -138,9 +141,11 @@ class IntTestBaseClass(TestBase):
                     attributes={'zone': zone}, slo=slo,
                     routingMorphic=routingMorphic,
                     vnfSequence=vnfSequence, 
+                    scalingMode=scalingMode,
                     vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
-    def genLowLatencySFC(self, classifier, zone=SIMULATOR_ZONE):
+    def genLowLatencySFC(self, classifier, zone=SIMULATOR_ZONE,
+                            scalingMode=AUTO_SCALE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_MONITOR]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_MONITOR,
@@ -165,10 +170,11 @@ class IntTestBaseClass(TestBase):
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
                     backupInstanceNumber, applicationType, directions,
                     {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-                    vnfSequence=vnfSequence, 
+                    vnfSequence=vnfSequence, scalingMode=scalingMode,
                     vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
-    def genLargeConnectionSFC(self, classifier, zone=SIMULATOR_ZONE):
+    def genLargeConnectionSFC(self, classifier, zone=SIMULATOR_ZONE,
+                                scalingMode=AUTO_SCALE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_RATELIMITER, VNF_TYPE_FW]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_RATELIMITER,
@@ -197,10 +203,11 @@ class IntTestBaseClass(TestBase):
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
                     backupInstanceNumber, applicationType, directions,
                     {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-                    vnfSequence=vnfSequence, 
+                    vnfSequence=vnfSequence, scalingMode=scalingMode,
                     vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
-    def genBestEffortSFC(self, classifier, zone=SIMULATOR_ZONE):
+    def genBestEffortSFC(self, classifier, zone=SIMULATOR_ZONE,
+                            scalingMode=AUTO_SCALE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_RATELIMITER]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_RATELIMITER,
@@ -226,10 +233,11 @@ class IntTestBaseClass(TestBase):
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
                     backupInstanceNumber, applicationType, directions,
                     {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-                    vnfSequence=vnfSequence, 
+                    vnfSequence=vnfSequence, scalingMode=scalingMode,
                     vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
-    def genMixEquipmentSFC(self, classifier, zone=SIMULATOR_ZONE):
+    def genMixEquipmentSFC(self, classifier, zone=SIMULATOR_ZONE,
+                            scalingMode=AUTO_SCALE):
         sfcUUID = uuid.uuid1()
         vNFTypeSequence = [VNF_TYPE_RATELIMITER, VNF_TYPE_RATELIMITER]
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_RATELIMITER,
@@ -258,7 +266,7 @@ class IntTestBaseClass(TestBase):
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,
                     backupInstanceNumber, applicationType, directions,
                     {'zone': zone}, slo=slo, routingMorphic=routingMorphic,
-                    vnfSequence=vnfSequence, 
+                    vnfSequence=vnfSequence, scalingMode=scalingMode,
                     vnfiResourceQuota=VNFI_RESOURCE_QUOTA_SMALL)
 
     def genSFCITemplate(self, routingMorphic=None):

@@ -21,12 +21,12 @@ from sam.base.command import CMD_STATE_SUCCESSFUL
 from sam.base.messageAgent import MEASURER_QUEUE, SFF_CONTROLLER_QUEUE, \
     MEDIATOR_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, TURBONET_ZONE, MessageAgent
 from sam.base.shellProcessor import ShellProcessor
-from sam.base.vnf import VNFIStatus
+from sam.base.vnfiStatus import VNFIStatus
 from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
 from sam.test.fixtures.vnfControllerStub import VNFControllerStub
 from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, \
                         TestBase, CLASSIFIER_DATAPATH_IP, SFF1_CONTROLNIC_IP, \

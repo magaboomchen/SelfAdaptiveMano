@@ -17,11 +17,12 @@ import uuid
 import copy
 from typing import List, Tuple, Union
 
+from sam.base.slo import SLO
 from sam.base.vnf import VNFI
 from sam.base.switch import Switch
 from sam.base.server import Server
-from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
-from sam.base.path import MAPPING_TYPE_MMLPSFC, ForwardingPathSet, \
+from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.path import DIRECTION0_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, ForwardingPathSet, \
                             MAPPING_TYPE_E2EP, MAPPING_TYPE_UFRR, \
                             MAPPING_TYPE_NOTVIA_PSFC, MAPPING_TYPE_NETPACK, \
                             MAPPING_TYPE_INTERFERENCE, MAPPING_TYPE_NONE, \
@@ -235,7 +236,8 @@ class OSFCAdder(object):
                 forwardingPathSetsDict = {}
                 for rIndex in range(len(requestBatchList)):
                     forwardingPathSetsDict[rIndex] = ForwardingPathSet(
-                        {1:0}, mappingType, {1:{}})
+                        {DIRECTION0_PATHID_OFFSET:0}, mappingType,
+                        {DIRECTION0_PATHID_OFFSET:{}})
             else:
                 self.logger.error(
                     "Unknown mappingType {0}".format(mappingType))
@@ -409,6 +411,7 @@ class OSFCAdder(object):
             zoneName = sfc.attributes['zone']
             sfci = request.attributes['sfci']
             sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
+            sfci.sloRealTimeValue = SLO()
             self.logger.info("before trans, forwardingPathSet is {0}".format(sfci.forwardingPathSet))
             self.logger.warning("before sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
             if sfci.vnfiSequence in [None,[]]:

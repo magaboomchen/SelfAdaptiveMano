@@ -7,8 +7,9 @@ import logging
 
 from sam.base.command import CommandReply
 from sam.base.acl import ACL_ACTION_ALLOW, ACL_PROTO_UDP, ACLTable, ACLTuple
-from sam.base.sfc import SFC, SFC_DIRECTION_0, SFC_DIRECTION_1, SFCI, \
-                                            APP_TYPE_NORTHSOUTH_WEBSITE
+from sam.base.sfc import SFC, SFCI
+from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1, \
+                                    APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNFI, \
             VNF_TYPE_FORWARD, VNF_TYPE_MAX, VNFI_RESOURCE_QUOTA_SMALL
 from sam.base.slo import SLO

@@ -20,8 +20,9 @@ from scapy.contrib.roce import GRH
 
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.monitorStatistic import MonitorStatistics
-from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
 from sam.base.acl import ACLTable
+from sam.base.vnfiStatus import VNFIStatus
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import TURBONET_ZONE, VNF_CONTROLLER_QUEUE, \
     MSG_TYPE_VNF_CONTROLLER_CMD,  SFF_CONTROLLER_QUEUE, \
@@ -30,7 +31,7 @@ from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, \
                                     ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
 from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, \
-                            VNF_TYPE_FW, VNFIStatus
+                            VNF_TYPE_FW
 from sam.base.server import SERVER_TYPE_NFVI, Server
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.command import CMD_STATE_SUCCESSFUL

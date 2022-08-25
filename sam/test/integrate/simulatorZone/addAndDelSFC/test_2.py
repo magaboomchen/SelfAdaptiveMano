@@ -16,9 +16,10 @@ import uuid
 import pytest
 
 from sam.base.compatibility import screenInput
-from sam.base.messageAgent import DISPATCHER_QUEUE, SIMULATOR_ZONE
+from sam.base.messageAgent import DISPATCHER_QUEUE, REGULATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
-                        REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
+                        REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_UPDATE_SFC_STATE, Request
+from sam.base.sfcConstant import STATE_MANUAL
 from sam.test.integrate.intTestBase import IntTestBaseClass
 
 
@@ -102,6 +103,21 @@ class TestAddSFCClass(IntTestBaseClass):
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
+                        "Then press andy key to continue!")
+        screenInput()
+
+        # setup
+        for idx, sfc in enumerate(self.sfcList):
+            rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_UPDATE_SFC_STATE,
+                attributes={
+                    "sfc": self.getSFCFromDB(self.sfcList[idx].sfcUUID),
+                    "newState": STATE_MANUAL,
+                    "zone": SIMULATOR_ZONE
+                })
+            self.sendRequest(REGULATOR_QUEUE, rq)
+
+        self.logger.info("Please check if regulator recvs requests? "\
+                        "And SFC state turn to STATE_MANUAL? " \
                         "Then press andy key to continue!")
         screenInput()
 

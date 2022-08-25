@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import pytest
-import logging
 
 from sam.base.sfc import SFCI
 from sam.base.compatibility import screenInput

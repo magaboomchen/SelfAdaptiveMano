@@ -30,7 +30,7 @@ class BessControlPlane(object):
                 return True
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex,
-                    " isBESSAlive ")
+                    " isBESSAlive, bessServerUrl is {0} ".format(bessServerUrl))
                 count = count - 1
         return False
 

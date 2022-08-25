@@ -1,14 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from typing import Dict, Union
-
+import uuid
+from typing import Union
 from sam.base.acl import ACLTable
+from sam.base.rateLimiter import RateLimiterConfig
+
 from sam.base.server import Server
 from sam.base.switch import Switch
-from sam.base.rateLimiter import RateLimiterConfig
-from sam.base.monitorStatistic import MonitorStatistics
-from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.vnfiStatus import VNFIStatus
 
 VNF_TYPE_CLASSIFIER = 0
 VNF_TYPE_FORWARD = 1
@@ -88,14 +88,19 @@ class VNF(object):
 
 
 class VNFI(object):
-    def __init__(self, vnfID=None, vnfType=None, vnfiID=None,
-                 config=None, node=None, vnfiStatus=None):
+    def __init__(self, vnfID=None,  # type: Union[VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNF_TYPE_FW]
+                 vnfType=None,      # type: Union[VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNF_TYPE_FW]
+                 vnfiID=None,       # type: uuid
+                 config=None,       # type: Union[RateLimiterConfig, ACLTable]
+                 node=None,         # type: Union[Server, Switch]
+                 vnfiStatus=None    # type: VNFIStatus
+                ):
         self.vnfID = vnfID              # equal to the vnfType
         self.vnfType = vnfType
         self.vnfiID = vnfiID
         self.config = config
-        self.node = node                # type: Union[Server, Switch]
-        self.vnfiStatus = vnfiStatus    # type: VNFIStatus
+        self.node = node                
+        self.vnfiStatus = vnfiStatus    
         self.minCPUNum = 1
         self.maxCPUNum = 1  # CPU core number: 100%
         self.cpuCoreDistribution = []  # place vnfi on specific core
@@ -132,32 +137,3 @@ class VNFI(object):
 
     def __repr__(self):
         return str(self)
-
-
-# class VNFIRequest(object):
-#     def __init__(self, userID, requestID, requestType, vnfiID, config=None):
-#         self.userID =  userID # 0 is root
-#         self.requestID = requestID # uuid1()
-#         self.requestType = requestType # GETCONFIG/UPDATECONFIG/GETVNFI
-#         self.vnfiID = vnfiID
-#         self.config = config
-
-
-class VNFIStatus(object):
-    def __init__(self, inputTrafficAmount=None, # type: Dict[Union[SFC_DIRECTION_0, SFC_DIRECTION_1], int]
-                 inputPacketAmount=None,        # type: Dict[Union[SFC_DIRECTION_0, SFC_DIRECTION_1], int]
-                 outputTrafficAmount=None,      # type: Dict[Union[SFC_DIRECTION_0, SFC_DIRECTION_1], int]
-                 outputPacketAmount=None,       # type: Dict[Union[SFC_DIRECTION_0, SFC_DIRECTION_1], int]
-                 state=None                     # type: Union[MonitorStatistics, RateLimiterConfig, ACLTable]
-                ):
-        self.inputTrafficAmount = inputTrafficAmount  # Dict[int, int]
-        self.inputPacketAmount = inputPacketAmount
-        self.outputTrafficAmount = outputTrafficAmount
-        self.outputPacketAmount = outputPacketAmount
-        self.state = state
-
-    def __str__(self):
-        string = "{0}\n".format(self.__class__)
-        for key, values in self.__dict__.items():
-            string = string + "{0}:{1}\n".format(key, values)
-        return string

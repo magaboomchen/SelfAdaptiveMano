@@ -224,7 +224,7 @@ class VNFIAdder(object):
         vdev1 = '%s,path=%s' % ('net_virtio_user%d' % (vioStart + 1) , _vdev1[1][6:])
         imageName = vcConfig.RATELIMITER_IMAGE_CLICK
         containerName = 'vnf-%s' % vnfi.vnfiID 
-        filePrefix = 'fw-%d' % (vioStart / 2)
+        filePrefix = 'rl-%d' % (vioStart / 2)
         dpdkInfo = 'DPDKInfo('
         socketMem = '' 
         for each in cpus:

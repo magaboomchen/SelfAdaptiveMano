@@ -7,7 +7,7 @@ from logging import Logger
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REQUEST, MessageAgent, SAMMessage
 from sam.base.request import REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_UPDATE_SFC_STATE, Request
 from sam.base.exceptionProcessor import ExceptionProcessor
-from sam.base.sfc import STATE_ACTIVE, STATE_MANUAL
+from sam.base.sfcConstant import STATE_ACTIVE, STATE_MANUAL
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 

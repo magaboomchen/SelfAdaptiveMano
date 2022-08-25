@@ -19,7 +19,7 @@ Note:
             }
         CMD_TYPE_GET_SFCI_STATE:
             attributes = {
-                "vnfis": self.vnfis   # see vnf.py, store state in vnfi.vnfiStatus(Class VNFIStatus)
+                "vnfis": self.vnfis   # see vnf.py, store state in vnfi.vnfiStatus
                 "sfci": self.sfci   # see sfc.py, store state in sfci.sloRealTimeValue
             }
     Class TestBase has many useful function;

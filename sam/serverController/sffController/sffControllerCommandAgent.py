@@ -20,8 +20,6 @@ from sam.serverController.sffController.sffFailureEmulator import SFFFailureEmul
 from sam.serverController.sffController.sibMaintainer import SIBMS
 from sam.serverController.sffController.argParser import ArgParser
 
-# TODO: finish sfci monitor
-
 
 class SFFControllerCommandAgent(object):
     def __init__(self, zoneName=""):
@@ -100,8 +98,8 @@ class SFFControllerCommandAgent(object):
                     rplyMsg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD_REPLY,
                                                                     cmdRply)
                     queueName = MEDIATOR_QUEUE
-                    if cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
-                        queueName = MEASURER_QUEUE
+                    # if cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
+                    #     queueName = MEASURER_QUEUE
                     self._messageAgent.sendMsg(queueName, rplyMsg)
             elif msgType == None:
                 pass

@@ -21,11 +21,14 @@ import pytest
 
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 from sam.base.compatibility import screenInput
-from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, REGULATOR_QUEUE, TURBONET_ZONE
+from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, \
+                                    REGULATOR_QUEUE, TURBONET_ZONE
 from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
-                        REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_UPDATE_SFC_STATE, Request
-from sam.base.sfc import SFCI, STATE_MANUAL
+                        REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, \
+                        REQUEST_TYPE_UPDATE_SFC_STATE, Request
+from sam.base.sfc import SFCI
+from sam.base.sfcConstant import STATE_MANUAL
 from sam.test.integrate.intTestBase import IntTestBaseClass
 
 
@@ -39,23 +42,23 @@ class TestAddSFCClass(IntTestBaseClass):
 
         # you can overwrite following function to test different sfc/sfci
         classifier = None
-        sfc1 = self.genLargeBandwidthSFC(classifier)
+        sfc1 = self.genLargeBandwidthSFC(classifier, TURBONET_ZONE)
         rM = sfc1.routingMorphic
         sfci1 = self.genSFCITemplate(rM)
 
-        sfc2 = self.genHighAvaSFC(classifier)
+        sfc2 = self.genHighAvaSFC(classifier, TURBONET_ZONE)
         rM = sfc2.routingMorphic
         sfci2 = self.genSFCITemplate(rM)
 
-        sfc3 = self.genLowLatencySFC(classifier)
+        sfc3 = self.genLowLatencySFC(classifier, TURBONET_ZONE)
         rM = sfc3.routingMorphic
         sfci3 = self.genSFCITemplate(rM)
 
-        sfc4 = self.genLargeConnectionSFC(classifier)
+        sfc4 = self.genLargeConnectionSFC(classifier, TURBONET_ZONE)
         rM = sfc4.routingMorphic
         sfci4 = self.genSFCITemplate(rM)
 
-        sfc5 = self.genBestEffortSFC(classifier)
+        sfc5 = self.genBestEffortSFC(classifier, TURBONET_ZONE)
         rM = sfc5.routingMorphic
         sfci5 = self.genSFCITemplate(rM)
 

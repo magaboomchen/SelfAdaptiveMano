@@ -5,7 +5,8 @@ from sam.base.sfc import SFCI
 from sam.base.slo import SLO
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.vnf import VNF_TYPE_RATELIMITER, VNFI, VNFIStatus
+from sam.base.vnfiStatus import VNFIStatus
+from sam.base.vnf import VNF_TYPE_RATELIMITER, VNFI
 from sam.base.command import CMD_STATE_SUCCESSFUL, CommandReply
 from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD_REPLY, \
                                     TURBONET_ZONE, SAMMessage, MessageAgent

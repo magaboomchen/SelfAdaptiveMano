@@ -12,7 +12,7 @@ from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL
 from sam.base.routingMorphic import IPV6_ROUTE_PROTOCOL
 from sam.base.routingMorphic import SRV6_ROUTE_PROTOCOL
 from sam.base.routingMorphic import ROCEV1_ROUTE_PROTOCOL
-from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
 
 
 class SrcDstPair(object):

@@ -15,9 +15,10 @@ import uuid
 import pytest
 
 from sam.base.compatibility import screenInput
-from sam.base.messageAgent import DISPATCHER_QUEUE, TURBONET_ZONE
+from sam.base.sfcConstant import MANUAL_SCALE, STATE_MANUAL
+from sam.base.messageAgent import DISPATCHER_QUEUE, REGULATOR_QUEUE, SIMULATOR_ZONE, TURBONET_ZONE
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
-                        REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, Request
+                        REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_UPDATE_SFC_STATE, Request
 from sam.test.integrate.intTestBase import IntTestBaseClass
 
 
@@ -28,7 +29,8 @@ class TestAddSFCClass(IntTestBaseClass):
 
         # you can overwrite following function to test different sfc/sfci
         classifier = None
-        self.sfc = self.genLargeBandwidthSFC(classifier, TURBONET_ZONE)
+        self.sfc = self.genLargeBandwidthSFC(classifier, TURBONET_ZONE,
+                                                MANUAL_SCALE)
         rM = self.sfc.routingMorphic
         self.sfci = self.genSFCITemplate(rM)
 
@@ -75,6 +77,19 @@ class TestAddSFCClass(IntTestBaseClass):
         self.sendRequest(DISPATCHER_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
+                        "Then press andy key to continue!")
+        screenInput()
+
+        rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_UPDATE_SFC_STATE,
+            attributes={
+                "sfc": self.getSFCFromDB(self.sfc.sfcUUID),
+                "newState": STATE_MANUAL,
+                "zone": TURBONET_ZONE
+            })
+        self.sendRequest(REGULATOR_QUEUE, rq)
+
+        self.logger.info("Please check if regulator recvs requests? "\
+                        "And SFC state turn to STATE_MANUAL? " \
                         "Then press andy key to continue!")
         screenInput()
 

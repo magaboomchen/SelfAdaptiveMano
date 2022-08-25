@@ -10,7 +10,7 @@ from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, MSG_TYPE_REQUEST, SAMMessage
 from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI, Request
-from sam.base.sfc import AUTO_RECOVERY, STATE_ACTIVE, STATE_DELETED, STATE_INACTIVE, STATE_RECOVER_MODE
+from sam.base.sfcConstant import AUTO_RECOVERY, STATE_ACTIVE, STATE_DELETED, STATE_INACTIVE, STATE_RECOVER_MODE
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 
 RECOVERY_TASK_STATE_READY = "RECOVERY_TASK_STATE_READY"

@@ -9,7 +9,8 @@ from sam.base.messageAgent import TURBONET_ZONE, SAMMessage, MessageAgent, MEDIA
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import SFF_CONTROLLER_IP, SFF_CONTROLLER_PORT
 from sam.base.sfc import SFCI
 from sam.base.slo import SLO
-from sam.base.vnf import VNF_TYPE_RATELIMITER, VNFI, VNFIStatus
+from sam.base.vnfiStatus import VNFIStatus
+from sam.base.vnf import VNF_TYPE_RATELIMITER, VNFI
 
 
 class SFFControllerStub(object):

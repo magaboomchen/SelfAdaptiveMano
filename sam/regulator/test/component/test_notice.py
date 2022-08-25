@@ -15,20 +15,24 @@ import uuid
 
 import pytest
 
-from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, REGULATOR_QUEUE, SIMULATOR_ZONE, TURBONET_ZONE
+from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, \
+                                REGULATOR_QUEUE, SIMULATOR_ZONE, TURBONET_ZONE
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
 from sam.base.routingMorphic import RoutingMorphic
 from sam.base.server import SERVER_TYPE_NFVI, Server
-from sam.base.sfc import APP_TYPE_LARGE_BANDWIDTH, SFC, SFCI, STATE_ACTIVE, STATE_DELETED, STATE_RECOVER_MODE
+from sam.base.sfc import SFC, SFCI
+from sam.base.sfcConstant import APP_TYPE_LARGE_BANDWIDTH, STATE_ACTIVE, \
+                                    STATE_DELETED, STATE_RECOVER_MODE
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.slo import SLO
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY, Switch
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
-from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNFI_RESOURCE_QUOTA_SMALL
+from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNF_TYPE_MONITOR, \
+                        VNF_TYPE_RATELIMITER, VNFI, VNFI_RESOURCE_QUOTA_SMALL
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.base.messageAgent import DISPATCHER_QUEUE, REGULATOR_QUEUE, \

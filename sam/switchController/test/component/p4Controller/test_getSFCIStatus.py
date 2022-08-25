@@ -27,9 +27,10 @@ from sam.base.monitorStatistic import MonitorStatistics
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, \
                                     ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
-from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1, SFCI
-from sam.base.vnf import VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, \
-                            VNFIStatus
+from sam.base.sfc import SFCI
+from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.vnfiStatus import VNFIStatus
+from sam.base.vnf import VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER
 from sam.switchController.test.component.p4ControllerTestBase import TestP4ControllerBase
 
 

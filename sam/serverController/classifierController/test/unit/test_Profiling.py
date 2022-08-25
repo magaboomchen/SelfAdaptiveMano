@@ -11,7 +11,8 @@ from scapy.layers.inet import IP
 from sam.base.compatibility import screenInput
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.routingMorphic import RoutingMorphic
-from sam.base.sfc import SFC, APP_TYPE_NORTHSOUTH_WEBSITE
+from sam.base.sfc import SFC
+from sam.base.sfcConstant import APP_TYPE_NORTHSOUTH_WEBSITE
 from sam.base.slo import SLO
 from sam.base.vnf import PREFERRED_DEVICE_TYPE_SERVER, VNF, VNF_TYPE_FORWARD
 from sam.base.server import Server, SERVER_TYPE_CLASSIFIER
