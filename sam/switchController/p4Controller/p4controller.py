@@ -2,6 +2,7 @@ import sam
 import uuid
 
 from agent.p4Agent import P4Agent
+from agent.p4MonitorStatus import P4MonitorStat, P4MonitorEntry, P4MonitorStatus
 
 from sam.base.command import CMD_TYPE_GET_SFCI_STATE, CommandReply, CMD_TYPE_ADD_SFC, CMD_TYPE_DEL_SFC, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL, CMD_STATE_PROCESSING
 from sam.base.command import CMD_TYPE_DEL_CLASSIFIER_ENTRY, CMD_TYPE_DEL_NSH_ROUTE, Command, CMD_TYPE_ADD_NSH_ROUTE, CMD_TYPE_ADD_CLASSIFIER_ENTRY
@@ -9,7 +10,7 @@ from sam.base.server import Server
 from sam.base.switch import Switch
 from sam.base.messageAgent import SAMMessage, MessageAgent, P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD, MSG_TYPE_P4CONTROLLER_CMD_REPLY, MEDIATOR_QUEUE, TURBONET_ZONE
 from sam.base.messageAgent import MSG_TYPE_TURBONET_CONTROLLER_CMD
-from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT, TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT, TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT, P4_CONTROLLER_PORT, P4_CONTROLLER_IP
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.vnf import VNFIStatus
@@ -22,6 +23,7 @@ from sam.switchController.base.p4ClassifierEntry import P4ClassifierEntry
 from sam.switchController.base.p4Action import ACTION_TYPE_DECAPSULATION_NSH, ACTION_TYPE_ENCAPSULATION_NSH, ACTION_TYPE_FORWARD, FIELD_TYPE_ETHERTYPE, FIELD_TYPE_MDTYPE, FIELD_TYPE_NEXT_PROTOCOL, FIELD_TYPE_SI, FIELD_TYPE_SPI, P4Action, FieldValuePair
 from sam.switchController.base.p4Match import ETH_TYPE_IPV4, ETH_TYPE_NSH, P4Match, ETH_TYPE_IPV6, ETH_TYPE_ROCEV1
 from sam.switchController.base.p4RouteEntry import P4RouteEntry
+from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
 
 P4CONTROLLER_P4_SWITCH_ID_1 = 20
 P4CONTROLLER_P4_SWITCH_ID_2 = 21
@@ -43,6 +45,7 @@ class P4Controller:
         self._commandresults = {}
         self._sfclist = {}
         self._p4agent = {}
+        self._p4monitor = {}
         # self._p4agent[0] = P4Agent('192.168.100.4:50052')
         # self._p4agent[1] = P4Agent('192.168.100.6:50052')
         self.logger.info('P4 controller initialization complete.')
@@ -57,6 +60,8 @@ class P4Controller:
             msg = self._messageAgent.getMsg(self.queueName)
             msgType = msg.getMessageType()
             if msgType == None:
+                # get from grpc
+                # get from digest
                 pass
             elif msgType == MSG_TYPE_P4CONTROLLER_CMD:
                 self.logger.info('Got a command.')
@@ -139,12 +144,12 @@ class P4Controller:
         hasdir0 = False
         hasdir1 = False
         directions = _cmd.attributes['sfc'].directions
-        if directions[0]['ID'] == 0:
+        if directions[0]['ID'] == SFC_DIRECTION_0:
             hasdir0 = True
         else:
             hasdir1 = True
         if len(directions) == 2:
-            if directions[1]['ID'] == 0:
+            if directions[1]['ID'] == SFC_DIRECTION_0:
                 hasdir0 = True
             else:
                 hasdir1 = True
@@ -185,12 +190,12 @@ class P4Controller:
         hasdir0 = False
         hasdir1 = False
         directions = _cmd.attributes['sfc'].directions
-        if directions[0]['ID'] == 0:
+        if directions[0]['ID'] == SFC_DIRECTION_0:
             hasdir0 = True
         else:
             hasdir1 = True
         if len(directions) == 2:
-            if directions[1]['ID'] == 0:
+            if directions[1]['ID'] == SFC_DIRECTION_0:
                 hasdir0 = True
             else:
                 hasdir1 = True
@@ -328,6 +333,12 @@ class P4Controller:
     def _delsfci(self, _cmd):
         # prepare to copy from add
         return True
+    
+    def _updatemonitor(self, _p4id):
+        pass
+    
+    def _addmonitorentry(self, _p4id, _service_path_index, _service_index, _src_addr, _dst_addr):
+        pass
 
 if __name__ == '__main__':
     p4ctl = P4Controller('')
