@@ -208,6 +208,7 @@ class SFFSFCIAdder(BessControlPlane):
                     value = sibm.getSFFEM1MatchValue(sfci, vnfiIdx, directionID)
                     value = self._sc.int2Bytes(value, 4)
                     argument = Any()
+                    # self.logger.debug("value {0}, oGate {1}".format(value, oGate))
                     arg = module_msg_pb2.ExactMatchCommandAddArg(
                         gate=oGate,
                         fields=[{"value_bin": value}]

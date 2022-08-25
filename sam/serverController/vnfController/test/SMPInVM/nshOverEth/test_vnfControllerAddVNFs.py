@@ -3,14 +3,11 @@
 
 '''
 Usage:
-    (1) sudo env "PATH=$PATH" python -m pytest ./test_vnfControllerAddMON.py -s --disable-warnings
-    (2) Please run 'python  ./serverAgent.py  0000:06:00.0  enp1s0  nfvi  2.2.0.98'
+    (1) sudo env "PATH=$PATH" python -m pytest ./test_vnfControllerAddVNFs.py -s --disable-warnings
+    (2) Please run 'python  ./serverAgent.py  0000:07:00.0  enp1s0  nfvi  2.2.0.98 10001'
         on the NFVI running bess.
-    (3) Manual test click control socket:
-            cd /data/smith/Projects/SelfAdaptiveMano/sam/serverController/vnfController/click/ControlSocket && java ControlSocket 192.168.20.6 49167 ipv4_mon_direction0 stat
 '''
 
-import os
 import time
 import uuid
 
@@ -19,41 +16,45 @@ from scapy.all import sniff, AsyncSniffer, Raw, sendp
 from scapy.layers.inet import IP, TCP
 from scapy.contrib.nsh import NSH
 from scapy.layers.inet6 import IPv6
+from sam.base.compatibility import screenInput
 
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, MEASURER_PORT, VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
 from sam.base.vnfiStatus import VNFIStatus
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.monitorStatistic import MonitorStatistics
 from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
-from sam.base.acl import ACLTable
+from sam.base.acl import ACLTable, ACLTuple, ACL_ACTION_ALLOW, ACL_PROTO_TCP
 from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.messageAgent import TURBONET_ZONE, VNF_CONTROLLER_QUEUE, MSG_TYPE_VNF_CONTROLLER_CMD, \
-    SFF_CONTROLLER_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE, MessageAgent
-from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
-from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, VNF_TYPE_FW
+from sam.base.messageAgent import TURBONET_ZONE, VNF_CONTROLLER_QUEUE, \
+    MSG_TYPE_VNF_CONTROLLER_CMD, SFF_CONTROLLER_QUEUE, \
+    MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE, MessageAgent
+from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL,\
+                                    ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
+from sam.base.vnf import VNF_TYPE_MONITOR, VNF_TYPE_RATELIMITER, VNFI, \
+                                                VNF_TYPE_FW
 from sam.base.server import SERVER_TYPE_NFVI, Server
 from sam.serverController.serverManager.serverManager import SERVERID_OFFSET
 from sam.base.command import CMD_STATE_SUCCESSFUL
-from sam.base.compatibility import screenInput
-from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.base.shellProcessor import ShellProcessor
-from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
+from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, \
+                                            CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
+from sam.test.fixtures.measurementStub import MeasurementStub
 from sam.test.fixtures.mediatorStub import MediatorStub
 from sam.base.test.fixtures.ipv4MorphicDict import ipv4MorphicDictTemplate
-from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, SFF1_CONTROLNIC_INTERFACE, WEBSITE_REAL_IPV6, TestBase, WEBSITE_REAL_IP, \
+from sam.test.testBase import DIRECTION0_TRAFFIC_SPI, DIRECTION1_TRAFFIC_SPI, \
+    OUTTER_CLIENT_IPV6, SFF1_CONTROLNIC_INTERFACE, WEBSITE_REAL_IPV6, TestBase, \
+    WEBSITE_REAL_IP, OUTTER_CLIENT_IP, \
     CLASSIFIER_DATAPATH_IP, SFCI1_0_EGRESS_IP, SFCI1_1_EGRESS_IP, \
     SFF1_DATAPATH_IP, SFF1_DATAPATH_MAC, SFF1_CONTROLNIC_IP, SFF1_CONTROLNIC_MAC
 from sam.serverController.sffController.test.component.testConfig import TESTER_SERVER_DATAPATH_IP, \
     TESTER_SERVER_DATAPATH_MAC, TESTER_DATAPATH_INTF
-from sam.serverController.vnfController.test.fixtures import sendDirection0Traffic
-from sam.serverController.vnfController.test.fixtures import sendDirection1Traffic
-from sam.serverController.vnfController.test.fixtures.sendDirection0Traffic import sendDirection0Traffic as sD0Traffic
-from sam.serverController.vnfController.test.fixtures.sendDirection1Traffic import sendDirection1Traffic as sD1Traffic
+from sam.serverController.vnfController.test.fixtures.sendDirection0Traffic import DGID, sendDirection0Traffic
+from sam.serverController.vnfController.test.fixtures.sendDirection1Traffic import sendDirection1Traffic
 
 
-class TestVNFAddMON(TestBase):
+class TestVNFAddFW(TestBase):
     @pytest.fixture(scope="function")
-    def setup_addMON(self):
+    def setup_addVNFs(self):
         # setup
         logConfigur = LoggerConfigurator(__name__, './log',
             'tester.log', level='debug')
@@ -64,22 +65,45 @@ class TestVNFAddMON(TestBase):
         self.clearQueue()
         self.killAllModule()
 
-        self.routeMorphic = SRV6_ROUTE_PROTOCOL # ROCEV1_ROUTE_PROTOCOL
-
-        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
-        self.sfc = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_MONITOR],
-                            routingMorphicTemplate=ipv4MorphicDictTemplate,
-                            zone=TURBONET_ZONE)
-        self.sfci = self.genBiDirection10BackupSFCI()
-        self.mediator = MediatorStub()
-
+        self.routeMorphic = IPV4_ROUTE_PROTOCOL
         self.server = self.genTesterServer(TESTER_SERVER_DATAPATH_IP,
                                             TESTER_SERVER_DATAPATH_MAC)
+        self.sfcList = []
+        self.sfciList = []
 
+        classifier = self.genClassifier(datapathIfIP = CLASSIFIER_DATAPATH_IP)
+        sfc1 = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_FW],
+                            routingMorphicTemplate=ipv4MorphicDictTemplate,
+                            zone=TURBONET_ZONE)
+        sfci1 = self.genBiDirection10BackupSFCI()
+
+
+        sfc2 = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_MONITOR],
+                            routingMorphicTemplate=ipv4MorphicDictTemplate,
+                            zone=TURBONET_ZONE)
+        sfci2 = self.genBiDirection10BackupSFCI()
+
+
+        sfc3 = self.genBiDirectionSFC(classifier, vnfTypeSeq=[VNF_TYPE_RATELIMITER],
+                            routingMorphicTemplate=ipv4MorphicDictTemplate,
+                            zone=TURBONET_ZONE)
+        sfci3 = self.genBiDirection10BackupSFCI()
+
+
+        # self.sfcList = [sfc1]
+        # self.sfciList = [sfci1]
+
+        # self.sfcList = [sfc1, sfc2]
+        # self.sfciList = [sfci1, sfci2]
+
+        self.sfcList = [sfc1, sfc2, sfc3]
+        self.sfciList = [sfci1, sfci2, sfci3]
+
+        self.mediator = MediatorStub()
         self.runSFFController()
         self.addSFCI2SFF()
         self.runVNFController()
-
+        
         self.measurer = MeasurementStub()
 
         yield
@@ -101,47 +125,79 @@ class TestVNFAddMON(TestBase):
                 server.setControlNICMAC(SFF1_CONTROLNIC_MAC)
                 server.setDataPathNICMAC(SFF1_DATAPATH_MAC)
                 server.updateResource()
-                config = None
-                vnfi = VNFI(VNF_TYPE_MONITOR, vnfType=VNF_TYPE_MONITOR, 
+                aclT = ACLTable()
+                ipv4RulesList = self.genTestIPv4FWRules()
+                for ipv4Rule in ipv4RulesList:
+                    aclT.addRules(ipv4Rule, IPV4_ROUTE_PROTOCOL)
+                ipv6RulesList = self.genTestIPv6FWRules()
+                for ipv6Rule in ipv6RulesList:
+                    aclT.addRules(ipv6Rule, IPV6_ROUTE_PROTOCOL)
+                rocev1RulesList = self.genTestRoceV1FWRules()
+                for rocev1Rule in rocev1RulesList:
+                    aclT.addRules(rocev1Rule, ROCEV1_ROUTE_PROTOCOL)
+                config = aclT
+                vnfi = VNFI(VNF_TYPE_FW, vnfType=VNF_TYPE_FW, 
                     vnfiID=uuid.uuid1(), config=config, node=server)
                 vnfiSequence[index].append(vnfi)
         return vnfiSequence
 
+    def genTestIPv4FWRules(self):
+        rules = []
+        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=OUTTER_CLIENT_IP, dstAddr=WEBSITE_REAL_IP, 
+            srcPort=(1234, 1234), dstPort=(80, 80)))
+        rules.append(ACLTuple(ACL_ACTION_ALLOW, proto=ACL_PROTO_TCP, srcAddr=WEBSITE_REAL_IP, dstAddr=OUTTER_CLIENT_IP,
+            srcPort=(80, 80), dstPort=(1234, 1234)))
+        rules.append(ACLTuple(ACL_ACTION_ALLOW))
+        return rules
+
+    def genTestIPv6FWRules(self):
+        rules = []
+        rules.append(ACLTuple(ACL_ACTION_ALLOW, dstAddr=WEBSITE_REAL_IPV6+"/128"))
+        rules.append(ACLTuple(ACL_ACTION_ALLOW, dstAddr=OUTTER_CLIENT_IPV6+"/128"))
+        rules.append(ACLTuple(ACL_ACTION_ALLOW))
+        return rules
+
+    def genTestRoceV1FWRules(self):
+        rules = []
+        rules.append(ACLTuple(ACL_ACTION_ALLOW, dstAddr=WEBSITE_REAL_IPV6+"/128"))
+        rules.append(ACLTuple(ACL_ACTION_ALLOW, dstAddr=OUTTER_CLIENT_IPV6+"/128"))
+        rules.append(ACLTuple(ACL_ACTION_ALLOW))
+        return rules
+
     def addSFCI2SFF(self):
-        self.logger.info("setup add SFCI to sff")
-        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
-        queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, TURBONET_ZONE)
-        self.sendCmd(queueName, MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
-        self.verifyCmdRply(MEDIATOR_QUEUE, self.addSFCICmd.cmdID)
+        for idx, sfc in enumerate(self.sfcList):
+            self.logger.info("setup add SFCI to sff")
+            self.addSFCICmd = self.mediator.genCMDAddSFCI(sfc, self.sfciList[idx])
+            queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, TURBONET_ZONE)
+            self.sendCmd(queueName, MSG_TYPE_SFF_CONTROLLER_CMD, self.addSFCICmd)
+            self.verifyCmdRply(MEDIATOR_QUEUE, self.addSFCICmd.cmdID)
 
     def delVNFI4Server(self):
-        self.logger.warning("Deleting VNFII")
-        self.delSFCICmd = self.mediator.genCMDDelSFCI(self.sfc, self.sfci)
-        queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, TURBONET_ZONE)
-        self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
-        self.verifyCmdRply(MEDIATOR_QUEUE, self.delSFCICmd.cmdID)
+        for idx, sfc in enumerate(self.sfcList):
+            self.logger.warning("Deleting VNFI")
+            self.delSFCICmd = self.mediator.genCMDDelSFCI(sfc, self.sfciList[idx])
+            queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, TURBONET_ZONE)
+            self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD, self.delSFCICmd)
+            self.verifyCmdRply(MEDIATOR_QUEUE, self.delSFCICmd.cmdID)
 
-    def test_addMON(self, setup_addMON):
+    def test_addVNFs(self, setup_addVNFs):
         # exercise
         self.logger.info("exercise")
-        self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfc, self.sfci)
-        queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, TURBONET_ZONE)
-        self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD, self.addSFCICmd)
+        for idx, sfc in enumerate(self.sfcList):
+            self.addSFCICmd = self.mediator.genCMDAddSFCI(sfc, self.sfciList[idx])
+            queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, TURBONET_ZONE)
+            self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD, self.addSFCICmd)
 
-        # verifiy
-        self.verifyCmdRply(MEDIATOR_QUEUE, self.addSFCICmd.cmdID)
-        self.verifyDirection0Traffic()
-        self.verifyDirection1Traffic()
+            # verifiy
+            self.verifyCmdRply(MEDIATOR_QUEUE, self.addSFCICmd.cmdID)
+            self.spi = idx+1
+            self.verifyDirection0Traffic(spi=self.spi)
 
-        # self.logger.info("please input any key to continue!")
-        # screenInput()
+            self.spi = 0x800000 | (idx+1)
+            self.verifyDirection1Traffic(spi=self.spi)
 
         # exercise
         self.logger.info("exercise")
-        self.sP.runPythonScript(os.path.abspath(sendDirection0Traffic.__file__), cmdSuffix="")
-        self.sP.runPythonScript(os.path.abspath(sendDirection1Traffic.__file__), cmdSuffix="")
-        self.logger.info("Sending pkts")
-        time.sleep(2)
         self.getSFCIStateCmd = self.measurer.genCMDGetSFCIState()
         self.startMsgAgentRPCReciever(MEASURER_IP, MEASURER_PORT)
         self.sendCmdByRPC(VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT,
@@ -150,10 +206,10 @@ class TestVNFAddMON(TestBase):
         # verifiy
         self.verifyGetSFCIStateCmdRply(MEASURER_IP, MEASURER_PORT, self.getSFCIStateCmd.cmdID)
 
-    def verifyDirection0Traffic(self):
+    def verifyDirection0Traffic(self, spi):
         aSniffer = self._checkEncapsulatedTraffic(inIntf=TESTER_DATAPATH_INTF)
         time.sleep(2)
-        sD0Traffic(routeMorphic=self.routeMorphic)
+        sendDirection0Traffic(routeMorphic=self.routeMorphic, spi=spi)
         while True:
             if not aSniffer.running:
                 break
@@ -168,7 +224,7 @@ class TestVNFAddMON(TestBase):
         aSniffer.start()
         return aSniffer
 
-    def encap_callback(self,frame):
+    def encap_callback(self, frame):
         self.logger.info("Get encap back packet!")
         frame.show()
         if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
@@ -180,7 +236,7 @@ class TestVNFAddMON(TestBase):
             innerPkt = frame.getlayer('IP')[1]
             assert innerPkt[IP].dst == WEBSITE_REAL_IP
         elif DEFAULT_CHAIN_TYPE == CHAIN_TYPE_NSHOVERETH:
-            condition = (frame[NSH].spi == DIRECTION0_TRAFFIC_SPI \
+            condition = (frame[NSH].spi == self.spi \
                 and frame[NSH].si == 0)
             assert condition == True
             if self.routeMorphic == IPV4_ROUTE_PROTOCOL:
@@ -200,10 +256,10 @@ class TestVNFAddMON(TestBase):
         else:
             raise ValueError("Unknown chain type {0}".format(DEFAULT_CHAIN_TYPE))
 
-    def verifyDirection1Traffic(self):
+    def verifyDirection1Traffic(self, spi):
         aSniffer = self._checkDecapsulatedTraffic(inIntf=TESTER_DATAPATH_INTF)
         time.sleep(2)
-        sD1Traffic(routeMorphic=self.routeMorphic)
+        sendDirection1Traffic(routeMorphic=self.routeMorphic, spi=spi)
         while True:
             if not aSniffer.running:
                 break
@@ -229,7 +285,7 @@ class TestVNFAddMON(TestBase):
             innerPkt = frame.getlayer('IP')[1]
             assert innerPkt[IP].src == WEBSITE_REAL_IP
         elif DEFAULT_CHAIN_TYPE == CHAIN_TYPE_NSHOVERETH:
-            condition = (frame[NSH].spi == DIRECTION1_TRAFFIC_SPI \
+            condition = (frame[NSH].spi == self.spi \
                 and frame[NSH].si == 0)
             if self.routeMorphic == IPV4_ROUTE_PROTOCOL:
                 assert frame[NSH].nextproto == 0x1

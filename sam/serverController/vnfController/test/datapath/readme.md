@@ -34,3 +34,14 @@ sudo ifconfig ens5f1 promisc
 ```
 docker build -t samfastclick:v1 .
 ```
+
+# VNFController Test Topology
+## Disable IGB_UIO on host
+```
+sudo ./sam/serverController/vnfController/test/datapath/setup/host/deSetup.sh
+```
+
+## Enable IGB_UIO on VM
+```
+sudo ./sam/serverController/vnfController/test/datapath/setup/vm/setup_nic_82599.sh
+```

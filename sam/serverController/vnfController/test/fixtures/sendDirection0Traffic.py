@@ -26,7 +26,7 @@ from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, 
 SGID = 1234<<64
 DGID = 5678<<64
 
-def sendDirection0Traffic(routeMorphic=IPV4_ROUTE_PROTOCOL, pufferDstIP=FW_VNFI1_0_IP, pktNum=1):
+def sendDirection0Traffic(routeMorphic=IPV4_ROUTE_PROTOCOL, pufferDstIP=FW_VNFI1_0_IP, pktNum=1, spi=DIRECTION0_TRAFFIC_SPI):
     cnt = 0
     while True:
         tcp = TCP(sport=1234, dport=80)
@@ -60,7 +60,7 @@ def sendDirection0Traffic(routeMorphic=IPV4_ROUTE_PROTOCOL, pufferDstIP=FW_VNFI1
                 nextproto=0x6
             else:
                 pass
-            nsh = NSH(spi = DIRECTION0_TRAFFIC_SPI, si = DIRECTION0_TRAFFIC_SI, nextproto=nextproto, length=0x6)
+            nsh = NSH(spi = spi, si = DIRECTION0_TRAFFIC_SI, nextproto=nextproto, length=0x6)
             frame = ether / nsh / oriPkt
 
 

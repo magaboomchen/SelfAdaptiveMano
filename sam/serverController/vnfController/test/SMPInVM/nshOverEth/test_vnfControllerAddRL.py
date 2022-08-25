@@ -18,6 +18,7 @@ from scapy.contrib.nsh import NSH
 from scapy.layers.inet6 import IPv6
 from scapy.contrib.roce import GRH
 
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, MEASURER_PORT, VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.monitorStatistic import MonitorStatistics
 from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
@@ -136,11 +137,12 @@ class TestVNFAddRL(TestBase):
         # exercise
         self.logger.info("exercise")
         self.getSFCIStateCmd = self.measurer.genCMDGetSFCIState()
-        queueName = self._messageAgent.genQueueName(VNF_CONTROLLER_QUEUE, TURBONET_ZONE)
-        self.sendCmd(queueName, MSG_TYPE_VNF_CONTROLLER_CMD, self.getSFCIStateCmd)
+        self.startMsgAgentRPCReciever(MEASURER_IP, MEASURER_PORT)
+        self.sendCmdByRPC(VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT,
+                            MSG_TYPE_VNF_CONTROLLER_CMD, self.getSFCIStateCmd)
 
         # verifiy
-        self.verifyGetSFCIStateCmdRply(MEDIATOR_QUEUE, self.getSFCIStateCmd.cmdID)
+        self.verifyGetSFCIStateCmdRply(MEASURER_IP, MEASURER_PORT, self.getSFCIStateCmd.cmdID)
 
     def verifyDirection0Traffic(self):
         aSniffer = self._checkEncapsulatedTraffic(inIntf=TESTER_DATAPATH_INTF)
@@ -247,8 +249,8 @@ class TestVNFAddRL(TestBase):
         assert cmdRply.attributes['zone'] == TURBONET_ZONE
         self.logger.info("Verify cmy rply successfully!")
 
-    def verifyGetSFCIStateCmdRply(self, queueName, cmdID):
-        cmdRply = self.recvCmdRply(queueName)
+    def verifyGetSFCIStateCmdRply(self, listenIP, listenPort, cmdID):
+        cmdRply = self.recvCmdRplyByRPC(listenIP, listenPort)
         assert cmdRply.cmdID == cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
         assert cmdRply.attributes['zone'] == TURBONET_ZONE

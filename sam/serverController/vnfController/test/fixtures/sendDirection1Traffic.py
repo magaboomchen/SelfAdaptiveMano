@@ -16,7 +16,7 @@ from sam.serverController.sffController.test.component.testConfig import TESTER_
 from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
 
 
-def sendDirection1Traffic(routeMorphic=IPV4_ROUTE_PROTOCOL, pufferDstIP=FW_VNFI1_1_IP):
+def sendDirection1Traffic(routeMorphic=IPV4_ROUTE_PROTOCOL, pufferDstIP=FW_VNFI1_1_IP, spi=DIRECTION1_TRAFFIC_SPI):
     tcp = TCP(sport=80, dport=1234)
     data = "Hello World"
     payloadLen = len(data)+len(tcp)
@@ -45,7 +45,7 @@ def sendDirection1Traffic(routeMorphic=IPV4_ROUTE_PROTOCOL, pufferDstIP=FW_VNFI1
             nextproto=0x6
         else:
             pass
-        nsh = NSH(spi = DIRECTION1_TRAFFIC_SPI, si = DIRECTION1_TRAFFIC_SI, nextproto=nextproto, length=0x6)
+        nsh = NSH(spi = spi, si = DIRECTION1_TRAFFIC_SI, nextproto=nextproto, length=0x6)
         frame = ether / nsh / oriPkt
     sendp(frame,iface=TESTER_DATAPATH_INTF)
     frame.show()
