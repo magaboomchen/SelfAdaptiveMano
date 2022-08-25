@@ -2,7 +2,11 @@
 # -*- coding: UTF-8 -*-
 
 import copy
+from logging import Logger
+from typing import Dict
+from uuid import uuid1
 
+from sam.base.sfc import SFCI
 from sam.base.vnf import VNF_TYPE_CLASSIFIER
 from sam.serverController.bessInfoBaseMaintainer import BessInfoBaseMaintainer
 
@@ -11,22 +15,27 @@ from sam.serverController.bessInfoBaseMaintainer import BessInfoBaseMaintainer
 
 class SIBMS(object):
     def __init__(self, logger):
-        self._sibms = {} # {serverID:SIBMaintainer}
-        self._sfcSet = {}   # {sfcUUID:[sfciID]}
-        self._sfciDict = {} # {sfciID: sfci}
+        # type: (Logger) -> None
+        self._sibms = {} # type: Dict[int, SIBMaintainer]
+        self._sfcSet = {}   # type: Dict[uuid1, int]
+        self._sfciDict = {} # type: Dict[int, SFCI]
         self.logger = logger
 
     def hasSibm(self, serverID):
+        # type: (int) -> bool
         return serverID in self._sibms
 
-    def addSibm(self,serverID):
+    def addSibm(self, serverID):
+        # type: (int) -> None
         self._sibms[serverID] = SIBMaintainer()
         self._sibms[serverID].addLogger(self.logger)
 
     def getSibm(self, serverID):
+        # type: (int) -> SIBMaintainer
         return self._sibms[serverID]
 
-    def delSibm(self,serverID):
+    def delSibm(self, serverID):
+        # type: (int) -> None
         if serverID in self._sibms.keys():
             del self._sibms[serverID]
 
@@ -36,9 +45,11 @@ class SIBMS(object):
             self._sibms[key].show()
 
     def addSFCI(self, sfci):
+        # type: (SFCI) -> None
         self._sfciDict[sfci.sfciID] = sfci
 
     def delSFCI(self, sfci):
+        # type: (SFCI) -> None
         del self._sfciDict[sfci.sfciID]
 
     def getAllSFCIs(self):
@@ -52,6 +63,7 @@ class SIBMaintainer(BessInfoBaseMaintainer):
         self._vnfiDict = {} # {vnfiID:vnfi}
 
     def addLogger(self, logger):
+        # type: (Logger) -> None
         self.logger = logger
 
     def getModuleNameSuffix(self, vnfiID, directionID):

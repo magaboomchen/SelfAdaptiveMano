@@ -2,11 +2,15 @@
 # -*- coding: UTF-8 -*-
 
 from __future__ import print_function
-import math
+from logging import Logger
+from typing import Dict
 import grpc
 from google.protobuf.any_pb2 import Any
 
+from sam.base.vnf import VNFI
 from sam.base.server import Server
+from sam.base.sfc import SFC, SFCI
+from sam.base.command import Command
 from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
 import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
@@ -14,18 +18,22 @@ import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
 import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
 from sam.serverController.bessControlPlane import BessControlPlane
 from sam.serverController.sffController.sffInitializer import SFFInitializer
+from sam.serverController.sffController.sibMaintainer import SIBMS
 
 
 class SFFSFCIAdder(BessControlPlane):
-    def __init__(self,sibms, logger):
+    def __init__(self, sibms,   # type: SIBMS
+                 logger         # type: Logger
+                ):
         super(SFFSFCIAdder, self).__init__()
         self.sibms = sibms
         self.logger = logger
         self.sffSFCInitializer = SFFInitializer(self.sibms, self.logger)
 
-    def addSFCIHandler(self,cmd):
-        sfc = cmd.attributes['sfc']
-        sfci = cmd.attributes['sfci']
+    def addSFCIHandler(self, cmd):
+        # type: (Command) -> None
+        sfc = cmd.attributes['sfc'] # type: SFC
+        sfci = cmd.attributes['sfci']   # type: SFCI
         self._checkVNFISequence(sfci.vnfiSequence)
         self.logger.info("Adding sfci: {0}".format(sfci.sfciID))
         self.sibms.addSFCI(sfci)
@@ -56,6 +64,7 @@ class SFFSFCIAdder(BessControlPlane):
                     continue
 
     def _addModules(self, server, directions, sfci, vnfi, vnfiIdx):
+        # type: (Server, Dict, SFCI, VNFI, int) -> None
         vnfiID = vnfi.vnfiID
         serverID = server.getServerID()
         sibm = self.sibms.getSibm(serverID)
@@ -164,6 +173,7 @@ class SFFSFCIAdder(BessControlPlane):
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
     def _addRules(self, server, sfci, directions, vnfi, vnfiIdx):
+        # type: (Server, SFCI, Dict, VNFI, int) -> None
         sfciID = sfci.sfciID
         vnfiID = vnfi.vnfiID
         vnfID = vnfi.vnfID
@@ -209,7 +219,8 @@ class SFFSFCIAdder(BessControlPlane):
 
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
-    def _addLinks(self,server,directions,vnfi):
+    def _addLinks(self, server, directions, vnfi):
+        # type: (Server, Dict, VNFI) -> None
         vnfiID = vnfi.vnfiID
         vnfID = vnfi.vnfID
         serverID = server.getServerID()

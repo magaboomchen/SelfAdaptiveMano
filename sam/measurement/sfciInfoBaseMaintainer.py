@@ -3,6 +3,8 @@
 
 from typing import Dict, Union
 
+from sam.base.sfc import SFCI
+from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
 from sam.base.vnfiStatus import VNFIStatus
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE
@@ -21,6 +23,7 @@ class SFCIInfoBaseMaintainer(XInfoBaseMaintainer):
         self._sfcis[zoneName] = sfcis
 
     def addSFCIByZone(self, sfci, zoneName):
+        # type: (SFCI, Union[TURBONET_ZONE, SIMULATOR_ZONE]) -> None
         if zoneName not in self._sfcis:
             self._sfcis[zoneName] = {}
         self._sfcis[zoneName][sfci.sfciID] = sfci
@@ -31,6 +34,7 @@ class SFCIInfoBaseMaintainer(XInfoBaseMaintainer):
         del self._sfcis[zoneName][sfci.sfciID]
 
     def updatePartialSFCIsByZone(self, sfcisDict, zoneName):
+        # type: (Dict[int, SFCI], str) -> None
         if zoneName not in self._sfcis:
             self._sfcis[zoneName] = {}
         for sfciID, sfci in sfcisDict.items():
@@ -57,6 +61,7 @@ class SFCIInfoBaseMaintainer(XInfoBaseMaintainer):
                 oldSFCI.routingMorphic = sfci.routingMorphic
 
     def _updateVNFIStatus(self, oldVNFIStatus, newVNFIStatus):
+        # type: (VNFIStatus, VNFIStatus) -> None
         if newVNFIStatus.inputTrafficAmount != None:
             oldVNFIStatus.inputTrafficAmount = newVNFIStatus.inputTrafficAmount
         if newVNFIStatus.inputPacketAmount != None:
@@ -69,6 +74,7 @@ class SFCIInfoBaseMaintainer(XInfoBaseMaintainer):
             oldVNFIStatus.state = newVNFIStatus.state
 
     def _updateSFCISLO(self, sfci):
+        # type: (SFCI) -> None
         inputTrafficSum = self._getSFCIInputTrafficSum(sfci)
         outputTrafficSum = self._getSFCIOutputTrafficSum(sfci)
         sfci.sloRealTimeValue.throughput = outputTrafficSum
@@ -76,24 +82,29 @@ class SFCIInfoBaseMaintainer(XInfoBaseMaintainer):
                                                                 outputTrafficSum)
 
     def _getSFCIInputTrafficSum(self, sfci):
+        # type: (SFCI) -> int
         inputTrafficSum = 0
         for vnfi in sfci.vnfiSequence[0]:
             if type(vnfi.vnfiStatus) == VNFIStatus:
-                inputTrafficSum += vnfi.vnfiStatus.inputTrafficAmount
+                for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
+                    inputTrafficSum += vnfi.vnfiStatus.inputTrafficAmount[directionID]
             else:
                 inputTrafficSum += 0 
         return inputTrafficSum
 
     def _getSFCIOutputTrafficSum(self, sfci):
+        # type: (SFCI) -> int
         outputTrafficSum = 0
         for vnfi in sfci.vnfiSequence[-1]:
             if type(vnfi.vnfiStatus) == VNFIStatus:
-                outputTrafficSum += vnfi.vnfiStatus.outputTrafficAmount
+                for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
+                    outputTrafficSum += vnfi.vnfiStatus.outputTrafficAmount[directionID]
             else:
                 outputTrafficSum += 0
         return outputTrafficSum
 
     def _computeDropRate(self, inputTrafficSum, outputTrafficSum):
+        # type: (int, int) -> float
         if inputTrafficSum == 0:
             dropRate = 0
         else:
