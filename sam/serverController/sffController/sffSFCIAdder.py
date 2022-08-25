@@ -222,7 +222,6 @@ class SFFSFCIAdder(BessControlPlane):
     def _addLinks(self, server, directions, vnfi):
         # type: (Server, Dict, VNFI) -> None
         vnfiID = vnfi.vnfiID
-        vnfID = vnfi.vnfID
         serverID = server.getServerID()
         sibm = self.sibms.getSibm(serverID)
         serverControlIP = server.getControlNICIP()
@@ -235,13 +234,13 @@ class SFFSFCIAdder(BessControlPlane):
                 directionID = direction["ID"]
 
                 nameQueueInc = sibm.getModuleName("QueueInc",vnfiID,
-                    directionID)
+                                                    directionID)
                 nameQueueOut = sibm.getModuleName("QueueOut",vnfiID,
-                    directionID)
+                                                    directionID)
                 nameUpdate = sibm.getModuleName("Update",vnfiID,
-                    directionID)
+                                                    directionID)
                 nameIPChecksum = sibm.getModuleName("IPChecksum",vnfiID,
-                    directionID)
+                                                    directionID)
 
                 # connection
                 if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:

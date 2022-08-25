@@ -2,21 +2,25 @@
 # -*- coding: UTF-8 -*-
 
 from __future__ import print_function
+from logging import Logger
 
 from google.protobuf.any_pb2 import Any
 import grpc
 
-from sam.serverController.sffController.sfcConfig import CHAIN_TYPE_NSHOVERETH, CHAIN_TYPE_UFRR, DEFAULT_CHAIN_TYPE
+from sam.base.server import Server
 import sam.serverController.builtin_pb.service_pb2_grpc as service_pb2_grpc
 import sam.serverController.builtin_pb.bess_msg_pb2 as bess_msg_pb2
 import sam.serverController.builtin_pb.module_msg_pb2 as module_msg_pb2
 import sam.serverController.builtin_pb.ports.port_msg_pb2 as port_msg_pb2
 from sam.base.sfcConstant import SFC_DOMAIN_PREFIX, SFC_DOMAIN_PREFIX_LENGTH
 from sam.serverController.bessControlPlane import BessControlPlane
+from sam.serverController.sffController.sibMaintainer import SIBMS
 
 
 class SFFInitializer(BessControlPlane):
-    def __init__(self,sibms,logger):
+    def __init__(self, sibms,   # type: SIBMS
+                 logger         # type: Logger
+                ):
         super(SFFInitializer, self).__init__()
         self.sibms = sibms
         self.logger = logger
@@ -28,7 +32,8 @@ class SFFInitializer(BessControlPlane):
         self._addRules(server)
         self._addLinks(server)
 
-    def _addModules(self,server):
+    def _addModules(self, server):
+        # type: (Server) -> None
         serverID = server.getServerID()
         sibm = self.sibms.getSibm(serverID)
         serverControlIP = server.getControlNICIP()
@@ -148,7 +153,8 @@ class SFFInitializer(BessControlPlane):
 
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
-    def _addRules(self,server):
+    def _addRules(self, server):
+        # type: (Server) -> None
         serverID = server.getServerID()
         sibm = self.sibms.getSibm(serverID)
         serverControlIP = server.getControlNICIP()
@@ -284,7 +290,8 @@ class SFFInitializer(BessControlPlane):
 
             stub.ResumeAll(bess_msg_pb2.EmptyRequest())
 
-    def _addLinks(self,server):
+    def _addLinks(self, server):
+        # type: (Server) -> None
         serverControlIP = server.getControlNICIP()
         bessServerUrl = serverControlIP + ":10514"
         with grpc.insecure_channel(bessServerUrl) as channel:

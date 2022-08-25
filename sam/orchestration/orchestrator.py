@@ -11,10 +11,10 @@ import math
 
 from sam.base.link import Link
 from sam.base.sfc import SFC, SFCI
-from sam.base.sfcConstant import STATE_INACTIVE
+from sam.base.sfcConstant import STATE_IN_PROCESSING, STATE_INACTIVE, STATE_INIT_FAILED, STATE_UNDELETED
 from sam.base.messageAgent import SAMMessage, MessageAgent, \
     MEDIATOR_QUEUE, ORCHESTRATOR_QUEUE, MSG_TYPE_ORCHESTRATOR_CMD
-from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_DEL_SFCI, \
+from sam.base.request import REQUEST_STATE_IN_PROCESSING, REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_DEL_SFCI, \
     REQUEST_TYPE_DEL_SFC, REQUEST_STATE_FAILED, Request
 from sam.base.command import CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, \
     CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
@@ -126,10 +126,14 @@ class Orchestrator(object):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)
+                    reqState = REQUEST_STATE_IN_PROCESSING
+                    sfcState = STATE_IN_PROCESSING
                 else:
-                    raise ValueError("Invalid add SFC state")
+                    self.logger.warning("Invalid add SFC state")
+                    reqState = REQUEST_STATE_FAILED
+                    sfcState = STATE_INIT_FAILED
                 if ENABLE_OIB:
-                    self._oib.addSFCRequestHandler(request, cmd)
+                    self._oib.addSFCRequestHandler(request, cmd, reqState, sfcState)
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
                 if self._batchMode == False:
                     raise ValueError("Deprecated function: genAddSFCICmd"
@@ -156,10 +160,14 @@ class Orchestrator(object):
                         ))
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)
+                    reqState = REQUEST_STATE_IN_PROCESSING
+                    sfciState = STATE_IN_PROCESSING
                 else:
-                    raise ValueError("Invalid del SFCI state")
+                    self.logger.warning("Invalid del SFCI state")
+                    reqState = REQUEST_STATE_FAILED
+                    sfciState = STATE_UNDELETED
                 if ENABLE_OIB:
-                    self._oib.delSFCIRequestHandler(request, cmd)
+                    self._oib.delSFCIRequestHandler(request, cmd, reqState, sfciState)
             elif request.requestType == REQUEST_TYPE_DEL_SFC:
                 cmd = self._osd.genDelSFCCmd(request)
                 sfc = cmd.attributes['sfc']
@@ -167,10 +175,14 @@ class Orchestrator(object):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)
+                    reqState = REQUEST_STATE_IN_PROCESSING
+                    sfcState = STATE_IN_PROCESSING
                 else:
-                    raise ValueError("Invalid del SFC state")
+                    self.logger.warning("Invalid del SFC state")
+                    reqState = REQUEST_STATE_FAILED
+                    sfcState = STATE_UNDELETED
                 if ENABLE_OIB:
-                    self._oib.delSFCRequestHandler(request, cmd)
+                    self._oib.delSFCRequestHandler(request, cmd, reqState, sfcState)
             else:
                 self.logger.warning(
                     "Unknown request:{0}".format(request.requestType)
@@ -187,7 +199,7 @@ class Orchestrator(object):
         self._validRequestBatchQueue = Queue.Queue()
         self._invalidRequestBatchQueue = Queue.Queue()
         while not requestBatchQueue.empty():
-            request = requestBatchQueue.get()
+            request = requestBatchQueue.get()   # type: Request
             if self._isValidAddSFCIRequest(request):
                 self._validRequestBatchQueue.put(request)
             else:
@@ -234,11 +246,15 @@ class Orchestrator(object):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)
+                    reqState = REQUEST_STATE_IN_PROCESSING
+                    sfciState = STATE_IN_PROCESSING
                 else:
-                    raise ValueError("Invalid add SFCI state")
+                    self.logger.warning("Invalid add SFCI state")
+                    reqState = REQUEST_STATE_FAILED
+                    sfciState = STATE_INIT_FAILED
                 if ENABLE_OIB:
                     self.logger.info("sfciID is {0}".format(sfciID))
-                    self._oib.addSFCIRequestHandler(request, cmd)
+                    self._oib.addSFCIRequestHandler(request, cmd, reqState, sfciState)
             self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
             self.logger.info("Batch process finish")
             self.batchLastTime = time.time()

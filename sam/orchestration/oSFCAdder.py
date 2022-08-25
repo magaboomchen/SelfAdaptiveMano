@@ -22,7 +22,8 @@ from sam.base.vnf import VNFI
 from sam.base.switch import Switch
 from sam.base.server import Server
 from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
-from sam.base.path import DIRECTION0_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, ForwardingPathSet, \
+from sam.base.path import DIRECTION0_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, \
+                            ForwardingPathSet, \
                             MAPPING_TYPE_E2EP, MAPPING_TYPE_UFRR, \
                             MAPPING_TYPE_NOTVIA_PSFC, MAPPING_TYPE_NETPACK, \
                             MAPPING_TYPE_INTERFERENCE, MAPPING_TYPE_NONE, \

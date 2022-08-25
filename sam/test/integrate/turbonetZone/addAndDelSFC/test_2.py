@@ -58,10 +58,16 @@ class TestAddSFCClass(IntTestBaseClass):
         rM = sfc5.routingMorphic
         sfci5 = self.genSFCITemplate(rM)
 
-        # self.sfcList = [sfc1, sfc2, sfc3, sfc4, sfc5]
-        # self.sfciList = [sfci1, sfci2, sfci3, sfci4, sfci5]
-        self.sfcList = [sfc2]
-        self.sfciList = [sfci2]
+        sfc6 = self.genMixEquipmentSFC(classifier, TURBONET_ZONE,
+                                                MANUAL_SCALE)
+        rM = sfc6.routingMorphic
+        sfci6 = self.genSFCITemplate(rM)
+
+        self.sfcList = [sfc1, sfc2, sfc3, sfc4, sfc5]
+        self.sfciList = [sfci1, sfci2, sfci3, sfci4, sfci5]
+
+        # self.sfcList = [sfc2, sfc5]
+        # self.sfciList = [sfci2, sfci5]
 
         yield
 

@@ -20,7 +20,7 @@ class BessControlPlane(object):
             'bessControlPlane.log', level='info')
         self.logger = logConfigur.getLogger()
 
-    def isBESSAlive(self,bessServerUrl):
+    def isBESSAlive(self, bessServerUrl):
         count = 3
         while count > 0:
             try:
@@ -71,15 +71,15 @@ class BessControlPlane(object):
             masks[4]["value_bin"] = b'\xFF\xFF'
         return [values,masks]
 
-    def _genIP4SVPIDs(self,sfcID,vnfID,pathID):
+    def _genIP4SVPIDs(self, sfcID, vnfID, pathID):
         ipNum = (10<<24) + ((vnfID & 0xF) << 20) + ((sfcID & 0xFFF) << 8) \
             + (pathID & 0xFF)
         return self._sc.int2ip(ipNum)
 
-    def getSFCIModuleSuffix(self,sfciID,direction):
+    def getSFCIModuleSuffix(self, sfciID, direction):
         return '_' + str(sfciID) + '_' + str(direction['ID'])
 
-    def getSFCModuleSuffix(self,sfcUUID,direction):
+    def getSFCModuleSuffix(self, sfcUUID, direction):
         return '_' + str(sfcUUID) + '_' + str(direction['ID'])
 
     def _checkVNFISequence(self, vnfiSequence):

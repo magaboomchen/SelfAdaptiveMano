@@ -21,7 +21,6 @@ class P4Controller:
         self._messageAgent = MessageAgent()
         self.queueName = self._messageAgent.genQueueName(P4CONTROLLER_QUEUE, _zonename)
         self._messageAgent.startRecvMsg(self.queueName)
-        self._messageAgent.startMsgReceiverRPCServer(P4_CONTROLLER_IP, P4_CONTROLLER_PORT)
         self._commands = {}
         self._commandresults = {}
         self._sfclist = {}
@@ -32,30 +31,9 @@ class P4Controller:
             msg = self._messageAgent.getMsg(self.queueName)
             msgType = msg.getMessageType()
             if msgType == None:
-                msg = self._messageAgent.getMsgByRPC(P4_CONTROLLER_IP, P4_CONTROLLER_PORT)
-                msgType = msg.getMessageType()
-                if msgType == None:
-                    pass
-                elif msgType == MSG_TYPE_P4CONTROLLER_CMD:
-                    self.logger.info('Got a command from rpc')
-                    cmd = msg.getbody()
-                    source = msg.getSource()
-                    self._commands[cmd.cmdID] = cmd
-                    self._commandresults[cmd.cmdID] = CMD_STATE_PROCESSING
-                    resdict = {}
-                    success = True
-                    if success:
-                        self._commandresults[cmd.cmdID] = CMD_STATE_SUCCESSFUL
-                    else:
-                        self._commandresults[cmd.cmdID] = CMD_STATE_FAIL
-                    cmdreply = CommandReply(cmd.cmdID, self._commandresults[cmd.cmdID])
-                    cmdreply.attributes["zone"] = TURBONET_ZONE
-                    cmdreply.attributes.update(resdict)
-                    replymessage = SAMMessage(MSG_TYPE_P4CONTROLLER_CMD_REPLY, cmdreply)
-                    # self._messageAgent.sendMsgByRPC(P4_CONTROLLER_IP, P4_CONTROLLER_PORT, replymessage)
-                    self._messageAgent.sendMsgByRPC(source['srcIP'], source['srcPort'], replymessage)
+                pass
             elif msgType == MSG_TYPE_P4CONTROLLER_CMD:
-                self.logger.info('Got a command from rabbitMQ.')
+                self.logger.info('Got a command.')
                 cmd = msg.getbody()
                 self._commands[cmd.cmdID] = cmd
                 self._commandresults[cmd.cmdID] = CMD_STATE_PROCESSING
@@ -73,7 +51,6 @@ class P4Controller:
             else:
                 self.logger.error('Unsupported msg type for P4 controller: %s.' % msg.getMessageType())
 
-
 if __name__ == '__main__':
-    p4ctl = P4Controller(TURBONET_ZONE)
+    p4ctl = P4Controller('')
     p4ctl.run()

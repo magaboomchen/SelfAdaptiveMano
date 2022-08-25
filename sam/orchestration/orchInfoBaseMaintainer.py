@@ -88,45 +88,42 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     @reConnectionDecorator
     def updateRequest(self, request, sfcUUID=None, sfciID=None, cmdUUID=None, retryCnt=None):
         if self.hasRequest(request.requestID):
-            fieldsValues = " `REQUEST_TYPE` = ({0}), `STATE` = ({1}), `PICKLE` = ('{2}') ".format(
+            fieldsValues = " `REQUEST_TYPE` = ('{0}'), `STATE` = ('{1}'), `PICKLE` = ('{2}') ".format(
                                                 request.requestType,
                                                 request.requestState,
                                                 self.pIO.obj2Pickle(request).decode()
                                                 )
             if sfcUUID != None:
-                fieldsValues += ", `SFC_UUID` = ({0})".format(sfcUUID)
+                fieldsValues += ", `SFC_UUID` = ('{0}')".format(sfcUUID)
             if sfciID != None:
                 fieldsValues += ", `SFCIID` = ({0})".format(sfciID)
             if cmdUUID != None:
-                fieldsValues += ", `CMD_UUID` = ({0})".format(cmdUUID)
+                fieldsValues += ", `CMD_UUID` = ('{0}')".format(cmdUUID)
             if retryCnt != None:
                 fieldsValues += ", `RETRY_CNT` = ({0})".format(retryCnt)
 
             self.dbA.update("`Request`", 
                 fieldsValues,
-                " `REQUEST_UUID` = ({0}) ".format(
+                " `REQUEST_UUID` = ('{0}') ".format(
                     request.requestID)
                 )
 
     @reConnectionDecorator
     def hasRequest(self, requestUUID):
         results = self.dbA.query("Request", " REQUEST_UUID ",
-                                    " REQUEST_UUID = '{0}'".format(requestUUID))
+                                    " REQUEST_UUID = '{0}' ".format(requestUUID))
         if results != ():
             return True
         else:
             return False
 
     @reConnectionDecorator
-    def updateRequestState(self, requestUUID, state):
-        if self.hasRequest(requestUUID):
-            self.dbA.update("Request", "STATE = {0}".format(state), " REQUEST_UUID = {0}".format(requestUUID))
-
-    @reConnectionDecorator
     def incRequestRetryCnt(self, requestUUID):
         if self.hasRequest(requestUUID):
-            retryCnt = self.dbA.query("Request", "RETRY_CNT", " REQUEST_UUID = {0}".format(requestUUID))
-            self.dbA.update("Request", "RETRY_CNT = {0}".format(retryCnt+1), " REQUEST_UUID = {0}".format(requestUUID))
+            results = self.dbA.query("Request", " RETRY_CNT ", " REQUEST_UUID = '{0}' ".format(requestUUID))
+            print(results)
+            retryCnt = results[0][0]
+            self.dbA.update("Request", " RETRY_CNT = {0} ".format(retryCnt+1), " REQUEST_UUID = '{0}' ".format(requestUUID))
 
     @reConnectionDecorator
     def delRequest(self, requestUUID):
@@ -135,12 +132,12 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def getAllRequest(self, condition=None):
-        fields = " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, STATE, PICKLE "
+        fields = " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, STATE, PICKLE, RETRY_CNT "
         results = self.dbA.query("Request", fields, condition)
         requestTupleList = []
         for requestTuple in results: 
             reqResList = list(requestTuple)
-            reqResList[-1] = self._decodePickle2Object(reqResList[-1])
+            reqResList[-2] = self._decodePickle2Object(reqResList[-2])
             transedReqTuple = tuple(reqResList)
             requestTupleList.append(transedReqTuple)
         return requestTupleList
@@ -290,12 +287,12 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             return True
 
     @reConnectionDecorator
-    def addSFCRequestHandler(self, request, cmd):
-        request.requestState = REQUEST_STATE_IN_PROCESSING
+    def addSFCRequestHandler(self, request, cmd, requestState, sfcState):
+        request.requestState = requestState
         self._addRequest2DB(request, cmd)
 
         sfc = cmd.attributes['sfc']
-        self.addSFC2DB(sfc)
+        self.addSFC2DB(sfc, state=sfcState)
 
     def _isAddSFCIValidState(self, sfciID):
         if self.hasSFCI(sfciID):
@@ -308,8 +305,8 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             return True
 
     @reConnectionDecorator
-    def addSFCIRequestHandler(self, request, cmd):
-        request.requestState = REQUEST_STATE_IN_PROCESSING
+    def addSFCIRequestHandler(self, request, cmd, requestState, sfciState):
+        request.requestState = requestState
 
         sfc = cmd.attributes['sfc']
         zoneName = sfc.attributes["zone"]
@@ -317,7 +314,8 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         if self.hasSFCI(sfci.sfciID):
             sfciState = self.getSFCIState(sfci.sfciID)
             if sfciState in [STATE_DELETED, STATE_INIT_FAILED]:
-                self.updateSFCI2DB(sfci, sfc.sfcUUID, zoneName, STATE_IN_PROCESSING)
+                self.updateSFCI2DB(sfci, sfc.sfcUUID, zoneName, 
+                                    STATE_IN_PROCESSING)
             else:
                 request.requestState = REQUEST_STATE_FAILED
         else:
@@ -336,13 +334,13 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             return False
 
     @reConnectionDecorator
-    def delSFCIRequestHandler(self, request, cmd):
-        request.requestState = REQUEST_STATE_IN_PROCESSING
+    def delSFCIRequestHandler(self, request, cmd, requestState, sfciState):
+        request.requestState = requestState
         self._addRequest2DB(request, cmd)
 
         sfci = cmd.attributes['sfci']
         sfciID = sfci.sfciID
-        self.updateSFCIState(sfciID, STATE_IN_PROCESSING)
+        self.updateSFCIState(sfciID, sfciState)
 
     def _isDelSFCValidState(self, sfcUUID):
         if self.hasSFC(sfcUUID):
@@ -360,13 +358,15 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             return False
 
     @reConnectionDecorator
-    def delSFCRequestHandler(self, request, cmd):
-        request.requestState = REQUEST_STATE_IN_PROCESSING
+    def delSFCRequestHandler(self, request, cmd,
+                                requestState, sfcState):
+        request.requestState = requestState
         self._addRequest2DB(request, cmd)
 
         sfc = cmd.attributes['sfc']
         sfcUUID = sfc.sfcUUID
-        self.updateSFCState(sfcUUID, STATE_IN_PROCESSING)
+        if sfcState == STATE_IN_PROCESSING:
+            self.updateSFCState(sfcUUID, sfcState)
 
     def cmdRplyHandler(self, request, cmdState):
         (request.requestState, sfcState, sfciState) = \
@@ -500,14 +500,14 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     def updateSFC2DB(self, sfc, sfciIDList=None, state=STATE_IN_PROCESSING):
         if self.hasSFC(sfc.sfcUUID):
             self.dbA.update("`SFCI`", 
-                " `ZONE_NAME` = ({0}), `SFCIID_LIST` = ('{1}')," \
-                " `STATE` = ({2}), `PICKLE` = ('{3}') ".format(
+                " `ZONE_NAME` = ('{0}'), `SFCIID_LIST` = ('{1}')," \
+                " `STATE` = ('{2}'), `PICKLE` = ('{3}') ".format(
                             sfc.attributes["zone"],
                             self.pIO.obj2Pickle(sfciIDList),
                             state,
                             self.pIO.obj2Pickle(sfc)
                 ),
-                " `SFC_UUID` = ({0}) ".format(
+                " `SFC_UUID` = ('{0}') ".format(
                     sfc.sfcUUID)
                 )
 

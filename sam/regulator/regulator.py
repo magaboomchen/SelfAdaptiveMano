@@ -73,17 +73,15 @@ class Regulator(object):
         thread.start()
 
     def startRoutine(self):
-        try:
-            while True:
-                # self.requestReplyHandlerRoutine()
-                # self.commandHandlerRoutine()
+        while True:
+            try:
                 self.msgHandlerRoutine()
                 self.retryFailureRequestRoutine()
-        except Exception as ex:
-            ExceptionProcessor(self.logger).logException(ex, 
-                "Regulator msg handler")
-        finally:
-            pass
+            except Exception as ex:
+                ExceptionProcessor(self.logger).logException(ex, 
+                    "Regulator msg handler")
+            finally:
+                pass
 
     def retryFailureRequestRoutine(self):
         currTimestamp = time.time()
@@ -106,17 +104,17 @@ class Regulator(object):
                 retryCnt = requestTuple[7]
                 if retryCnt > MAX_RETRY_NUM:
                     self.logger.warning(" failed request {0} exceeds" \
-                                        " max retry number".format(request))
+                                        " max retry number".format(requestUUID))
                     continue
                 if requestType in [REQUEST_TYPE_ADD_SFC, 
                                     REQUEST_TYPE_ADD_SFCI,
                                     REQUEST_TYPE_DEL_SFCI,
                                     REQUEST_TYPE_DEL_SFC]:
-                    self._oib.updateRequestState(requestUUID, REQUEST_STATE_INITIAL)
+                    self._oib.updateRequestState2DB(request, REQUEST_STATE_INITIAL)
                     self._oib.incRequestRetryCnt(requestUUID)
                     msg = SAMMessage(MSG_TYPE_REQUEST, request)
                     self._messageAgent.sendMsg(DISPATCHER_QUEUE, msg)
-                    self.logger.debug(" retry failed request {0}".format(request))
+                    self.logger.debug(" retry failed request {0}".format(requestUUID))
                 elif requestType in [REQUEST_TYPE_GET_DCN_INFO]:
                     self.logger.warning("Disable retry for get dcn info request!")
                     self._oib.delRequest(requestUUID)

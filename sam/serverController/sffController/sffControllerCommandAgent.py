@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-from sam.base.messageAgent import MEASURER_QUEUE, SAMMessage, MessageAgent, SFF_CONTROLLER_QUEUE, \
+from sam.base.messageAgent import SAMMessage, MessageAgent, SFF_CONTROLLER_QUEUE, \
     MSG_TYPE_SFF_CONTROLLER_CMD, MEDIATOR_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD_REPLY
 from sam.base.command import CommandReply, CMD_STATE_PROCESSING, CMD_TYPE_PAUSE_BESS, \
     CMD_TYPE_RESUME_BESS, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_GET_SFCI_STATE, \
@@ -11,8 +11,6 @@ from sam.base.command import CommandReply, CMD_STATE_PROCESSING, CMD_TYPE_PAUSE_
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import SFF_CONTROLLER_IP, SFF_CONTROLLER_PORT
-
-from sam.serverController.sffController.sfcConfig import DEFAULT_CHAIN_TYPE
 from sam.serverController.sffController.sffSFCIAdder import SFFSFCIAdder
 from sam.serverController.sffController.sffSFCIDeleter import SFFSFCIDeleter
 from sam.serverController.sffController.sffMonitor import SFFMonitor

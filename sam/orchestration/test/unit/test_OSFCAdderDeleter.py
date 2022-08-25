@@ -4,6 +4,8 @@
 import sys
 
 from sam.base.messageAgent import DEFAULT_ZONE
+from sam.base.request import REQUEST_STATE_IN_PROCESSING
+from sam.base.sfcConstant import STATE_IN_PROCESSING
 if sys.version > '3':
     import queue as Queue
 else:
@@ -142,7 +144,10 @@ class TestOSFCAdderDeleterClass(TestBase):
     def test_genAddSFCCmd(self):
         # exercise
         cmd = self.oA.genAddSFCCmd(self.addSFCRequest)
-        self._oib.addSFCRequestHandler(self.addSFCRequest, cmd)
+        self._oib.addSFCRequestHandler(self.addSFCRequest,
+                                        cmd,
+                                        REQUEST_STATE_IN_PROCESSING
+                                        )
         sfc = cmd.attributes['sfc']
         self.logger.info(sfc)
 
@@ -153,7 +158,10 @@ class TestOSFCAdderDeleterClass(TestBase):
     def test_genAddSFCICmd(self):
         # exercise
         cmd = self.oA.genAddSFCICmd(self.addSFCIRequest)
-        self._oib.addSFCIRequestHandler(self.addSFCIRequest, cmd)
+        self._oib.addSFCIRequestHandler(self.addSFCIRequest,
+                                        cmd,
+                                        REQUEST_STATE_IN_PROCESSING
+                                        )
 
         sfci = cmd.attributes['sfci']
         forwardingPathSet = sfci.forwardingPathSet
@@ -168,7 +176,11 @@ class TestOSFCAdderDeleterClass(TestBase):
     def test_genDelSFCICmd(self):
         # exercise
         cmd = self.oD.genDelSFCICmd(self.delSFCIRequest)
-        self._oib.delSFCIRequestHandler(self.delSFCIRequest, cmd)
+        self._oib.delSFCIRequestHandler(self.delSFCIRequest,
+                                        cmd,
+                                        REQUEST_STATE_IN_PROCESSING,
+                                        STATE_IN_PROCESSING
+                                        )
         sfc = cmd.attributes['sfc']
         sfci = cmd.attributes['sfci']
 
@@ -180,7 +192,10 @@ class TestOSFCAdderDeleterClass(TestBase):
     def test_genDelSFCCmd(self):
         # exercise
         cmd = self.oD.genDelSFCCmd(self.delSFCRequest)
-        self._oib.delSFCRequestHandler(self.delSFCRequest, cmd)
+        self._oib.delSFCRequestHandler(self.delSFCRequest,
+                                        cmd,
+                                        REQUEST_STATE_IN_PROCESSING,
+                                        STATE_IN_PROCESSING)
         sfc = cmd.attributes['sfc']
 
         # verify

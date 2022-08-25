@@ -87,7 +87,7 @@ class VNFIAdder(object):
             dpdkInfo = dpdkInfo[:-2] + ')'
             socketMem = socketMem[:-1]
 
-            command = 'sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.FWD_APP_CLICK)
+            command = "sed -i \'1i\\{0}\' {1}".format(dpdkInfo, vcConfig.FWD_APP_CLICK)
             command = command + " && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s  -- %s" % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
         containerName = 'vnf-%s' % vnfi.vnfiID
         try:
@@ -141,7 +141,7 @@ class VNFIAdder(object):
             appName = clickConfFilePath
             command = ' cp %s %s' %(vcConfig.FW_APP_CLICK, clickConfFilePath)
             if not vcConfig.USING_PRECONFIG:
-                command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, clickConfFilePath)
+                command = command + " && sed -i \'1i\\{0}\' {1}".format(dpdkInfo, clickConfFilePath)
                 command = command + ' && mkdir -p %s' % vcConfig.FW_RULE_DIR
                 if DEFAULT_CHAIN_TYPE == CHAIN_TYPE_UFRR:
                     if type(vnfi.config) == ACLTable:
@@ -156,28 +156,28 @@ class VNFIAdder(object):
                             ipv4ACLRulesList = aclTable.getRulesList(IPV4_ROUTE_PROTOCOL)
                             newIPV4FWRulesFileName = "statelessIPV4FWRules_" +  containerName
                             newIPV4FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newIPV4FWRulesFileName
-                            command = command + ' && sed -i \'s/statelessIPV4FWRules/%s/\' %s' % (newIPV4FWRulesFileName, clickConfFilePath)
+                            command = command + " && sed -i \'s/statelessIPV4FWRules/{0}/\' {1}".format(newIPV4FWRulesFileName, clickConfFilePath)
                             for rule in ipv4ACLRulesList:
-                                command = command + ' && echo \"%s\" >> %s' % (rule.genFWLine(), newIPV4FWRulesPath)
+                                command = command + " && echo \'{0}\' >> {1}".format(rule.genFWLine(), newIPV4FWRulesPath)
                         if aclTable.getRulesNum(IPV6_ROUTE_PROTOCOL) != 0:
                             ipv6ACLRulesList = aclTable.getRulesList(IPV6_ROUTE_PROTOCOL)
                             newIPV6FWRulesFileName = "statelessIPV6FWRules_" +  containerName
                             newIPV6FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newIPV6FWRulesFileName
-                            command = command + ' && sed -i \'s/statelessIPV6FWRules/%s/\' %s' % (newIPV6FWRulesFileName, clickConfFilePath)
+                            command = command + " && sed -i \'s/statelessIPV6FWRules/{0}/\' {1}".format(newIPV6FWRulesFileName, clickConfFilePath)
                             for rule in ipv6ACLRulesList:
                                 command = command + ' && echo \"%s\" >> %s' % (rule.gen128BitsDstIdentifierFWLine(), newIPV6FWRulesPath)
                         if aclTable.getRulesNum(SRV6_ROUTE_PROTOCOL) != 0:
                             ipv6ACLRulesList = aclTable.getRulesList(SRV6_ROUTE_PROTOCOL)
                             newIPV6FWRulesFileName = "statelessIPV6FWRules_" +  containerName
                             newIPV6FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newIPV6FWRulesFileName
-                            command = command + ' && sed -i \'s/statelessIPV6FWRules/%s/\' %s' % (newIPV6FWRulesFileName, clickConfFilePath)
+                            command = command + " && sed -i \'s/statelessIPV6FWRules/{0}/\' {1}".format(newIPV6FWRulesFileName, clickConfFilePath)
                             for rule in ipv6ACLRulesList:
                                 command = command + ' && echo \"%s\" >> %s' % (rule.gen128BitsDstIdentifierFWLine(), newIPV6FWRulesPath)
                         if aclTable.getRulesNum(ROCEV1_ROUTE_PROTOCOL) != 0:
                             rocev1ACLRulesList = aclTable.getRulesList(ROCEV1_ROUTE_PROTOCOL)
                             newROCEV1FWRulesFileName = "statelessROCEV1FWRules_" +  containerName
                             newROCEV1FWRulesPath = vcConfig.FW_RULE_DIR + '/' + newROCEV1FWRulesFileName
-                            command = command + ' && sed -i \'s/statelessROCEV1FWRules/%s/\' %s' % (newROCEV1FWRulesFileName, clickConfFilePath)
+                            command = command + " && sed -i \'s/statelessROCEV1FWRules/{0}/\' {1}".format(newROCEV1FWRulesFileName, clickConfFilePath)
                             for rule in rocev1ACLRulesList:
                                 command = command + ' && echo \"%s\" >> %s' % (rule.gen128BitsDstIdentifierFWLine(), newROCEV1FWRulesPath)
                 else:
@@ -187,7 +187,7 @@ class VNFIAdder(object):
                 volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
                 #ulimit = docker.types.Ulimit(name='stack', soft=268435456, hard=268435456)
             else:
-                command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, clickConfFilePath)
+                command = command + " && sed -i \'1i\\{0}\' {1}".format(dpdkInfo, clickConfFilePath)
                 command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
                 if vcConfig.DEBUG:
                     volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}, vcConfig.PRECONFIG_PATH: {'bind': vcConfig.FW_RULE_DIR, 'mode': 'rw'}}
@@ -230,10 +230,10 @@ class VNFIAdder(object):
         for each in cpus:
             if len(each) != 0:
                 dpdkInfo = dpdkInfo + 'NB_SOCKET_MBUF %d, ' % vcConfig.DPDKINFO_BUF
-                socketMem = socketMem + '%d,' % vnfi.maxMem
+                socketMem = socketMem + '{0},'.format(vnfi.maxMem)
             else:
                 dpdkInfo = dpdkInfo + 'NB_SOCKET_MBUF 0, '
-                socketMem = socketMem + '%d,' % 0
+                socketMem = socketMem + '{0},'.format(0)
         dpdkInfo = dpdkInfo[:-2] + ')'
         socketMem = socketMem[:-1]
         try:
@@ -242,11 +242,11 @@ class VNFIAdder(object):
             command = ' cp %s %s' %(vcConfig.RATELIMITER_APP_CLICK, clickConfFilePath)
             if type(vnfi.config) == RateLimiterConfig:
                 maxRate = vnfi.config.maxMbps
-                command = command + ' && sed -i \'s/2000Bps/%sBps/\' %s' % (maxRate*1000.0, clickConfFilePath)
-            command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, clickConfFilePath)
-            command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
+                command = command + " && sed -i \'s/2000Bps/{0}Bps/\' {1}".format(maxRate*1000.0, clickConfFilePath)
+            command = command + " && sed -i \'1i\\{0}\' {1}".format(dpdkInfo, clickConfFilePath)
+            command = command + " && {0} --dpdk -l {1} -n 1 --socket-mem {2} --file-prefix {3} --no-pci --vdev={4} --vdev={5} -- {6}".format(vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
-            ports = {'%d/tcp' % vcConfig.CLICK_CONTROLL_SOCKET_PORT: None}
+            ports = {'{0}/tcp'.format(vcConfig.CLICK_CONTROLL_SOCKET_PORT): None}
             container = dockerClient.containers.run(imageName, ['/bin/bash', '-c', command], tty=True, remove=not debug, privileged=True, name=containerName, 
                 volumes=volumes, detach=True, ports=ports) #, ulimits=[ulimit])
 
@@ -294,8 +294,8 @@ class VNFIAdder(object):
             for dst in LB.dst:
                 declLine = declLine + ', DST %s' % dst
             declLine = 'lb :: IPLoadBalancer(%s)' % declLine
-            command = 'sed -i \"1i\\%s\" %s' % (declLine, vcConfig.LB_APP_CLICK)
-            command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.LB_APP_CLICK)
+            command = "sed -i \'1i\\{0}\' {1}".format(declLine, vcConfig.LB_APP_CLICK)
+            command = command + " && sed -i \'1i\\{0}\' {1}".format(dpdkInfo, vcConfig.LB_APP_CLICK)
             command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
             #print(command)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
@@ -343,7 +343,7 @@ class VNFIAdder(object):
         clickConfFilePath = vcConfig.MON_APP_CLICK + "_" + containerName + ".click"
         appName = clickConfFilePath
         command = ' cp %s %s' %(vcConfig.MON_APP_CLICK, clickConfFilePath)
-        command = command + '&& sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.MON_APP_CLICK)
+        command = command + " && sed -i \'1i\\{0}\' {1}".format(dpdkInfo, vcConfig.MON_APP_CLICK)
         # command = command + ' && sed -i \'s/7777/%s/\' %s' % (controlSocketPort, clickConfFilePath)
         command = command + " && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s" % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
         volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
@@ -393,8 +393,8 @@ class VNFIAdder(object):
         socketMem = socketMem[:-1]
         try:
             declLine = 'nat :: IPRewriterPatterns(NAT %s %d-%d - -)' % (NAT.pubIP, NAT.minPort, NAT.maxPort)
-            command = 'sed -i \"1i\\%s\" %s' % (declLine, vcConfig.NAT_APP_CLICK)
-            command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.NAT_APP_CLICK)
+            command = " sed -i \'1i\\{0}\' {1}".format(declLine, vcConfig.NAT_APP_CLICK)
+            command = command + " && sed -i \'1i\\{0}\' {1}".format(dpdkInfo, vcConfig.NAT_APP_CLICK)
             command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
             self.logger.info(command)
             volumes = {'/mnt/huge_1GB': {'bind': '/dev/hugepages', 'mode': 'rw'}, '/tmp/': {'bind': '/tmp/', 'mode': 'rw'}}
@@ -441,11 +441,11 @@ class VNFIAdder(object):
         socketMem = socketMem[:-1]
         # command = "%s --dpdk -l %d-%d -n 1 -m %d --no-pci --vdev=%s --vdev=%s -- %s" % (vcConfig.CLICK_PATH, startCPU, endCPU, vnfi.maxMem, vdev0, vdev1, appName)
         declLine = "%s 0 234 \\\\\\\\<%s> \\\\\\\\<%s> 300 64," % (VPN.tunnelSrcIP, VPN.encryptKey, VPN.authKey)
-        command = "sed -i \"3i %s\" %s" % (declLine, vcConfig.VPN_APP_CLICK)
+        command = " sed -i \'3i {0}\' {1}".format(declLine, vcConfig.VPN_APP_CLICK)
         declLine = "0.0.0.0/0 %s 1 234 \\\\\\\\<%s> \\\\\\\\<%s> 300 64" % (VPN.tunnelDstIP, VPN.encryptKey, VPN.authKey)
-        command = command + " && sed -i \"4i %s\" %s" % (declLine, vcConfig.VPN_APP_CLICK)
+        command = command + " && sed -i \'4i {0}\' {1}".format(declLine, vcConfig.VPN_APP_CLICK)
         # command = command + " && cat ./click-conf/vpn.click "
-        command = command + ' && sed -i \"1i\\%s\" %s' % (dpdkInfo, vcConfig.VPN_APP_CLICK)
+        command = command + " && sed -i \'1i\\{0}\' {1}".format(dpdkInfo, vcConfig.VPN_APP_CLICK)
         command = command + ' && %s --dpdk -l %s -n 1 --socket-mem %s --file-prefix %s --no-pci --vdev=%s --vdev=%s -- %s' % (vcConfig.CLICK_PATH, cpuStr, socketMem, filePrefix, vdev0, vdev1, appName)
         containerName = 'vnf-%s' % vnfi.vnfiID
         try:

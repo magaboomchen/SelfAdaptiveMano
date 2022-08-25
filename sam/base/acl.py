@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
 
@@ -155,7 +155,7 @@ class ACLTable(object):
         return len(self.ipv6RulesList) + len(self.srv6RulesList) + len(self.rocev1RulesList)
 
     def getRulesList(self, routeProtocol):
-        # type: (Union[IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL]) -> list(ACLTuple)
+        # type: (Union[IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL]) -> List[ACLTuple]
         if routeProtocol == IPV4_ROUTE_PROTOCOL:
             return self.ipv4RulesList
         elif routeProtocol == IPV6_ROUTE_PROTOCOL:
