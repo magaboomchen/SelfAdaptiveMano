@@ -4,4 +4,4 @@ export PYTHONPATH=$SDE_INSTALL/lib/python$PYTHON_VER/site-packages/p4testutils:$
 echo SDE_INSTALL = $SDE_INSTALL
 echo PYTHON_VER = $PYTHON_VER
 echo PYTHONPATH = $PYTHONPATH
-python p4controller.py
+python p4Controller.py

@@ -23,14 +23,14 @@ from sam.switchController.base.p4ClassifierEntry import P4ClassifierEntry
 from sam.switchController.base.p4Action import ACTION_TYPE_DECAPSULATION_NSH, ACTION_TYPE_ENCAPSULATION_NSH, ACTION_TYPE_FORWARD, FIELD_TYPE_ETHERTYPE, FIELD_TYPE_MDTYPE, FIELD_TYPE_NEXT_PROTOCOL, FIELD_TYPE_SI, FIELD_TYPE_SPI, P4Action, FieldValuePair
 from sam.switchController.base.p4Match import ETH_TYPE_IPV4, ETH_TYPE_NSH, P4Match, ETH_TYPE_IPV6, ETH_TYPE_ROCEV1
 from sam.switchController.base.p4RouteEntry import P4RouteEntry
-from sam.base.sfc import SFC_DIRECTION_0, SFC_DIRECTION_1
+from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
 
 P4CONTROLLER_P4_SWITCH_ID_1 = 20
 P4CONTROLLER_P4_SWITCH_ID_2 = 21
 DIRECTION_MASK_0 = 8388607
 DIRECTION_MASK_1 = 8388608
 
-class P4Controller:
+class P4Controller(object):
     def __init__(self, _zonename):
         # message init
         logConf = LoggerConfigurator(__name__, './log', 'p4Controller.log', level='debug')
