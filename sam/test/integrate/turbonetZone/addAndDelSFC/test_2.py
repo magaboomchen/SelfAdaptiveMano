@@ -92,14 +92,15 @@ class TestAddSFCClass(IntTestBaseClass):
         # exercise
         for idx, sfci in enumerate(self.sfciList):
             sfc = self.getSFCFromDB(self.sfcList[idx].sfcUUID)
-            rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
-                attributes={
-                    "sfc": sfc,
-                    "sfci": sfci,
-                    "zone": TURBONET_ZONE
-                })
-            self.logger.info("sfc is {0}".format(sfc))
-            self.sendRequest(DISPATCHER_QUEUE, rq)
+            if sfc.scalingMode == MANUAL_SCALE:
+                rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
+                    attributes={
+                        "sfc": sfc,
+                        "sfci": sfci,
+                        "zone": TURBONET_ZONE
+                    })
+                self.logger.info("sfc is {0}".format(sfc))
+                self.sendRequest(DISPATCHER_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")

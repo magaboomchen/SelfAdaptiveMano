@@ -67,6 +67,9 @@ class Server(object):
     def getServerID(self):
         return self._serverID
 
+    def getNodeID(self):
+        return self._serverID
+
     def getServerType(self):
         return self._serverType
 

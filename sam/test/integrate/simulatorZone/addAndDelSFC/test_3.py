@@ -28,8 +28,10 @@ from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
                         REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, \
                         REQUEST_TYPE_UPDATE_SFC_STATE, Request
 from sam.base.sfc import SFCI
-from sam.base.sfcConstant import STATE_MANUAL
+from sam.base.sfcConstant import MANUAL_SCALE, STATE_MANUAL
 from sam.test.integrate.intTestBase import IntTestBaseClass
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import ABNORMAL_DETECTOR_IP, \
+                                ABNORMAL_DETECTOR_PORT, REGULATOR_IP, REGULATOR_PORT
 
 
 class TestAddSFCClass(IntTestBaseClass):
@@ -62,8 +64,11 @@ class TestAddSFCClass(IntTestBaseClass):
         rM = sfc5.routingMorphic
         sfci5 = self.genSFCITemplate(rM)
 
-        self.sfcList = [sfc1, sfc2, sfc3, sfc4, sfc5]
-        self.sfciList = [sfci1, sfci2, sfci3, sfci4, sfci5]
+        # self.sfcList = [sfc1, sfc2, sfc3, sfc4, sfc5]
+        # self.sfciList = [sfci1, sfci2, sfci3, sfci4, sfci5]
+
+        self.sfcList = [sfc5]
+        self.sfciList = [sfci5]
 
         yield
 
@@ -88,14 +93,23 @@ class TestAddSFCClass(IntTestBaseClass):
         # exercise
         for idx, sfci in enumerate(self.sfciList):
             sfc = self.getSFCFromDB(self.sfcList[idx].sfcUUID)
-            rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
-                attributes={
-                    "sfc": sfc,
-                    "sfci": sfci,
-                    "zone": SIMULATOR_ZONE
-                })
-            self.logger.info("sfc is {0}".format(sfc))
-            self.sendRequest(DISPATCHER_QUEUE, rq)
+            if sfc.scalingMode == MANUAL_SCALE:
+                rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
+                    attributes={
+                        "sfc": sfc,
+                        "sfci": sfci,
+                        "zone": SIMULATOR_ZONE
+                    })
+                self.logger.info("sfc is {0}".format(sfc))
+                self.sendRequest(DISPATCHER_QUEUE, rq)
+            else:
+                while True:
+                    sfciIDList = self.getSFCIIDListFromDB(self.sfcList[idx].sfcUUID)
+                    if len(sfciIDList) >= 1:
+                        for sfciID in sfciIDList:
+                            sfci = self.getSFCIFromDB(sfciID)
+                            self.sfciList[idx] = sfci
+                        break
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
@@ -146,7 +160,11 @@ class TestAddSFCClass(IntTestBaseClass):
                 break
             else:
                 self.logger.info("Unknown abnormal type")
-        self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
+
+        self.setMessageAgetnListenSocket(ABNORMAL_DETECTOR_IP, 
+                                            ABNORMAL_DETECTOR_PORT)
+        self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
+
         self.logger.info("Please check regulator if affected SFCI recovered?"\
                         "Then press andy key to continue!")
         screenInput()

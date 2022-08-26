@@ -55,17 +55,18 @@ class TestAddSFCClass(IntTestBaseClass):
         # exercise
         sfcInDB = self.getSFCFromDB(self.sfc.sfcUUID)
         self.logger.info("sfcInDB is {0}".format(sfcInDB))
-        rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
-            attributes={
-                "sfc": sfcInDB,
-                "sfci": self.sfci,
-                "zone": TURBONET_ZONE
-            })
-        self.sendRequest(DISPATCHER_QUEUE, rq)
+        if sfcInDB.scalingMode == MANUAL_SCALE:
+            rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
+                attributes={
+                    "sfc": sfcInDB,
+                    "sfci": self.sfci,
+                    "zone": TURBONET_ZONE
+                })
+            self.sendRequest(DISPATCHER_QUEUE, rq)
 
-        self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
-        screenInput()
+            self.logger.info("Please check orchestrator if recv a command reply?"\
+                            "Then press andy key to continue!")
+            screenInput()
 
         # exercise
         rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,

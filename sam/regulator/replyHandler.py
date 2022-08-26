@@ -3,21 +3,23 @@
 
 import math
 import time
-from typing import Dict, Union
 import uuid
 from logging import Logger
+from typing import Dict, List, Union
 
-from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REQUEST, MessageAgent,\
-                                     SAMMessage
+from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REQUEST, \
+                                SIMULATOR_ZONE, TURBONET_ZONE, MessageAgent,\
+                                SAMMessage
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI, \
                             Request
 from sam.base.sfc import SFC, SFCI
-from sam.base.sfcConstant import AUTO_SCALE, REGULATOR_SFCIID_ALLOCATED_RANGE, \
-                    STATE_ACTIVE, STATE_DELETED, \
+from sam.base.command import CommandReply
+from sam.base.sfcConstant import AUTO_SCALE, REGULATOR_SFCIID_ALLOCATED_RANGE, SFC_DIRECTION_0, SFC_DIRECTION_1, \
+                    STATE_ACTIVE, STATE_DELETED, STATE_IN_PROCESSING, \
                     STATE_SCALING_IN_MODE, STATE_SCALING_OUT_MODE
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.vnfiStatus import VNFIStatus
-from sam.base.vnf import PREFERRED_DEVICE_TYPE_P4, PREFERRED_DEVICE_TYPE_SERVER
+from sam.base.vnf import VNFI, PREFERRED_DEVICE_TYPE_P4, PREFERRED_DEVICE_TYPE_SERVER
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.regulator.config import ENABLE_SCALING, MAX_OVER_LOAD_NUM_THRESHOLD, \
@@ -30,6 +32,9 @@ UNDERLOAD_STATE = "UNDERLOAD_STATE"
 NORMALLOAD_STATE = "NORMALLOAD_STATE"
 STARTUP_STATE = "STARTUP_STATE"
 
+SCALING_TASK_STATE_ADDING = "SCALING_TASK_STATE_ADDING"
+SCALING_TASK_STATE_DELETING = "SCALING_TASK_STATE_DELETING"
+
 
 class ReplyHandler(object):
     def __init__(self, logger, msgAgent, oib):
@@ -38,17 +43,19 @@ class ReplyHandler(object):
         self._messageAgent = msgAgent
         self._oib = oib
         self.sfcisInAllZoneDict = {}
-        self.sfcLoadStateDict = {}  # [sfcUUID] = {"loadList": [], "currentSFCINum": 1, "targetSFCINum": 1}
+        self.sfcLoadStateDict = {}  # [sfcUUID] = {"loadList": [], "currentValidSFCINum": 1, "targetSFCINum": 1}
         self.sfciLoadDict = {}      # [sfciID] = [[sloRealTimeValue, timestamp, bandwidth]]
-        self.maxLoadListLength = max(MAX_OVER_LOAD_NUM_THRESHOLD, MAX_UNDER_LOAD_NUM_THRESHOLD)
+        self.maxLoadListLength = max(MAX_OVER_LOAD_NUM_THRESHOLD, 
+                                        MAX_UNDER_LOAD_NUM_THRESHOLD)
         self.pM = PerformanceModel()
         self.scalingOutTaskDict = {}  # type: Dict[SFC.sfcUUID, Dict[SFCI.sfciID, Union[OVERLOAD_STATE, UNDERLOAD_STATE, NORMALLOAD_STATE, STARTUP_STATE]]]
         self.scalingInTaskDict = {}  # type: Dict[SFC.sfcUUID, Dict[SFCI.sfciID, Union[OVERLOAD_STATE, UNDERLOAD_STATE, NORMALLOAD_STATE, STARTUP_STATE]]]
         self.sfciIDAllocator = SFCIDAllocator(self._oib,
-                                                REGULATOR_SFCIID_ALLOCATED_RANGE[0],
-                                                REGULATOR_SFCIID_ALLOCATED_RANGE[1])
+                                    REGULATOR_SFCIID_ALLOCATED_RANGE[0],
+                                    REGULATOR_SFCIID_ALLOCATED_RANGE[1])
 
     def handle(self, reply):
+        # type: (CommandReply) -> None
         try:
             self.logger.info("Get a reply")
             self.scalingHandler(reply)
@@ -59,6 +66,7 @@ class ReplyHandler(object):
             pass
 
     def scalingHandler(self, reply):
+        # type: (CommandReply) -> None
         if not ENABLE_SCALING:
             return
         if "sfcis" in reply.attributes.keys():
@@ -75,7 +83,7 @@ class ReplyHandler(object):
         # compute the input traffic bandwidth of all SFCs
         zoneName = sfcTuple[0]
         sfciIDList = sfcTuple[2]
-        sfc = sfcTuple[4]
+        sfc = sfcTuple[4]   # type: SFC
         self.logger.info("sfciIDList is {0}".format(sfciIDList))
         # self.logger.info("sfc is {0}".format(sfc))
         sumSFCITrafficBandwidth = 0
@@ -94,37 +102,56 @@ class ReplyHandler(object):
         self.logger.debug("sumSFCITrafficBandwidth is {0}".format(sumSFCITrafficBandwidth))
         targetSFCINum = self.computeTargetSFCINum(sfc, sumSFCITrafficBandwidth)
         self.logger.debug("targetSFCINum is {0}".format(targetSFCINum))
-        currentSFCINum = len(sfciIDList)
-        if currentSFCINum != 0:
-            if currentSFCINum > targetSFCINum:
-                loadState = UNDERLOAD_STATE
-            elif currentSFCINum == targetSFCINum:
-                loadState = NORMALLOAD_STATE
-            elif currentSFCINum < targetSFCINum:
-                loadState = OVERLOAD_STATE
-        else:
-            loadState = STARTUP_STATE
+        currentValidSFCINum = self.getCurrentValidSFCINum(sfciIDList)
+        self.logger.debug("currentValidSFCINum is {0}".format(currentValidSFCINum))
+        # if currentValidSFCINum != 0:
+        #     if currentValidSFCINum > targetSFCINum:
+        #         loadState = UNDERLOAD_STATE
+        #     elif currentValidSFCINum == targetSFCINum:
+        #         loadState = NORMALLOAD_STATE
+        #     elif currentValidSFCINum < targetSFCINum:
+        #         loadState = OVERLOAD_STATE
+        # else:
+        #     loadState = STARTUP_STATE
+        if currentValidSFCINum > targetSFCINum:
+            loadState = UNDERLOAD_STATE
+        elif currentValidSFCINum == targetSFCINum:
+            loadState = NORMALLOAD_STATE
+        elif currentValidSFCINum < targetSFCINum:
+            loadState = OVERLOAD_STATE
 
         if sfc.sfcUUID not in self.sfcLoadStateDict:
             self.sfcLoadStateDict[sfc.sfcUUID] = {"loadList": [],
-                                                    "currentSFCINum": 1,
-                                                    "targetSFCINum": 1}
+                                                    "currentValidSFCINum": 0,
+                                                    "targetSFCINum": 0}
         loadList = self.sfcLoadStateDict[sfc.sfcUUID]["loadList"]
         loadList.append(loadState)
         if len(loadList) > self.maxLoadListLength:
             loadList.pop(0)
-        self.sfcLoadStateDict[sfc.sfcUUID]["currentSFCINum"] = currentSFCINum
+        self.sfcLoadStateDict[sfc.sfcUUID]["currentValidSFCINum"] = currentValidSFCINum
         self.sfcLoadStateDict[sfc.sfcUUID]["targetSFCINum"] = targetSFCINum
 
+    def getCurrentValidSFCINum(self, sfciIDList):
+        cnt = 0
+        for sfciID in sfciIDList:
+            sfciState = self._oib.getSFCIState(sfciID)
+            if sfciState in [STATE_ACTIVE, STATE_IN_PROCESSING]:
+                cnt += 1
+        return cnt
+
     def updateSFCILoad(self, sfci):
+        # type: (SFCI) -> float
         sfciID = sfci.sfciID
         if sfciID not in self.sfciLoadDict:
             self.sfciLoadDict[sfciID] = []
         sumVNFIsStatus = self.computeFirstVNFIsLoad(sfci.vnfiSequence)
         self.sfciLoadDict[sfciID].append([sumVNFIsStatus, time.time(), 0])
         if len(self.sfciLoadDict[sfciID]) >= 2:
-            trafficLoad1 = self.sfciLoadDict[sfciID][-1][0].inputTrafficAmount
-            trafficLoad0 = self.sfciLoadDict[sfciID][-2][0].inputTrafficAmount
+            trafficLoad1 = 0
+            trafficLoad0 = 0
+            for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
+                trafficLoad1 += self.sfciLoadDict[sfciID][-1][0].inputTrafficAmount[directionID]
+                trafficLoad0 += self.sfciLoadDict[sfciID][-2][0].inputTrafficAmount[directionID]
             timestamp1 = self.sfciLoadDict[sfciID][-1][1]
             timestamp0 = self.sfciLoadDict[sfciID][-2][1]
             if trafficLoad0 != None and trafficLoad1 != None:
@@ -137,25 +164,28 @@ class ReplyHandler(object):
         return self.sfciLoadDict[sfciID][-1][2]
 
     def computeFirstVNFIsLoad(self, vnfiSequence):
-        sumVNFIsStatus = VNFIStatus(inputTrafficAmount=0,
-                                    inputPacketAmount=0,
-                                    outputTrafficAmount=0,
-                                    outputPacketAmount=0)
+        # type: (List[List[VNFI]]) -> VNFIStatus
+        sumVNFIsStatus = VNFIStatus(inputTrafficAmount={SFC_DIRECTION_0:0, SFC_DIRECTION_1:0},
+                                    inputPacketAmount={SFC_DIRECTION_0:0, SFC_DIRECTION_1:0},
+                                    outputTrafficAmount={SFC_DIRECTION_0:0, SFC_DIRECTION_1:0},
+                                    outputPacketAmount={SFC_DIRECTION_0:0, SFC_DIRECTION_1:0})
         for vnfi in vnfiSequence[0]:
             if type(vnfi.vnfiStatus) != VNFIStatus:
                 continue
-            if vnfi.vnfiStatus.inputTrafficAmount != None:
-                sumVNFIsStatus.inputTrafficAmount += vnfi.vnfiStatus.inputTrafficAmount
-            if vnfi.vnfiStatus.inputPacketAmount != None:
-                sumVNFIsStatus.inputPacketAmount += vnfi.vnfiStatus.inputPacketAmount
-            if vnfi.vnfiStatus.outputTrafficAmount != None:
-                sumVNFIsStatus.outputTrafficAmount += vnfi.vnfiStatus.outputTrafficAmount
-            if vnfi.vnfiStatus.outputPacketAmount != None:
-                sumVNFIsStatus.outputPacketAmount += vnfi.vnfiStatus.outputPacketAmount
+            for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
+                if vnfi.vnfiStatus.inputTrafficAmount != None:
+                    sumVNFIsStatus.inputTrafficAmount[directionID] += vnfi.vnfiStatus.inputTrafficAmount[directionID]
+                if vnfi.vnfiStatus.inputPacketAmount != None:
+                    sumVNFIsStatus.inputPacketAmount[directionID] += vnfi.vnfiStatus.inputPacketAmount[directionID]
+                if vnfi.vnfiStatus.outputTrafficAmount != None:
+                    sumVNFIsStatus.outputTrafficAmount[directionID] += vnfi.vnfiStatus.outputTrafficAmount[directionID]
+                if vnfi.vnfiStatus.outputPacketAmount != None:
+                    sumVNFIsStatus.outputPacketAmount[directionID] += vnfi.vnfiStatus.outputPacketAmount[directionID]
         self.logger.debug("sumVNFIsStatus is {0}".format(sumVNFIsStatus))
         return sumVNFIsStatus
 
     def computeTargetSFCINum(self, sfc, sumSFCITrafficBandwidth):
+        # type: (SFC, int) -> int
         vNFTypeSequence = sfc.vNFTypeSequence
         maxExpCPU = 0
         maxExpMem = 0
@@ -178,7 +208,7 @@ class ReplyHandler(object):
         return targetSFCINum 
 
     def processAbnormalLoadSFC(self, sfcTuple):
-        sfc = sfcTuple[4]
+        sfc = sfcTuple[4]   # type: (SFC)
 
         if self.isOverLoadCondition(sfc):
             self._oib.updateSFCState(sfc.sfcUUID, STATE_SCALING_OUT_MODE)
@@ -191,38 +221,49 @@ class ReplyHandler(object):
             return 
 
     def isOverLoadCondition(self, sfc):
-        currentSFCINum = self.sfcLoadStateDict[sfc.sfcUUID]["currentSFCINum"]
+        # type: (SFC) -> bool
+        currentValidSFCINum = self.sfcLoadStateDict[sfc.sfcUUID]["currentValidSFCINum"]
         maxScalingInstanceNumber = sfc.maxScalingInstanceNumber
-        scalingOutCondition = (currentSFCINum < maxScalingInstanceNumber)
-
-        loadList = self.sfcLoadStateDict[sfc.sfcUUID]["loadList"]
-        self.logger.debug("loadList is {0}".format(loadList))
-        overLoadCnt = 0
-        for load in loadList:
-            if load == OVERLOAD_STATE:
-                overLoadCnt += 1
-        scalingOutCondition = scalingOutCondition \
-                                and (overLoadCnt >= MAX_OVER_LOAD_NUM_THRESHOLD)
+        scalingOutCondition = (currentValidSFCINum < maxScalingInstanceNumber)
 
         sfcState = self._oib.getSFCState(sfc.sfcUUID)
-        scalingOutCondition = scalingOutCondition and (sfcState == STATE_ACTIVE)
+        scalingOutCondition = scalingOutCondition \
+                                and (sfcState == STATE_ACTIVE) \
+                                and (sfc.scalingMode == AUTO_SCALE)
+
+        loadList = self.sfcLoadStateDict[sfc.sfcUUID]["loadList"]
+        # self.logger.debug("loadList is {0}".format(loadList))
+        # overLoadCnt = 0
+        # for load in loadList:
+        #     if load == OVERLOAD_STATE:
+        #         overLoadCnt += 1
+        # scalingOutCondition = scalingOutCondition \
+        #                         and (overLoadCnt >= MAX_OVER_LOAD_NUM_THRESHOLD) \
+
+        scalingOutConditionPart1 = True
         for sfcLoadState in loadList[-MAX_OVER_LOAD_NUM_THRESHOLD:]:
-            scalingOutCondition = scalingOutCondition \
+            scalingOutConditionPart1 = scalingOutConditionPart1 \
                                     and (sfcLoadState == OVERLOAD_STATE) \
-                                    and (sfc.scalingMode == AUTO_SCALE)
+
+        scalingOutConditionPart2 = (currentValidSFCINum == 0)
+
+        scalingOutCondition = scalingOutCondition \
+                and (scalingOutConditionPart1 or scalingOutConditionPart2)
+
         return scalingOutCondition
 
     def isUnderLoadCondition(self, sfc):
+        # type: (SFC) -> bool
+        sfcState = self._oib.getSFCState(sfc.sfcUUID)
+        scalingInCondition = (sfcState == STATE_ACTIVE)
+
         loadList = self.sfcLoadStateDict[sfc.sfcUUID]["loadList"]
         self.logger.debug("loadList is {0}".format(loadList))
-        underLoadCnt = 0
-        for load in loadList:
-            if load == UNDERLOAD_STATE:
-                underLoadCnt += 1
-        scalingInCondition = (underLoadCnt >= MAX_UNDER_LOAD_NUM_THRESHOLD)        
-
-        sfcState = self._oib.getSFCState(sfc.sfcUUID)
-        scalingInCondition = scalingInCondition and (sfcState == STATE_ACTIVE)
+        # underLoadCnt = 0
+        # for load in loadList:
+        #     if load == UNDERLOAD_STATE:
+        #         underLoadCnt += 1
+        # scalingInCondition = (underLoadCnt >= MAX_UNDER_LOAD_NUM_THRESHOLD)
         for sfcLoadState in loadList[-MAX_UNDER_LOAD_NUM_THRESHOLD:]:
             scalingInCondition = scalingInCondition \
                                     and (sfcLoadState == UNDERLOAD_STATE)  \
@@ -230,6 +271,7 @@ class ReplyHandler(object):
         return scalingInCondition
 
     def scalingOutSFC(self, sfc):
+        # type: (SFC) -> None
         deltaSFCINum = abs(self.getDeltaSFCINum(sfc))
         self.logger.warning("scaling out deltaSFCINum {0}".format(deltaSFCINum))
         for _ in range(deltaSFCINum):
@@ -237,11 +279,12 @@ class ReplyHandler(object):
             if sfciID == None:
                 sfciID = self.sfciIDAllocator.getAvaSFCIID()
             sfci = SFCI(sfciID)
-            req = self._genAddSFCIRequest(sfc, sfci)
+            zoneName = self._oib.getSFCZone4DB(sfc.sfcUUID)
+            req = self._genAddSFCIRequest(sfc, sfci, zoneName)
             self._sendRequest2Dispatcher(req)
             if sfc.sfcUUID not in self.scalingOutTaskDict:
                 self.scalingOutTaskDict[sfc.sfcUUID] = {}
-            self.scalingOutTaskDict[sfc.sfcUUID] = {sfciID: "adding"}
+            self.scalingOutTaskDict[sfc.sfcUUID] = {sfciID: SCALING_TASK_STATE_ADDING}
 
     def _genAddSFCIRequest(self, sfc, sfci, zoneName):
         req = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFCI, 
@@ -253,20 +296,23 @@ class ReplyHandler(object):
         return req
 
     def _sendRequest2Dispatcher(self, request):
+        # type: (Request) -> None
         queueName = DISPATCHER_QUEUE
         msg = SAMMessage(MSG_TYPE_REQUEST, request)
         self._messageAgent.sendMsg(queueName, msg)
 
     def getDeltaSFCINum(self, sfc):
+        # type: (SFC) -> int
         maxScalingInstanceNumber = sfc.maxScalingInstanceNumber
         targetSFCINum = self.sfcLoadStateDict[sfc.sfcUUID]["targetSFCINum"]
         targetSFCINum = min(targetSFCINum, maxScalingInstanceNumber)
         targetSFCINum = max(targetSFCINum, 1)
-        currentSFCINum = self.sfcLoadStateDict[sfc.sfcUUID]["currentSFCINum"]
-        deltaSFCINum = targetSFCINum - currentSFCINum
+        currentValidSFCINum = self.sfcLoadStateDict[sfc.sfcUUID]["currentValidSFCINum"]
+        deltaSFCINum = targetSFCINum - currentValidSFCINum
         return deltaSFCINum
 
     def scalingInSFC(self, sfc):
+        # type: (SFC) -> None
         deltaSFCINum = abs(self.getDeltaSFCINum(sfc))
         self.logger.warning("scaling in deltaSFCINum {0}".format(deltaSFCINum))
         sfciIDList = self._oib.getSFCCorrespondingSFCIID4DB(sfc.sfcUUID)
@@ -278,9 +324,10 @@ class ReplyHandler(object):
             self._sendRequest2Dispatcher(req)
             if sfc.sfcUUID not in self.scalingInTaskDict:
                 self.scalingInTaskDict[sfc.sfcUUID] = {}
-            self.scalingOutTaskDict[sfc.sfcUUID] = {sfciID: "deleting"}
+            self.scalingOutTaskDict[sfc.sfcUUID] = {sfciID: SCALING_TASK_STATE_DELETING}
 
     def _genDelSFCIRequest(self, sfc, sfci, zoneName):
+        # type: (SFC, SFCI, Union[SIMULATOR_ZONE, TURBONET_ZONE]) -> Request
         req = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFCI, 
                         attributes={
                             "sfc": sfc,
@@ -291,7 +338,6 @@ class ReplyHandler(object):
 
     def processAllScalingTasks(self):
         self.logger.debug(" Scaling out task dict is {0}".format(self.scalingOutTaskDict))
-        time.sleep(1)
         for sfcUUID in list(self.scalingOutTaskDict.keys()):
             isScalingOutFinish = True
             for sfciID, scalingOutTaskState in list(self.scalingOutTaskDict[sfcUUID].items()):

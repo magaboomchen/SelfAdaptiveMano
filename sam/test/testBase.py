@@ -504,6 +504,13 @@ class TestBase(object):
         tmpMessageAgent.sendMsg(queue, msg)
         del tmpMessageAgent
 
+    def setMessageAgetnListenSocket(self, listenIP, listenPort):
+        try:
+            self.tmpMessageAgent
+        except AttributeError:
+            self.tmpMessageAgent = MessageAgent()
+        self.tmpMessageAgent.setListenSocket(listenIP, listenPort)
+
     def sendCmdByRPC(self, dstIP, dstPort, msgType, cmd):
         msg = SAMMessage(msgType, cmd)
         self.tmpMessageAgent.sendMsgByRPC(dstIP, dstPort, msg)

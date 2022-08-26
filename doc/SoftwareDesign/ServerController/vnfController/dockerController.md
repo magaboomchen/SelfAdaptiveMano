@@ -30,7 +30,7 @@ PS：
 
 1.1）启动docker：
 
-    sudo docker run -ti --rm --privileged  --name=test \
+    sudo docker run -ti ----privileged  --name=test \
     -v /mnt/huge_1GB:/dev/hugepages \
     -v /tmp/:/tmp/  \
     dpdk-app-testpmd

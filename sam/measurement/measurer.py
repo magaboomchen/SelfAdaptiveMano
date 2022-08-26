@@ -7,11 +7,12 @@ import uuid
 import ctypes
 import inspect
 import threading
-from typing import Dict
+from typing import Dict, Union
 from logging import Logger
 from threading import Thread
 from packaging import version
 
+from sam.base.shellProcessor import ShellProcessor
 from sam.measurement.mConfig import MEASURE_TIME_SLOT, SIMULATOR_ZONE_ONLY, TURBONET_ZONE_ONLY
 from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD, MSG_TYPE_SERVER_MANAGER_CMD, MSG_TYPE_SFF_CONTROLLER_CMD, MSG_TYPE_SIMULATOR_CMD, MSG_TYPE_VNF_CONTROLLER_CMD, PUFFER_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, \
                                 SAMMessage, MessageAgent, \
@@ -22,12 +23,13 @@ from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
     SERVER_MANAGER_IP, SERVER_MANAGER_PORT, \
     VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
 from sam.base.command import Command, CMD_TYPE_GET_TOPOLOGY, \
-    CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_SFCI_STATE
+    CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_SFCI_STATE, CommandReply
 from sam.base.request import REQUEST_TYPE_GET_SFCI_STATE, Reply, \
                                 REQUEST_STATE_SUCCESSFUL, \
-                                REQUEST_TYPE_GET_DCN_INFO
+                                REQUEST_TYPE_GET_DCN_INFO, Request
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.measurement import measurerCommandSender
 from sam.dashboard.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 
@@ -47,37 +49,24 @@ class Measurer(object):
         self._messageAgent = MessageAgent(self.logger)
         self._messageAgent.startMsgReceiverRPCServer(MEASURER_IP, MEASURER_PORT)
 
-        self._threadSet = {}    # type: Dict[int, Thread]
-
     def startMeasurer(self):
         self._collectTopology()
         self._runService()
 
     def _collectTopology(self):
-        # start a new thread to send command
-        threadID = len(self._threadSet)
-        thread = MeasurerCommandSender(threadID, self._messageAgent,
-            self.logger, self._dashib)
-        self._threadSet[threadID] = thread
-        thread.setDaemon(True)
-        thread.start()
+        # start a new process to send command
+        self.sP = ShellProcessor()
+        filePath = measurerCommandSender.__file__
+        self.sP.runPythonScript(filePath)
 
     def __del__(self):
+        self.logConfigur = LoggerConfigurator(__name__, None,
+            None, level='info')
+        self.logger = self.logConfigur.getLogger()
         self.logger.info("Delete Measurer.")
-        self.logger.debug(self._threadSet)
-        for key, thread in self._threadSet.items():
-            self.logger.debug("check thread is alive?")
-            if version.parse(sys.version.split(' ')[0]) \
-                                    >= version.parse('3.9'):
-                threadLiveness = thread.is_alive()
-            else:
-                threadLiveness = thread.isAlive()
-            if threadLiveness:
-                self.logger.info("Kill thread: %d" %thread.ident)
-                self._async_raise(thread.ident, KeyboardInterrupt)
-                thread.join()
+        self.sP.killPythonScript("measurerCommandSender.py")
 
-    def _async_raise(self,tid, exctype):
+    def _async_raise(self, tid, exctype):
         """raises the exception, performs cleanup if needed"""
         tid = ctypes.c_long(tid)
         if not inspect.isclass(exctype):
@@ -114,6 +103,7 @@ class Measurer(object):
                         "measurer")
 
     def _requestHandler(self, request):
+        # type: (Request) -> None
         self.logger.info("Recv a request")
         if request.requestType == REQUEST_TYPE_GET_DCN_INFO:
             attributes = self.getTopoAttributes()
@@ -121,6 +111,7 @@ class Measurer(object):
                 REQUEST_STATE_SUCCESSFUL, attributes)
             return rply
         elif request.requestType == REQUEST_TYPE_GET_SFCI_STATE:
+            self.logger.info("Get SFCI state request.")
             attributes = self.getSFCIAttributes()
             rply = Reply(request.requestID,
                 REQUEST_STATE_SUCCESSFUL, attributes)
@@ -146,6 +137,7 @@ class Measurer(object):
         self._messageAgent.sendMsgByRPC(dstIP, dstPort, msg)
 
     def _commandReplyHandler(self, cmdRply):
+        # type: (CommandReply) -> None
         # self.logger.debug(cmdRply)
         zoneName = cmdRply.attributes['zone']
         self.logger.info("Get a command reply from {0}".format(zoneName))
@@ -159,6 +151,7 @@ class Measurer(object):
             raise ValueError("Unimplement zone {0}".format(zoneName))
 
     def _cmdRplyHandler4SimulatorZone(self, cmdRply, zoneName):
+        # type: (CommandReply, Union[SIMULATOR_ZONE, TURBONET_ZONE]) -> None
         for key,value in cmdRply.attributes.items():
             if key == 'switches':
                 self._dib.updateSwitchesByZone(value, zoneName)
@@ -166,7 +159,6 @@ class Measurer(object):
                 self._dib.updateLinksByZone(value, zoneName)
             elif key == 'servers':
                 self._dib.updateServersByZone(value, zoneName)
-                self._dib.updateSwitch2ServerLinksByZone(zoneName)
             elif key == 'vnfis':
                 # This code path is deprecated.
                 self._dib.updateVnfisByZone(value, zoneName)
@@ -180,6 +172,7 @@ class Measurer(object):
                 self.logger.warning("Unknown attributes:{0}".format(key))
 
     def _cmdRplyHandler4TurbonetZone(self, cmdRply, zoneName):
+        # type: (CommandReply, Union[SIMULATOR_ZONE, TURBONET_ZONE]) -> None
         for key,value in cmdRply.attributes.items():
             if key == 'switches':
                 raise ValueError("We don't need measure it.")
@@ -208,6 +201,7 @@ class Measurer(object):
         # self.logger.debug("dib:{0}".format(self._dib))
 
     def _cmdRplyHandler4PUFFERZone(self, cmdRply, zoneName):
+        # type: (CommandReply, Union[SIMULATOR_ZONE, TURBONET_ZONE]) -> None
         raise ValueError("Haven't implement and test!")
         for key,value in cmdRply.attributes.items():
             if key == 'switches':
@@ -227,83 +221,6 @@ class Measurer(object):
                 self._dib.updatePartialSFCIsByZone(value, zoneName)
             else:
                 self.logger.warning("Unknown attributes:{0}".format(key))
-
-
-class MeasurerCommandSender(threading.Thread):
-    def __init__(self, threadID,    # type: int
-                    messageAgent,   # type: MessageAgent
-                    logger,         # type: Logger
-                    dashib          # type: DashboardInfoBaseMaintainer
-                ):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self._messageAgent = messageAgent
-        self.logger = logger
-        self._dashib = dashib
-
-    def run(self):
-        self.logger.debug("thread MeasurerCommandSender.run().")
-        while True:
-            try:
-                zoneNameList = self._dashib.getAllZone()
-                if SIMULATOR_ZONE_ONLY:
-                    zoneNameList = [SIMULATOR_ZONE]
-                if TURBONET_ZONE_ONLY:
-                    zoneNameList = [TURBONET_ZONE]
-                self.logger.debug("zoneNameList is {0}".format(zoneNameList))
-                for zoneName in zoneNameList:
-                    self.logger.debug("zoneName: {0}".format(zoneName))
-                    self.sendGetTopoCmd(zoneName)
-                    self.sendGetServersCmd(zoneName)
-                    self.sendGetSFCIStatusCmd(zoneName)
-            except Exception as ex:
-                ExceptionProcessor(self.logger).logException(ex)
-            finally:
-                time.sleep(MEASURE_TIME_SLOT)
-
-    def sendGetTopoCmd(self, zoneName):
-        getTopoCmd = Command(CMD_TYPE_GET_TOPOLOGY, uuid.uuid1(),
-            {"zone":zoneName})
-        if zoneName == SIMULATOR_ZONE:
-            msg = SAMMessage(MSG_TYPE_SIMULATOR_CMD, getTopoCmd)
-            self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
-        elif zoneName == TURBONET_ZONE:
-            pass
-        else:
-            raise ValueError("Unimplement zone {0}".format(zoneName))
-
-    def sendGetServersCmd(self, zoneName):
-        getServersCmd = Command(CMD_TYPE_GET_SERVER_SET, uuid.uuid1(),
-            {"zone":zoneName})
-        if zoneName == SIMULATOR_ZONE:
-            msg = SAMMessage(MSG_TYPE_SIMULATOR_CMD, getServersCmd)
-            self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, \
-                                            msg)
-        elif zoneName == TURBONET_ZONE:
-            msg = SAMMessage(MSG_TYPE_SERVER_MANAGER_CMD, getServersCmd)
-            self._messageAgent.sendMsgByRPC(SERVER_MANAGER_IP, \
-                                            SERVER_MANAGER_PORT, msg)
-        else:
-            raise ValueError("Unimplement zone {0}".format(zoneName))
-
-    def sendGetSFCIStatusCmd(self, zoneName):
-        getSFCIStateCmd = Command(CMD_TYPE_GET_SFCI_STATE, uuid.uuid1(),
-            {"zone":zoneName})
-        if zoneName == SIMULATOR_ZONE:
-            msg = SAMMessage(MSG_TYPE_SIMULATOR_CMD, getSFCIStateCmd)
-            self._messageAgent.sendMsgByRPC(SIMULATOR_IP, SIMULATOR_PORT, msg)
-        elif zoneName == TURBONET_ZONE:
-            msg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD, getSFCIStateCmd)
-            self._messageAgent.sendMsgByRPC(SFF_CONTROLLER_IP, \
-                                            SFF_CONTROLLER_PORT, msg)
-            msg = SAMMessage(MSG_TYPE_P4CONTROLLER_CMD, getSFCIStateCmd)
-            self._messageAgent.sendMsgByRPC(P4_CONTROLLER_IP, \
-                                            P4_CONTROLLER_PORT, msg)
-            msg = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD, getSFCIStateCmd)
-            self._messageAgent.sendMsgByRPC(VNF_CONTROLLER_IP, \
-                                            VNF_CONTROLLER_PORT, msg)
-        else:
-            raise ValueError("Unimplement zone {0}".format(zoneName))
 
 
 if __name__=="__main__":

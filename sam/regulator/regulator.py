@@ -9,11 +9,9 @@ Get SFCI from db, check which switch/server has been used for each SFCI.
 
 """
 
-import sys
 import time
 import ctypes
 import inspect
-from packaging import version
 
 from sam.base.pickleIO import PickleIO
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import REGULATOR_IP, REGULATOR_PORT
@@ -26,10 +24,11 @@ from sam.base.request import REQUEST_STATE_FAILED, REQUEST_STATE_INITIAL, \
                                 REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
                                 REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, \
                                 REQUEST_TYPE_GET_DCN_INFO
+from sam.base.shellProcessor import ShellProcessor
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
+from sam.regulator import regulatorRequestSender
 from sam.regulator.argParser import ArgParser
 from sam.regulator.config import ENABLE_REQUEST_RETRY, FAILURE_REQUEST_RETRY_TIMEOUT, MAX_RETRY_NUM
-from sam.regulator.regulatorRequestSender import RegulatorRequestSender
 from sam.regulator.replyHandler import ReplyHandler
 from sam.regulator.commandHandler import CommandHandler
 from sam.regulator.requestHandler import RequestHandler
@@ -57,20 +56,16 @@ class Regulator(object):
                                             self._oib)
         self.requestHandler = RequestHandler(self.logger, self._messageAgent,
                                             self._oib)                           
-        self._threadSet = {}
 
     def startRegulator(self):
         self._collectSFCIState()
         self.startRoutine()
 
     def _collectSFCIState(self):
-        # start a new thread to send command
-        threadID = len(self._threadSet)
-        thread = RegulatorRequestSender(threadID, self._messageAgent,
-                                                        self.logger)
-        self._threadSet[threadID] = thread
-        thread.setDaemon(True)
-        thread.start()
+        # start a new process to send command
+        self.sP = ShellProcessor()
+        filePath = regulatorRequestSender.__file__
+        self.sP.runPythonScript(filePath)
 
     def startRoutine(self):
         while True:
@@ -129,32 +124,34 @@ class Regulator(object):
             pass
         else:
             body = msg.getbody()
+            if self._messageAgent.isRequest(body):
+                self.requestHandler.handle(body)
+            else:
+                self.logger.error("Unknown massage body:{0}".format(body))
+
+        msg = self._messageAgent.getMsgByRPC(REGULATOR_IP, REGULATOR_PORT)
+        msgType = msg.getMessageType()
+        if msgType == None:
+            pass
+        else:
+            body = msg.getbody()
             if self._messageAgent.isCommand(body):
                 self.cmdHandler.handle(body)
             elif self._messageAgent.isReply(body):
                 self.replyHandler.handle(body)
-            elif self._messageAgent.isRequest(body):
-                self.requestHandler.handle(body)
             else:
                 self.logger.error("Unknown massage body:{0}".format(body))
+        time.sleep(1)
         self.cmdHandler.processAllRecoveryTasks()
         self.replyHandler.processAllScalingTasks()
         self.requestHandler.processAllRequestTask()
 
     def __del__(self):
+        self.logConfigur = LoggerConfigurator(__name__, None,
+            None, level='info')
+        self.logger = self.logConfigur.getLogger()
         self.logger.info("Delete Regulator.")
-        self.logger.debug(self._threadSet)
-        for key, thread in self._threadSet.items():
-            self.logger.debug("check thread is alive?")
-            if version.parse(sys.version.split(' ')[0]) \
-                                    >= version.parse('3.9'):
-                threadLiveness = thread.is_alive()
-            else:
-                threadLiveness = thread.isAlive()
-            if threadLiveness:
-                self.logger.info("Kill thread: %d" %thread.ident)
-                self._async_raise(thread.ident, KeyboardInterrupt)
-                thread.join()
+        self.sP.killPythonScript("regulatorRequestSender.py")
 
     def _async_raise(self,tid, exctype):
         """raises the exception, performs cleanup if needed"""

@@ -17,6 +17,8 @@ import pytest
 
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, \
                                 REGULATOR_QUEUE, SIMULATOR_ZONE, TURBONET_ZONE
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import ABNORMAL_DETECTOR_IP, \
+                                ABNORMAL_DETECTOR_PORT, REGULATOR_IP, REGULATOR_PORT
 from sam.base.path import MAPPING_TYPE_NETPACK, ForwardingPathSet
 from sam.base.rateLimiter import RateLimiterConfig
 from sam.base.request import REQUEST_TYPE_ADD_SFCI, REQUEST_TYPE_DEL_SFCI
@@ -227,7 +229,10 @@ class TestNoticeClass(TestBase):
         # exercise
         # send command
         cmd = self.genAbnormalServerHandleCommand()
-        self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
+        # self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
+        self.setMessageAgetnListenSocket(ABNORMAL_DETECTOR_IP, 
+                                            ABNORMAL_DETECTOR_PORT)
+        self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
 
         # check dispatcherStub
         req = self.recvRequest(DISPATCHER_QUEUE)
@@ -276,7 +281,10 @@ class TestNoticeClass(TestBase):
         # exercise
         # send command
         cmd = self.genFailureSwitchHandleCommand()
-        self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
+        # self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
+        self.setMessageAgetnListenSocket(ABNORMAL_DETECTOR_IP, 
+                                            ABNORMAL_DETECTOR_PORT)
+        self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
 
         # check dispatcherStub
         req = self.recvRequest(DISPATCHER_QUEUE)

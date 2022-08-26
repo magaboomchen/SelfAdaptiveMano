@@ -35,6 +35,9 @@ class Switch(object):
         self.gatewayPortLists = []  # e.g. [0]
         self.p4NFUsage = p4NFUsage
 
+    def getNodeID(self):
+        return self.switchID
+
     def __str__(self):
         string = "{0}\n".format(self.__class__)
         for key,values in self.__dict__.items():

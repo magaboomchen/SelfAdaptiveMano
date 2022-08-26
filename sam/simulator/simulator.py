@@ -31,7 +31,7 @@ class Simulator(object):
     def __init__(self, op_input):
         # type: (Queue) -> None
         logConfigur = LoggerConfigurator(__name__, './log',
-                                         'simulator.log', level='debug')
+                                         'simulator.log', level='info')
         self.logger = logConfigur.getLogger()
         self.logger.info("Init simulator.")
 

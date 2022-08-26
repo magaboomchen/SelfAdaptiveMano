@@ -180,6 +180,9 @@ MSG_TYPE_SERVER_REPLY = "MSG_TYPE_SERVER_REPLY"
 MSG_TYPE_TESTER_CMD = "MSG_TYPE_TESTER_CMD"
 # regulator
 MSG_TYPE_REGULATOR_CMD = "MSG_TYPE_REGULATOR_CMD"
+# abnormal detector
+MSG_TYPE_ABNORMAL_DETECTOR_CMD = "MSG_TYPE_DETECTOR_CMD"
+MSG_TYPE_ABNORMAL_DETECTOR_CMD_REPLY = "MSG_TYPE_DETECTOR_CMD_REPLY"
 
 MESSAGE_AGENT_MAX_QUEUE_SIZE = 99999
 MESSAGE_AGENT_GRPC_RETRY_WAIT_TIME = 1
@@ -367,9 +370,10 @@ class MessageAgent(object):
                 break
 
     def sendMsgByRPC(self, dstIP, dstPort, message):
+        # type: (str, int, SAMMessage) -> None
         if self.listenIP == None or self.listenPort == None:
             raise ValueError("Unset listen IP and port.")
-        self.logger.info("gRPC listen dstIP {0}, dstPort {1}".format(dstIP, dstPort))
+        self.logger.debug("gRPC send to dstIP {0}, dstPort {1}".format(dstIP, dstPort))
 
         cnt = MESSAGE_AGENT_GRPC_ERROR_LOG_TIME_SLOT
         while True:
@@ -384,17 +388,18 @@ class MessageAgent(object):
 
                 stub = messageAgent_pb2_grpc.MessageStorageStub(channel=self.gRPCChannel)
  
-                source = {"comType":"RPC",
-                    "srcIP": self.listenIP,
-                    "srcPort": self.listenPort
-                }
-                message.setSource(source)
+                if type(message) == SAMMessage:
+                    source = {"comType":"RPC",
+                        "srcIP": self.listenIP,
+                        "srcPort": self.listenPort
+                    }
+                    message.setSource(source)
                 pickles = self._encodeMessage(message)
                 pickles = bytes(pickles)
                 req = messageAgent_pb2.Pickle(picklebytes=pickles)
                 response = stub.Store(req)
 
-                self.logger.info("response is {0}".format(response))
+                self.logger.debug("response is {0}".format(response))
                 if response.booly:
                     break
             except grpc.RpcError as e:
@@ -440,8 +445,7 @@ class MessageAgent(object):
                 return port
 
     def startMsgReceiverRPCServer(self, listenIP, listenPort):
-        self.listenIP = listenIP
-        self.listenPort = listenPort
+        self.setListenSocket(listenIP, listenPort)
         srcQueueName = "{0}:{1}".format(listenIP, listenPort)
         if srcQueueName in self.msgQueues:
             self.logger.warning("Already listening on recv socket.")
@@ -460,6 +464,10 @@ class MessageAgent(object):
             server.add_insecure_port('{0}:{1}'.format(listenIP, listenPort))
             server.start()
             self.gRPCServersList.append(server)
+
+    def setListenSocket(self, listenIP, listenPort):
+        self.listenIP = listenIP
+        self.listenPort = listenPort
 
     def getMsgByRPC(self, listenIP, listenPort):
         msg = self.getMsg("{0}:{1}".format(listenIP, listenPort))

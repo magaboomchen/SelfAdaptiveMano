@@ -45,7 +45,7 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
     def updateSwitch2ServerLinksByZone(self, zoneName):
         servers = self.getServersByZone(zoneName)
         for serverID, serverInfoDict in servers.items():
-            server = serverInfoDict['server']
+            server = serverInfoDict['server']   # type: Server
             bw = server.getNICBandwidth()
             switch = self.getConnectedSwitch(serverID, zoneName)
             switchID = switch.switchID

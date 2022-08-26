@@ -74,7 +74,7 @@ class SFC(object):
                 protectionMode=WITHOUT_PROTECTION,  # type:  Union[WITHOUT_PROTECTION, WITH_PROTECTION]
                 recoveryMode=AUTO_RECOVERY, # type: Union[AUTO_RECOVERY, MANUAL_RECOVERY]
                 vnfSequence=None,           # type: List[VNF]
-                vnfiResourceQuota=None      # type: Union[VNFI_RESOURCE_QUOTA_SMALL, VNFI_RESOURCE_QUOTA_LARGE]
+                vnfiResourceQuota=None,     # type: Union[VNFI_RESOURCE_QUOTA_SMALL, VNFI_RESOURCE_QUOTA_LARGE]
                 ):
         self.sfcUUID = sfcUUID
         self.vNFTypeSequence = vNFTypeSequence  # [FW, LB]
@@ -91,9 +91,8 @@ class SFC(object):
         if attributes is None:
             self.attributes = {}
         else:
-            self.attributes = attributes  # {"zone":ZONENAME}
-        self.directions = directions
-
+            self.attributes = attributes  # {"zone":ZONENAME}   # TODO: MAY BE refactor to a data structure, not a dict
+        self.directions = directions    # TODO: MAY BE refactor to a data structure, not a dict
         # directions' data structure
         # [
         # {
