@@ -121,7 +121,9 @@ class Orchestrator(object):
         try:
             if request.requestType == REQUEST_TYPE_ADD_SFC:
                 cmd = self._osa.genAddSFCCmd(request)
-                if self._oib._isAddSFCValidState(cmd):
+                sfc = cmd.attributes['sfc'] # type: SFC
+                sfcUUID = sfc.sfcUUID
+                if self._oib._isAddSFCValidState(sfcUUID):
                     # self._odir.getDCNInfo()
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
