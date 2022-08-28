@@ -240,7 +240,7 @@ class TestBase(object):
         else:
             vNFTypeSequence = vnfTypeSeq
         vnfSequence = []
-        for idx in range(len(vnfTypeSeq)):
+        for idx in range(len(vNFTypeSequence)):
             vnf = VNF(uuid.uuid1(), vNFTypeSequence[idx],
                         None, PREFERRED_DEVICE_TYPE_SERVER)
             vnfSequence.append(vnf)
@@ -504,7 +504,7 @@ class TestBase(object):
         tmpMessageAgent.sendMsg(queue, msg)
         del tmpMessageAgent
 
-    def setMessageAgetnListenSocket(self, listenIP, listenPort):
+    def setMessageAgentListenSocket(self, listenIP, listenPort):
         try:
             self.tmpMessageAgent
         except AttributeError:

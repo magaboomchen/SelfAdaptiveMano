@@ -32,10 +32,10 @@ class VNFControllerStub(object):
         msg = SAMMessage(MSG_TYPE_VNF_CONTROLLER_CMD_REPLY, cmdRply)
         self.mA.sendMsg(MEDIATOR_QUEUE, msg)
 
-    def installVNF(self, sshUsrname, sshPassword, remoteIP, vnfiID, privateKeyFilePath=None):
+    def installVNF(self, sshUsrname, sshPassword, remoteIP, vnfiID, numa, privateKeyFilePath=None):
         self.vnfBase[remoteIP] = {}
         self.vnfBase[remoteIP]["VNFAggCount"] = 0
-        command = self.genVNFInstallationCommand(remoteIP, vnfiID)
+        command = self.genVNFInstallationCommand(remoteIP, vnfiID, numa)
         self.sshA = SSHAgent()
         if privateKeyFilePath == None:
             self.sshA.connectSSH(sshUsrname, sshPassword, remoteIP, remoteSSHPort=22)
@@ -46,7 +46,7 @@ class VNFControllerStub(object):
         # shellCmdRply = self.sshA.runShellCommand(command)
         return shellCmdRply
 
-    def genVNFInstallationCommand(self,remoteIP,vnfiID):
+    def genVNFInstallationCommand(self,remoteIP,vnfiID,numa):
         vdevs0 = self.sibm.getVdev(vnfiID,0).split(",")
         vdevs1 = self.sibm.getVdev(vnfiID,1).split(",")
         vdev0 = vdevs0[0]
@@ -54,14 +54,21 @@ class VNFControllerStub(object):
         vdev1 = vdevs1[0]
         path1 = vdevs1[1].split("iface=")[1]
         name = self.genVNFName(remoteIP)
+        if numa:
+            memPara = " --socket-mem 1024,1024 "
+            appMemPara = " --numa  --port-numa-config=0,0,1,0 --ring-numa-config=0,3,0,1,3,0 "
+        else:
+            memPara = " -m 2048 "
+            appMemPara = ""
         command = "sudo -S docker run -ti --rm --privileged  --name="+ str(name) + " " \
             + "-v /mnt/huge_1GB:/dev/hugepages " \
             + "-v /tmp/:/tmp/ " \
-            + "dpdk-app-testpmd ./build/app/testpmd -l 0-1 -n 1 -m 1024 --no-pci " \
+            + "dpdk-app-testpmd ./build/app/testpmd -l 2,4 -n 1 {0} --no-pci ".format(memPara) \
             + "--vdev=net_virtio_user0" + ",path=" + path0 + " " \
             + "--vdev=net_virtio_user1" + ",path=" + path1 + " " \
             + "--file-prefix=virtio --log-level=8 -- " \
-            + "--txqflags=0xf00 --disable-hw-vlan --forward-mode=io --port-topology=chained --total-num-mbufs=2048 -a"
+            + "--txqflags=0xf00 --disable-hw-vlan --forward-mode=io --port-topology=chained " \
+            + " {0} --total-num-mbufs=2048 -a".format(appMemPara)
         self.vnfBase[remoteIP][vnfiID] = {"name":name}
         self.logger.info(command)
         return command

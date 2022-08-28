@@ -4,7 +4,7 @@
 import uuid
 
 from sam.base.messageAgent import SAMMessage, MessageAgent, \
-    MEASURER_QUEUE, DCN_INFO_RECIEVER_QUEUE, MSG_TYPE_REQUEST
+                                    DCN_INFO_RECIEVER_QUEUE, MSG_TYPE_REQUEST
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
     MEASURER_PORT
 from sam.base.request import Request, REQUEST_TYPE_GET_DCN_INFO
@@ -27,7 +27,6 @@ class ODCNInfoRetriever(object):
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_GET_DCN_INFO,
             DCN_INFO_RECIEVER_QUEUE)
         msg = SAMMessage(MSG_TYPE_REQUEST, request)
-        # self._messageAgent.sendMsg(MEASURER_QUEUE, msg)
         self._messageAgent.sendMsgByRPC(MEASURER_IP, MEASURER_PORT, msg)
 
     def _recvDCNInfo(self):

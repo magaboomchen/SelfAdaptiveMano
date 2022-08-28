@@ -230,7 +230,7 @@ class TestNoticeClass(TestBase):
         # send command
         cmd = self.genAbnormalServerHandleCommand()
         # self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
-        self.setMessageAgetnListenSocket(ABNORMAL_DETECTOR_IP, 
+        self.setMessageAgentListenSocket(ABNORMAL_DETECTOR_IP, 
                                             ABNORMAL_DETECTOR_PORT)
         self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
 
@@ -282,7 +282,7 @@ class TestNoticeClass(TestBase):
         # send command
         cmd = self.genFailureSwitchHandleCommand()
         # self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
-        self.setMessageAgetnListenSocket(ABNORMAL_DETECTOR_IP, 
+        self.setMessageAgentListenSocket(ABNORMAL_DETECTOR_IP, 
                                             ABNORMAL_DETECTOR_PORT)
         self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
 

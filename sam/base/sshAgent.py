@@ -24,14 +24,19 @@ class SSHAgent(object):
             username = sshUsrname, password = sshPassword)
 
     def connectSSHWithRSA(self, sshUsrname, privateKeyFilePath, remoteIP, remoteSSHPort=22):
-        f = open(privateKeyFilePath,'r')
-        s = f.read()
-        keyfile = StringIO.StringIO(s)
-        mykey = paramiko.RSAKey.from_private_key(keyfile)
-        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.ssh.connect(hostname = remoteIP, port = remoteSSHPort,
-            username = sshUsrname, pkey=mykey)
-        f.close()
+        if sys.version > '3':
+            self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()) # no known_hosts error
+            self.ssh.connect(hostname = remoteIP, username = sshUsrname,
+                                key_filename=privateKeyFilePath) # no passwd needed
+        else:
+            f = open(privateKeyFilePath,'r')
+            s = f.read()
+            keyfile = StringIO.StringIO(s)
+            mykey = paramiko.RSAKey.from_private_key(keyfile)
+            self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.ssh.connect(hostname = remoteIP, port = remoteSSHPort,
+                username = sshUsrname, pkey=mykey)
+            f.close()
 
     def loadUserPassword(self, sshPassword):
         self.passwd = sshPassword

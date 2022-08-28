@@ -10,8 +10,7 @@ from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD, P4CONTROLLER_QUEUE,
     MSG_TYPE_CLASSIFIER_CONTROLLER_CMD, SERVER_CLASSIFIER_CONTROLLER_QUEUE, \
     SIMULATOR_QUEUE, MSG_TYPE_NETWORK_CONTROLLER_CMD, NETWORK_CONTROLLER_QUEUE, \
     MSG_TYPE_SFF_CONTROLLER_CMD, SFF_CONTROLLER_QUEUE, VNF_CONTROLLER_QUEUE, \
-    SERVER_MANAGER_QUEUE, MSG_TYPE_SERVER_MANAGER_CMD, ORCHESTRATOR_QUEUE, \
-    MEASURER_QUEUE, MSG_TYPE_MEDIATOR_CMD_REPLY
+    SERVER_MANAGER_QUEUE, MSG_TYPE_SERVER_MANAGER_CMD, MSG_TYPE_MEDIATOR_CMD_REPLY
 from sam.base.switch import SWITCH_TYPE_NPOP
 from sam.base.commandMaintainer import CommandMaintainer
 from sam.base.command import CommandReply, CMD_TYPE_ADD_SFC, \
@@ -494,7 +493,7 @@ class Mediator(object):
         elif cmdRplyType == CMD_TYPE_GET_SERVER_SET or \
                 cmdRplyType == CMD_TYPE_GET_TOPOLOGY or \
                 cmdRplyType == CMD_TYPE_GET_SFCI_STATE:
-            queue = MEASURER_QUEUE
+            raise ValueError("Measurer use gRPC to collect information.")
         else:
             self.logger.error("Command reply error.")
         # generate message

@@ -161,7 +161,7 @@ class TestAddSFCClass(IntTestBaseClass):
             else:
                 self.logger.info("Unknown abnormal type")
 
-        self.setMessageAgetnListenSocket(ABNORMAL_DETECTOR_IP, 
+        self.setMessageAgentListenSocket(ABNORMAL_DETECTOR_IP, 
                                             ABNORMAL_DETECTOR_PORT)
         self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
 

@@ -4,8 +4,7 @@
 import pytest
 
 from sam.mediator import mediator
-from sam.base.messageAgent import SERVER_MANAGER_QUEUE, \
-    MEASURER_QUEUE, MSG_TYPE_MEDIATOR_CMD,  \
+from sam.base.messageAgent import MSG_TYPE_MEDIATOR_CMD, \
     SERVER_CLASSIFIER_CONTROLLER_QUEUE, SFF_CONTROLLER_QUEUE, \
     NETWORK_CONTROLLER_QUEUE, MEDIATOR_QUEUE, \
     ORCHESTRATOR_QUEUE, VNF_CONTROLLER_QUEUE
@@ -50,29 +49,6 @@ class TestMediatorClass(TestBase):
         yield
         # teardown
         self.sP.killPythonScript("mediator/mediator.py")
-
-    # @pytest.mark.skip(reason='Saving time')
-    def test_CMD_TYPE_GET_SERVER_SET(self,setup_startMediator):
-        # measurement send command, serverManger recv command
-        # exercise
-        getServerSetCmd = self.mS.genCMDGetServerSet()
-        self.sendCmd(MEDIATOR_QUEUE, MSG_TYPE_MEDIATOR_CMD, getServerSetCmd)
-        # verify
-        recvCmd = self.recvCmd(SERVER_MANAGER_QUEUE)
-        assert recvCmd.cmdType == CMD_TYPE_GET_SERVER_SET
-
-        # server Manager send command reply, measurement recv command reply
-        # exercise
-        cmdRply = CommandReply(recvCmd.cmdID, CMD_STATE_SUCCESSFUL,
-            {1:self.server})
-        self.sMS.sendCmdRply(cmdRply)
-        # verify
-        recvCmdRply = self.recvCmdRply(MEASURER_QUEUE)
-        assert recvCmdRply.cmdID == getServerSetCmd.cmdID
-        assert recvCmdRply.cmdState == CMD_STATE_SUCCESSFUL
-        lObj = recvCmdRply.attributes[1]
-        rObj = self.server
-        assert lObj.__dict__ == rObj.__dict__
 
     # @pytest.mark.skip(reason='Saving time')
     def test_CMD_TYPE_ADD_SFCI_SUCCESSFUL(self,setup_startMediator):

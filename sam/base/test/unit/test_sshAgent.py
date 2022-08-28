@@ -41,7 +41,7 @@ class TestSSHAgentClass(object):
         command = "sudo -S docker run -ti --rm --privileged --name=name1 " \
             + "-v /mnt/huge_1GB:/dev/hugepages " \
             + "-v /tmp/:/tmp/ dpdk-app-testpmd " \
-            + "./build/app/testpmd -l 0-1 -n 1 -m 1024 " \
+            + "./build/app/testpmd -l 2,4 -n 1 -m 0,2048 " \
             + "--no-pci " \
             + "--vdev=net_virtio_user0,path=/tmp/vsock_ecc5e758-e1ff-11ea-bb15-1866da864c17_0 " \
             + "--vdev=net_virtio_user1,path=/tmp/vsock_ecc5e758-e1ff-11ea-bb15-1866da864c17_1 " \

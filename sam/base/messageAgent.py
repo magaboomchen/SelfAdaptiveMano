@@ -4,7 +4,7 @@
 """
 Usage:
     from sam.base.messageAgent import SAMMessage, MessageAgent, TURBONET_ZONE, \
-                                        REGULATOR_QUEUE, MEASURER_QUEUE, \
+                                        REGULATOR_QUEUE, 
                                         DEFINABLE_MEASURER_QUEUE, ABNORMAL_DETECTOR_QUEUE
 
 Use case 1 - abnormal detector:
@@ -128,7 +128,6 @@ DEFAULT_ZONE = "DEFAULT_ZONE"
 # formal queue type
 REQUEST_PROCESSOR_QUEUE = "REQUEST_PROCESSOR_QUEUE"
 DCN_INFO_RECIEVER_QUEUE = "DCN_INFO_RECIEVER_QUEUE"
-MEASURER_QUEUE = "MEASURER_QUEUE"
 DEFINABLE_MEASURER_QUEUE = "DEFINABLE_MEASURER_QUEUE"
 ABNORMAL_DETECTOR_QUEUE = "ABNORMAL_DETECTOR_QUEUE"
 DISPATCHER_QUEUE = "DISPATCHER_QUEUE"

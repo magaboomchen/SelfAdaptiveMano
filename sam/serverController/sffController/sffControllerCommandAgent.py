@@ -96,8 +96,6 @@ class SFFControllerCommandAgent(object):
                     rplyMsg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD_REPLY,
                                                                     cmdRply)
                     queueName = MEDIATOR_QUEUE
-                    # if cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
-                    #     queueName = MEASURER_QUEUE
                     self._messageAgent.sendMsg(queueName, rplyMsg)
             elif msgType == None:
                 pass
@@ -141,10 +139,6 @@ class SFFControllerCommandAgent(object):
                     cmdRply.attributes.update(resDict)
                     rplyMsg = SAMMessage(MSG_TYPE_SFF_CONTROLLER_CMD_REPLY,
                                                                     cmdRply)
-                    # queueName = MEDIATOR_QUEUE
-                    # if cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
-                    #     queueName = MEASURER_QUEUE
-                    # self._messageAgent.sendMsg(queueName, rplyMsg)
                     self._messageAgent.sendMsgByRPC(source['srcIP'], source['srcPort'], rplyMsg)
             elif msgType == None:
                 pass

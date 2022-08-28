@@ -296,6 +296,7 @@ class TestVNFAddFW(TestBase):
             assert sfci.sfciID == sfciID
             assert len(sfci.vnfiSequence) != 0
             vnfiSequence = sfci.vnfiSequence
+            self.logger.info("vnfiSeq is {0}".format(vnfiSequence))
             for vnfis in vnfiSequence:
                 for vnfi in vnfis:
                     vnfiStatus = vnfi.vnfiStatus

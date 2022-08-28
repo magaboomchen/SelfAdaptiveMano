@@ -18,8 +18,9 @@ from scapy.all import Raw, sendp, AsyncSniffer
 from scapy.contrib.nsh import NSH
 
 from sam.base.command import CMD_STATE_SUCCESSFUL
-from sam.base.messageAgent import MEASURER_QUEUE, SFF_CONTROLLER_QUEUE, \
+from sam.base.messageAgent import SFF_CONTROLLER_QUEUE, \
     MEDIATOR_QUEUE, MSG_TYPE_SFF_CONTROLLER_CMD, TURBONET_ZONE, MessageAgent
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, MEASURER_PORT, SFF_CONTROLLER_IP, SFF_CONTROLLER_PORT
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.vnfiStatus import VNFIStatus
 from sam.test.fixtures.measurementStub import MeasurementStub
@@ -94,7 +95,8 @@ class TestSFFSFCIAdderClass(TestBase):
         try:
             # In normal case, there should be a timeout error!
             shellCmdRply = self.vC.installVNF(BESS_SERVER_USER, BESS_SERVER_USER_PASSWORD, 
-                SFF1_CONTROLNIC_IP, self.sfci.vnfiSequence[0][0].vnfiID, PRIVATE_KEY_FILE_PATH)
+                SFF1_CONTROLNIC_IP, self.sfci.vnfiSequence[0][0].vnfiID, numa=True, 
+                privateKeyFilePath=PRIVATE_KEY_FILE_PATH)
             self.logger.info(
                 "Error command reply:\n stdin:{0}\n stdout:{1}\n stderr:{2}".format(
                 None,
@@ -116,15 +118,21 @@ class TestSFFSFCIAdderClass(TestBase):
 
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_getSFCIState(self, setup_getSFCIState):
-        # exercise
-        self.getSFCIStateCmd = self.measurer.genCMDGetSFCIState()
-        queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, TURBONET_ZONE)
-        self.logger.info("Press Any key to test get SFCI State!")
-        # screenInput()
-        self.sendCmd(queueName, MSG_TYPE_SFF_CONTROLLER_CMD, self.getSFCIStateCmd)
+        for _ in range(10):
+            # exercise
+            self.getSFCIStateCmd = self.measurer.genCMDGetSFCIState()
+            # queueName = self._messageAgent.genQueueName(SFF_CONTROLLER_QUEUE, TURBONET_ZONE)
+            # self.logger.info("Press Any key to test get SFCI State!")
+            # screenInput()
+            # self.sendCmd(queueName, MSG_TYPE_SFF_CONTROLLER_CMD, self.getSFCIStateCmd)
 
-        # verify
-        self.verifyGetSFCIStateCmdRply()
+            self.startMsgAgentRPCReciever(MEASURER_IP, MEASURER_PORT)
+            self.sendCmdByRPC(SFF_CONTROLLER_IP, SFF_CONTROLLER_PORT, 
+                                MSG_TYPE_SFF_CONTROLLER_CMD,
+                                self.getSFCIStateCmd)
+
+            # verify
+            self.verifyGetSFCIStateCmdRply()
 
     def verifyArpResponder(self):
         self._sendArpRequest(interface=TESTER_DATAPATH_INTF, requestIP=SFF1_DATAPATH_IP)
@@ -240,7 +248,7 @@ class TestSFFSFCIAdderClass(TestBase):
         self.logger.info("Verify cmy rply successfully!")
 
     def verifyGetSFCIStateCmdRply(self):
-        cmdRply = self.recvCmdRply(MEASURER_QUEUE)
+        cmdRply = self.recvCmdRplyByRPC(MEASURER_IP, MEASURER_PORT)
         assert cmdRply.cmdID == self.getSFCIStateCmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
         assert "sfcisDict" in cmdRply.attributes
