@@ -69,6 +69,7 @@ results/
 results*/
 .idea
 .vscode/
+!sam/dashboard/backup
 
 # Backup Files
 *~

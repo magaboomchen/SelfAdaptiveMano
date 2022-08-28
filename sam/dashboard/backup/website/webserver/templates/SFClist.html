@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+{% load staticfiles %}
+<link href="{%static "css/adstyle.css" %}" rel="stylesheet" type="text/css" />
+<link href="{%static "css/userstyle.css" %}" rel="stylesheet" type="text/css" />
+{% include "header.html" %}
+{% include 'menu.html' %}
+<style>
+.button.icon:before {
+    content: "";
+    position: relative;
+    top: 1px;
+    float:left;
+    width: 12px;
+    height: 12px;
+    margin: 0 0.75em 0 -0.25em;
+    background: url("{% static "img/gh-icons.png" %}") 0 99px no-repeat;
+}
+</style>
+<body>
+<div class="home">
+    <div class="home_right">
+        <div class="homepage">
+            <div class="ptbt"><a>运维平台</a></div>
+            <div class="pagename"><a>SFC列表</a></div>
+            <div class="dangqianweizhi"><a>首页 > 权限系统 > SFC</a></div>
+        </div>
+        
+        <div class="user_hr">
+        </div>
+        <div class="user_list">
+            <div class="user_list_ls">
+                <table class="table table-striped table-bordered table-hover" table-layout=fixed; width=100%; align="center">
+                    <thead>
+                    <tr>
+                        
+                        <th>ID</th>
+                        <th>Zone Name</th>
+                        <th>SFC UUID</th>
+                        <th>SFCIID list</th>  
+                        <th>State</th>                          
+                        
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for line in displayedSFCsList %}
+                        <tr>
+                            <td>
+                                {{ line.ID }}
+                            </td>
+                            <td>
+                                {{ line.zoneName }}
+                            </td>
+                            <td>
+                                {{ line.SFC_UUID }}
+                            </td>
+                            <td>
+                                {{ line.SFCIIDList }}
+                            </td>
+                            <td>
+                                {{ line.state }}
+                            </td>
+                            
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="drpage">
+                    {% if numDict.hasPreviousPage %}
+                        <a href="?page=1" class='fy'>首页</a>&nbsp;
+                        <a href="?page={{ numDict.previousPageNum }}" class='fy'>上一页</a>&nbsp;
+                    {% endif %}
+                    {% for p in pageRange %}
+                    {% ifequal p pageNum %}
+                        <span class="fy">{{p}}</span>
+                    {% else %}
+                        <a href="?page={{p}}" class="fy" style="te;margin: 3px">{{p}}</a>
+                    {% endifequal %}
+                    {% endfor %}
+                    {% if numDict.hasNextPage %}
+                        <a href="?page={{ numDict.nextPageNum }}" class='fy'>下一页</a>&nbsp;
+                        <a href="?page={{ totalPageNum }}" class='fy'>尾页</a>
+                    {% endif %}
+                       
+                        <a>[第{{ pageNum }}/{{ totalPageNum }}页]</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
