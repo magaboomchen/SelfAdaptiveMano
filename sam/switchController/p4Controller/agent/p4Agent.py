@@ -42,6 +42,10 @@ class P4Agent:
                 client.DataTuple('$PORT_ENABLE', bool_val=True)
             ])]
         )
+        self.res_spi = 0
+        self.res_si = 0
+        self.res_src = 0
+        self.res_dst = 0
 
     def addMonitorv4(self, _service_path_index, _service_index):
         monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv4')
@@ -249,12 +253,16 @@ class P4Agent:
             ])]
         )
 
-    def queryIndex(self, _service_path_index, _service_index, _index_val):
-        # currently not supported
+    def queryMonitorv4(self, _service_path_index, _service_index, _src_addr, _dst_addr):
+        monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv4')
+        monitortable.info.key_field_annotation_add('hdr.ipv4_h.src_addr', 'ipv4')
+        monitortable.info.key_field_annotation_add('hdr.ipv4_h.dst_addr', 'ipv4')
         pass
 
-    def queryMonitor(self, _service_path_index, _service_index, _hash_val):
-        # currently not supported
+    def queryMonitorv6(self, _service_path_index, _service_index, _src_addr, _dst_addr):
+        monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv6')
+        monitortable.info.key_field_annotation_add('hdr.ipv6_h.src_addr', 'ipv6')
+        monitortable.info.key_field_annotation_add('hdr.ipv6_h.dst_addr', 'ipv6')
         pass
     
     def queryIOamount(self, _service_path_index, _service_index):
@@ -264,12 +272,46 @@ class P4Agent:
     
     def waitForDigenst(self):
         learn_filter = self.bfrtinfo.learn_get("digest")
-        learn_filter.info.data_field_annotation_add("src_addr", "ipv6")
-        learn_filter.info.data_field_annotation_add("dst_addr", "ipv6")
+        # learn_filter.info.data_field_annotation_add("src_addr", "ipv6")
+        # learn_filter.info.data_field_annotation_add("dst_addr", "ipv6")
         digest = self.interface.digest_get()
-        print(digest)
+        if digest == None:
+            return False
         data_list = learn_filter.make_data_list(digest)
-        print(data_list)
         data_dict = data_list[0].to_dict()
-        print(data_dict)
+        self.res_spi = (data_dict['service_header'] >> 8)
+        self.res_si = (data_dict['service_header'] & 255)
+        self.res_src = data_dict['src_addr']
+        self.res_dst = data_dict['dst_addr']
+        print(self.res_spi)
+        print(self.res_si)
+        print(self.res_src)
+        print(self.res_dst)
+        return True
+
+    def addMonitorEntryv4(self):
+        monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv4')
+        monitortable.entry_add(
+            self.target,
+            [monitortable.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', self.res_spi),
+                client.KeyTuple('hdr.nsh_h.service_index', self.res_si),
+                client.KeyTuple('hdr.ipv4_h.dst_addr', self.res_dst, ((1 << 32) - 1)),
+                client.KeyTuple('hdr.ipv4_h.src_addr', self.res_src, ((1 << 32) - 1))
+            ])],
+            [monitortable.make_data([], 'SwitchIngress.hit_monitor_v4')]
+        )
+
+    def addMonitorEntryv6(self):
+        monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv6')
+        monitortable.entry_add(
+            self.target,
+            [monitortable.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', self.res_spi),
+                client.KeyTuple('hdr.nsh_h.service_index', self.res_si),
+                client.KeyTuple('hdr.ipv6_h.dst_addr', self.res_dst, ((1 << 128) - 1)),
+                client.KeyTuple('hdr.ipv6_h.src_addr', self.res_src, ((1 << 128) - 1))
+            ])],
+            [monitortable.make_data([], 'SwitchIngress.hit_monitor_v6')]
+        )
 

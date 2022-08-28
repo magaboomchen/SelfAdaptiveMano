@@ -1,5 +1,6 @@
 import sam
 import uuid
+import time
 
 from agent.p4Agent import P4Agent
 from agent.p4MonitorStatus import P4MonitorStat, P4MonitorEntry, P4MonitorStatus
@@ -45,7 +46,7 @@ class P4Controller(object):
         self._commandresults = {}
         self._sfclist = {}
         self._p4agent = {}
-        self._p4monitor = {}
+        self._p4monitor = {} # monitorstatus list
         # self._p4agent[0] = P4Agent('192.168.100.4:50052')
         # self._p4agent[1] = P4Agent('192.168.100.6:50052')
         self.logger.info('P4 controller initialization complete.')
@@ -60,9 +61,32 @@ class P4Controller(object):
             msg = self._messageAgent.getMsg(self.queueName)
             msgType = msg.getMessageType()
             if msgType == None:
-                # get from grpc
-                # get from digest
-                pass
+                msg = self._messageAgent.getMsgByRPC(P4_CONTROLLER_IP, P4_CONTROLLER_PORT)
+                msgType = msg.getMessageType()
+                if msgType == None:
+                    #while self._p4agent[0].waitForDigenst():
+                    #    pass
+                    #while self._p4agent[1].waitForDigenst():
+                    #    pass
+                    # if timeout then update monitor
+                elif msgType == MSG_TYPE_P4CONTROLLER_CMD:
+                    self.logger.info('Got a command from rpc')
+                    cmd = msg.getbody()
+                    source = msg.getSource()
+                    self._commands[cmd.cmdID] = cmd
+                    self._commandresults[cmd.cmdID] = CMD_STATE_PROCESSING
+                    resdict = {}
+                    success = True
+                    success, resdict = self._getstate(cmd)
+                    if success:
+                        self._commandresults[cmd.cmdID] = CMD_STATE_SUCCESSFUL
+                    else:
+                        self._commandresults[cmd.cmdID] = CMD_STATE_FAIL
+                    cmdreply = CommandReply(cmd.cmdID, self._commandresults[cmd.cmdID])
+                    cmdreply.attributes["zone"] = TURBONET_ZONE
+                    cmdreply.attributes.update(resdict)
+                    replymessage = SAMMessage(MSG_TYPE_P4CONTROLLER_CMD_REPLY, cmdreply)
+                    self._messageAgent.sendMsgByRPC(source['srcIP'], source['srcPort'], replymessage)
             elif msgType == MSG_TYPE_P4CONTROLLER_CMD:
                 self.logger.info('Got a command.')
                 cmd = msg.getbody()
@@ -84,8 +108,6 @@ class P4Controller(object):
                     success1 = self._delsfc(cmd)
                     success2 = self._delsfci(cmd)
                     success = success1 & success2
-                elif cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
-                    success, resdict = self._getstate(cmd)
                 else:
                     self.logger.error("Unsupported cmd type for P4 controller: %s." % cmd.cmdType)
                 '''
@@ -335,9 +357,6 @@ class P4Controller(object):
         return True
     
     def _updatemonitor(self, _p4id):
-        pass
-    
-    def _addmonitorentry(self, _p4id, _service_path_index, _service_index, _src_addr, _dst_addr):
         pass
 
 if __name__ == '__main__':
