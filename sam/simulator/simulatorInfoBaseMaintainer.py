@@ -32,7 +32,7 @@ from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 if sys.version_info[0] == 3:
     from functools import reduce
 
-MAX_BG_BW = 1024.0 * 3
+MAX_BG_BW = 1024.0 * 80
 # BG_RATIO = 0.75
 CHECK_CONNECTIVITY = True
 

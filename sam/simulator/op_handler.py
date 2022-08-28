@@ -69,7 +69,7 @@ def server_handler(cmd_list, sib):
     opt, arg = getopt(cmd_list[2:], '', ('pattern=', 'value=', 'min=', 'max='))
     opt = dict(opt)
     if not opt and not arg and cmd in ('up', 'down'):  # server <serverID> up|down
-        sib.servers[server_id]['Active'] = (arg[0] == 'up')
+        sib.servers[server_id]['Active'] = (cmd == 'up')
     elif not arg and cmd in ('cpu', 'mem'):
         sib.bgProcesses.setdefault(server_id, {'cpu': lambda: 0, 'mem': lambda: 0})
         if opt['--pattern'] == 'constant' and '--value' in opt:
