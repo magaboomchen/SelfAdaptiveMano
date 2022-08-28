@@ -8,8 +8,7 @@
 // ---------------- headers ----------------
 
 struct digest_t {
-    bit<24> service_path_index;
-    bit<8> service_index;
+    bit<32> service_header;
     bit<128> dst_addr;
     bit<128> src_addr;
 }
@@ -103,6 +102,7 @@ struct ig_metadata_t {
     bit<8> color;
     bit<128> src_digest;
     bit<128> dst_digest;
+    bit<32> service_digest;
 }
 
 // ---------------- basic ----------------
@@ -143,6 +143,7 @@ parser SwitchIngressParser(
         ig_md.color = 0;
         ig_md.src_digest = 0;
         ig_md.dst_digest = 0;
+        ig_md.service_digest = 0;
         transition parse_ethernet;
     }
 
@@ -196,7 +197,7 @@ control SwitchIngressDeparser(
     Digest<digest_t>() digest;
     apply {
         if (ig_intr_dprsr_md.digest_type == 1) {
-            digest.pack({hdr.nsh_h.service_path_index, hdr.nsh_h.service_index, ig_md.dst_digest, ig_md.src_digest});
+            digest.pack({ig_md.service_digest, ig_md.dst_digest, ig_md.src_digest});
         }
         pkt.emit(hdr.eth_h);
         pkt.emit(hdr.nsh_h);
@@ -383,9 +384,11 @@ control SwitchIngress(
     }
 
     apply {
+        ig_intr_dprsr_md.digest_type = 0;
         ig_intr_tm_md.bypass_egress = 1w1;
         ig_intr_tm_md.ucast_egress_port = EGRESS_PORT;
         if(hdr.nsh_h.isValid()) {
+            ig_md.service_digest = hdr.nsh_h.service_path_index ++ hdr.nsh_h.service_index;
             CounterIngress.apply();
             if(hdr.ipv4_h.isValid()) {
                 FlowMonitorv4.apply();

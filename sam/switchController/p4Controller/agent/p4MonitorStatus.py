@@ -23,6 +23,9 @@ class P4MonitorEntry:
 class P4MonitorStatus:
     def __init__(self, _service_path_index, _service_index, _proto, _p4id):
         self.p4id = _p4id
+        self.service_path_index = _service_path_index
+        self.service_index = _service_index
+        self.proto = _proto
         self._entries = {}
         self._src = []
         self._dst = []
@@ -40,14 +43,16 @@ class P4MonitorStatus:
         self._dst.append(_dst_addr)
         self._pkts.append(0)
         self._bytes.append(0)
+        self._time.append(time.time())
         self._pktrate.append(0.0)
         self._byterate.append(0.0)
     
     def removeEntry(self, _uuid):
         self._entries[_uuid] = False
     
-    def updateStat(self, _uuid, _pkt_cnt, _byte_cnt, _time = 0):
-        # update rates
+    def updateStat(self, _uuid, _pkt_cnt, _byte_cnt, _time):
+        self._pktrate[_uuid] = (_pkt_cnt - self._pkts[_uuid]) / (_time - self._time[_uuid])
+        self._byterate[_uuid] = (_byte_cnt - self._bytes[_uuid]) / (_time - self._time[_uuid])
         self._time[_uuid] = _time
         self._pkts[_uuid] = _pkt_cnt
         self._bytes[_uuid] = _byte_cnt
@@ -74,3 +79,10 @@ class P4MonitorStatus:
                     _byte_rate = self._byterate[i]
                 ))
         return res
+    
+    def hasEntry(self, _src_addr, _dst_addr):
+        for i in self._entries.keys():
+            if self._entries[i]:
+                if _src_addr == self._src[i] and _dst_addr == self._dst[i]:
+                    return True
+        return False
