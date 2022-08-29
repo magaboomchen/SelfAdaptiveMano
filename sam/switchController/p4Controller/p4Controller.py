@@ -52,23 +52,56 @@ class P4Controller(object):
         self.logger.info('P4 controller initialization complete.')
 
     def getmsk(self, _addrstr):
-        addr = ''
-        msk = ''
+        adrlst = _addrstr.split('/')
+        addr = adrlst[0]
+        msk = '::'
+        if _addr.find(':') != -1:
+            msklen = 128
+            if len(adrlst) == 2:
+                msklen = int(adrlst[1])
+            binarray = '1' * msklen + '0' * (128 - msklen)
+            mskval = []
+            for i in range(8):
+                hexstr = hex(int(binarray[i * 16: i * 16 + 16], 2))
+                mskval.append(hexstr[2:])
+            msk = ':'.join(mskval)
+        else:
+            msklen = 32
+            if len(adrlst) == 2:
+                msklen = int(adrlst[1])
+            binarray = '1' * msklen + '0' * (32 - msklen)
+            mskval = []
+            for i in range(4):
+                mskval.append(str(int(binarray[i * 8: i * 8 + 8], 2)))
+            msk = '.'.join(mskval)
         return addr, msk
 
     def run(self):
+        lastupdatetime = time.time()
         while True:
             msg = self._messageAgent.getMsg(self.queueName)
             msgType = msg.getMessageType()
+            print(msg)
             if msgType == None:
                 msg = self._messageAgent.getMsgByRPC(P4_CONTROLLER_IP, P4_CONTROLLER_PORT)
                 msgType = msg.getMessageType()
                 if msgType == None:
                     #while self._p4agent[0].waitForDigenst():
                     #    pass
-                    #while self._p4agent[1].waitForDigenst():
-                    #    pass
-                    # if timeout then update monitor
+                    '''
+                    while self._p4agent[1].waitForDigenst():
+                        p4src = self._p4agent[1].res_src
+                        p4dst = self._p4agent[1].res_dst
+                        p4spi = self._p4agent[1].res_spi
+                        p4si = self._p4agent[1].res_si
+                        if self._p4monitor[(p4spi, p4si)].hasEntry(p4src, p4dst):
+                            self._p4monitor[(p4spi, p4si)].addEntry(p4src, p4dst)
+                            self._p4agent[1].addMonitorEntry()
+                    '''
+                    if time.time() - lastupdatetime > 5.0:
+                        # self._updatemonitor(0)
+                        self._updatemonitor(1)
+                        lastupdatetime = time.time()
                 elif msgType == MSG_TYPE_P4CONTROLLER_CMD:
                     self.logger.info('Got a command from rpc')
                     cmd = msg.getbody()
@@ -330,12 +363,14 @@ class P4Controller(object):
                     elif nfi.vnfType == VNF_TYPE_MONITOR:
                         if hasdir0:
                             self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si, _outport = eport)
+                            self._p4monitor[((spi & DIRECTION_MASK_0), si)] = P4MonitorStatus((spi & DIRECTION_MASK_0), si, routemorphic, p4id)
                             if routemorphic == IPV4_ROUTE_PROTOCOL:
                                 self._p4agent[p4id].addMonitorv4(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si)
                             else:
                                 self._p4agent[p4id].addMonitorv6(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si)
                         if hasdir1:
                             self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si, _outport = eport)
+                            self._p4monitor[((spi | DIRECTION_MASK_1), si)] = P4MonitorStatus((spi | DIRECTION_MASK_1), si, routemorphic, p4id)
                             if routemorphic == IPV4_ROUTE_PROTOCOL:
                                 self._p4agent[p4id].addMonitorv4(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si)
                             else:
@@ -356,8 +391,24 @@ class P4Controller(object):
         # prepare to copy from add
         return True
     
-    def _updatemonitor(self, _p4id):
-        pass
+    def _updatemonitor(self):
+        for i in self._p4monitor.keys():
+            p4id = self._p4monitor[i].p4id
+            spi = self._p4monitor[i].service_path_index
+            si = self._p4monitor[i].service_index
+            proto = self._p4monitor[i].proto
+            entrylst = self._p4monitor[i].getEntryList
+            for mnentry in entrylst:
+                pktcnt = 0
+                bytecnt = 0
+                timetag = time.time()
+                '''
+                if proto == IPV4_ROUTE_PROTOCOL:
+                    pktcnt, bytecnt = self._p4agent[p4id].queryMonitorv4(spi, si, mnentry.src, mnentry.dst)
+                else:
+                    pktcnt, bytecnt = self._p4agent[p4id].queryMonitorv6(spi, si, mnentry.src, mnentry.dst)
+                '''
+                self._p4monitor[i].updateStat(mnentry.uuid, pktcnt, bytecnt)
 
 if __name__ == '__main__':
     p4ctl = P4Controller('')

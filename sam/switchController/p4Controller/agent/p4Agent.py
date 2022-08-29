@@ -288,6 +288,9 @@ class P4Agent:
         print(self.res_src)
         print(self.res_dst)
         return True
+    
+    def addMonitorEntry(self):
+        pass
 
     def addMonitorEntryv4(self):
         monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv4')
