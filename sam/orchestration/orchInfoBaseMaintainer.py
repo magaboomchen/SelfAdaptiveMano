@@ -334,7 +334,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     @reConnectionDecorator
     def addSFCIRequestHandler(self, request, cmd, requestState, 
                                 sfciState, orchTime):
-        # type: (Request, Command, str, str) -> None
+        # type: (Request, Command, str, str, float) -> None
         request.requestState = requestState
 
         sfc = cmd.attributes['sfc']

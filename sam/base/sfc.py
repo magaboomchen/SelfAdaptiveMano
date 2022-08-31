@@ -4,6 +4,7 @@
 from uuid import UUID
 from typing import Any, Dict, List, Union
 
+from sam.base.direction import Direction
 from sam.base.slo import SLO
 from sam.base.path import ForwardingPathSet
 from sam.base.routingMorphic import RoutingMorphic
@@ -11,7 +12,7 @@ from sam.base.vnf import VNF, VNF_TYPE_FW, VNF_TYPE_LB, VNFI, \
             VNFI_RESOURCE_QUOTA_LARGE, VNFI_RESOURCE_QUOTA_SMALL
 from sam.base.sfcConstant import APP_TYPE_LARGE_BANDWIDTH, \
             APP_TYPE_NORTHSOUTH_WEBSITE, AUTO_SCALE, AUTO_RECOVERY, \
-            MANUAL_RECOVERY, MANUAL_SCALE, WITH_PROTECTION, \
+            MANUAL_RECOVERY, MANUAL_SCALE, SFC_DIRECTION_0, SFC_DIRECTION_1, WITH_PROTECTION, \
             WITHOUT_PROTECTION
 
 
@@ -66,7 +67,7 @@ class SFC(object):
                 maxScalingInstanceNumber,   # type: int
                 backupInstanceNumber,       # type: int
                 applicationType,            # type: Union[APP_TYPE_NORTHSOUTH_WEBSITE, APP_TYPE_LARGE_BANDWIDTH]
-                directions=None,            # type: Dict[str, Any]
+                directions=None,            # type: Dict[Union[SFC_DIRECTION_0, SFC_DIRECTION_1], Union[Dict[str, Any], Direction]]
                 attributes=None,            # type: Dict[str, Any]
                 slo=None,                   # type: SLO
                 scalingMode=AUTO_SCALE,     # type: Union[AUTO_SCALE, MANUAL_SCALE]
@@ -77,14 +78,14 @@ class SFC(object):
                 vnfiResourceQuota=None,     # type: Union[VNFI_RESOURCE_QUOTA_SMALL, VNFI_RESOURCE_QUOTA_LARGE]
                 ):
         self.sfcUUID = sfcUUID
-        self.vNFTypeSequence = vNFTypeSequence  # [FW, LB]
+        self.vNFTypeSequence = vNFTypeSequence  # e.g. [FW, LB]
         self.vnfSequence = vnfSequence
         self.scalingMode = scalingMode
-        self.vnfiResourceQuota = vnfiResourceQuota  # VNFI_RESOURCE_QUOTA_SMALL
-        self.maxScalingInstanceNumber = maxScalingInstanceNumber  # 2
+        self.vnfiResourceQuota = vnfiResourceQuota
+        self.maxScalingInstanceNumber = maxScalingInstanceNumber
         self.protectionMode = protectionMode
-        self.backupInstanceNumber = backupInstanceNumber  # 1
-        self.applicationType = applicationType  # NORTHSOUTH_WEBSITE
+        self.backupInstanceNumber = backupInstanceNumber
+        self.applicationType = applicationType
         self.recoveryMode = recoveryMode
         self.routingMorphic = routingMorphic
         self.slo = slo
@@ -153,23 +154,12 @@ class SFC(object):
         return {
             'sfcUUID': str(self.sfcUUID),
             'vNFTypeSequence': self.vNFTypeSequence,
-            'zone': self.attributes['zone'],  # "PROJECT3_ZONE"
+            'zone': self.attributes['zone'],
             'source': self.directions[0]['source'],
-            # Outside, {'IPv4':"0.0.0.0"} or {'MPLS':srcLable} or
-            # other routing addressing format
-            'ingress': self.directions[0]['ingress'].getServerID(),
-            # Any May be a P4 switch or a server
+            'ingress': self.directions[0]['ingress'].getNodeID(),
             'match': self.directions[0]['match'],
-            # {{},{},...}
-            # classifier's match,
-            # generic match fields: {"offset":offset,
-            # "size":size, "value": value}
-            'egress': self.directions[0]['egress'].getServerID(),
-            # Any, May be a P4 switch or a server
+            'egress': self.directions[0]['egress'].getNodeID(),
             'destination': self.directions[0]['destination'],
-            # websiteIP
-            # {'IPv4':"0.0.0.0"} or
-            # {'MPLS':srcLable} or other routing addressing format
             'routingMorphic': self.routingMorphic
         }
 

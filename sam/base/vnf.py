@@ -3,9 +3,9 @@
 
 import uuid
 from typing import Union
+
 from sam.base.acl import ACLTable
 from sam.base.rateLimiter import RateLimiterConfig
-
 from sam.base.server import Server
 from sam.base.switch import Switch
 from sam.base.vnfiStatus import VNFIStatus
@@ -111,10 +111,8 @@ class VNFI(object):
         # e.g. [2,2] allocates 2 huge page on numa0 and 2 hugepages on numa1
 
     def to_dict(self):
-        if type(self.node) == Switch:
-            nodeID = self.node.switchID
-        elif type(self.node) == Server:
-            nodeID = self.node.getServerID()
+        if type(self.node) in [Switch, Server]:
+            nodeID = self.node.getNodeID()
         else:
             raise ValueError("Unknown node type {0}".format(type(self.node)))
 
