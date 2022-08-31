@@ -172,6 +172,7 @@ class ReplyHandler(object):
         for vnfi in vnfiSequence[0]:
             if type(vnfi.vnfiStatus) != VNFIStatus:
                 continue
+            self.logger.warning("vnfi.vnfiStatus {0}".format(vnfi.vnfiStatus))
             for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
                 if vnfi.vnfiStatus.inputTrafficAmount != None:
                     sumVNFIsStatus.inputTrafficAmount[directionID] += vnfi.vnfiStatus.inputTrafficAmount[directionID]

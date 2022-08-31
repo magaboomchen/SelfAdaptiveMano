@@ -1,18 +1,21 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from typing import Dict
+import time
+from typing import Dict, Tuple
 from logging import Logger
 
 from sam.base.sfc import SFC, SFCI
 from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REQUEST, \
                                     MessageAgent, SAMMessage
-from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
+from sam.base.request import REQUEST_STATE_REJECT, REQUEST_TYPE_ADD_SFC, \
+                                REQUEST_TYPE_ADD_SFCI, \
                                 REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, \
                                 REQUEST_TYPE_UPDATE_SFC_STATE, Request
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.sfcConstant import STATE_ACTIVE, STATE_MANUAL
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
+from sam.regulator.config import REQUEST_WAITING_TIMEOUT
 
 
 class RequestHandler(object):
@@ -27,41 +30,42 @@ class RequestHandler(object):
             REQUEST_TYPE_ADD_SFCI: {},
             REQUEST_TYPE_DEL_SFCI: {},
             REQUEST_TYPE_DEL_SFC: {}
-        }    # type: Dict[Request.requestType, Dict[Request.requestID, Request]]
+        }    # type: Dict[Request.requestType, Dict[Request.requestID, Tuple[Request, time.time()]]]
 
     def handle(self, request):
         # type: (Request) -> None
         try:
             self.logger.info("Get a request")
+            timestamp = time.time()
             if request.requestType == REQUEST_TYPE_UPDATE_SFC_STATE:
                 sfc = request.attributes["sfc"] # type: SFC
                 sfcState = self._oib.getSFCState(sfc.sfcUUID)
                 newState = request.attributes["newState"]
                 if self._isSFCStateAlreadyTransed(sfcState, newState):
-                    pass
+                    self._oib.updateRequestState2DB(request, REQUEST_STATE_REJECT)
                 elif self._isValidToTransSFCState(sfcState, newState):
                     self._oib.updateSFCState(sfc.sfcUUID, newState)
                     if request.requestID in self._taskDict[REQUEST_TYPE_UPDATE_SFC_STATE]:
-                        del self._taskDict[REQUEST_TYPE_UPDATE_SFC_STATE]
+                        del self._taskDict[REQUEST_TYPE_UPDATE_SFC_STATE][request.requestID]
                 else:
-                    self._taskDict[REQUEST_TYPE_UPDATE_SFC_STATE][request.requestID] = request
+                    self._taskDict[REQUEST_TYPE_UPDATE_SFC_STATE][request.requestID] = (request, timestamp)
             elif request.requestType == REQUEST_TYPE_ADD_SFC:
                 sfc = request.attributes["sfc"] # type: SFC
                 if self._oib.isAddSFCValidState(sfc.sfcUUID):
                     self.sendRequest2Dispatcher(request)
                     if request.requestID in self._taskDict[REQUEST_TYPE_ADD_SFC]:
-                        del self._taskDict[REQUEST_TYPE_ADD_SFC]
+                        del self._taskDict[REQUEST_TYPE_ADD_SFC][request.requestID]
                 else:
-                    self._taskDict[REQUEST_TYPE_ADD_SFC][request.requestID] = request
+                    self._taskDict[REQUEST_TYPE_ADD_SFC][request.requestID] = (request, timestamp)
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
                 sfc = request.attributes["sfc"]     # type: SFC
                 sfci = request.attributes["sfci"]   # type: SFCI
                 if self._isValidAddSFCIRequest(sfcState, sfci.sfciID):
                     self.sendRequest2Dispatcher(request)
                     if request.requestID in self._taskDict[REQUEST_TYPE_ADD_SFCI]:
-                        del self._taskDict[REQUEST_TYPE_ADD_SFCI]
+                        del self._taskDict[REQUEST_TYPE_ADD_SFCI][request.requestID]
                 else:
-                    self._taskDict[REQUEST_TYPE_ADD_SFCI][request.requestID] = request
+                    self._taskDict[REQUEST_TYPE_ADD_SFCI][request.requestID] = (request, timestamp)
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 sfc = request.attributes["sfc"]     # type: SFC
                 sfci = request.attributes["sfci"]   # type: SFCI
@@ -69,17 +73,17 @@ class RequestHandler(object):
                 if self._isValidDelSFCIRequest(sfcState, sfci.sfciID):
                     self.sendRequest2Dispatcher(request)
                     if request.requestID in self._taskDict[REQUEST_TYPE_DEL_SFCI]:
-                        del self._taskDict[REQUEST_TYPE_DEL_SFCI]
+                        del self._taskDict[REQUEST_TYPE_DEL_SFCI][request.requestID]
                 else:
-                    self._taskDict[REQUEST_TYPE_DEL_SFCI][request.requestID] = request
+                    self._taskDict[REQUEST_TYPE_DEL_SFCI][request.requestID] = (request, timestamp)
             elif request.requestType == REQUEST_TYPE_DEL_SFC:
                 sfc = request.attributes["sfc"]
                 if self._oib.isDelSFCValidState(sfc.sfcUUID):
                     self.sendRequest2Dispatcher(request)
                     if request.requestID in self._taskDict[REQUEST_TYPE_DEL_SFC]:
-                        del self._taskDict[REQUEST_TYPE_DEL_SFC]
+                        del self._taskDict[REQUEST_TYPE_DEL_SFC][request.requestID]
                 else:
-                    self._taskDict[REQUEST_TYPE_DEL_SFC][request.requestID] = request
+                    self._taskDict[REQUEST_TYPE_DEL_SFC][request.requestID] = (request, timestamp)
             else:
                 pass
         except Exception as ex:
@@ -109,5 +113,10 @@ class RequestHandler(object):
     def processAllRequestTask(self):
         self.logger.debug("process all requests.")
         for requestType, requestDict in list(self._taskDict.items()):
-            for requestID, request in list(requestDict.items()):
-                self.handle(request)
+            for requestID, requestTuple in list(requestDict.items()):
+                (request, timestamp) = requestTuple
+                if time.time() - timestamp > REQUEST_WAITING_TIMEOUT:
+                    self._oib.updateRequestState2DB(request, REQUEST_STATE_REJECT)
+                    del self._taskDict[requestType][request.requestID]
+                else:
+                    self.handle(request)

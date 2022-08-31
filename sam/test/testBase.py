@@ -639,6 +639,7 @@ class TestBase(object):
         return request
 
     def genAddSFCIRequest(self, sfc, sfci):
+        # type: (SFC, SFCI) -> Request
         sfc.backupInstanceNumber = 3
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFCI,
             REQUEST_PROCESSOR_QUEUE, requestState=REQUEST_STATE_INITIAL,
@@ -647,12 +648,14 @@ class TestBase(object):
         return request
 
     def genDelSFCRequest(self, sfc):
+        # type: (SFC) -> Request
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFC,
             REQUEST_PROCESSOR_QUEUE, requestState=REQUEST_STATE_INITIAL,
                 attributes={'sfc':sfc, 'zone':DEFAULT_ZONE})
         return request
 
     def genDelSFCIRequest(self, sfc, sfci):
+        # type: (SFC, SFCI) -> Request
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_DEL_SFCI,
             REQUEST_PROCESSOR_QUEUE, requestState=REQUEST_STATE_INITIAL,
                 attributes={'sfc':sfc, 'sfci':sfci, 'zone':DEFAULT_ZONE})

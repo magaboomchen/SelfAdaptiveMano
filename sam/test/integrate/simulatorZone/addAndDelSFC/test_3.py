@@ -21,7 +21,7 @@ import pytest
 
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 from sam.base.compatibility import screenInput
-from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_REGULATOR_CMD, \
+from sam.base.messageAgent import MSG_TYPE_REGULATOR_CMD, \
                                     REGULATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
@@ -67,8 +67,8 @@ class TestAddSFCClass(IntTestBaseClass):
         # self.sfcList = [sfc1, sfc2, sfc3, sfc4, sfc5]
         # self.sfciList = [sfci1, sfci2, sfci3, sfci4, sfci5]
 
-        self.sfcList = [sfc5]
-        self.sfciList = [sfci5]
+        self.sfcList = [sfc2, sfc3, sfc4, sfc5]
+        self.sfciList = [sfci2, sfci3, sfci4, sfci5]
 
         yield
 
@@ -84,7 +84,7 @@ class TestAddSFCClass(IntTestBaseClass):
                     "sfc": sfc,
                     "zone": SIMULATOR_ZONE
                 })
-            self.sendRequest(DISPATCHER_QUEUE, rq)
+            self.sendRequest(REGULATOR_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
                         "Then press andy key to continue!")
@@ -101,7 +101,7 @@ class TestAddSFCClass(IntTestBaseClass):
                         "zone": SIMULATOR_ZONE
                     })
                 self.logger.info("sfc is {0}".format(sfc))
-                self.sendRequest(DISPATCHER_QUEUE, rq)
+                self.sendRequest(REGULATOR_QUEUE, rq)
             else:
                 while True:
                     sfciIDList = self.getSFCIIDListFromDB(self.sfcList[idx].sfcUUID)

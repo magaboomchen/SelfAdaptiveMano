@@ -1,29 +1,17 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import sys
-import time
-import uuid
 import ctypes
 import inspect
-import threading
-from typing import Dict, Union
-from logging import Logger
-from threading import Thread
-from packaging import version
+from typing import Union
 
 from sam.base.shellProcessor import ShellProcessor
-from sam.measurement.mConfig import MEASURE_TIME_SLOT, SIMULATOR_ZONE_ONLY, TURBONET_ZONE_ONLY
-from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD, MSG_TYPE_SERVER_MANAGER_CMD, MSG_TYPE_SFF_CONTROLLER_CMD, MSG_TYPE_SIMULATOR_CMD, MSG_TYPE_VNF_CONTROLLER_CMD, PUFFER_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, \
+from sam.base.messageAgent import  PUFFER_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, \
                                 SAMMessage, MessageAgent, \
-                                MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD
+                                MSG_TYPE_REPLY
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
-    MEASURER_PORT, P4_CONTROLLER_IP, P4_CONTROLLER_PORT, SFF_CONTROLLER_IP, \
-    SFF_CONTROLLER_PORT, SIMULATOR_IP, SIMULATOR_PORT, \
-    SERVER_MANAGER_IP, SERVER_MANAGER_PORT, \
-    VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
-from sam.base.command import Command, CMD_TYPE_GET_TOPOLOGY, \
-    CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_SFCI_STATE, CommandReply
+                                                            MEASURER_PORT
+from sam.base.command import CommandReply
 from sam.base.request import REQUEST_TYPE_GET_SFCI_STATE, Reply, \
                                 REQUEST_STATE_SUCCESSFUL, \
                                 REQUEST_TYPE_GET_DCN_INFO, Request

@@ -79,16 +79,6 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     def addRequest(self, request, sfcUUID=None, sfciID=None, cmdUUID=None, retryCnt=0):
         # type: (Request, uuid1, int, uuid1, int) -> None
         if not self.hasRequest(request.requestID):
-            # fields = " REQUEST_UUID, REQUEST_TYPE, SFC_UUID, SFCIID, CMD_UUID, STATE, PICKLE, RETRY_CNT "
-            # dataTuple = (
-            #                 request.requestID,
-            #                 request.requestType,
-            #                 sfcUUID, sfciID, cmdUUID,
-            #                 request.requestState,
-            #                 self.pIO.obj2Pickle(request),
-            #                 retryCnt
-            #             )
-
             fields = " REQUEST_UUID, REQUEST_TYPE, STATE, PICKLE"
             dataList = [request.requestID, request.requestType, 
                             request.requestState,
@@ -514,13 +504,16 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     def updateRequestState2DB(self, request, state):
         # type: (Request, str) -> None
         request.requestState = state
-        self.dbA.update("Request", 
-            " PICKLE = '{0}', STATE = '{1}' ".format(
-                self._encodeObject2Pickle(request).decode(),
-                state
-                ),
-            " REQUEST_UUID = '{0}' ".format(request.requestID)
-            )
+        if self.hasRequest(request.requestID):
+            self.dbA.update("Request", 
+                " PICKLE = '{0}', STATE = '{1}' ".format(
+                    self._encodeObject2Pickle(request).decode(),
+                    state
+                    ),
+                " REQUEST_UUID = '{0}' ".format(request.requestID)
+                )
+        else:
+            self.addRequest(request)
 
     @reConnectionDecorator
     def addSFC2DB(self, sfc, sfciIDList=None, state=STATE_IN_PROCESSING):
