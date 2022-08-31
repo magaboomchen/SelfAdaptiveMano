@@ -9,6 +9,7 @@ import ipaddress
 import math
 import random
 import sys
+import time
 
 import numpy as np
 
@@ -146,14 +147,26 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         # identifierDict['humanReadable'] = <object routingMorphic>.value2HumanReadable(identifierDict['value'])
         # flow(identifierDict)
 
+    def update_flow(self, flow):
+        if flow['del']:
+            return 0
+        bw = flow['bw']()
+        timestamp = time.time()
+        traffic = bw * (timestamp - flow['timestamp'])
+        pkt = math.ceil(traffic / flow['pkt_size'])
+        flow['traffic'] += traffic
+        flow['pkt'] += pkt
+        flow['timestamp'] = timestamp
+        return bw
+
     def updateServerResource(self):
         serverProcesses = {}
         for serverID, vnfis in self.vnfis.items():
             if serverID in self.servers:
-                serverProcesses[serverID] = [{'cpu': vnfi['cpu'](), 'mem': vnfi['mem']()} for vnfi in vnfis]
+                serverProcesses[serverID] = [{'cpu': vnfi['cpu'], 'mem': vnfi['mem']} for vnfi in vnfis]
 
         for serverID, process in self.bgProcesses.items():
-            serverProcesses.setdefault(serverID, []).append({'cpu': process['cpu'](), 'mem': process['mem']()})
+            serverProcesses.setdefault(serverID, []).append({'cpu': process['cpu'], 'mem': process['mem']})
 
         for serverID, processes in serverProcesses.items():
             server = self.servers[serverID]['server']  # type: Server
@@ -288,15 +301,14 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
                     pathlist = primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
                 else:
                     pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
-                if len(sfci['traffics'][dirID]) == 0:
-                    bw = 0
-                    pktAmount = 0
-                else:
-                    bws = [self.flows[traffic_id]['bw']() for traffic_id in sfci['traffics'][dirID]]
-                    pktAmount = sum([math.ceil(bws[i] / self.flows[traffic_id]['pkt_size']) for i, traffic_id in
-                                     enumerate(sfci['traffics'][dirID])])
-                    bw = sum(bws)
-                sfcis.setdefault(sfciID, {})[dirID] = {'bw': bw, 'pktAmount': pktAmount}
+                bw = 0
+                trafficAmount = 0
+                pktAmount = 0
+                for traffic_id in sfci['traffics'][dirID]:
+                    bw += self.update_flow(self.flows[traffic_id])
+                    trafficAmount += self.flows[traffic_id]['traffic']
+                    pktAmount += self.flows[traffic_id]['pkt']
+                sfcis.setdefault(sfciID, {})[dirID] = {'bw': bw, 'trafficAmount': trafficAmount, 'pktAmount': pktAmount}
                 for stage, path in enumerate(pathlist):
                     for hop, (_, srcID) in enumerate(path):
                         if hop != len(path) - 1:
@@ -332,7 +344,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
                                 vnfiStatus = VNFIStatus({}, {}, {}, {}, state)
                                 if dirID == 0:
                                     vnfiStatus.inputTrafficAmount[SFC_DIRECTION_0] = vnfiStatus.outputTrafficAmount[
-                                        SFC_DIRECTION_0] = sfcis[sfciID][dirID]['bw']
+                                        SFC_DIRECTION_0] = sfcis[sfciID][dirID]['trafficAmount']
                                     vnfiStatus.inputPacketAmount[SFC_DIRECTION_0] = vnfiStatus.outputPacketAmount[
                                         SFC_DIRECTION_0] = sfcis[sfciID][dirID]['pktAmount']
                                     vnfiStatus.inputTrafficAmount[SFC_DIRECTION_1] = vnfiStatus.outputTrafficAmount[
@@ -340,7 +352,7 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
                                         vnfiStatus.outputPacketAmount[SFC_DIRECTION_1] = 0
                                 else:
                                     vnfiStatus.inputTrafficAmount[SFC_DIRECTION_1] = vnfiStatus.outputTrafficAmount[
-                                        SFC_DIRECTION_1] = sfcis[sfciID][dirID]['bw']
+                                        SFC_DIRECTION_1] = sfcis[sfciID][dirID]['trafficAmount']
                                     vnfiStatus.inputPacketAmount[SFC_DIRECTION_1] = vnfiStatus.outputPacketAmount[
                                         SFC_DIRECTION_1] = sfcis[sfciID][dirID]['pktAmount']
                                 vnfi.vnfiStatus = vnfiStatus

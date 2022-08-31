@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 import random
+import time
 
 from sam.base.command import Command, CMD_TYPE_ADD_SFC, CMD_TYPE_DEL_SFC, CMD_TYPE_ADD_SFCI, \
     CMD_TYPE_DEL_SFCI, CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_TOPOLOGY, CMD_TYPE_GET_FLOW_SET, CMD_TYPE_GET_SFCI_STATE, \
@@ -221,8 +222,8 @@ def add_sfci_handler(cmd, sib):
                 'sfciID': sfciID,
                 'stage': stage,
                 'vnfi': vnfi,
-                'cpu': lambda: (100 * (vnfi.minCPUNum + random.random() * (vnfi.maxCPUNum - vnfi.minCPUNum))),
-                'mem': lambda: (vnfi.minMem + random.random() * (vnfi.maxMem - vnfi.minMem)),
+                'cpu': vnfi.maxCPUNum,
+                'mem': vnfi.maxMem,
             })
     for direction in directions:
         dirID = direction['ID']
@@ -267,7 +268,8 @@ def add_sfci_handler(cmd, sib):
                 if vnfi.vnfType == VNF_TYPE_RATELIMITER:
                     bw = min(bw, vnfi.config.maxMbps)
         sib.flows[trafficID] = {'bw': (lambda: float(bw * random.random())), 'pkt_size': 500,
-                                'sfciID': sfciID, 'dirID': dirID}
+                                'sfciID': sfciID, 'dirID': dirID, 'traffic': 0, 'pkt': 0, 'timestamp': time.time(),
+                                'del': False}
         sib.sfcis[sfciID]['traffics'][dirID].add(trafficID)
 
     return {}
