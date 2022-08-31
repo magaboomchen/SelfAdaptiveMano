@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 import random
+import time
 from getopt import getopt
 
 from sam.simulator.simulatorInfoBaseMaintainer import SimulatorInfoBaseMaintainer
@@ -112,20 +113,28 @@ def traffic_handler(cmd_list, sib):
     opt, arg = getopt(cmd_list[1:], '', ('trafficPattern=', 'value=', 'min=', 'max=', 'pktSize='))
     traffic_id = int(cmd_list[0])
     opt = dict(opt)
+    has_change = False
     # traffic <trafficID> --trafficPattern constant --value <value in Mbps>:
     if not arg and '--trafficPattern' in opt and opt['--trafficPattern'] == 'constant' and '--value' in opt:
+        sib.update_flow(sib.flows[traffic_id])
         sib.flows[traffic_id]['bw'] = lambda: float(opt['--value'])
+        has_change = True
 
     # traffic <trafficID> --trafficPattern uniform --min <value> --max <value>:
     elif not arg and '--trafficPattern' in opt \
             and opt['--trafficPattern'] == 'uniform' and '--min' in opt and '--max' in opt:
+        sib.update_flow(sib.flows[traffic_id])
         sib.flows[traffic_id]['bw'] = lambda: (
                 float(opt['--min']) + (float(opt['--max']) - float(opt['--min'])) * random.random())
+        has_change = True
 
     # traffic <trafficID> --pktSize <value in Bytes>:
-    elif not arg and '--pktSize' in opt:
+    if not arg and '--pktSize' in opt:
+        sib.update_flow(sib.flows[traffic_id])
         sib.flows[traffic_id]['pkt_size'] = int(opt['--pktSize'])
-    else:
+        has_change = True
+
+    if not has_change:
         raise ValueError
 
 
@@ -144,7 +153,8 @@ def add_handler(cmd_list, sib):
         if traffic_id in sib.flows:
             raise KeyError(traffic_id)
         sib.flows[traffic_id] = {'bw': (lambda: float(opt['--trafficRate'])), 'pkt_size': 500,
-                                 'sfciID': sfci_id, 'dirID': dir_id}
+                                 'sfciID': sfci_id, 'dirID': dir_id, 'traffic': 0, 'pkt': 0, 'timestamp': time.time(),
+                                 'del': False}
         sib.sfcis[sfci_id]['traffics'][dir_id].add(traffic_id)
     else:
         raise ValueError
@@ -159,9 +169,7 @@ def del_handler(cmd_list, sib):
     traffic_id = cmd_list[1]
     opt, arg = getopt(cmd_list[2], '', ())
     if not opt and not arg:  # del traffic <trafficID>
-        sfci_id = sib.flows[traffic_id]['sfciID']
-        dir_id = sib.flows[traffic_id]['dirID']
-        sib.sfcis[sfci_id]['traffics'][dir_id].remove(traffic_id)
-        sib.flows.pop(traffic_id)
+        sib.update_flow(sib.flows[traffic_id])
+        sib.flows[traffic_id]['del'] = True
     else:
         raise ValueError
