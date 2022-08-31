@@ -84,8 +84,9 @@ class TestAddSFCIClass(TestP4ControllerBase):
                                                 self.delSFCICmd)
 
             # verify
-            self.verifyTurbonetRecvDelRouteEntryCmd(self.sfciList[idx])
-            self.verifyTurbonetRecvDelClassifierEntryCmd(self.sfcList[idx])
+            # self.verifyTurbonetRecvDelRouteEntryCmd(self.sfciList[idx])
+            # self.verifyTurbonetRecvDelClassifierEntryCmd(self.sfcList[idx])
+            self.verifyTurbonetRecvDelSFCICmd(self.sfciList[idx], self.sfcList[idx])
             self.verifyDelSFCICmdRply()
 
             # exercise
@@ -95,6 +96,28 @@ class TestAddSFCIClass(TestP4ControllerBase):
                                                 self.delSFCCmd)
 
             self.verifyDelSFCCmdRply()
+
+    def verifyTurbonetRecvDelSFCICmd(self, sfc, sfci):
+        # type: (SFC, SFCI) -> None
+        cmdNum = len(sfc.directions)
+
+        pFPDict = sfci.forwardingPathSet.primaryForwardingPath
+        maxCmdCnt = 0
+        for pathIdx in [DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET]:
+            if pathIdx in pFPDict:
+                pFP = pFPDict[pathIdx]
+                for segPath in pFP:
+                    if len(segPath) == 2:
+                        continue
+                    for idx, (stageNum, nodeID) in enumerate(segPath):
+                        if (self.isSwitchID(nodeID) 
+                                and idx !=0 
+                                and idx !=len(segPath)-1):
+                            maxCmdCnt += 1
+
+        self.turbonetControllerStub.recvCmd(
+            [CMD_TYPE_DEL_CLASSIFIER_ENTRY, CMD_TYPE_DEL_NSH_ROUTE], 
+            [cmdNum, maxCmdCnt])
 
     def verifyTurbonetRecvDelClassifierEntryCmd(self, sfc):
         # type: (SFC) -> None

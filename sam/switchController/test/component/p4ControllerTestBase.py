@@ -5,6 +5,7 @@ import uuid
 from typing import List, Tuple, Union
 
 from sam.base.sfc import SFC, SFCI
+from sam.orchestration.algorithms.base.pathServerFiller import PathServerFiller
 from sam.test.testBase import DCN_GATEWAY_IP
 from sam.base.routingMorphic import RoutingMorphic
 from sam.base.rateLimiter import RateLimiterConfig
@@ -62,18 +63,15 @@ class TestP4ControllerBase(IntTestBaseClass):
 
         sfc1 = self.genLargeBandwidthSFC(classifier, zone=TURBONET_ZONE)
         rM = sfc1.routingMorphic
-        sfci1 = self.genUniDirection10BackupP4NFVISFCI(
-            sfcLength=2, routingMorphic=rM)  # genLargeBandwidthSFCI()
+        sfci1 = self.genUniDirection10BackupP4ServerNFVISFCI(sfc1, routingMorphic=rM)
 
         sfc3 = self.genLowLatencySFC(classifier, zone=TURBONET_ZONE)
         rM = sfc3.routingMorphic
-        sfci3 = self.genUniDirection10BackupP4NFVISFCI(
-            sfcLength=1, routingMorphic=rM)  # genLowLatencySFCI()
+        sfci3 = self.genUniDirection10BackupP4ServerNFVISFCI(sfc3, routingMorphic=rM)
 
         sfc4 = self.genLargeConnectionSFC(classifier, zone=TURBONET_ZONE)
         rM = sfc4.routingMorphic
-        sfci4 = self.genUniDirection10BackupP4NFVISFCI(
-            sfcLength=1, routingMorphic=rM)  # genLargeConnectionSFCI()
+        sfci4 = self.genUniDirection10BackupP4ServerNFVISFCI(sfc4, routingMorphic=rM)
 
         sfc6 = self.genMixEquipmentSFC(classifier, zone=TURBONET_ZONE)
         rM = sfc6.routingMorphic
@@ -83,68 +81,72 @@ class TestP4ControllerBase(IntTestBaseClass):
         self.sfcList = [sfc1, sfc3, sfc4, sfc6]
         self.sfciList = [sfci1, sfci3, sfci4, sfci6]
 
-    def genUniDirection10BackupP4NFVISFCI(
-            self, mappedVNFISeq=True, sfcLength=1, routingMorphic=None):
-        if mappedVNFISeq:
-            vnfiSequence = self.gen10BackupP4VNFISequence(sfcLength)
-        else:
-            vnfiSequence = None
-        return SFCI(self.assignSFCIID(), vnfiSequence, None,
-                    self.genUniDirection10BackupP4BasedForwardingPathSet(
-                        sfcLength),
-                    routingMorphic)
+    # def genUniDirection10BackupP4NFVISFCI(
+    #         self, sfc, mappedVNFISeq=True, routingMorphic=None):
+    #     if mappedVNFISeq:
+    #         # vnfiSequence = self.gen10BackupP4VNFISequence(sfcLength)
+    #         vnfiSequence = self.gen10BackupP4ServerVNFISequence(sfc)
+    #     else:
+    #         vnfiSequence = None
+    #     fPS = self.genUniDirection10BackupP4ServerBasedForwardingPathSet(
+    #                                                     sfc, vnfiSequence)
+    #     return SFCI(self.assignSFCIID(), vnfiSequence, None,
+    #                 # self.genUniDirection10BackupP4BasedForwardingPathSet(
+    #                 #     sfcLength),
+    #                 fPS,
+    #                 routingMorphic)
 
-    def gen10BackupP4VNFISequence(self, sfcLength=1):
-        # type: (int) -> List[List[VNFI]]
-        # hard-code function
-        vnfiSequence = []
-        for index in range(sfcLength):
-            vnfiSequence.append([])
-            for iN in range(1):
-                switch = Switch(SWITCH_SFF1_SWITCHID, SWITCH_TYPE_NPOP,
-                                SWITCH_SFF1_LANIP, programmable=True)
-                vnfi = VNFI(
-                    VNF_TYPE_RATELIMITER, vnfType=VNF_TYPE_RATELIMITER,
-                    vnfiID=uuid.uuid1(),
-                    config=RateLimiterConfig(maxMbps=100),
-                    node=switch)
-                vnfiSequence[index].append(vnfi)
-        return vnfiSequence
+    # def gen10BackupP4VNFISequence(self, sfcLength=1):
+    #     # type: (int) -> List[List[VNFI]]
+    #     # hard-code function
+    #     vnfiSequence = []
+    #     for index in range(sfcLength):
+    #         vnfiSequence.append([])
+    #         for iN in range(1):
+    #             switch = Switch(SWITCH_SFF1_SWITCHID, SWITCH_TYPE_NPOP,
+    #                             SWITCH_SFF1_LANIP, programmable=True)
+    #             vnfi = VNFI(
+    #                 VNF_TYPE_RATELIMITER, vnfType=VNF_TYPE_RATELIMITER,
+    #                 vnfiID=uuid.uuid1(),
+    #                 config=RateLimiterConfig(maxMbps=100),
+    #                 node=switch)
+    #             vnfiSequence[index].append(vnfi)
+    #     return vnfiSequence
 
-    def genUniDirection10BackupP4BasedForwardingPathSet(self, sfciLength=1):
-        # type: (int) -> ForwardingPathSet
-        # please ref /sam/base/path.py
-        # This function generate a sfc forwarding path for sfc "ingress->L2Forwarding->egress"
-        # The primary forwarding path has two stage, the first stage is "ingress->L2Forwarding",
-        # the second stage is "L2Forwarding->egress".
-        # Each stage is a list of layeredNodeIDTuple which format is (stageIndex, nodeID)
-        if sfciLength == 1:
-            d1FP = [
-                # (stageIndex, nodeID)
-                [(0, 0), (0, 8), (0, 16), (0, SWITCH_SFF1_SWITCHID)],
-                # Note that may be a serverID ocurred in path!
-                [(1, SWITCH_SFF1_SWITCHID), (1, 16), (1, 8), (1, 0)]
-            ]
-        elif sfciLength == 2:
-            d1FP = [
-                [(0, 0), (0, 8), (0, 16), (0, SWITCH_SFF1_SWITCHID)],
-                [(1, SWITCH_SFF1_SWITCHID), (1, SWITCH_SFF1_SWITCHID)],
-                [(2, SWITCH_SFF1_SWITCHID), (2, 16), (2, 8), (2, 0)]
-            ]
-        elif sfciLength == 3:
-            d1FP = [
-                [(0, 0), (0, 8), (0, 16), (0, SWITCH_SFF1_SWITCHID)],
-                [(1, SWITCH_SFF1_SWITCHID), (1, SWITCH_SFF1_SWITCHID)],
-                [(2, SWITCH_SFF1_SWITCHID), (2, SWITCH_SFF1_SWITCHID)],
-                [(3, SWITCH_SFF1_SWITCHID), (3, 16), (3, 8), (3, 0)]
-            ]
-        else:
-            raise ValueError("Unimplement sfci length!")
-        primaryForwardingPath = {DIRECTION0_PATHID_OFFSET: d1FP}
-        mappingType = MAPPING_TYPE_MMLPSFC  # This is your mapping algorithm type
-        backupForwardingPath = {}   # you don't need to care about backupForwardingPath
-        return ForwardingPathSet(primaryForwardingPath, mappingType,
-                                 backupForwardingPath)
+    # def genUniDirection10BackupP4BasedForwardingPathSet(self, sfciLength=1):
+    #     # type: (int) -> ForwardingPathSet
+    #     # please ref /sam/base/path.py
+    #     # This function generate a sfc forwarding path for sfc "ingress->L2Forwarding->egress"
+    #     # The primary forwarding path has two stage, the first stage is "ingress->L2Forwarding",
+    #     # the second stage is "L2Forwarding->egress".
+    #     # Each stage is a list of layeredNodeIDTuple which format is (stageIndex, nodeID)
+    #     if sfciLength == 1:
+    #         d0FP = [
+    #             # (stageIndex, nodeID)
+    #             [(0, 0), (0, 8), (0, 16), (0, SWITCH_SFF1_SWITCHID)],
+    #             # Note that may be a serverID ocurred in path!
+    #             [(1, SWITCH_SFF1_SWITCHID), (1, 16), (1, 8), (1, 0)]
+    #         ]
+    #     elif sfciLength == 2:
+    #         d0FP = [
+    #             [(0, 0), (0, 8), (0, 16), (0, SWITCH_SFF1_SWITCHID)],
+    #             [(1, SWITCH_SFF1_SWITCHID), (1, SWITCH_SFF1_SWITCHID)],
+    #             [(2, SWITCH_SFF1_SWITCHID), (2, 16), (2, 8), (2, 0)]
+    #         ]
+    #     elif sfciLength == 3:
+    #         d0FP = [
+    #             [(0, 0), (0, 8), (0, 16), (0, SWITCH_SFF1_SWITCHID)],
+    #             [(1, SWITCH_SFF1_SWITCHID), (1, SWITCH_SFF1_SWITCHID)],
+    #             [(2, SWITCH_SFF1_SWITCHID), (2, SWITCH_SFF1_SWITCHID)],
+    #             [(3, SWITCH_SFF1_SWITCHID), (3, 16), (3, 8), (3, 0)]
+    #         ]
+    #     else:
+    #         raise ValueError("Unimplement sfci length!")
+    #     primaryForwardingPath = {DIRECTION0_PATHID_OFFSET: d0FP}
+    #     mappingType = MAPPING_TYPE_MMLPSFC  # This is your mapping algorithm type
+    #     backupForwardingPath = {}   # you don't need to care about backupForwardingPath
+    #     return ForwardingPathSet(primaryForwardingPath, mappingType,
+    #                              backupForwardingPath)
 
     def genUniDirection10BackupP4ServerNFVISFCI(
             self, sfc, mappedVNFISeq=True, routingMorphic=None):
@@ -194,7 +196,7 @@ class TestP4ControllerBase(IntTestBaseClass):
         # The primary forwarding path has two stage, the first stage is "ingress->L2Forwarding",
         # the second stage is "L2Forwarding->egress".
         # Each stage is a list of layeredNodeIDTuple which format is (stageIndex, nodeID)
-        d1FP = []
+        d0FP = []
         for idx, vnf in enumerate(sfc.vnfSequence):
             if idx == 0:
                 srcNodeID = 0
@@ -210,9 +212,13 @@ class TestP4ControllerBase(IntTestBaseClass):
                 dstNode = vnfiSequence[idx][0].node
                 dstNodeID = self.getNodeID(dstNode)
             segPath = self.getSegPath(srcNodeID, dstNodeID, idx)
-            d1FP.append(segPath)
+            d0FP.append(segPath)
 
-        primaryForwardingPath = {DIRECTION0_PATHID_OFFSET: d1FP}
+        pSF = PathServerFiller()
+        d1FP = pSF.reverseForwardingPath(d0FP)
+        primaryForwardingPath = {DIRECTION0_PATHID_OFFSET: d0FP}
+        if len(sfc.directions) == 2:
+            primaryForwardingPath[DIRECTION1_PATHID_OFFSET] = d1FP
         mappingType = MAPPING_TYPE_MMLPSFC  # This is your mapping algorithm type
         backupForwardingPath = {}   # you don't need to care about backupForwardingPath
         return ForwardingPathSet(primaryForwardingPath, mappingType,
@@ -223,7 +229,7 @@ class TestP4ControllerBase(IntTestBaseClass):
         if type(node) == Server:
             nodeID = node.getServerID()
         elif type(node) == Switch:
-            nodeID = node.getSwitchID()
+            nodeID = node.switchID
         else:
             raise ValueError("Unknown node type {0}".format(type(node)))
         return nodeID
@@ -287,8 +293,9 @@ class TestP4ControllerBase(IntTestBaseClass):
                          self.addSFCICmd)
 
             # verify
-            self.verifyTurbonetRecvAddClassifierEntryCmd(self.sfcList[idx])
-            self.verifyTurbonetRecvAddRouteEntryCmd(self.sfciList[idx])
+            # self.verifyTurbonetRecvAddClassifierEntryCmd(self.sfcList[idx])
+            # self.verifyTurbonetRecvAddRouteEntryCmd(self.sfciList[idx])
+            self.verifyTurbonetRecvAddSFCICmd(self.sfcList[idx], self.sfciList[idx])
             self.verifyAddSFCICmdRply()
 
     def verifyAddSFCCmdRply(self):
@@ -296,6 +303,28 @@ class TestP4ControllerBase(IntTestBaseClass):
         assert cmdRply.cmdID == self.addSFCCmd.cmdID
         assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
         assert cmdRply.attributes['zone'] == TURBONET_ZONE
+
+    def verifyTurbonetRecvAddSFCICmd(self, sfc, sfci):
+        # type: (SFC, SFCI) -> None
+        cmdNum = len(sfc.directions)
+
+        pFPDict = sfci.forwardingPathSet.primaryForwardingPath
+        maxCmdCnt = 0
+        for pathIdx in [DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET]:
+            if pathIdx in pFPDict:
+                pFP = pFPDict[pathIdx]
+                for segPath in pFP:
+                    if len(segPath) == 2:
+                        continue
+                    for idx, (stageNum, nodeID) in enumerate(segPath):
+                        if (self.isSwitchID(nodeID) 
+                                and idx != 0 
+                                and idx != len(segPath)-1):
+                            maxCmdCnt += 1
+
+        self.turbonetControllerStub.recvCmd(
+            [CMD_TYPE_ADD_CLASSIFIER_ENTRY, CMD_TYPE_ADD_NSH_ROUTE], 
+            [cmdNum, maxCmdCnt])
 
     def verifyTurbonetRecvAddClassifierEntryCmd(self, sfc):
         # type: (SFC) -> None
