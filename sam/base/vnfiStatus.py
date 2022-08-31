@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+import datetime
 from typing import Dict, Union
 
 from sam.base.acl import ACLTable
@@ -14,13 +15,14 @@ class VNFIStatus(object):
                  inputPacketAmount=None,        # type: Dict[Union[SFC_DIRECTION_0, SFC_DIRECTION_1], int]
                  outputTrafficAmount=None,      # type: Dict[Union[SFC_DIRECTION_0, SFC_DIRECTION_1], int]
                  outputPacketAmount=None,       # type: Dict[Union[SFC_DIRECTION_0, SFC_DIRECTION_1], int]
-                 state=None                     # type: Union[MonitorStatistics, RateLimiterConfig, ACLTable]
+                 state=None                    # type: Union[MonitorStatistics, RateLimiterConfig, ACLTable]
                 ):
         self.inputTrafficAmount = inputTrafficAmount  # Dict[int, int]
         self.inputPacketAmount = inputPacketAmount
         self.outputTrafficAmount = outputTrafficAmount
         self.outputPacketAmount = outputPacketAmount
         self.state = state
+        self.timestamp = datetime.datetime.now()
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

@@ -99,7 +99,7 @@ class ReplyHandler(object):
                 sfciTrafficBandwidth = self.updateSFCILoad(sfci)
                 sumSFCITrafficBandwidth += sfciTrafficBandwidth
 
-        self.logger.debug("sumSFCITrafficBandwidth is {0}".format(sumSFCITrafficBandwidth))
+        self.logger.debug("sumSFCITrafficBandwidth is {0} Gbps".format(sumSFCITrafficBandwidth))
         targetSFCINum = self.computeTargetSFCINum(sfc, sumSFCITrafficBandwidth)
         self.logger.debug("targetSFCINum is {0}".format(targetSFCINum))
         currentValidSFCINum = self.getCurrentValidSFCINum(sfciIDList)
@@ -145,7 +145,9 @@ class ReplyHandler(object):
         if sfciID not in self.sfciLoadDict:
             self.sfciLoadDict[sfciID] = []
         sumVNFIsStatus = self.computeFirstVNFIsLoad(sfci.vnfiSequence)
-        self.sfciLoadDict[sfciID].append([sumVNFIsStatus, time.time(), 0])
+        self.sfciLoadDict[sfciID].append([sumVNFIsStatus, 
+                                            sumVNFIsStatus.timestamp.timestamp(),
+                                            0])
         if len(self.sfciLoadDict[sfciID]) >= 2:
             trafficLoad1 = 0
             trafficLoad0 = 0
@@ -155,8 +157,12 @@ class ReplyHandler(object):
             timestamp1 = self.sfciLoadDict[sfciID][-1][1]
             timestamp0 = self.sfciLoadDict[sfciID][-2][1]
             if trafficLoad0 != None and trafficLoad1 != None:
-                deltaT = (trafficLoad1 - trafficLoad0) * 1.0 / 1e06
-                self.sfciLoadDict[sfciID][-1][2] = deltaT / (timestamp1 - timestamp0)
+                deltaLoad = (trafficLoad1 - trafficLoad0) * 1.0 / 1e03
+                deltaTime = timestamp1 - timestamp0
+                if deltaTime > 0:
+                    self.sfciLoadDict[sfciID][-1][2] = deltaLoad / deltaTime
+                else:
+                    self.sfciLoadDict[sfciID].pop(0)
         if len(self.sfciLoadDict[sfciID]) > self.maxLoadListLength:
             self.sfciLoadDict[sfciID].pop(0)
         self.logger.info("self.sfciLoadDict of {0} is {1}".format(sfciID, 
@@ -187,6 +193,7 @@ class ReplyHandler(object):
 
     def computeTargetSFCINum(self, sfc, sumSFCITrafficBandwidth):
         # type: (SFC, int) -> int
+        # Gbps
         vNFTypeSequence = sfc.vNFTypeSequence
         maxExpCPU = 0
         maxExpMem = 0

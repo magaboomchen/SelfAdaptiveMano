@@ -15,6 +15,7 @@ Usage of this unit test:
     python -m pytest ./sam/simulator/test/test_getSFCIStatus.py -s --disable-warnings
 '''
 
+import datetime
 from time import sleep
 
 import pytest
@@ -146,6 +147,7 @@ class TestGetSFCIStatusClass(TestSimulatorBase):
                     assert vnfiStatus.outputTrafficAmount[SFC_DIRECTION_1] >= 0
                     assert vnfiStatus.outputPacketAmount[SFC_DIRECTION_0] >= 0
                     assert vnfiStatus.outputPacketAmount[SFC_DIRECTION_1] >= 0
+                    assert type(vnfiStatus.timestamp) == datetime.datetime
                     vnfType = vnfi.vnfType
                     if vnfType == VNF_TYPE_FW:
                         assert type(vnfiStatus.state) == ACLTable

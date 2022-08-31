@@ -237,8 +237,11 @@ class Orchestrator(object):
             self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
             self.logger.info("Trigger batch process.")
             self.processInvalidAddSFCIRequests(self._requestBatchQueue)
+            orchStartTime = time.time()
             reqCmdTupleList = self._osa.genABatchOfRequestAndAddSFCICmds(
                                                 self._requestBatchQueue)
+            orchStopTime = time.time()
+            orchTime = orchStopTime - orchStartTime
             self.logger.info("After mapping, there are {0} request in queue".format(self._requestBatchQueue.qsize()))
             for (request, cmd) in reqCmdTupleList:
                 sfci = cmd.attributes['sfci']   # type: SFCI
@@ -255,7 +258,7 @@ class Orchestrator(object):
                     sfciState = STATE_INIT_FAILED
                 if ENABLE_OIB:
                     self.logger.info("sfciID is {0}".format(sfciID))
-                    self._oib.addSFCIRequestHandler(request, cmd, reqState, sfciState)
+                    self._oib.addSFCIRequestHandler(request, cmd, reqState, sfciState, orchTime)
             self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
             self.logger.info("Batch process finish")
             self.batchLastTime = time.time()

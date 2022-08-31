@@ -124,6 +124,8 @@ class PerformanceModel(object):
         return vnfResConsRatioList[vnfType]
 
     def getExpectedServerResource(self, vnfType, trafficDemand):
+        # type: (str, float) -> None
+        # traffidcDemand's unit is Gbps
         resConRatio = self.getResourceConsumeRatioOfVNF(vnfType)
         for index in range(len(resConRatio)):
             resConRatio[index] = math.ceil(

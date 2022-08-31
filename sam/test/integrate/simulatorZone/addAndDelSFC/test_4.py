@@ -5,13 +5,11 @@
 This is an example for writing integrate test
 The work flow:
     * generate 5 addSFC and 5 addSFCI command to dispatcher
-    * generate 1 server failure using simulator, check whether regulator enable failover of the corresponding SFCI
-        * [error] server 14481 down
-        * [error] switch 421 down
-        * [error] link 928 421 down
+    * generate 1 traffic to sfci
+        * add traffic 10001 10001 0 --trafficRate 10000
 
 Usage of this unit test:
-    python -m pytest ./test_3.py -s --disable-warnings
+    python -m pytest ./test_4.py -s --disable-warnings
 '''
 
 import uuid
@@ -21,8 +19,7 @@ import pytest
 
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 from sam.base.compatibility import screenInput
-from sam.base.messageAgent import MSG_TYPE_REGULATOR_CMD, \
-                                    REGULATOR_QUEUE, SIMULATOR_ZONE
+from sam.base.messageAgent import REGULATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
                         REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFCI, \
@@ -30,8 +27,6 @@ from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
 from sam.base.sfc import SFCI
 from sam.base.sfcConstant import MANUAL_SCALE, STATE_MANUAL
 from sam.test.integrate.intTestBase import IntTestBaseClass
-from sam.base.messageAgentAuxillary.msgAgentRPCConf import ABNORMAL_DETECTOR_IP, \
-                        ABNORMAL_DETECTOR_PORT, REGULATOR_IP, REGULATOR_PORT
 
 
 class TestAddSFCClass(IntTestBaseClass):
@@ -67,8 +62,11 @@ class TestAddSFCClass(IntTestBaseClass):
         # self.sfcList = [sfc1, sfc2, sfc3, sfc4, sfc5]
         # self.sfciList = [sfci1, sfci2, sfci3, sfci4, sfci5]
 
-        self.sfcList = [sfc2, sfc3, sfc4, sfc5]
-        self.sfciList = [sfci2, sfci3, sfci4, sfci5]
+        # self.sfcList = [sfc2, sfc3, sfc4, sfc5]
+        # self.sfciList = [sfci2, sfci3, sfci4, sfci5]
+
+        self.sfcList = [sfc5]
+        self.sfciList = [sfci5]
 
         yield
 
@@ -116,56 +114,8 @@ class TestAddSFCClass(IntTestBaseClass):
         screenInput()
 
         # exercise
-        while True:
-            abnormalType = screenInput("Please input abnormal type: switch, server, link.\n")
-            if abnormalType == "switch":
-                switchIDList = []
-                for sfci in self.sfciList:
-                    updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
-                    switchIDList.extend(self.getAllSwitchIDFromSFCI(updatedSFCI))
-                self.logger.info("Please input abnormal switchID from "
-                                    "candidate switch list {0}".format(switchIDList))
-                abnSwitchID = int(screenInput())
-                self.logger.info("Please input abnormal serverID to "
-                                    " simulator: switch {0} down ".format(abnSwitchID))
-                cmd = self.genAbnormalSwitchHandleCommand(abnSwitchID)
-                break
-            elif abnormalType == "server":
-                serverIDList = []
-                for sfci in self.sfciList:
-                    updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
-                    serverIDList.extend(self.getAllServerIDFromSFCI(updatedSFCI))
-                self.logger.info("Please input abnormal serverID from "
-                                    "candidate server list {0}".format(serverIDList))
-                abnServerID = int(screenInput())
-                self.logger.info("Please input abnormal serverID to "
-                                    " simulator: server {0} down ".format(abnServerID))
-                cmd = self.genAbnormalServerHandleCommand(abnServerID)
-                break
-            elif abnormalType == "link":
-                linkIDList = []
-                for sfci in self.sfciList:
-                    updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
-                    linkIDList.extend(self.getAllLinkIDFromSFCI(updatedSFCI))
-                self.logger.info("Please input abnormal linkID from "
-                                    "candidate link list {0}".format(linkIDList))
-                srcNodeID = int(screenInput("srcNodeID:"))
-                dstNodeID = int(screenInput("dstNodeID:"))
-                abnLinkID = (srcNodeID, dstNodeID)
-                self.logger.info("Please input abnormal linkID to "
-                                    " simulator: link {0} {1} down ".format(
-                                                    abnLinkID[0], abnLinkID[1]))
-                screenInput()
-                cmd = self.genAbnormalLinkHandleCommand(abnLinkID)
-                break
-            else:
-                self.logger.info("Unknown abnormal type")
-
-        self.setMessageAgentListenSocket(ABNORMAL_DETECTOR_IP, 
-                                            ABNORMAL_DETECTOR_PORT)
-        self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
-
-        self.logger.info("Please check regulator if affected SFCI recovered?"\
+        screenInput("Please input large traffic to sfci.\n")
+        self.logger.info("Please check regulator if affected SFCI scaling up?"\
                         "Then press andy key to continue!")
         screenInput()
 

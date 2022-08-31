@@ -217,7 +217,7 @@ class IntTestBaseClass(TestBase):
         vnfSequence = [VNF(uuid.uuid1(), VNF_TYPE_RATELIMITER,
                             RateLimiterConfig(maxMbps=100),
                             PREFERRED_DEVICE_TYPE_SERVER)]
-        maxScalingInstanceNumber = 1
+        maxScalingInstanceNumber = 2
         backupInstanceNumber = 0
         applicationType = APP_TYPE_BEST_EFFORT
         routingMorphic = RoutingMorphic()

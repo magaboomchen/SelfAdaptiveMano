@@ -332,7 +332,8 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             return True
 
     @reConnectionDecorator
-    def addSFCIRequestHandler(self, request, cmd, requestState, sfciState):
+    def addSFCIRequestHandler(self, request, cmd, requestState, 
+                                sfciState, orchTime):
         # type: (Request, Command, str, str) -> None
         request.requestState = requestState
 
@@ -347,7 +348,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             else:
                 request.requestState = REQUEST_STATE_FAILED
         else:
-            self.addSFCI2DB(sfci, sfc.sfcUUID, zoneName)
+            self.addSFCI2DB(sfci, sfc.sfcUUID, zoneName, orchTime=orchTime)
 
         self.addCmdInfo2Request(request, cmd)
 
