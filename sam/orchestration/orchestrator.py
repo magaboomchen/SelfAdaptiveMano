@@ -123,7 +123,7 @@ class Orchestrator(object):
                 cmd = self._osa.genAddSFCCmd(request)
                 sfc = cmd.attributes['sfc'] # type: SFC
                 sfcUUID = sfc.sfcUUID
-                if self._oib._isAddSFCValidState(sfcUUID):
+                if self._oib.isAddSFCValidState(sfcUUID):
                     # self._odir.getDCNInfo()
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
@@ -149,7 +149,7 @@ class Orchestrator(object):
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 cmd = self._osd.genDelSFCICmd(request)
                 sfci = cmd.attributes['sfci']
-                if self._oib._isDelSFCIValidState(sfci.sfciID):
+                if self._oib.isDelSFCIValidState(sfci.sfciID):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     ingress = cmd.attributes['sfc'].directions[0]['ingress']
                     if type(ingress) == Server:
@@ -173,7 +173,7 @@ class Orchestrator(object):
             elif request.requestType == REQUEST_TYPE_DEL_SFC:
                 cmd = self._osd.genDelSFCCmd(request)
                 sfc = cmd.attributes['sfc']
-                if self._oib._isDelSFCValidState(sfc.sfcUUID):
+                if self._oib.isDelSFCValidState(sfc.sfcUUID):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)
@@ -207,8 +207,7 @@ class Orchestrator(object):
             else:
                 self._invalidRequestBatchQueue.put(request)
                 request.requestState = REQUEST_STATE_FAILED
-                self._oib.addRequest(request, sfcUUID=-1,
-                                        sfciID=-1, cmdUUID=-1)
+                self._oib.addRequest(request)
         self._requestBatchQueue = self._validRequestBatchQueue
 
     def _isValidAddSFCIRequest(self, request):
@@ -244,7 +243,7 @@ class Orchestrator(object):
             for (request, cmd) in reqCmdTupleList:
                 sfci = cmd.attributes['sfci']   # type: SFCI
                 sfciID = sfci.sfciID
-                if self._oib._isAddSFCIValidState(sfciID):
+                if self._oib.isAddSFCIValidState(sfciID):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
                     self.sendCmd(cmd)

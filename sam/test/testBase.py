@@ -630,6 +630,7 @@ class TestBase(object):
             random.randint(0, 255), random.randint(0, 255))
 
     def genAddSFCRequest(self, sfc):
+        # type: (SFC) -> Request
         sfc.backupInstanceNumber = 3
         request = Request(0, uuid.uuid1(), REQUEST_TYPE_ADD_SFC,
             REQUEST_PROCESSOR_QUEUE, requestState=REQUEST_STATE_INITIAL,

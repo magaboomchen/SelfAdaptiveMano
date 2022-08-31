@@ -31,7 +31,7 @@ class SFCIDAllocator(SourceAllocator):
     def getDeletedStateSFCIID(self, sfc):
         # type: (SFC) -> Union[int, None]
         # get deleted sfci for this sfc
-        sfciIDList = self._oib.getSFCCorrespondingSFCIID4DB(sfc.sfcUUID)
+        sfciIDList = self._oib.getSFCIIDListOfASFC4DB(sfc.sfcUUID)
         for sfciID in sfciIDList:
             sfciState = self._oib.getSFCIState(sfciID)
             if sfciState == STATE_DELETED:

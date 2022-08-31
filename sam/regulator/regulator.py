@@ -14,7 +14,8 @@ import ctypes
 import inspect
 
 from sam.base.pickleIO import PickleIO
-from sam.base.messageAgentAuxillary.msgAgentRPCConf import REGULATOR_IP, REGULATOR_PORT
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import REGULATOR_IP, \
+                                                            REGULATOR_PORT
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.messageAgent import DISPATCHER_QUEUE, \
@@ -28,7 +29,8 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.regulator import regulatorRequestSender
 from sam.regulator.argParser import ArgParser
-from sam.regulator.config import ENABLE_REQUEST_RETRY, FAILURE_REQUEST_RETRY_TIMEOUT, MAX_RETRY_NUM
+from sam.regulator.config import ENABLE_REQUEST_RETRY, MAX_RETRY_NUM, \
+                                    FAILURE_REQUEST_RETRY_TIMEOUT
 from sam.regulator.replyHandler import ReplyHandler
 from sam.regulator.commandHandler import CommandHandler
 from sam.regulator.requestHandler import RequestHandler

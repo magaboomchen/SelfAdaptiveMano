@@ -64,7 +64,7 @@ class IntTestBaseClass(TestBase):
         return self.sfcInDB
 
     def getSFCIIDListFromDB(self, sfcUUID):
-        sfciIDList = self._oib.getSFCCorrespondingSFCIID4DB(sfcUUID)
+        sfciIDList = self._oib.getSFCIIDListOfASFC4DB(sfcUUID)
         return sfciIDList
 
     def getSFCIFromDB(self, sfciID):

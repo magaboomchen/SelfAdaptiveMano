@@ -13,6 +13,7 @@ select * from Request;
 
 import uuid
 import pytest
+from typing import List
 
 from sam.base.request import Request, REQUEST_TYPE_ADD_SFC
 from sam.base.messageAgent import REQUEST_PROCESSOR_QUEUE
@@ -46,6 +47,7 @@ class TestRequestClass(DashboardTestBase):
                                 sfciID=idx, cmdUUID=uuid.uuid1())
 
     def delAddSFCRequests(self, addSFCRequestList):
+        # type: (List[Request]) -> None
         for req in addSFCRequestList:
             self.oib.delRequest(req.requestID)
 

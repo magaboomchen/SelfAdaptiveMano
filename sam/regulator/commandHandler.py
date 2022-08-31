@@ -119,7 +119,7 @@ class CommandHandler(object):
             return False
 
     def isAllSFCIDeleted(self, sfcUUID):
-        sfciIDList = self._oib.getSFCCorrespondingSFCIID4DB(sfcUUID)
+        sfciIDList = self._oib.getSFCIIDListOfASFC4DB(sfcUUID)
         for sfciID in sfciIDList:
             sfciState = self._oib.getSFCIState(sfciID)
             if sfciState != STATE_DELETED:

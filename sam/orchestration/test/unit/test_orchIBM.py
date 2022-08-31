@@ -1,7 +1,15 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+'''
+Usage:
+python -m pytest ./test_orchIBM.py -s
+'''
+
 import uuid
+
+import pytest
+from sam.base.messageAgent import DEFAULT_ZONE
 
 from sam.base.path import ForwardingPathSet, MAPPING_TYPE_UFRR
 from sam.base.command import Command, CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
@@ -24,7 +32,8 @@ class TestOIBMClass(TestBase):
             'testOIBM.log', level='debug')
         cls.logger = logConfigur.getLogger()
 
-        cls.oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123")
+        cls.oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123", 
+                                            reInitialTable=True)
 
         cls.testBase = TestBase()
         cls.classifier = cls.testBase.genClassifier("2.2.0.36")
@@ -59,51 +68,72 @@ class TestOIBMClass(TestBase):
         cls.oib.dbA.dropTable("SFC")
         cls.oib.dbA.dropTable("SFCI")
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_initRequestTable(self):
         self.oib._initRequestTable()
         assert self.oib.dbA.hasTable("Orchestrator", "Request") == True
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_initSFCTable(self):
         self.oib._initSFCTable()
         assert self.oib.dbA.hasTable("Orchestrator", "SFC") == True
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_initSFCITable(self):
         self.oib._initSFCITable()
         assert self.oib.dbA.hasTable("Orchestrator", "SFCI") == True
 
-    def test_addRequest2DB(self):
-        self.oib._addRequest2DB(self.addSFCRequest, self.addSFCCmd)
+    # @pytest.mark.skip(reason='Temporarly')
+    def test_addRequest(self):
+        self.oib.addRequest(self.addSFCRequest)
         condition = " REQUEST_UUID = '{0}' ".format(
             self.addSFCRequest.requestID)
         results = self.oib.dbA.query("Request", " * ",
             condition)
         assert results != ()
 
-        self.oib._addRequest2DB(self.addSFCIRequest, self.addSFCICmd)
+    # @pytest.mark.skip(reason='Temporarly')
+    def test_queryRequest(self):
+        request = self.oib.getRequestByRequestUUID(
+                            self.addSFCRequest.requestID)
+        assert request.requestID == self.addSFCRequest.requestID
+
+    # @pytest.mark.skip(reason='Temporarly')
+    def test_addCmdInfo2Request(self):
+        self.oib.addCmdInfo2Request(self.addSFCRequest, self.addSFCCmd)
+        condition = " REQUEST_UUID = '{0}' ".format(
+            self.addSFCRequest.requestID)
+        results = self.oib.dbA.query("Request", " * ",
+            condition)
+        assert results != ()
+
+        self.oib.addCmdInfo2Request(self.addSFCIRequest, self.addSFCICmd)
         condition = " REQUEST_UUID = '{0}' ".format(
             self.addSFCIRequest.requestID)
         results = self.oib.dbA.query("Request", " * ",
             condition)
         assert results != ()
 
-        self.oib._addRequest2DB(self.delSFCIRequest, self.delSFCICmd)
+        self.oib.addCmdInfo2Request(self.delSFCIRequest, self.delSFCICmd)
         condition = " REQUEST_UUID = '{0}' ".format(
             self.delSFCIRequest.requestID)
         results = self.oib.dbA.query("Request", " * ",
             condition)
         assert results != ()
 
-        self.oib._addRequest2DB(self.delSFCRequest, self.delSFCCmd)
+        self.oib.addCmdInfo2Request(self.delSFCRequest, self.delSFCCmd)
         condition = " REQUEST_UUID = '{0}' ".format(
             self.delSFCRequest.requestID)
         results = self.oib.dbA.query("Request", " * ",
             condition)
         assert results != ()
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_getRequest(self):
         request = self.oib.getRequestByCmdID(self.addSFCCmd.cmdID)
         assert request.requestID == self.addSFCRequest.requestID
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_updateRequestState2DB(self):
         request = self.oib.getRequestByRequestUUID(self.addSFCRequest.requestID)
         assert request.requestState == REQUEST_STATE_INITIAL
@@ -114,6 +144,7 @@ class TestOIBMClass(TestBase):
         request = self.oib.getRequestByRequestUUID(self.addSFCRequest.requestID)
         assert request.requestState == REQUEST_STATE_SUCCESSFUL
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_addSFC2DB(self):
         sfc = self.oib.getSFC4DB(self.sfc.sfcUUID)
         assert sfc == None
@@ -121,6 +152,7 @@ class TestOIBMClass(TestBase):
         sfc = self.oib.getSFC4DB(self.sfc.sfcUUID)
         assert sfc.sfcUUID == self.sfc.sfcUUID
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_updateSFCState(self):
         state = self.oib.getSFCState(self.sfc.sfcUUID)
         assert state == STATE_IN_PROCESSING
@@ -129,37 +161,43 @@ class TestOIBMClass(TestBase):
         state = self.oib.getSFCState(self.sfc.sfcUUID)
         assert state == STATE_INACTIVE
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_addSFCI2SFCInDB(self):
-        results = self.oib.dbA.query("SFC", " SFCIID_LIST ",
-            " SFC_UUID = '{0}' ".format(self.sfc.sfcUUID))
-        assert results[0][0] == ""
+        sfciIDList = self.oib.getSFCIIDListOfASFC4DB(self.sfc.sfcUUID)
+        assert type(sfciIDList) == list
+        assert len(sfciIDList) == 0
         self.oib._addSFCI2SFCInDB(self.sfc.sfcUUID, self.sfci.sfciID)
-        results = self.oib.dbA.query("SFC", " SFCIID_LIST ",
-            " SFC_UUID = '{0}' ".format(self.sfc.sfcUUID))
-        assert results[0][0] == str(self.sfci.sfciID) + ","
+        sfciIDList = self.oib.getSFCIIDListOfASFC4DB(self.sfc.sfcUUID)
+        assert type(sfciIDList) == list
+        assert len(sfciIDList) == 1
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_delSFCI4SFCInDB(self):
-        results = self.oib.dbA.query("SFC", " SFCIID_LIST ",
-            " SFC_UUID = '{0}' ".format(self.sfc.sfcUUID))
-        assert results[0][0] == str(self.sfci.sfciID) + ","
+        sfciIDList = self.oib.getSFCIIDListOfASFC4DB(self.sfc.sfcUUID)
+        assert type(sfciIDList) == list
+        assert len(sfciIDList) == 1
         self.oib._delSFCI4SFCInDB(self.sfc.sfcUUID, self.sfci.sfciID)
-        results = self.oib.dbA.query("SFC", " SFCIID_LIST ",
-            " SFC_UUID = '{0}' ".format(self.sfc.sfcUUID))
-        assert results[0][0] == ""
+        sfciIDList = self.oib.getSFCIIDListOfASFC4DB(self.sfc.sfcUUID)
+        assert type(sfciIDList) == list
+        assert len(sfciIDList) == 0
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_addSFCI2DB(self):
-        self.oib.addSFCI2DB(self.sfci)
+        self.oib.addSFCI2DB(self.sfci, self.sfc.sfcUUID, DEFAULT_ZONE)
         sfci = self.oib.getSFCI4DB(self.sfci.sfciID)
         assert sfci.sfciID == self.sfci.sfciID
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_updateSFCIState(self):
         self.oib.updateSFCIState(self.sfci.sfciID, STATE_DELETED)
         assert self.oib.getSFCIState(self.sfci.sfciID) == STATE_DELETED
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_pruneSFC4DB(self):
         self.oib.pruneSFC4DB(self.sfc.sfcUUID)
         assert self.oib.getSFC4DB(self.sfc.sfcUUID) == None
 
+    # @pytest.mark.skip(reason='Temporarly')
     def test_pruneSFCI4DB(self):
         self.oib.pruneSFCI4DB(self.sfci.sfciID)
         assert self.oib.getSFC4DB(self.sfci.sfciID) == None

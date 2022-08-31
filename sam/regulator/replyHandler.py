@@ -315,7 +315,7 @@ class ReplyHandler(object):
         # type: (SFC) -> None
         deltaSFCINum = abs(self.getDeltaSFCINum(sfc))
         self.logger.warning("scaling in deltaSFCINum {0}".format(deltaSFCINum))
-        sfciIDList = self._oib.getSFCCorrespondingSFCIID4DB(sfc.sfcUUID)
+        sfciIDList = self._oib.getSFCIIDListOfASFC4DB(sfc.sfcUUID)
         sfciIDList = sorted(sfciIDList)
         zoneName = self._oib.getSFCZone4DB(sfc.sfcUUID)
         for sfciID in sfciIDList[:deltaSFCINum]:
