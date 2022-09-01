@@ -150,6 +150,14 @@ class SFC(object):
     def isFixedResourceQuota(self):
         return self.vnfiResourceQuota != None
 
+    def isAutoRecovery(self):
+        # type: (None) -> bool
+        return self.recoveryMode == AUTO_RECOVERY
+
+    def isAutoScaling(self):
+        # type: (None) -> bool
+        return self.scalingMode == AUTO_SCALE
+
     def to_dict(self):
         return {
             'sfcUUID': str(self.sfcUUID),

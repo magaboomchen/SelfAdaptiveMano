@@ -2,9 +2,9 @@
 # -*- coding: UTF-8 -*-
 
 import copy
-from logging import Logger
-from typing import Dict
 from uuid import UUID
+from typing import Dict
+from logging import Logger
 
 from sam.base.sfc import SFCI
 from sam.base.vnf import VNF_TYPE_CLASSIFIER

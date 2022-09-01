@@ -42,8 +42,8 @@ class ForwardingPathSet(object):
         self.mappingType = mappingType  # MAPPING_TYPE_NONE, MAPPING_TYPE_UFRR, etc
         self.backupForwardingPath = backupForwardingPath
         # {
-        #   1:{(srcID,dstID,pathID):forwardingPath},
-        #   128:{(srcID,dstID,pathID):forwardingPath}
+        #   DIRECTION0_PATHID_OFFSET:{(srcID,dstID,pathID):forwardingPath},
+        #   DIRECTION1_PATHID_OFFSET:{(srcID,dstID,pathID):forwardingPath}
         # }
         # direction0's pathID > 1 and < 128
         # direction1's pathID > 128 and < 256

@@ -268,7 +268,7 @@ class TestNoticeClass(TestBase):
         sfciState = self._oib.getSFCIState(self.sfci.sfciID)
         self.logger.info("update sfci state to {0} already!".format(sfciState))
 
-        time.sleep(8)
+        time.sleep(5)
         sfcState = self._oib.getSFCState(self.sfc.sfcUUID)
         assert sfcState == STATE_ACTIVE
 
@@ -284,7 +284,8 @@ class TestNoticeClass(TestBase):
         # self.sendCmd(REGULATOR_QUEUE, MSG_TYPE_REGULATOR_CMD, cmd)
         self.setMessageAgentListenSocket(ABNORMAL_DETECTOR_IP, 
                                             ABNORMAL_DETECTOR_PORT)
-        self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
+        self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, \
+                            MSG_TYPE_REGULATOR_CMD, cmd)
 
         # check dispatcherStub
         req = self.recvRequest(DISPATCHER_QUEUE)
@@ -301,6 +302,6 @@ class TestNoticeClass(TestBase):
 
         self.updateSFCIState2DB(self.sfci, STATE_ACTIVE)
 
-        time.sleep(8)
+        time.sleep(5)
         sfcState = self._oib.getSFCState(self.sfc.sfcUUID)
         assert sfcState == STATE_ACTIVE

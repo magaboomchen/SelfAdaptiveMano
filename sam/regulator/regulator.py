@@ -39,6 +39,7 @@ from sam.regulator.requestHandler import RequestHandler
 class Regulator(object):
     def __init__(self):
         self.pIO = PickleIO()
+        self.sP = ShellProcessor()
         self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
                                             False)
         logConfigur = LoggerConfigurator(__name__, './log',
@@ -57,7 +58,7 @@ class Regulator(object):
         self.replyHandler = ReplyHandler(self.logger, self._messageAgent,
                                             self._oib)
         self.requestHandler = RequestHandler(self.logger, self._messageAgent,
-                                            self._oib)                           
+                                            self._oib)                    
 
     def startRegulator(self):
         self._collectSFCIState()
@@ -65,7 +66,6 @@ class Regulator(object):
 
     def _collectSFCIState(self):
         # start a new process to send command
-        self.sP = ShellProcessor()
         filePath = regulatorRequestSender.__file__
         self.sP.runPythonScript(filePath)
 
@@ -144,8 +144,8 @@ class Regulator(object):
             else:
                 self.logger.error("Unknown massage body:{0}".format(body))
         time.sleep(1)
-        self.cmdHandler.processAllRecoveryTasks()
-        self.replyHandler.processAllScalingTasks()
+        self.cmdHandler.sfcRestorer.processAllRecoveryTasks()
+        self.replyHandler.sfcScalingProcessor.processAllScalingTasks()
         self.requestHandler.processAllRequestTask()
 
     def __del__(self):

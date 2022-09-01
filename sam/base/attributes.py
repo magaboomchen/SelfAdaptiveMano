@@ -3,7 +3,7 @@
 
 
 from typing import Any, Dict, List, Union
-from uuid import uuid1
+from uuid import UUID
 
 from sam.base.sfc import SFC, SFCI
 from sam.base.link import Link
@@ -42,7 +42,7 @@ ATTR_DETECTION_DICT = "detectionDict"
 class Attributes(object):
     def __init__(self, zone=None,    # type: str
                 sfc=None,            # type: SFC
-                sfcUUID=None,        # type: uuid1
+                sfcUUID=None,        # type: UUID
                 sfci=None,           # type: SFCI
                 classifier=None,     # type: Union[Server, Switch]
                 error=None,          # type: str
@@ -56,8 +56,8 @@ class Attributes(object):
                 flows=None,          # type: Flow
                 serverDown=None,     # type: List[Server]
                 serverUp=None,       # type: List[Server]
-                vnfisStateDict=None, # type: Dict[uuid1, Dict[str, Any]]
-                sfcisDict=None,      # type: Dict[uuid1, Dict[str, Any]]
+                vnfisStateDict=None, # type: Dict[UUID, Dict[str, Any]]
+                sfcisDict=None,      # type: Dict[UUID, Dict[str, Any]]
                 allZoneDetectionDict=None,   # type: Dict[Union[SIMULATOR_ZONE, TURBONET_ZONE], Dict[str, Any]]
                 detectionDict=None   # type: Dict[str, Any]
             ):

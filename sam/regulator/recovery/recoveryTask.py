@@ -1,0 +1,24 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+import datetime
+from typing import Dict, Union
+
+from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, Request
+
+RECOVERY_TASK_STATE_READY = "RECOVERY_TASK_STATE_READY"
+RECOVERY_TASK_STATE_DELETING_SFCI = "RECOVERY_TASK_STATE_DELETING_SFCI"
+RECOVERY_TASK_STATE_WAITING_TO_DELETE_SFC = "RECOVERY_TASK_STATE_WAITING_TO_DELETE_SFC"
+RECOVERY_TASK_STATE_DELETING_SFC = "RECOVERY_TASK_STATE_DELETING_SFC"
+RECOVERY_TASK_STATE_ADDING_SFCI = "RECOVERY_TASK_STATE_ADDING_SFCI"
+RECOVERY_TASK_STATE_WAITING = "RECOVERY_TASK_STATE_WAITING"
+RECOVERY_TASK_TYPE_SFCI = "RECOVERY_TASK_TYPE_SFCI"
+RECOVERY_TASK_TYPE_SFC = "RECOVERY_TASK_TYPE_SFC"
+
+
+class RecoveryTask(object):
+    def __init__(self, sfciID, recoveryTaskState):
+        self.sfciID = sfciID
+        self.recoveryTaskState = recoveryTaskState
+        self.reqDict = {}   # type: Dict[Union[REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI], Request]
+        self.timestamp = datetime.datetime.now()

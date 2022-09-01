@@ -141,6 +141,12 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
             self.dbA.update("Request", " RETRY_CNT = {0} ".format(retryCnt+1), " REQUEST_UUID = '{0}' ".format(requestUUID))
 
     @reConnectionDecorator
+    def getRequestRetryCnt(self, requestUUID):
+        results = self.dbA.query("Request", 
+            " RETRY_CNT ", " REQUEST_UUID = '{0}' ".format(requestUUID))
+        return results[0][0]
+
+    @reConnectionDecorator
     def delRequest(self, requestUUID):
         if self.hasRequest(requestUUID):
             self.dbA.delete("Request", " REQUEST_UUID = '{0}'".format(requestUUID))
@@ -658,6 +664,15 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     def pruneSFCI4DB(self, sfciID):
         # type: (int) -> None
         self.dbA.delete("SFCI", " SFCIID = '{0}' ".format(sfciID))
+
+    @reConnectionDecorator
+    def isAllSFCIDeleted(self, sfcUUID):
+        sfciIDList = self.getSFCIIDListOfASFC4DB(sfcUUID)
+        for sfciID in sfciIDList:
+            sfciState = self.getSFCIState(sfciID)
+            if sfciState != STATE_DELETED:
+                return False
+        return True
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)
