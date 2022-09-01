@@ -91,3 +91,8 @@ class Attributes(object):
             for (key, value) in self.__dict__.items()
             if value != None
             )
+
+    def fromDict(self, dictionary):
+        for key in list(self.__dict__.keys()):
+            if key in dictionary:
+                self.__dict__[key] = dictionary[key]

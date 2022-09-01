@@ -26,11 +26,13 @@ class TrafficEndPoint(object):
         self.rocev1 = rocev1
 
     def toDict(self):
-        trafficEndPointDict = {
-            'node': self.node,
-            'IPv4': self.ipv4,
-            'IPv6': self.ipv6,
-            'SRv6': self.srv6,
-            'RoceV1': self.rocev1
-        }
-        return trafficEndPointDict
+        return dict(
+            (key, value)
+            for (key, value) in self.__dict__.items()
+            if value != None
+            )
+
+    def fromDict(self, dictionary):
+        for key in list(self.__dict__.keys()):
+            if key in dictionary:
+                self.__dict__[key] = dictionary[key]

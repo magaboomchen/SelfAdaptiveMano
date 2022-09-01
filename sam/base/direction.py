@@ -39,12 +39,13 @@ class Direction(object):
         self.destination = destination
 
     def toDict(self):
-        directionDict = {
-            'ID': self.id,
-            'source': self.source,
-            'ingress': self.ingress,
-            'match': self.match,
-            'egress': self.egress,
-            'destination': self.destination
-        }
-        return directionDict
+        return dict(
+            (key, value)
+            for (key, value) in self.__dict__.items()
+            if value != None
+            )
+
+    def fromDict(self, dictionary):
+        for key in list(self.__dict__.keys()):
+            if key in dictionary:
+                self.__dict__[key] = dictionary[key]

@@ -16,11 +16,13 @@ class SFCMatch(object):
         self.proto = proto
 
     def toDict(self):
-        sfcMatchDict = {
-            'srcIP': self.srcIP,
-            'dstIP': self.dstIP,
-            'srcPort': self.srcPort,
-            'dstPort': self.dstPort,
-            'proto': self.proto
-        }
-        return sfcMatchDict
+        return dict(
+            (key, value)
+            for (key, value) in self.__dict__.items()
+            if value != None
+            )
+
+    def fromDict(self, dictionary):
+        for key in list(self.__dict__.keys()):
+            if key in dictionary:
+                self.__dict__[key] = dictionary[key]
