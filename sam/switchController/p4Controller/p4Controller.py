@@ -185,26 +185,31 @@ class P4Controller(object):
                 hasdir1 = True
         sfci = _cmd.attributes['sfci']
         sfciID = sfci.sfciID
+        nfseq = sfci.vnfiSequence
+        si = len(nfseq)
         self.logger.info('Adding SFC: id - %s.' % sfciID)
         self.logger.info('Adding SFC: Adding Turbonet Classifier Entries.')
-        for diri in directions:
+        fpset = sfci.forwardingPathSet.primaryForwardingPath
+        print(fpset)
+        # get next node
+        for diri in directions: # this list uncertain
             direthertype = ETH_TYPE_IPV4
             ignode = 0
             egnode = 0
             ignextnode = 0
             egnextnode = 0
-            matchaddr = 0xF0FFFFFF
-            dirspi = 0xFF0
-            dirsi = 0xE
-            dirnxtproto = 0x01
-            self.logger.info('Adding SFC: Classifier: ether - %x, SPI - %d, SI - %d, addr - %x, proto - %x.' % (direthertype, dirspi, dirsi, matchaddr, dirnxtproto))
+            matchaddrsrc = 0xF0FFFFFF
+            matchaddrdst = 0xF0FFFFFF
+            dirspi = sfciID
+            dirsi = si
+            self.logger.info('Adding SFC: Classifier: proto - %x, SPI - %d, SI - %d, src - %x, dst - %x.' % (direthertype, dirspi, dirsi, matchaddrsrc, matchaddrdst))
             self.logger.info('Adding SFC: Node Info: inode - %d, enode - %d, inode(next) - %d, enode(next) - %d.' % (ignode, egnode, ignextnode, egnextnode))
             # inbound
-            p4M = P4Match(direthertype, src = None, dst = matchaddr)
+            p4M = P4Match(direthertype, src = matchaddrsrc, dst = matchaddrdst)
             fVPList = [
                 FieldValuePair(FIELD_TYPE_SPI, dirspi),
                 FieldValuePair(FIELD_TYPE_SI, dirsi),
-                FieldValuePair(FIELD_TYPE_NEXT_PROTOCOL, dirnxtproto),
+                FieldValuePair(FIELD_TYPE_NEXT_PROTOCOL, direthertype),
                 FieldValuePair(FIELD_TYPE_MDTYPE, 0x1)
             ]
             p4A = P4Action(actionType = ACTION_TYPE_ENCAPSULATION_NSH, nextNodeID = ignextnode, newFieldValueList = fVPList)
@@ -213,7 +218,7 @@ class P4Controller(object):
             classifiermsg = SAMMessage(MSG_TYPE_TURBONET_CONTROLLER_CMD, classifiercmd)
             self._messageAgent.sendMsgByRPC(TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT, classifiermsg)
             # outbound
-            p4M = P4Match(ETH_TYPE_NSH, src = None, dst = matchaddr)
+            p4M = P4Match(ETH_TYPE_NSH, src = None, dst = None)
             fVPList = [
                 FieldValuePair(FIELD_TYPE_ETHERTYPE, direthertype)
             ]
@@ -222,9 +227,7 @@ class P4Controller(object):
             classifiercmd = Command(CMD_TYPE_ADD_CLASSIFIER_ENTRY, uuid.uuid1(), attributes = p4CE)
             classifiermsg = SAMMessage(MSG_TYPE_TURBONET_CONTROLLER_CMD, classifiercmd)
             self._messageAgent.sendMsgByRPC(TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT, classifiermsg)
-        fpset = sfci.forwardingPathSet.primaryForwardingPath
         self.logger.info('Adding SFC: Adding Turbonet Route Entries.')
-        print(fpset)
         if hasdir0:
             self.logger.info('Adding SFC: Adding Turbonet Direction 0 Route Entries.')
             lst = fpset[DIRECTION0_PATHID_OFFSET]
