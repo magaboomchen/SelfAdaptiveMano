@@ -1,6 +1,7 @@
 import sam
 import uuid
 import time
+import ipaddress
 
 from agent.p4Agent import P4Agent
 from agent.p4MonitorStatus import P4MonitorStat, P4MonitorEntry, P4MonitorStatus
@@ -9,6 +10,7 @@ from sam.base.command import CMD_TYPE_GET_SFCI_STATE, CommandReply, CMD_TYPE_ADD
 from sam.base.command import CMD_TYPE_DEL_CLASSIFIER_ENTRY, CMD_TYPE_DEL_NSH_ROUTE, Command, CMD_TYPE_ADD_NSH_ROUTE, CMD_TYPE_ADD_CLASSIFIER_ENTRY
 from sam.base.server import Server
 from sam.base.switch import Switch
+from sam.base.sfc import SFCI
 from sam.base.messageAgent import SAMMessage, MessageAgent, P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD, MSG_TYPE_P4CONTROLLER_CMD_REPLY, MEDIATOR_QUEUE, TURBONET_ZONE
 from sam.base.messageAgent import MSG_TYPE_TURBONET_CONTROLLER_CMD
 from sam.base.messageAgentAuxillary.msgAgentRPCConf import TEST_PORT, TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT, P4_CONTROLLER_PORT, P4_CONTROLLER_IP
@@ -18,12 +20,14 @@ from sam.base.vnfiStatus import VNFIStatus
 from sam.base.routingMorphic import IPV4_ROUTE_PROTOCOL, IPV6_ROUTE_PROTOCOL, ROCEV1_ROUTE_PROTOCOL, SRV6_ROUTE_PROTOCOL
 from sam.base.vnf import VNF_TYPE_FORWARD, VNF_TYPE_FW, VNF_TYPE_MONITOR, VNF_TYPE_LB, VNF_TYPE_NAT, VNF_TYPE_RATELIMITER, VNF_TYPE_VPN
 from sam.base.acl import ACLTable, ACLTuple, ACL_ACTION_ALLOW, ACL_ACTION_DENY, ACL_PROTO_TCP, ACL_PROTO_ICMP, ACL_PROTO_IGMP, ACL_PROTO_IPIP, ACL_PROTO_UDP
-from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, ForwardingPathSet
 from sam.base.rateLimiter import RateLimiterConfig
+from sam.base.monitorStatistic import MonitorStatistics
+from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, ForwardingPathSet
 from sam.switchController.base.p4ClassifierEntry import P4ClassifierEntry
 from sam.switchController.base.p4Action import ACTION_TYPE_DECAPSULATION_NSH, ACTION_TYPE_ENCAPSULATION_NSH, ACTION_TYPE_FORWARD, FIELD_TYPE_ETHERTYPE, FIELD_TYPE_MDTYPE, FIELD_TYPE_NEXT_PROTOCOL, FIELD_TYPE_SI, FIELD_TYPE_SPI, P4Action, FieldValuePair
 from sam.switchController.base.p4Match import ETH_TYPE_IPV4, ETH_TYPE_NSH, P4Match, ETH_TYPE_IPV6, ETH_TYPE_ROCEV1
 from sam.switchController.base.p4RouteEntry import P4RouteEntry
+
 from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
 
 P4CONTROLLER_P4_SWITCH_ID_1 = 20
@@ -41,12 +45,15 @@ class P4Controller(object):
         self._messageAgent = MessageAgent()
         self.queueName = self._messageAgent.genQueueName(P4CONTROLLER_QUEUE, _zonename)
         self._messageAgent.startRecvMsg(self.queueName)
+        self._messageAgent.startMsgReceiverRPCServer(P4_CONTROLLER_IP, P4_CONTROLLER_PORT)
         # controller init
         self._commands = {}
         self._commandresults = {}
         self._sfclist = {}
         self._p4agent = {}
         self._p4monitor = {} # monitorstatus list
+        self._sfcilist = {}
+        self._sfcidir = {} # directions of sfcilist
         # self._p4agent[0] = P4Agent('192.168.100.4:50052')
         # self._p4agent[1] = P4Agent('192.168.100.6:50052')
         self.logger.info('P4 controller initialization complete.')
@@ -81,14 +88,19 @@ class P4Controller(object):
         while True:
             msg = self._messageAgent.getMsg(self.queueName)
             msgType = msg.getMessageType()
-            print(msg)
             if msgType == None:
                 msg = self._messageAgent.getMsgByRPC(P4_CONTROLLER_IP, P4_CONTROLLER_PORT)
                 msgType = msg.getMessageType()
                 if msgType == None:
-                    #while self._p4agent[0].waitForDigenst():
-                    #    pass
                     '''
+                    while self._p4agent[0].waitForDigenst():
+                        p4src = self._p4agent[0].res_src
+                        p4dst = self._p4agent[0].res_dst
+                        p4spi = self._p4agent[0].res_spi
+                        p4si = self._p4agent[0].res_si
+                        if self._p4monitor[(p4spi, p4si)].hasEntry(p4src, p4dst):
+                            self._p4monitor[(p4spi, p4si)].addEntry(p4src, p4dst)
+                            self._p4agent[0].addMonitorEntry()
                     while self._p4agent[1].waitForDigenst():
                         p4src = self._p4agent[1].res_src
                         p4dst = self._p4agent[1].res_dst
@@ -99,8 +111,7 @@ class P4Controller(object):
                             self._p4agent[1].addMonitorEntry()
                     '''
                     if time.time() - lastupdatetime > 5.0:
-                        # self._updatemonitor(0)
-                        self._updatemonitor(1)
+                        self._updatemonitor()
                         lastupdatetime = time.time()
                 elif msgType == MSG_TYPE_P4CONTROLLER_CMD:
                     self.logger.info('Got a command from rpc')
@@ -110,7 +121,10 @@ class P4Controller(object):
                     self._commandresults[cmd.cmdID] = CMD_STATE_PROCESSING
                     resdict = {}
                     success = True
-                    success, resdict = self._getstate(cmd)
+                    if cmd.cmdType == CMD_TYPE_GET_SFCI_STATE:
+                        success, resdict = self._getstate()
+                    else:
+                        self.logger.error("Unsupported cmd type for P4 controller: %s." % cmd.cmdType)
                     if success:
                         self._commandresults[cmd.cmdID] = CMD_STATE_SUCCESSFUL
                     else:
@@ -123,19 +137,18 @@ class P4Controller(object):
             elif msgType == MSG_TYPE_P4CONTROLLER_CMD:
                 self.logger.info('Got a command.')
                 cmd = msg.getbody()
-                print(msg)
                 self._commands[cmd.cmdID] = cmd
                 self._commandresults[cmd.cmdID] = CMD_STATE_PROCESSING
                 resdict = {}
                 success = True
+                self.logger.info('Command Type: %s.' % cmd.cmdType)
                 if cmd.cmdType == CMD_TYPE_ADD_SFC:
                     success = True
                 elif cmd.cmdType == CMD_TYPE_DEL_SFC:
                     success = True
-                '''
                 elif cmd.cmdType == CMD_TYPE_ADD_SFCI:
                     success1 = self._addsfc(cmd)
-                    success2 = self._addsfci(cmd)
+                    success2 = True # self._addsfci(cmd)
                     success = success1 & success2
                 elif cmd.cmdType == CMD_TYPE_DEL_SFCI:
                     success1 = self._delsfc(cmd)
@@ -143,7 +156,6 @@ class P4Controller(object):
                     success = success1 & success2
                 else:
                     self.logger.error("Unsupported cmd type for P4 controller: %s." % cmd.cmdType)
-                '''
                 if success:
                     self._commandresults[cmd.cmdID] = CMD_STATE_SUCCESSFUL
                 else:
@@ -159,9 +171,22 @@ class P4Controller(object):
     def _addsfc(self, _cmd):
         # send turbonet command
         sfc = _cmd.attributes['sfc']
+        hasdir0 = False
+        hasdir1 = False
         directions = sfc.directions
+        if directions[0]['ID'] == SFC_DIRECTION_0:
+            hasdir0 = True
+        else:
+            hasdir1 = True
+        if len(directions) == 2:
+            if directions[1]['ID'] == SFC_DIRECTION_0:
+                hasdir0 = True
+            else:
+                hasdir1 = True
         sfci = _cmd.attributes['sfci']
         sfciID = sfci.sfciID
+        self.logger.info('Adding SFC: id - %s.' % sfciID)
+        self.logger.info('Adding SFC: Adding Turbonet Classifier Entries.')
         for diri in directions:
             direthertype = ETH_TYPE_IPV4
             ignode = 0
@@ -172,6 +197,8 @@ class P4Controller(object):
             dirspi = 0xFF0
             dirsi = 0xE
             dirnxtproto = 0x01
+            self.logger.info('Adding SFC: Classifier: ether - %x, SPI - %d, SI - %d, addr - %x, proto - %x.' % (direthertype, dirspi, dirsi, matchaddr, dirnxtproto))
+            self.logger.info('Adding SFC: Node Info: inode - %d, enode - %d, inode(next) - %d, enode(next) - %d.' % (ignode, egnode, ignextnode, egnextnode))
             # inbound
             p4M = P4Match(direthertype, src = None, dst = matchaddr)
             fVPList = [
@@ -186,7 +213,7 @@ class P4Controller(object):
             classifiermsg = SAMMessage(MSG_TYPE_TURBONET_CONTROLLER_CMD, classifiercmd)
             self._messageAgent.sendMsgByRPC(TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT, classifiermsg)
             # outbound
-            p4M = P4Match(ETH_TYPE_NSH, src = matchaddr, dst = None)
+            p4M = P4Match(ETH_TYPE_NSH, src = None, dst = matchaddr)
             fVPList = [
                 FieldValuePair(FIELD_TYPE_ETHERTYPE, direthertype)
             ]
@@ -196,48 +223,43 @@ class P4Controller(object):
             classifiermsg = SAMMessage(MSG_TYPE_TURBONET_CONTROLLER_CMD, classifiercmd)
             self._messageAgent.sendMsgByRPC(TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT, classifiermsg)
         fpset = sfci.forwardingPathSet.primaryForwardingPath
-        hasdir0 = False
-        hasdir1 = False
-        directions = _cmd.attributes['sfc'].directions
-        if directions[0]['ID'] == SFC_DIRECTION_0:
-            hasdir0 = True
-        else:
-            hasdir1 = True
-        if len(directions) == 2:
-            if directions[1]['ID'] == SFC_DIRECTION_0:
-                hasdir0 = True
-            else:
-                hasdir1 = True
+        self.logger.info('Adding SFC: Adding Turbonet Route Entries.')
+        print(fpset)
         if hasdir0:
+            self.logger.info('Adding SFC: Adding Turbonet Direction 0 Route Entries.')
             lst = fpset[DIRECTION0_PATHID_OFFSET]
             for segpath in lst:
                 pathlen = len(segpath)
                 for i in range(pathlen - 1):
-                    fromnode = 0
-                    tonode = 0
+                    fromnode = segpath[i][1]
+                    tonode = segpath[i + 1][1]
+                    self.logger.info('Adding SFC: Adding One Segment: idx - %d, from - %d, to - %d.' % (i, fromnode, tonode))
                     if fromnode == tonode:
                         continue
-                    p4M = P4Match(ETH_TYPE_NSH, 0xF0FFFFFF)
+                    p4M = P4Match(ETH_TYPE_NSH, src = None, dst = None)
                     p4A = P4Action(actionType = ACTION_TYPE_FORWARD, nextNodeID = tonode, newFieldValueList = None)
                     p4RE = P4RouteEntry(nodeID = fromnode, match = p4M, action = p4A)
                     routecmd = Command(CMD_TYPE_ADD_NSH_ROUTE, uuid.uuid1(), attributes = p4RE)
                     routemsg = SAMMessage(MSG_TYPE_TURBONET_CONTROLLER_CMD, routecmd)
                     self._messageAgent.sendMsgByRPC(TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT, routemsg)
         if hasdir1:
+            self.logger.info('Adding SFC: Adding Turbonet Direction 1 Route Entries.')
             lst = fpset[DIRECTION1_PATHID_OFFSET]
             for segpath in lst:
                 pathlen = len(segpath)
                 for i in range(pathlen - 1):
-                    fromnode = 0
-                    tonode = 0
+                    fromnode = segpath[i][1]
+                    tonode = segpath[i + 1][1]
+                    self.logger.info('Adding SFC: Adding One Segment: idx - %d, from - %d, to - %d.' % (i, fromnode, tonode))
                     if fromnode == tonode:
                         continue
-                    p4M = P4Match(ETH_TYPE_NSH, 0xF0FFFFFF)
+                    p4M = P4Match(ETH_TYPE_NSH, src = None, dst = None)
                     p4A = P4Action(actionType = ACTION_TYPE_FORWARD, nextNodeID = tonode, newFieldValueList = None)
                     p4RE = P4RouteEntry(nodeID = fromnode, match = p4M, action = p4A)
                     routecmd = Command(CMD_TYPE_ADD_NSH_ROUTE, uuid.uuid1(), attributes = p4RE)
                     routemsg = SAMMessage(MSG_TYPE_TURBONET_CONTROLLER_CMD, routecmd)
                     self._messageAgent.sendMsgByRPC(TURBONET_CONTROLLER_IP, TURBONET_CONTROLLER_PORT, routemsg)
+        self.logger.info('Adding SFC: Finished.')
         return True
     
     def _addsfci(self, _cmd):
@@ -255,11 +277,14 @@ class P4Controller(object):
             else:
                 hasdir1 = True
         sfciID = sfci.sfciID
-        self.logger.info('Adding sfci %s.' % sfciID)
+        self.logger.info('Adding SFCI: sfciid -  %s.' % sfciID)
         nfseq = sfci.vnfiSequence
         si = len(nfseq)
         spi = sfciID
+        self._sfcidir[spi] = (hasdir0, hasdir1)
+        self._sfcilist[spi] = sfci
         routemorphic = sfci.routingMorphic.morphicName
+        self.logger.info('Adding SFCI: Routing Morphic - %s.' % routemorphic)
         for nf in nfseq:
             eport = 136
             if si == 1:
@@ -275,113 +300,178 @@ class P4Controller(object):
                         continue
                     if nfi.vnfType == VNF_TYPE_FW:
                         if hasdir0:
-                            self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si, _outport = eport)
+                            # self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si, _outport = eport)
                             fwlst = nfi.config.getRulesList(routemorphic)
+                            self.logger.info('Adding SFCI: Adding Direction 0 Firewall with Protocol %s.' % routemorphic)
                             for aclins in fwlst:
                                 proto = aclins.proto
                                 isdrop = (aclins.action == ACL_ACTION_DENY)
                                 srcaddr, srcmsk = self.getmsk(aclins.srcAddr)
                                 dstaddr, dstmsk = self.getmsk(aclins.dstAddr)
+                                self.logger.info('Adding SFCI: Adding Direction 0 Firewall Entry: spi - %d, si - %d, action - %d.' % (spi, si, aclins.action))
+                                self.logger.info('Adding SFCI: Adding Direction 0 Firewall Entry: src - %s, msk - %s.' % (srcaddr, srcmsk))
+                                self.logger.info('Adding SFCI: Adding Direction 0 Firewall Entry: dst - %s, msk - %s.' % (dstaddr, dstmsk))
+                                '''
                                 if routemorphic == IPV4_ROUTE_PROTOCOL:
                                     self._p4agent[p4id].addv4FWentry(
-                                        _service_path_index = (spi & DIRECTION_MASK_0),
-                                        _service_index = si,
-                                        _src_addr = srcaddr,
-                                        _dst_addr = dstaddr,
-                                        _src_mask = srcmsk,
-                                        _dst_mask = dstmsk,
-                                        _nxt_hdr = proto,
-                                        _priority = 0,
-                                        _is_drop = isdrop
+                                        _service_path_index = (spi & DIRECTION_MASK_0), _service_index = si,
+                                        _src_addr = srcaddr, _dst_addr = dstaddr, _src_mask = srcmsk, _dst_mask = dstmsk,
+                                        _nxt_hdr = proto, _priority = 0, _is_drop = isdrop
                                     )
                                 else:
                                     self._p4agent[p4id].addv6FWentry(
-                                        _service_path_index = (spi & DIRECTION_MASK_0),
-                                        _service_index = si,
-                                        _src_addr = srcaddr,
-                                        _dst_addr = dstaddr,
-                                        _src_mask = srcmsk,
-                                        _dst_mask = dstmsk,
-                                        _nxt_hdr = proto,
-                                        _priority = 0,
-                                        _is_drop = isdrop
+                                        _service_path_index = (spi & DIRECTION_MASK_0), _service_index = si,
+                                        _src_addr = srcaddr, _dst_addr = dstaddr, _src_mask = srcmsk, _dst_mask = dstmsk,
+                                        _nxt_hdr = proto,  _priority = 0, _is_drop = isdrop
                                     )
+                                '''
                         if hasdir1:
-                            self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si, _outport = eport)
+                            # self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si, _outport = eport)
                             fwlst = nfi.config.getRulesList(routemorphic)
+                            self.logger.info('Adding SFCI: Adding Direction 1 Firewall with Protocol %s.' % routemorphic)
                             for aclins in fwlst:
                                 proto = aclins.proto
                                 isdrop = (aclins.action == ACL_ACTION_DENY)
                                 srcaddr, srcmsk = self.getmsk(aclins.srcAddr)
                                 dstaddr, dstmsk = self.getmsk(aclins.dstAddr)
+                                self.logger.info('Adding SFCI: Adding Direction 1 Firewall Entry: spi - %d, si - %d, action - %d.' % (spi, si, aclins.action))
+                                self.logger.info('Adding SFCI: Adding Direction 1 Firewall Entry: src - %s, msk - %s.' % (srcaddr, srcmsk))
+                                self.logger.info('Adding SFCI: Adding Direction 1 Firewall Entry: dst - %s, msk - %s.' % (dstaddr, dstmsk))
+                                '''
                                 if routemorphic == IPV4_ROUTE_PROTOCOL:
                                     self._p4agent[p4id].addv4FWentry(
-                                        _service_path_index = (spi | DIRECTION_MASK_1),
-                                        _service_index = si,
-                                        _src_addr = srcaddr,
-                                        _dst_addr = dstaddr,
-                                        _src_mask = srcmsk,
-                                        _dst_mask = dstmsk,
-                                        _nxt_hdr = proto,
-                                        _priority = 0,
-                                        _is_drop = isdrop
+                                        _service_path_index = (spi | DIRECTION_MASK_1), _service_index = si,
+                                        _src_addr = srcaddr, _dst_addr = dstaddr, _src_mask = srcmsk, _dst_mask = dstmsk,
+                                        _nxt_hdr = proto, _priority = 0, _is_drop = isdrop
                                     )
                                 else:
                                     self._p4agent[p4id].addv6FWentry(
-                                        _service_path_index = (spi | DIRECTION_MASK_1),
-                                        _service_index = si,
-                                        _src_addr = srcaddr,
-                                        _dst_addr = dstaddr,
-                                        _src_mask = srcmsk,
-                                        _dst_mask = dstmsk,
-                                        _nxt_hdr = proto,
-                                        _priority = 0,
-                                        _is_drop = isdrop
+                                        _service_path_index = (spi | DIRECTION_MASK_1), _service_index = si,
+                                        _src_addr = srcaddr, _dst_addr = dstaddr, _src_mask = srcmsk, _dst_mask = dstmsk,
+                                        _nxt_hdr = proto, _priority = 0, _is_drop = isdrop
                                     )
+                                '''
                     elif nfi.vnfType == VNF_TYPE_RATELIMITER:
                         ratelim = nfi.config.maxMbps * 1024
+                        self.logger.info('Adding SFCI: Adding RateLimiter with limit %d (Mbps).' % nfi.config.maxMbps)
+                        '''
                         if hasdir0:
+                            
                             self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si, _outport = eport)
                             self._p4agent[p4id].addRateLimiter(
-                                _service_path_index = (spi & DIRECTION_MASK_0),
-                                _service_index = si,
-                                _cir = ratelim,
-                                _cbs = ratelim,
-                                _pir = ratelim,
-                                _pbs = ratelim
+                                _service_path_index = (spi & DIRECTION_MASK_0), _service_index = si,
+                                _cir = ratelim, _cbs = ratelim, _pir = ratelim, _pbs = ratelim
                             )
                         if hasdir1:
                             self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si, _outport = eport)
                             self._p4agent[p4id].addRateLimiter(
-                                _service_path_index = (spi | DIRECTION_MASK_1),
-                                _service_index = si,
-                                _cir = ratelim,
-                                _cbs = ratelim,
-                                _pir = ratelim,
-                                _pbs = ratelim
+                                _service_path_index = (spi | DIRECTION_MASK_1), _service_index = si,
+                                _cir = ratelim, _cbs = ratelim, _pir = ratelim, _pbs = ratelim
                             )
+                        '''
                     elif nfi.vnfType == VNF_TYPE_MONITOR:
                         if hasdir0:
-                            self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si, _outport = eport)
+                            self.logger.info('Adding SFCI: Adding Direction 0 Monitor: spi - %d, si - %d.' % (spi, si))
+                            # self._p4agent[p4id].addIEGress(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si, _outport = eport)
                             self._p4monitor[((spi & DIRECTION_MASK_0), si)] = P4MonitorStatus((spi & DIRECTION_MASK_0), si, routemorphic, p4id)
+                            '''
                             if routemorphic == IPV4_ROUTE_PROTOCOL:
                                 self._p4agent[p4id].addMonitorv4(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si)
                             else:
                                 self._p4agent[p4id].addMonitorv6(_service_path_index = (spi & DIRECTION_MASK_0), _service_index = si)
+                            '''
                         if hasdir1:
-                            self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si, _outport = eport)
+                            self.logger.info('Adding SFCI: Adding Direction 1 Monitor: spi - %d, si - %d.' % (spi, si))
+                            # self._p4agent[p4id].addIEGress(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si, _outport = eport)
                             self._p4monitor[((spi | DIRECTION_MASK_1), si)] = P4MonitorStatus((spi | DIRECTION_MASK_1), si, routemorphic, p4id)
+                            '''
                             if routemorphic == IPV4_ROUTE_PROTOCOL:
                                 self._p4agent[p4id].addMonitorv4(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si)
                             else:
                                 self._p4agent[p4id].addMonitorv6(_service_path_index = (spi | DIRECTION_MASK_1), _service_index = si)
+                            '''
                     else:
                         return False
             si = si - 1
+        self.logger.info('Adding SFCI: Finished.')
         return True
     
-    def _getstate(self, _cmd):
-        return True, {}
+    def _getstate(self):
+        self.logger.info('Getting SFCI State: Started.')
+        for sfci in self._sfcilist:
+            nfseq = sfci.vnfSequence
+            si = len(nfseq)
+            spi = sfciID
+            routemorphic = sfci.routingMorphic.morphicName
+            (hasdir0, hasdir1) = self._sfcidir[spi]
+            for nfs in nfseq:
+                for nfi in nfs:
+                    if isinstance(nfi.node, Switch):
+                        p4id = -1
+                        if nfi.node.switchID == P4CONTROLLER_P4_SWITCH_ID_1:
+                            p4id = 0
+                        elif nfi.node.switchID == P4CONTROLLER_P4_SWITCH_ID_2:
+                            p4id = 1
+                        else:
+                            continue
+                        ingpkt = {}
+                        egpkt = {}
+                        ingbyte = {}
+                        egbyte = {}
+                        stat = None
+                        if hasdir0:
+                            ingpkt_temp, ingbyte_temp, egpkt_temp, egbyte_temp = 0, 0, 0, 0
+                            # ingpkt_temp, ingbyte_temp, egpkt_temp, egbyte_temp = self._p4agent[p4id].queryIOamount((spi & DIRECTION_MASK_0), si)
+                            ingpkt[SFC_DIRECTION_0] = ingpkt_temp
+                            ingbyte[SFC_DIRECTION_0] = ingbyte_temp
+                            egpkt[SFC_DIRECTION_0] = egpkt_temp
+                            egbyte[SFC_DIRECTION_0] = egbyte_temp
+                        if hasdir1:
+                            ingpkt_temp, ingbyte_temp, egpkt_temp, egbyte_temp = 0, 0, 0, 0
+                            # ingpkt_temp, ingbyte_temp, egpkt_temp, egbyte_temp = self._p4agent[p4id].queryIOamount((spi | DIRECTION_MASK_1), si)
+                            ingpkt[SFC_DIRECTION_1] = ingpkt_temp
+                            ingbyte[SFC_DIRECTION_1] = ingbyte_temp
+                            egpkt[SFC_DIRECTION_1] = egpkt_temp
+                            egbyte[SFC_DIRECTION_1] = egbyte_temp
+                        if nfi.vnfType == VNF_TYPE_MONITOR:
+                            stat = MonitorStatistics()
+                            if hasdir0:
+                                reslst = self._p4monitor[((spi & DIRECTION_MASK_0), si)].getStat()
+                                for resentry in reslst:
+                                    addrpair = None
+                                    if routemorphic == IPV4_ROUTE_PROTOCOL:
+                                        addrpair = SrcDstPair(ipaddress.IPv4Address(resentry.src), ipaddress.IPv4Address(resentry.dst), IPV4_ROUTE_PROTOCOL)
+                                    else:
+                                        addrpair = SrcDstPair(ipaddress.IPv6Address(resentry.src), ipaddress.IPv6Address(resentry.dst), routemorphic)
+                                    stat.addStatistic(
+                                        directionID = SFC_DIRECTION_0,
+                                        srcDstPair = addrpair,
+                                        pktRate = resentry.pktrate,
+                                        bytesRate = resentry.byterate
+                                    )
+                            if hasdir1:
+                                reslst = self._p4monitor[((spi | DIRECTION_MASK_1), si)].getStat()
+                                for resentry in reslst:
+                                    addrpair = None
+                                    if routemorphic == IPV4_ROUTE_PROTOCOL:
+                                        addrpair = SrcDstPair(ipaddress.IPv4Address(resentry.src), ipaddress.IPv4Address(resentry.dst), IPV4_ROUTE_PROTOCOL)
+                                    else:
+                                        addrpair = SrcDstPair(ipaddress.IPv6Address(resentry.src), ipaddress.IPv6Address(resentry.dst), routemorphic)
+                                    stat.addStatistic(
+                                        directionID = SFC_DIRECTION_1,
+                                        srcDstPair = addrpair,
+                                        pktRate = resentry.pktrate,
+                                        bytesRate = resentry.byterate
+                                    )
+                        else:
+                            stat = nfi.config
+                        nfi.vnfiStatus = VNFIStatus(
+                            inputTrafficAmount = ingbyte, inputPacketAmount = ingpkt,
+                            outputTrafficAmount = egbyte, outputPacketAmount = egpkt,
+                            state = stat
+                        )
+                si = si - 1
+        return True, self._sfcilist
     
     def _delsfc(self, _cmd):
         # prepare to copy from add

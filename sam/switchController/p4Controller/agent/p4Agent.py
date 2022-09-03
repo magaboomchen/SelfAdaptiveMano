@@ -255,19 +255,69 @@ class P4Agent:
 
     def queryMonitorv4(self, _service_path_index, _service_index, _src_addr, _dst_addr):
         monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv4')
-        monitortable.info.key_field_annotation_add('hdr.ipv4_h.src_addr', 'ipv4')
-        monitortable.info.key_field_annotation_add('hdr.ipv4_h.dst_addr', 'ipv4')
-        pass
+        #monitortable.info.key_field_annotation_add('hdr.ipv4_h.src_addr', 'ipv4')
+        #monitortable.info.key_field_annotation_add('hdr.ipv4_h.dst_addr', 'ipv4')
+        resp = monitortable.entry_get(
+            self.target,
+            [monitortable.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index),
+                client.KeyTuple('hdr.ipv4_h.dst_addr', _dst_addr, ((1 << 32) - 1)),
+                client.KeyTuple('hdr.ipv4_h.src_addr', _src_addr, ((1 << 32) - 1)),
+                client.KeyTuple("$MATCH_PRIORITY", 0)
+            ])], {"from_hw": True},
+            monitortable.make_data([client.DataTuple("$COUNTER_SPEC_BYTES"), client.DataTuple("$COUNTER_SPEC_PKTS")], 'SwitchIngress.hit_monitor_v4', get=True)
+        )
+        data_dict = next(resp)[0].to_dict()
+        pktcnt = data_dict["$COUNTER_SPEC_PKTS"]
+        bytecnt = data_dict["$COUNTER_SPEC_BYTES"]
+        return pktcnt, bytecnt
 
     def queryMonitorv6(self, _service_path_index, _service_index, _src_addr, _dst_addr):
         monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv6')
-        monitortable.info.key_field_annotation_add('hdr.ipv6_h.src_addr', 'ipv6')
-        monitortable.info.key_field_annotation_add('hdr.ipv6_h.dst_addr', 'ipv6')
-        pass
+        #monitortable.info.key_field_annotation_add('hdr.ipv6_h.src_addr', 'ipv6')
+        #monitortable.info.key_field_annotation_add('hdr.ipv6_h.dst_addr', 'ipv6')
+        resp = monitortable.entry_get(
+            self.target,
+            [monitortable.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index),
+                client.KeyTuple('hdr.ipv6_h.dst_addr', _dst_addr, ((1 << 128) - 1)),
+                client.KeyTuple('hdr.ipv6_h.src_addr', _src_addr, ((1 << 128) - 1)),
+                client.KeyTuple("$MATCH_PRIORITY", 0)
+            ])], {"from_hw": True},
+            monitortable.make_data([client.DataTuple("$COUNTER_SPEC_BYTES"), client.DataTuple("$COUNTER_SPEC_PKTS")], 'SwitchIngress.hit_monitor_v6', get=True)
+        )
+        data_dict = next(resp)[0].to_dict()
+        pktcnt = data_dict["$COUNTER_SPEC_PKTS"]
+        bytecnt = data_dict["$COUNTER_SPEC_BYTES"]
+        return pktcnt, bytecnt
     
     def queryIOamount(self, _service_path_index, _service_index):
         tableingress = self.bfrtinfo.table_get('SwitchIngress.CounterIngress')
+        resp = tableingress.entry_get(
+            self.target,
+            [tableingress.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index)
+            ])], {"from_hw": True},
+            tableingress.make_data([client.DataTuple("$COUNTER_SPEC_BYTES"), client.DataTuple("$COUNTER_SPEC_PKTS")], 'SwitchIngress.hit_ingress', get=True)
+        )
+        data_dict = next(resp)[0].to_dict()
+        ipkt = data_dict["$COUNTER_SPEC_PKTS"]
+        ibyte = data_dict["$COUNTER_SPEC_BYTES"]
         tableegress = self.bfrtinfo.table_get('SwitchIngress.CounterEgress')
+        resp = tableegress.entry_get(
+            self.target,
+            [tableegress.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index)
+            ])], {"from_hw": True},
+            tableegress.make_data([client.DataTuple("$COUNTER_SPEC_BYTES"), client.DataTuple("$COUNTER_SPEC_PKTS")], 'SwitchIngress.hit_egress', get=True)
+        )
+        data_dict = next(resp)[0].to_dict()
+        epkt = data_dict["$COUNTER_SPEC_PKTS"]
+        ebyte = data_dict["$COUNTER_SPEC_BYTES"]
         return ipkt, ibyte, epkt, ebyte
     
     def waitForDigenst(self):
@@ -290,7 +340,10 @@ class P4Agent:
         return True
     
     def addMonitorEntry(self):
-        pass
+        if self.res_src >= (1 << 32) or self.res_dst >= (1 << 32):
+            self.addMonitorEntryv4()
+        else:
+            self.addMonitorEntryv6()
 
     def addMonitorEntryv4(self):
         monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv4')
@@ -300,7 +353,8 @@ class P4Agent:
                 client.KeyTuple('hdr.nsh_h.service_path_index', self.res_spi),
                 client.KeyTuple('hdr.nsh_h.service_index', self.res_si),
                 client.KeyTuple('hdr.ipv4_h.dst_addr', self.res_dst, ((1 << 32) - 1)),
-                client.KeyTuple('hdr.ipv4_h.src_addr', self.res_src, ((1 << 32) - 1))
+                client.KeyTuple('hdr.ipv4_h.src_addr', self.res_src, ((1 << 32) - 1)),
+                client.KeyTuple("$MATCH_PRIORITY", 0)
             ])],
             [monitortable.make_data([], 'SwitchIngress.hit_monitor_v4')]
         )
@@ -313,7 +367,8 @@ class P4Agent:
                 client.KeyTuple('hdr.nsh_h.service_path_index', self.res_spi),
                 client.KeyTuple('hdr.nsh_h.service_index', self.res_si),
                 client.KeyTuple('hdr.ipv6_h.dst_addr', self.res_dst, ((1 << 128) - 1)),
-                client.KeyTuple('hdr.ipv6_h.src_addr', self.res_src, ((1 << 128) - 1))
+                client.KeyTuple('hdr.ipv6_h.src_addr', self.res_src, ((1 << 128) - 1)),
+                client.KeyTuple("$MATCH_PRIORITY", 0)
             ])],
             [monitortable.make_data([], 'SwitchIngress.hit_monitor_v6')]
         )
