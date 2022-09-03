@@ -28,7 +28,7 @@ class TurbonetControllerStub(object):
         cmdCntList = [0] * len(maxCmdCntList)
         try:
             while True:
-                if self._isValidCmdCntList(cmdCntList, maxCmdCntList):
+                if not self._isValidCmdCntList(cmdCntList, maxCmdCntList):
                     raise ValueError("Unvalid cmdCntList " \
                         " {0}, maxCmdCntList {1}".format(cmdCntList,
                                                 maxCmdCntList))

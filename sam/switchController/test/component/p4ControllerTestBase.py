@@ -306,7 +306,7 @@ class TestP4ControllerBase(IntTestBaseClass):
 
     def verifyTurbonetRecvAddSFCICmd(self, sfc, sfci):
         # type: (SFC, SFCI) -> None
-        cmdNum = len(sfc.directions)
+        cmdNum = len(sfc.directions) * 2
 
         pFPDict = sfci.forwardingPathSet.primaryForwardingPath
         maxCmdCnt = 0
@@ -328,7 +328,7 @@ class TestP4ControllerBase(IntTestBaseClass):
 
     def verifyTurbonetRecvAddClassifierEntryCmd(self, sfc):
         # type: (SFC) -> None
-        cmdNum = len(sfc.directions)
+        cmdNum = len(sfc.directions) * 2
         self.turbonetControllerStub.recvCmd(
             [CMD_TYPE_ADD_CLASSIFIER_ENTRY], cmdNum)
 

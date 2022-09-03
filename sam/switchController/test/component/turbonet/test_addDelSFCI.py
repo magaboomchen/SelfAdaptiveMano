@@ -70,7 +70,7 @@ class TestAddClassifierEntryClass(TestP4ControllerBase):
         #     }
         # }
 
-        p4M = P4Match(ETH_TYPE_IPV4, src=None, dst=0xF0FFFFFF)
+        p4M = P4Match(ETH_TYPE_IPV4, src=None, dst=0xF0FFFFFF, dstMask=0xFFFFFFFF)
         fVPList = [
             FieldValuePair(FIELD_TYPE_SPI, 0xFF0),
             FieldValuePair(FIELD_TYPE_SI, 0xE),
@@ -158,7 +158,7 @@ class TestAddClassifierEntryClass(TestP4ControllerBase):
         #     }
         # }
 
-        p4M = P4Match(ETH_TYPE_NSH, 0xF0FFFFFF)
+        p4M = P4Match(ETH_TYPE_NSH, nsh = 0xF0FFFFFF)
         p4A = P4Action(actionType=ACTION_TYPE_FORWARD,
                        nextNodeID=10001,
                        newFieldValueList=None)
