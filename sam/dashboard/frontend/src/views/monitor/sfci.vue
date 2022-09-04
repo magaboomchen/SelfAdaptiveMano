@@ -1,9 +1,9 @@
 <template>
   <div>
-    <div class="operate">
-      <a-button type="dashed" style="width: 100%" icon="plus" @click="add">添加</a-button>
-    </div>
-    <div style="height: 30px;"></div>
+    <!--    <div class="operate">-->
+    <!--      <a-button type="dashed" style="width: 100%" icon="plus" @click="add">添加</a-button>-->
+    <!--    </div>-->
+    <!--    <div style="height: 30px;"></div>-->
     <s-table
       ref="table"
       size="default"

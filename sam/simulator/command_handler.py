@@ -113,7 +113,9 @@ def add_sfc_handler(cmd, sib):
     sfc = cmd.attributes['sfc']  # type: SFC
     sfcUUID = sfc.sfcUUID
     check_sfc(sfc, sib)
-    sib.sfcs[sfcUUID] = {'sfc': sfc}
+    directions = sfc.directions
+    sib.sfcs[sfcUUID] = {'sfc': sfc, 'traffics': {direction['ID']: set() for direction in directions},
+                         'sfcis': []}
 
     return {}
 
@@ -252,25 +254,28 @@ def add_sfci_handler(cmd, sib):
                         continue
                     linkInfo['Status']['usedBy'].add((sfciID, dirID, stage, hop))
     # store information
-    sib.sfcs[sfcUUID] = {'sfc': sfc}
     sib.sfcis[sfciID] = {'sfc': sfc, 'sfci': sfci,
                          'traffics': {direction['ID']: set() for direction in directions}}
 
-    for direction in directions:
-        dirID = direction['ID']
-        if len(sib.flows) == 0:
-            trafficID = 0
-        else:
-            trafficID = max(sib.flows.keys()) + 1
-        bw = sfc.slo.throughput * 1024.0
-        for vnfis in sfci.vnfiSequence:
-            for vnfi in vnfis:
-                if vnfi.vnfType == VNF_TYPE_RATELIMITER:
-                    bw = min(bw, vnfi.config.maxMbps)
-        sib.flows[trafficID] = {'bw': (lambda: float(bw * random.random())), 'pkt_size': 500,
-                                'sfciID': sfciID, 'dirID': dirID, 'traffic': 0, 'pkt': 0, 'timestamp': time.time(),
-                                'del': False}
-        sib.sfcis[sfciID]['traffics'][dirID].add(trafficID)
+    if sfcUUID in sib.sfcs:
+        sib.sfcs[sfcUUID]['sfcis'].append(sfciID)
+    else:
+        sib.sfcs[sfcUUID] = {'sfc': sfc, 'traffics': {direction['ID']: set() for direction in directions},
+                             'sfcis': [sfciID]}
+        for direction in directions:
+            dirID = direction['ID']
+            if len(sib.flows) == 0:
+                trafficID = 0
+            else:
+                trafficID = max(sib.flows.keys()) + 1
+            bw = sfc.slo.throughput * 1024.0
+            for vnfis in sfci.vnfiSequence:
+                for vnfi in vnfis:
+                    if vnfi.vnfType == VNF_TYPE_RATELIMITER:
+                        bw = min(bw, vnfi.config.maxMbps)
+            sib.flows[trafficID] = {'bw': (lambda: float(bw * random.random())), 'pkt_size': 500,
+                                    'dirID': dirID, 'traffic': 0, 'pkt': 0, 'timestamp': time.time(), 'del': False}
+            sib.sfcs[sfcUUID]['traffics'][dirID].add(trafficID)
 
     return {}
 
@@ -289,10 +294,14 @@ def del_sfc_handler(cmd, sib):
     # type: (Command, SimulatorInfoBaseMaintainer) -> dict
     sfc = cmd.attributes['sfc']  # type: SFC
     sfcUUID = sfc.sfcUUID
-    for sfciID, sfciInfo in sib.sfcis.items():
-        if sfciInfo['sfc'].sfcUUID == sfcUUID:
-            sfci = sfciInfo['sfci']
-            remove_sfci(sfc, sfci, sib)
+    for sfciID in sib.sfcs[sfcUUID]['sfcis']:
+        sfci = sib.sfcis[sfciID]['sfci']
+        remove_sfci(sfc, sfci, sib)
+
+    for traffics in sib.sfcs[sfcUUID]['traffics'].values():
+        for trafficID in traffics:
+            sib.flows.pop(trafficID)
+
     sib.sfcs.pop(sfcUUID)
     return {}
 

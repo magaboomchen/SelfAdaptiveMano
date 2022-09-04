@@ -292,30 +292,49 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
         sfcis = {}
         performanceModel = PerformanceModel()
 
-        for sfciID, sfci in self.sfcis.items():
-            directions = sfci['sfc'].directions
-            primaryForwardingPath = sfci['sfci'].forwardingPathSet.primaryForwardingPath
+        for sfcUUID, sfcInfo in self.sfcs.items():
+            if len(sfcInfo['sfcis']) == 0:
+                continue
+            directions = sfcInfo['sfc'].directions
+            sfc_traffic = {}
             for direction in directions:
                 dirID = direction['ID']
-                if dirID == 0:
-                    pathlist = primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
-                else:
-                    pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
-                bw = 0
-                trafficAmount = 0
-                pktAmount = 0
-                for traffic_id in sfci['traffics'][dirID]:
-                    bw += self.update_flow(self.flows[traffic_id])
-                    trafficAmount += self.flows[traffic_id]['traffic']
-                    pktAmount += self.flows[traffic_id]['pkt']
-                sfcis.setdefault(sfciID, {})[dirID] = {'bw': bw, 'trafficAmount': trafficAmount, 'pktAmount': pktAmount}
-                for stage, path in enumerate(pathlist):
-                    for hop, (_, srcID) in enumerate(path):
-                        if hop != len(path) - 1:
-                            dstID = path[hop + 1][1]
-                            if srcID == dstID:
-                                continue
-                            links[(srcID, dstID)] = links.setdefault((srcID, dstID), 0) + bw
+                sfc_traffic[dirID] = {'bw': 0, 'trafficAmount': 0, 'pktAmount': 0}
+                for traffic_id in sfcInfo['traffics'][dirID]:
+                    sfc_traffic[dirID]['bw'] += self.update_flow(self.flows[traffic_id])
+                    sfc_traffic[dirID]['trafficAmount'] += self.flows[traffic_id]['traffic']
+                    sfc_traffic[dirID]['pktAmount'] += self.flows[traffic_id]['pkt']
+
+                sfc_traffic[dirID]['bw'] /= len(sfcInfo['sfcis'])
+                sfc_traffic[dirID]['trafficAmount'] /= len(sfcInfo['sfcis'])
+                sfc_traffic[dirID]['pktAmount'] /= len(sfcInfo['sfcis'])
+                sfc_traffic[dirID]['pktAmount'] = math.ceil(sfc_traffic[dirID]['pktAmount'])
+
+            for sfciID in sfcInfo['sfcis']:
+                sfci = self.sfcis[sfciID]
+                primaryForwardingPath = sfci['sfci'].forwardingPathSet.primaryForwardingPath
+                for direction in directions:
+                    dirID = direction['ID']
+                    if dirID == 0:
+                        pathlist = primaryForwardingPath[DIRECTION0_PATHID_OFFSET]
+                    else:
+                        pathlist = primaryForwardingPath[DIRECTION1_PATHID_OFFSET]
+                    bw = sfc_traffic[dirID]['bw']
+                    trafficAmount = sfc_traffic[dirID]['bw']
+                    pktAmount = sfc_traffic[dirID]['bw']
+                    for traffic_id in sfci['traffics'][dirID]:
+                        bw += self.update_flow(self.flows[traffic_id])
+                        trafficAmount += self.flows[traffic_id]['traffic']
+                        pktAmount += self.flows[traffic_id]['pkt']
+                    sfcis.setdefault(sfciID, {})[dirID] = {'bw': bw, 'trafficAmount': trafficAmount,
+                                                           'pktAmount': pktAmount}
+                    for stage, path in enumerate(pathlist):
+                        for hop, (_, srcID) in enumerate(path):
+                            if hop != len(path) - 1:
+                                dstID = path[hop + 1][1]
+                                if srcID == dstID:
+                                    continue
+                                links[(srcID, dstID)] = links.setdefault((srcID, dstID), 0) + bw
 
         for sfciID, sfci in self.sfcis.items():
             slo = SLO(availability=0, latency=0, throughput=0, dropRate=0)
@@ -341,7 +360,10 @@ class SimulatorInfoBaseMaintainer(DCNInfoBaseMaintainer):
                                     state = ACLTable()
                                 else:
                                     raise ValueError("Unknown vnf type {0}".format(vnfi.vnfType))
-                                vnfiStatus = VNFIStatus({}, {}, {}, {}, state)
+                                if vnfi.vnfiStatus is None:
+                                    vnfiStatus = VNFIStatus({}, {}, {}, {}, state)
+                                else:
+                                    vnfiStatus = vnfi.vnfiStatus
                                 if dirID == 0:
                                     vnfiStatus.inputTrafficAmount[SFC_DIRECTION_0] = vnfiStatus.outputTrafficAmount[
                                         SFC_DIRECTION_0] = sfcis[sfciID][dirID]['trafficAmount']

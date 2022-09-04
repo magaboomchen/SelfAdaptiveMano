@@ -1,37 +1,37 @@
 # start 4 terminals
 ## Terminal 1
 ```
-cd ~/Projects/SelfAdaptiveMano/sam/test/integrate/simulatorZone/addAndDelSFC
+cd /src/SelfAdaptiveMano/sam/test/integrate/simulatorZone/addAndDelSFC
 python -m pytest ./test_1.py -s --disable-warnings
 ```
 
 ## Terminal 2 (dispatcher will initial orchestrator automatically)
 ```
-cd ~/Projects/SelfAdaptiveMano/sam/dispatcher
+cd /src/SelfAdaptiveMano/sam/dispatcher
 python ./dispatcher.py -parallelMode
 ```
 
 ## Terminal 3
 ```
-cd ~/Projects/SelfAdaptiveMano/sam/mediator
+cd /src/SelfAdaptiveMano/sam/mediator
 python ./mediator.py
 ```
 
 ## Terminal 4
 ```
-cd ~/Projects/SelfAdaptiveMano
+cd /src/SelfAdaptiveMano
 python ./sam/simulator/simulator.py
 ```
 
 ## Terminal 5 (for test2 and test3)
 ```
-cd ~/Projects/SelfAdaptiveMano/sam/measurement
+cd /src/SelfAdaptiveMano/sam/measurement
 python ./measurer.py
 ```
 
 ## Terminal 6 (for test3)
 ```
-cd ~/Projects/SelfAdaptiveMano/sam/regulator
+cd /src/SelfAdaptiveMano/sam/regulator
 python ./regulator.py
 ```
 

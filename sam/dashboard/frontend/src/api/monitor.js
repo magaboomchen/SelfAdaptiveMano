@@ -27,3 +27,28 @@ export function getSFCIs () {
     method: 'get'
   })
 }
+
+export function getSFCs () {
+  return axios({
+    url: '/manager/sfc/',
+    method: 'get'
+  })
+}
+
+export function addSFC (data) {
+  return axios({
+    url: '/manager/sfc/',
+    method: 'post',
+    data: data
+  })
+}
+
+export function delSFC (uuid) {
+  return axios({
+    url: '/manager/sfc/',
+    method: 'delete',
+    params: {
+      'sfc_uuid': uuid
+    }
+  })
+}

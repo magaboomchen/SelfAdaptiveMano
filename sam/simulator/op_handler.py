@@ -145,17 +145,26 @@ def add_handler(cmd_list, sib):
     if obj_type != 'traffic':
         raise ValueError
     traffic_id = int(cmd_list[1])
-    sfci_id = int(cmd_list[2])
-    dir_id = int(cmd_list[3])
-    opt, arg = getopt(cmd_list[4:], '', ('trafficRate=',))
+    opt, arg = getopt(cmd_list[2:], '', ('trafficRate=', 'sfci=', 'sfc=', 'dir='))
     opt = dict(opt)
-    if not arg and '--trafficRate' in opt:  # add traffic <trafficID> <sfciID> <dirID> --trafficRate <value in Mbps>
+    if not arg and '--trafficRate' in opt and '--sfci' in opt and '--dir' in opt:  # add traffic <trafficID> --sfci <sfciID> --dir <dirID> --trafficRate <value in Mbps>
         if traffic_id in sib.flows:
             raise KeyError(traffic_id)
+        sfci_id = int(opt['--sfci'])
+        dir_id = int(opt['--dir'])
         sib.flows[traffic_id] = {'bw': (lambda: float(opt['--trafficRate'])), 'pkt_size': 500,
-                                 'sfciID': sfci_id, 'dirID': dir_id, 'traffic': 0, 'pkt': 0, 'timestamp': time.time(),
-                                 'del': False}
+                                 'dirID': dir_id, 'traffic': 0, 'pkt': 0, 'timestamp': time.time(), 'del': False}
         sib.sfcis[sfci_id]['traffics'][dir_id].add(traffic_id)
+
+    elif not arg and '--trafficRate' in opt and '--sfc' in opt and '--dir' in opt:  # add traffic <trafficID> --sfc <sfcUUID> --dir <dirID> --trafficRate <value in Mbps>
+        if traffic_id in sib.flows:
+            raise KeyError(traffic_id)
+        sfc_uuid = int(opt['--sfc'])
+        dir_id = int(opt['--dir'])
+        sib.flows[traffic_id] = {'bw': (lambda: float(opt['--trafficRate'])), 'pkt_size': 500,
+                                 'dirID': dir_id, 'traffic': 0, 'pkt': 0, 'timestamp': time.time(), 'del': False}
+        sib.sfcs[sfc_uuid]['traffics'][dir_id].add(traffic_id)
+
     else:
         raise ValueError
 
@@ -167,7 +176,7 @@ def del_handler(cmd_list, sib):
     if obj_type != 'traffic':
         raise ValueError
     traffic_id = cmd_list[1]
-    opt, arg = getopt(cmd_list[2], '', ())
+    opt, arg = getopt(cmd_list[2:], '', ())
     if not opt and not arg:  # del traffic <trafficID>
         sib.update_flow(sib.flows[traffic_id])
         sib.flows[traffic_id]['del'] = True

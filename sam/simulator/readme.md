@@ -33,23 +33,27 @@ switch <switch_id> up|down
 ```
 link <src_id> <dst_id> up|down
 ```
-7. 为sfci添加一条traffic，默认流量为常量，pktSize为500。
+7. 为sfc|sfci添加一条traffic，默认流量为常量，pktSize为500。
 ```
-add|del traffic <traffic_id> <sfci_id> <dir_id> --trafficRate=<value in Mbps>
+add|del traffic <traffic_id> [--sfci <sfci_id> | --sfc <sfc_uuid>] --dir <dir_id> --trafficRate=<value in Mbps>
 ```
-8. 修改traffic的流量为常量
+8. 删除traffic.
+```
+del traffic <traffic_id>
+```
+9. 修改traffic的流量为常量
 ```
 traffic <traffic_id> --trafficPattern=constant --value=<value> [--pktSize=<pkt size>]
 ```
-9. 修改traffic的流量为均匀分布的随机变量
+10修改traffic的流量为均匀分布的随机变量
 ```
 traffic <traffic_id> --trafficPattern=uniform --min=<min> --max=<max> [--pktSize=<pkt size>]
 ```
-10. 模拟对server的资源的使用（静态）
+11. 模拟对server的资源的使用（静态）
 ```
 server <server_id> cpu|mem --pattern=constant --value=<value>
 ```
-11. 模拟对server的资源的使用（均匀分布）
+12. 模拟对server的资源的使用（均匀分布）
 ```
 server <server_id> cpu|mem --pattern=uniform --min=<value> --max=<value>
 ```
