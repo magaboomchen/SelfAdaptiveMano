@@ -393,7 +393,7 @@ class Server(object):
         return string
 
     def __repr__(self):
-        return x2str(self)
+        return str(self)
 
 # if __name__ =="__main__":
 #     _NUMACpuCore = []

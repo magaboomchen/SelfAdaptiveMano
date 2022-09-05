@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from uuid import uuid1
+from uuid import UUID
 from typing import Any, Dict, List, Union
 
 from sam.base.slo import SLO
@@ -21,7 +21,7 @@ class SFCI(object):
                 sloRealTimeValue=None,  # type: SLO
                 forwardingPathSet=None, # type: ForwardingPathSet
                 routingMorphic=None     # type: RoutingMorphic
-                ):   
+                ):
         self.sfciID = sfciID
         self.vnfiSequence = vnfiSequence  # only show the direction0
         self.sloRealTimeValue = sloRealTimeValue
@@ -61,7 +61,7 @@ class SFCI(object):
 
 
 class SFC(object):
-    def __init__(self, sfcUUID,     # type: uuid1
+    def __init__(self, sfcUUID,     # type: UUID
                 vNFTypeSequence,    # type: list(Union[VNF_TYPE_FW, VNF_TYPE_LB])
                 maxScalingInstanceNumber,   # type: int
                 backupInstanceNumber,       # type: int

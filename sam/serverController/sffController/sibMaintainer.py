@@ -4,7 +4,7 @@
 import copy
 from logging import Logger
 from typing import Dict
-from uuid import uuid1
+from uuid import UUID
 
 from sam.base.sfc import SFCI
 from sam.base.vnf import VNF_TYPE_CLASSIFIER
@@ -17,7 +17,7 @@ class SIBMS(object):
     def __init__(self, logger):
         # type: (Logger) -> None
         self._sibms = {} # type: Dict[int, SIBMaintainer]
-        self._sfcSet = {}   # type: Dict[uuid1, int]
+        self._sfcSet = {}   # type: Dict[UUID, int]
         self._sfciDict = {} # type: Dict[int, SFCI]
         self.logger = logger
 

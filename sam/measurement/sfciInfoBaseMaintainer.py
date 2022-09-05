@@ -86,8 +86,11 @@ class SFCIInfoBaseMaintainer(XInfoBaseMaintainer):
         inputTrafficSum = 0
         for vnfi in sfci.vnfiSequence[0]:
             if type(vnfi.vnfiStatus) == VNFIStatus:
-                for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
-                    inputTrafficSum += vnfi.vnfiStatus.inputTrafficAmount[directionID]
+                inputTrafficAmount = vnfi.vnfiStatus.inputTrafficAmount
+                if type(inputTrafficAmount) == Dict:
+                    for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
+                        if directionID in inputTrafficAmount.keys():
+                            inputTrafficSum += inputTrafficAmount[directionID]
             else:
                 inputTrafficSum += 0 
         return inputTrafficSum
@@ -97,8 +100,11 @@ class SFCIInfoBaseMaintainer(XInfoBaseMaintainer):
         outputTrafficSum = 0
         for vnfi in sfci.vnfiSequence[-1]:
             if type(vnfi.vnfiStatus) == VNFIStatus:
-                for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
-                    outputTrafficSum += vnfi.vnfiStatus.outputTrafficAmount[directionID]
+                outputTrafficAmount = vnfi.vnfiStatus.outputTrafficAmount
+                if type(outputTrafficAmount) == Dict:
+                    for directionID in [SFC_DIRECTION_0, SFC_DIRECTION_1]:
+                        if directionID in outputTrafficAmount.keys():
+                            outputTrafficSum += vnfi.vnfiStatus.outputTrafficAmount[directionID]
             else:
                 outputTrafficSum += 0
         return outputTrafficSum
@@ -121,3 +127,9 @@ class SFCIInfoBaseMaintainer(XInfoBaseMaintainer):
             return self._sfcis[zoneName]
         else:
             return {}
+
+    def setSFCILatency(self, zoneName, sfciID, avgLatency):
+        if zoneName not in self._sfcis.keys():
+            self._sfcis[zoneName] = {}
+        if sfciID in self._sfcis[zoneName].keys():
+            self._sfcis[zoneName][sfciID].sloRealTimeValue.latency = avgLatency

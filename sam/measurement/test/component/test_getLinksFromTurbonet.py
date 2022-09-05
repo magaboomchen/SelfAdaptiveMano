@@ -12,6 +12,7 @@ from sam.orchestration.oDcnInfoRetriever import ODCNInfoRetriever
 from sam.base.request import Request, REQUEST_TYPE_GET_DCN_INFO
 from sam.base.shellProcessor import ShellProcessor
 from sam.test.fixtures.serverManagerStub import ServerManagerStub
+from sam.test.fixtures.turbonetStub import TurbonetStub
 from sam.test.fixtures.vnfControllerStub import VNFControllerStub
 from sam.test.fixtures.p4ControllerStub import P4ControllerStub
 from sam.test.fixtures.sffControllerStub import SFFControllerStub
@@ -24,47 +25,37 @@ class TestMeasurerClass(TestBase):
     def setup_collectDCNInfo(self):
         # setup
         logConfigur = LoggerConfigurator(__name__, './log',
-            'testMeasurerClass.log', level='warning')
+            'testMeasurerClass.log', level='info')
         self.logger = logConfigur.getLogger()
 
         self.sP = ShellProcessor()
 
-        self.sS = SimulatorStub()
         self.sffS = SFFControllerStub()
         self.p4S = P4ControllerStub()
         self.vS = VNFControllerStub()
         self.seS = ServerManagerStub()
+        self.turbonet = TurbonetStub()
         self.cleanLog()
         self.initZone()
-        self.runMeasurer()
-        # self.logger.info("Please start measurer. " \
-        #     "and then press any key to continue.")
-        # screenInput("Type here: ")
+        # self.runMeasurer()
+        self.logger.info("Please start measurer. " \
+            "and then press any key to continue.")
+        screenInput("Type here: ")
 
         yield
         # teardown
         self.logger.info("Teardown")
         self.killAllModule()
 
-    @pytest.mark.skip(reason='Temporarly')
-    def test_collectTopology(self, setup_collectDCNInfo):
-        # exercise
-        self.sS.recvCmdFromMeasurer()
-        # verify
-        self.logger.info("Please check measurer's log, " \
-            "and then press any key to continue.")
-        screenInput("Type here: ")
-        assert 1 == 1
-
     # @pytest.mark.skip(reason='Temporarly')
-    def test_requestHandler(self, setup_collectDCNInfo):
+    def test_replyHandler(self, setup_collectDCNInfo):
         self.logger.info("test_requestHanler")
         # exercise
-        self.sS.recvCmdFromMeasurer()
         self.sffS.recvCmdFromMeasurer()
         self.p4S.recvCmdFromMeasurer()
         self.vS.recvCmdFromMeasurer()
         self.seS.recvCmdFromMeasurer()
+        self.turbonet.recvCmdFromMeasurer()
         time.sleep(5)
         logConfigur = LoggerConfigurator(__name__, './log',
             'measurer.log', level='debug')
@@ -78,7 +69,3 @@ class TestMeasurerClass(TestBase):
             "and then press any key to continue.")
         screenInput("Type here: ")
         assert 1 == 1
-
-    def genGetDCNInfoRequest(self):
-        request = Request(0, uuid.uuid1(), REQUEST_TYPE_GET_DCN_INFO)
-        return request

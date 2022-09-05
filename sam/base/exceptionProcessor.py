@@ -2,10 +2,12 @@
 # -*- coding: UTF-8 -*-
 
 import traceback
+from logging import Logger
 
 
 class ExceptionProcessor(object):
     def __init__(self, logger):
+        # type: (Logger) -> None
         self.logger = logger
 
     def logException(self, ex, note=None):

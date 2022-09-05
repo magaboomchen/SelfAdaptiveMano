@@ -3,25 +3,22 @@
 
 import time
 import uuid
+from sam.base.request import REQUEST_TYPE_GET_LINK_INFO, Request
 
 from sam.measurement.mConfig import MEASURE_TIME_SLOT, SIMULATOR_ZONE_ONLY, TURBONET_ZONE_ONLY
-from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD, MSG_TYPE_SERVER_MANAGER_CMD, MSG_TYPE_SFF_CONTROLLER_CMD, MSG_TYPE_SIMULATOR_CMD, MSG_TYPE_VNF_CONTROLLER_CMD, PUFFER_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, \
-                                SAMMessage, MessageAgent, \
-                                MSG_TYPE_REPLY, MSG_TYPE_MEDIATOR_CMD
-from sam.base.messageAgentAuxillary.msgAgentRPCConf import MEASURER_IP, \
+from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD, MSG_TYPE_REQUEST, MSG_TYPE_SERVER_MANAGER_CMD, \
+    MSG_TYPE_SFF_CONTROLLER_CMD, MSG_TYPE_SIMULATOR_CMD, MSG_TYPE_VNF_CONTROLLER_CMD, \
+    SIMULATOR_ZONE, TURBONET_ZONE, SAMMessage, MessageAgent
+from sam.base.messageAgentAuxillary.msgAgentRPCConf import DEFINABLE_MEASURER_IP, DEFINABLE_MEASURER_PORT, MEASURER_IP, \
     MEASURER_PORT, P4_CONTROLLER_IP, P4_CONTROLLER_PORT, SFF_CONTROLLER_IP, \
     SFF_CONTROLLER_PORT, SIMULATOR_IP, SIMULATOR_PORT, \
     SERVER_MANAGER_IP, SERVER_MANAGER_PORT, \
     VNF_CONTROLLER_IP, VNF_CONTROLLER_PORT
 from sam.base.command import Command, CMD_TYPE_GET_TOPOLOGY, \
-    CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_SFCI_STATE, CommandReply
-from sam.base.request import REQUEST_TYPE_GET_SFCI_STATE, Reply, \
-                                REQUEST_STATE_SUCCESSFUL, \
-                                REQUEST_TYPE_GET_DCN_INFO, Request
+    CMD_TYPE_GET_SERVER_SET, CMD_TYPE_GET_SFCI_STATE
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.dashboard.backup.dashboardInfoBaseMaintainer import DashboardInfoBaseMaintainer
-from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 
 
 class MeasurerCommandSender(object):
@@ -51,6 +48,8 @@ class MeasurerCommandSender(object):
                     self.sendGetTopoCmd(zoneName)
                     self.sendGetServersCmd(zoneName)
                     self.sendGetSFCIStatusCmd(zoneName)
+                    if zoneName == TURBONET_ZONE:
+                        self.sendGetTurbonetLinksRequest()
             except Exception as ex:
                 ExceptionProcessor(self.logger).logException(ex)
             finally:
@@ -66,6 +65,17 @@ class MeasurerCommandSender(object):
             pass
         else:
             raise ValueError("Unimplement zone {0}".format(zoneName))
+
+    def sendGetTurbonetLinksRequest(self):
+        listenIP = self._messageAgent.getListenIP()
+        listenPort = self._messageAgent.getListenPort()
+        reqSource = {"srcIP": listenIP, "srcPort": listenPort}
+        getLinkReq = Request(0, uuid.uuid1(), REQUEST_TYPE_GET_LINK_INFO,
+                                requestSource=reqSource)
+        msg = SAMMessage(MSG_TYPE_REQUEST, getLinkReq)
+        self._messageAgent.sendMsgByRPC(DEFINABLE_MEASURER_IP, 
+                                        DEFINABLE_MEASURER_PORT,
+                                        msg)
 
     def sendGetServersCmd(self, zoneName):
         getServersCmd = Command(CMD_TYPE_GET_SERVER_SET, uuid.uuid1(),

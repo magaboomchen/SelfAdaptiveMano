@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from uuid import uuid1
+from uuid import UUID
 from functools import wraps
 from typing import List, Tuple
 
@@ -77,7 +77,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def addRequest(self, request, sfcUUID=None, sfciID=None, cmdUUID=None, retryCnt=0):
-        # type: (Request, uuid1, int, uuid1, int) -> None
+        # type: (Request, UUID, int, UUID, int) -> None
         if not self.hasRequest(request.requestID):
             fields = " REQUEST_UUID, REQUEST_TYPE, STATE, PICKLE"
             dataList = [request.requestID, request.requestType, 
@@ -101,7 +101,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def updateRequest(self, request, sfcUUID=None, sfciID=None, cmdUUID=None, retryCnt=None):
-        # type: (Request, uuid1, int, uuid1, int) -> None
+        # type: (Request, UUID, int, UUID, int) -> None
         if self.hasRequest(request.requestID):
             fieldsValues = " `REQUEST_TYPE` = ('{0}'), `STATE` = ('{1}'), `PICKLE` = ('{2}') ".format(
                                                 request.requestType,
@@ -176,7 +176,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def hasSFC(self, sfcUUID):
-        # type: (uuid1) -> bool
+        # type: (UUID) -> bool
         results = self.dbA.query("SFC", " SFC_UUID ",
                                     " SFC_UUID = '{0}'".format(sfcUUID))
         if results != ():
@@ -186,7 +186,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def delSFC(self, sfcUUID):
-        # type: (uuid1) -> None
+        # type: (UUID) -> None
         if self.hasSFC(sfcUUID):
             self.dbA.delete("SFC", " SFC_UUID = '{0}'".format(sfcUUID))
 
@@ -224,7 +224,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def addSFCI2DB(self, sfci, sfcUUID, zoneName, state=STATE_IN_PROCESSING, orchTime=-1):
-        # type: (SFCI, uuid1, str, str, float) -> None
+        # type: (SFCI, UUID, str, str, float) -> None
         if not self.hasSFCI(sfci.sfciID):
             fields = " SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME, ZONE_NAME "
             dataTuple = (
@@ -240,7 +240,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def updateSFCI2DB(self, sfci, sfcUUID=None, zoneName=None, state=None, orchTime=None):
-        # type: (SFCI, uuid1, str, str, float) -> None
+        # type: (SFCI, UUID, str, str, float) -> None
         if self.hasSFCI(sfci.sfciID):
             fieldsValues = " `VNFI_LIST` = ('{0}'), `PICKLE` = ('{1}')".format(
                         self.pIO.obj2Pickle(sfci.vnfiSequence).decode(),       
@@ -374,7 +374,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         self.updateSFCIState(sfciID, sfciState)
 
     def isDelSFCValidState(self, sfcUUID):
-        # type: (uuid1) -> bool
+        # type: (UUID) -> bool
         if self.hasSFC(sfcUUID):
             sfcState = self.getSFCState(sfcUUID)
             sfciIDList = self.getSFCIIDListOfASFC4DB(sfcUUID)
@@ -470,7 +470,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         return request
 
     def getRequestByRequestUUID(self, requestUUID):
-        # type: (uuid1) -> Request
+        # type: (UUID) -> Request
         results = self.dbA.query("Request", "PICKLE", 
             " REQUEST_UUID = '{0}' ".format(requestUUID))
         request = self._decodePickle2Object(results[0][0])
@@ -550,12 +550,12 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def pruneSFC4DB(self, sfcUUID):
-        # type: (uuid1) -> None
+        # type: (UUID) -> None
         self.dbA.delete("SFC", " SFC_UUID = '{0}' ".format(sfcUUID))
 
     @reConnectionDecorator
     def getSFC4DB(self, sfcUUID):
-        # type: (uuid1) -> SFC
+        # type: (UUID) -> SFC
         results = self.dbA.query("SFC", " PICKLE ", 
             " SFC_UUID = '{0}' ".format(sfcUUID))
         if results != ():
@@ -566,7 +566,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def getSFCZone4DB(self, sfcUUID):
-        # type: (uuid1) -> str
+        # type: (UUID) -> str
         results = self.dbA.query("SFC", " ZONE_NAME ", 
             " SFC_UUID = '{0}' ".format(sfcUUID))
         if results != ():
@@ -577,7 +577,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def getSFCIIDListOfASFC4DB(self, sfcUUID):
-        # type: (uuid1) -> List[int]
+        # type: (UUID) -> List[int]
         results = self.dbA.query("SFC", " SFCIID_LIST ", 
             " SFC_UUID = '{0}' ".format(sfcUUID))
         if results != ():
@@ -588,13 +588,13 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def updateSFCState(self, sfcUUID, state):
-        # type: (uuid1, str) -> None
+        # type: (UUID, str) -> None
         self.dbA.update("SFC", " STATE = '{0}' ".format(state),
             " SFC_UUID = '{0}' ".format(sfcUUID))
 
     @reConnectionDecorator
     def getSFCState(self, sfcUUID):
-        # type: (uuid1) -> str
+        # type: (UUID) -> str
         results =  self.dbA.query("SFC", " STATE ",
             " SFC_UUID = '{0}' ".format(sfcUUID))
         if results != ():
@@ -605,7 +605,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def _addSFCI2SFCInDB(self, sfcUUID, sfciID):
-        # type: (uuid1, int) -> None
+        # type: (UUID, int) -> None
         results = self.dbA.query("SFC", " SFCIID_LIST ",
             " SFC_UUID = ('{0}') ".format(sfcUUID))
         sfciIDList = self.pIO.pickle2Obj(results[0][0])
@@ -617,7 +617,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
 
     @reConnectionDecorator
     def _delSFCI4SFCInDB(self, sfcUUID, sfciID):
-        # type: (uuid1, int) -> None
+        # type: (UUID, int) -> None
         results = self.dbA.query("SFC", " SFCIID_LIST ",
             " SFC_UUID = ('{0}') ".format(sfcUUID))
         sfciIDList = self.pIO.pickle2Obj(results[0][0])

@@ -1,12 +1,15 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from typing import Any, Dict
+
 REQUEST_STATE_INITIAL = "REQUEST_STATE_INITIAL"
 REQUEST_STATE_IN_PROCESSING = "REQUEST_STATE_IN_PROCESSING"
 REQUEST_STATE_SUCCESSFUL = "REQUEST_STATE_SUCCESSFUL"
 REQUEST_STATE_FAILED = "REQUEST_STATE_FAILED"
 REQUEST_STATE_REJECT = "REQUEST_STATE_REJECT"
 
+REQUEST_TYPE_GET_LINK_INFO = "REQUEST_TYPE_GET_LINK_INFO"
 REQUEST_TYPE_GET_DCN_INFO = "REQUEST_TYPE_GET_DCN_INFO"
 REQUEST_TYPE_GET_SFCI_STATE = "REQUEST_TYPE_GET_SFCI_STATE"
 REQUEST_TYPE_ADD_SFC = "REQUEST_TYPE_ADD_SFC"
@@ -24,10 +27,11 @@ class Request(object):
         self.requestID = requestID # uuid1()
         self.requestType = requestType
         self.requestSrcQueue = requestSrcQueue
-        self.requestSource = requestSource
+        self.requestSource = requestSource  # type: Dict[str, Any]
+        # e.g. {"srcIP": "10.0.0.1", "srcPort": 50001}
         self.requestState = requestState
-        self.attributes = attributes
-        # {'sfc':sfc, 'error':error}
+        self.attributes = attributes    # type: Dict[str, Any]
+        # e.g. {'sfc':sfc, 'error':error}
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

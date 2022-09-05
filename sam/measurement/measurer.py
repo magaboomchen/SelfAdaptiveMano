@@ -5,6 +5,8 @@ import ctypes
 import inspect
 from typing import Union
 
+from sam.base.link import Link
+from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.messageAgent import  PUFFER_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, \
                                 SAMMessage, MessageAgent, \
@@ -84,6 +86,8 @@ class Measurer(object):
                         self.sendReply(rply, source["srcIP"], source["srcPort"])
                     elif self._messageAgent.isCommandReply(body):
                         self._commandReplyHandler(body)
+                    elif self._messageAgent.isReply(body):
+                        self._replyHandler(body)
                     else:
                         self.logger.error("Unknown massage body")
                 except Exception as ex:
@@ -105,7 +109,7 @@ class Measurer(object):
                 REQUEST_STATE_SUCCESSFUL, attributes)
             return rply
         else:
-            self.logger.warning("Unknown request:{0}".format(
+            self.logger.error("Unknown request:{0}".format(
                 request.requestType))
 
     def getTopoAttributes(self):
@@ -157,7 +161,7 @@ class Measurer(object):
             elif key == 'sfcisDict':
                 self._dib.updateSFCIsByZone(value, zoneName)
             else:
-                self.logger.warning("Unknown attributes:{0}".format(key))
+                self.logger.error("Unknown attributes:{0}".format(key))
 
     def _cmdRplyHandler4TurbonetZone(self, cmdRply, zoneName):
         # type: (CommandReply, Union[SIMULATOR_ZONE, TURBONET_ZONE]) -> None
@@ -185,7 +189,7 @@ class Measurer(object):
                 #                                     sfci.sloRealTimeValue.throughput,
                 #                                     sfci.sloRealTimeValue.dropRate))
             else:
-                self.logger.warning("Unknown attributes:{0}".format(key))
+                self.logger.error("Unknown attributes:{0}".format(key))
         # self.logger.debug("dib:{0}".format(self._dib))
 
     def _cmdRplyHandler4PUFFERZone(self, cmdRply, zoneName):
@@ -208,8 +212,71 @@ class Measurer(object):
             elif key == 'sfcisDict':
                 self._dib.updatePartialSFCIsByZone(value, zoneName)
             else:
-                self.logger.warning("Unknown attributes:{0}".format(key))
+                self.logger.error("Unknown attributes:{0}".format(key))
 
+    def _replyHandler(self, reply):
+        # type: (CommandReply) -> None
+        # self.logger.debug(reply)
+        zoneName = reply.attributes['zone']
+        self.logger.info("Get a command reply from {0}".format(zoneName))
+        if zoneName == TURBONET_ZONE:
+            self._replyHandler4TurbonetZone(reply)
+        else:
+            raise ValueError("Unimplement zone {0}".format(zoneName))
+
+    def _replyHandler4TurbonetZone(self, cmdRply,):
+        # type: (CommandReply) -> None
+        for key,value in cmdRply.attributes.items():
+            if key == 'switches':
+                raise ValueError("We don't need measure it.")
+            elif key == 'links':
+                self.computeAllSFCILatency(value, TURBONET_ZONE)
+            elif key == 'vnfis':
+                raise ValueError("We don't need measure it.")
+            elif key == 'zone':
+                pass
+            elif key == 'source':
+                pass
+            elif key == 'servers':
+                raise ValueError("We don't need measure it.")
+            elif key == 'sfcisDict':
+                raise ValueError("We don't need measure it.")
+            else:
+                self.logger.error("Unknown attributes:{0}".format(key))
+
+    def computeAllSFCILatency(self, links, zoneName):
+        sfciDict = self._dib.getSFCIsByZone(zoneName)
+        for sfciID, sfci in sfciDict.items():
+            sumLatency = 0
+            for pathOffsetID in [DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET]:
+                if pathOffsetID in sfci.forwardingPathSet.primaryForwardingPath.keys():
+                    fp = sfci.forwardingPathSet.primaryForwardingPath[pathOffsetID]
+                    latency = self.computeForwardingPathLatency(fp, links, zoneName)
+                    sumLatency += latency
+            avgLatency = float(sumLatency) / 2.0
+            self.logger.info("the avgLatency {0}".format(avgLatency))
+            self._dib.setSFCILatency(zoneName, sfciID, avgLatency)
+
+    def computeForwardingPathLatency(self, fp, links, zoneName):
+        avgLatency = 0
+        for stageIdx, segPath in enumerate(fp):
+            segPathLen = len(segPath)
+            for idx in range(segPathLen-1):
+                srcNodeID = segPath[idx][1]
+                dstNodeID = segPath[idx+1][1]
+                linkLatency = self.getLinkQueueLatency(links, srcNodeID, 
+                                                    dstNodeID, zoneName)
+                self.logger.info("link {0}-{1}'s latency {2}".format(srcNodeID, dstNodeID, linkLatency))
+                avgLatency += linkLatency
+        return avgLatency
+
+    def getLinkQueueLatency(self, links, srcID, dstID, zoneName):
+        latency = 0
+        if zoneName in links.keys():
+            if (srcID, dstID) in links[zoneName].keys():
+                link = links[zoneName][(srcID, dstID)]['link']    # type: Link
+                latency = link.queueLatency
+        return latency
 
 if __name__=="__main__":
     m = Measurer()

@@ -63,8 +63,23 @@ Use case 2 - definable measurer:
             reply = msg.getbody()   #  type: CommandReply
             attributes = reply.attributes
         elif msgType == MSG_TYPE_REQUEST:
-            pass
-            # from wang xuan run
+            request = msg.getbody()
+            requestType = request.requestType
+            if requestType == REQUEST_TYPE_GET_DCN_INFO:
+                # from wang xuan
+                rply = Reply()
+                rply.attributes = {"server":servers, "link":links, ...}
+            elif requestType == REQUEST_TYPE_GET_LINK_INFO:
+                # from  chen hao
+                rply = Reply()
+                rply.attributes = {"links":links}
+            else:
+                # unknown
+                pass
+            # construct reply message, e.g. rplyMsg
+            rplyMsg = SAMMessage(MSG_TYPE_REPLY, rply)
+            # send rplyMsg by the following code
+            mA.sendMsgByRPC(source['srcIP'], source['srcPort'], rplyMsg)
         else:
             pass
 
@@ -468,6 +483,12 @@ class MessageAgent(object):
     def setListenSocket(self, listenIP, listenPort):
         self.listenIP = listenIP
         self.listenPort = listenPort
+
+    def getListenIP(self):
+        return self.listenIP
+
+    def getListenPort(self):
+        return self.listenPort
 
     def getMsgByRPC(self, listenIP, listenPort):
         msg = self.getMsg("{0}:{1}".format(listenIP, listenPort))

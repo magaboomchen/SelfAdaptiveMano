@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from sam.base.path import DIRECTION0_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, ForwardingPathSet
 from sam.base.sfc import SFCI
 from sam.base.slo import SLO
 from sam.base.exceptionProcessor import ExceptionProcessor
@@ -61,7 +62,17 @@ class P4ControllerStub(object):
         sfciDict = {}
         vnfiSeq = [[VNFI(VNF_TYPE_RATELIMITER,VNF_TYPE_RATELIMITER,1,1,1,VNFIStatus())]]
         slo = SLO()
-        sfci = SFCI(1,vnfiSequence=vnfiSeq,sloRealTimeValue=slo)
+        fPS = ForwardingPathSet(
+            {DIRECTION0_PATHID_OFFSET:[
+                [(0,10001), (0,1), (0,2), (0,10003)],
+                [(0,10003), (0,2), (0,1), (0,10001)]
+            ]},
+            MAPPING_TYPE_MMLPSFC,
+            {DIRECTION0_PATHID_OFFSET:[
+                []
+            ]}
+        )
+        sfci = SFCI(1,vnfiSequence=vnfiSeq,sloRealTimeValue=slo, forwardingPathSet=fPS)
         sfciDict[1] = sfci
 
         return {'sfcisDict':sfciDict,
