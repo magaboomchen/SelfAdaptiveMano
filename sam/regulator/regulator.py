@@ -58,7 +58,7 @@ class Regulator(object):
         self.replyHandler = ReplyHandler(self.logger, self._messageAgent,
                                             self._oib)
         self.requestHandler = RequestHandler(self.logger, self._messageAgent,
-                                            self._oib)                    
+                                            self._oib)
 
     def startRegulator(self):
         self._collectSFCIState()

@@ -277,14 +277,15 @@ class TestP4ControllerBase(IntTestBaseClass):
             raise ValueError("Unknown implementation.")
         return segPath
 
-    def exerciseAddSFCAndSFCI(self):
+    def exerciseAddSFCAndSFCI(self, jointTestMode=False):
         for idx in [0, 1, 2]:
             self.logger.info("test idx {0}".format(idx))
             # exercise
             self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfcList[idx])
             self.sendCmd(P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD,
                          self.addSFCCmd)
-            self.verifyAddSFCCmdRply()
+            if not jointTestMode:
+                self.verifyAddSFCCmdRply()
 
             # exercise
             self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfcList[idx],
@@ -293,10 +294,9 @@ class TestP4ControllerBase(IntTestBaseClass):
                          self.addSFCICmd)
 
             # verify
-            # self.verifyTurbonetRecvAddClassifierEntryCmd(self.sfcList[idx])
-            # self.verifyTurbonetRecvAddRouteEntryCmd(self.sfciList[idx])
-            self.verifyTurbonetRecvAddSFCICmd(self.sfcList[idx], self.sfciList[idx])
-            self.verifyAddSFCICmdRply()
+            if not jointTestMode:
+                self.verifyTurbonetRecvAddSFCICmd(self.sfcList[idx], self.sfciList[idx])
+                self.verifyAddSFCICmdRply()
 
     def verifyAddSFCCmdRply(self):
         cmdRply = self.recvCmdRply(MEDIATOR_QUEUE)

@@ -106,7 +106,6 @@ class IntTestBaseClass(TestBase):
                                           'IPv6':"*"}
         }
         directions = [direction0, direction1]
-        # directions = [direction0]
         slo = SLO(throughput=5, latency=100, availability=0.999, \
                     connections=10)
         return SFC(sfcUUID, vNFTypeSequence, maxScalingInstanceNumber,

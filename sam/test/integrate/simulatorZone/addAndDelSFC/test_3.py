@@ -67,8 +67,11 @@ class TestAddSFCClass(IntTestBaseClass):
         # self.sfcList = [sfc1, sfc2, sfc3, sfc4, sfc5]
         # self.sfciList = [sfci1, sfci2, sfci3, sfci4, sfci5]
 
-        self.sfcList = [sfc2, sfc3, sfc4, sfc5]
-        self.sfciList = [sfci2, sfci3, sfci4, sfci5]
+        # self.sfcList = [sfc2, sfc3, sfc4, sfc5]
+        # self.sfciList = [sfci2, sfci3, sfci4, sfci5]
+
+        self.sfcList = [sfc2]
+        self.sfciList = [sfci2]
 
         yield
 
@@ -117,8 +120,10 @@ class TestAddSFCClass(IntTestBaseClass):
 
         # exercise
         while True:
-            abnormalType = screenInput("Please input abnormal type: switch, server, link.\n")
-            if abnormalType == "switch":
+            inputContent = screenInput("Please input abnormal type: \n"\
+                                        "switch, server, link.\n"\
+                                        "Please press 'quit' to quit.")
+            if inputContent == "switch":
                 switchIDList = []
                 for sfci in self.sfciList:
                     updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
@@ -129,8 +134,7 @@ class TestAddSFCClass(IntTestBaseClass):
                 self.logger.info("Please input abnormal serverID to "
                                     " simulator: switch {0} down ".format(abnSwitchID))
                 cmd = self.genAbnormalSwitchHandleCommand(abnSwitchID)
-                break
-            elif abnormalType == "server":
+            elif inputContent == "server":
                 serverIDList = []
                 for sfci in self.sfciList:
                     updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
@@ -141,8 +145,7 @@ class TestAddSFCClass(IntTestBaseClass):
                 self.logger.info("Please input abnormal serverID to "
                                     " simulator: server {0} down ".format(abnServerID))
                 cmd = self.genAbnormalServerHandleCommand(abnServerID)
-                break
-            elif abnormalType == "link":
+            elif inputContent == "link":
                 linkIDList = []
                 for sfci in self.sfciList:
                     updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
@@ -157,13 +160,14 @@ class TestAddSFCClass(IntTestBaseClass):
                                                     abnLinkID[0], abnLinkID[1]))
                 screenInput()
                 cmd = self.genAbnormalLinkHandleCommand(abnLinkID)
+            elif inputContent == "quit":
                 break
             else:
                 self.logger.info("Unknown abnormal type")
 
-        self.setMessageAgentListenSocket(ABNORMAL_DETECTOR_IP, 
-                                            ABNORMAL_DETECTOR_PORT)
-        self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
+            self.setMessageAgentListenSocket(ABNORMAL_DETECTOR_IP, 
+                                                ABNORMAL_DETECTOR_PORT)
+            self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
 
         self.logger.info("Please check regulator if affected SFCI recovered?"\
                         "Then press andy key to continue!")

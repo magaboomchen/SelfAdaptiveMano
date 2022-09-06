@@ -22,7 +22,7 @@ from sam.base.sfcConstant import STATE_ACTIVE, STATE_DELETED, STATE_IN_PROCESSIN
                                     STATE_UNDELETED
 from sam.regulator.recovery.recoveryTask import RECOVERY_TASK_STATE_ADDING_SFCI, \
                                                 RECOVERY_TASK_STATE_DELETING_SFC, \
-                                                RECOVERY_TASK_STATE_DELETING_SFCI, \
+                                                RECOVERY_TASK_STATE_DELETING_SFCI, RECOVERY_TASK_STATE_FINISH, \
                                                 RECOVERY_TASK_STATE_READY, \
                                                 RECOVERY_TASK_STATE_WAITING, \
                                                 RECOVERY_TASK_STATE_WAITING_TO_DELETE_SFC, \
@@ -152,7 +152,8 @@ class SFCRestorer(object):
                 elif sfcState == STATE_ACTIVE:
                     if sfc.isAutoScaling():
                         # use scaling functions to add SFCI
-                        self.rTM.deleteRecoveryTask(sfcUUID, None, recoveryTaskType)
+                        self.rTM.updateRecoveryTask(sfcUUID, sfciID, recoveryTaskType,
+                                        recoveryTaskState=RECOVERY_TASK_STATE_FINISH)
                     else:
                         sfciIDList = self.rTM.getSFCIIDListOfATask(sfcUUID, recoveryTaskType)
                         for sfciID in sfciIDList:
@@ -172,12 +173,12 @@ class SFCRestorer(object):
                     raise ValueError("Unexpected SFC state {0} during SFC recovery.".format(sfcState))
             elif recoveryTaskState == RECOVERY_TASK_STATE_ADDING_SFCI:
                 if sfciState == STATE_ACTIVE:
-                    self.rTM.deleteRecoveryTask(sfcUUID, sfciID, recoveryTaskType)
+                    self.rTM.updateRecoveryTask(sfcUUID, sfciID, recoveryTaskType,
+                                    recoveryTaskState=RECOVERY_TASK_STATE_FINISH)
                     if self.rTM.isAllSFCIRecovered(sfcUUID, recoveryTaskType):
                         self._oib.updateSFCState(sfcUUID, STATE_ACTIVE)
-                        self.rTM.deleteRecoveryTask(sfcUUID, None, recoveryTaskType)
                 elif sfciState == STATE_INIT_FAILED:
-                    pass    # use request retry to add SFC again
+                    # use request retry to add SFC again
                     req = self.rTM.getRequestFromTask(sfcUUID, recoveryTaskType, sfciID, REQUEST_TYPE_ADD_SFCI)
                     self._oib.getRequestRetryCnt(req)
                     if req > MAX_RETRY_NUM:
@@ -187,6 +188,8 @@ class SFCRestorer(object):
                         self._sendRequest2Dispatcher(req)
                 elif sfciState == STATE_IN_PROCESSING:
                     pass    # Do nothing
+            elif recoveryTaskState == RECOVERY_TASK_STATE_FINISH:
+                self.rTM.deleteRecoveryTask(sfcUUID, sfciID, recoveryTaskType)
             else:
                 raise ValueError("Unknown task state {0}".format(recoveryTaskState))
 

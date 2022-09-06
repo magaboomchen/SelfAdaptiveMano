@@ -22,6 +22,8 @@ from sam.base.messageAgent import MSG_TYPE_P4CONTROLLER_CMD, P4CONTROLLER_QUEUE
 from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
 from sam.switchController.test.component.p4ControllerTestBase import TestP4ControllerBase
 
+ENABLE_JOINT_TEST = True
+
 
 class TestAddSFCIClass(TestP4ControllerBase):
     @pytest.fixture(scope="function")
@@ -41,8 +43,14 @@ class TestAddSFCIClass(TestP4ControllerBase):
     def test_addSFCIWithP4VNFIOnASwitch(self, 
                                         setup_addSFCIWithP4VNFIOnASwitch):
         self.logger.info("Deploying SFCI to P4 controller.")
-        self.exerciseAddSFCAndSFCI()
+        self.exerciseAddSFCAndSFCI(jointTestMode=ENABLE_JOINT_TEST)
         self.logger.info("Deploying SFCI to P4 controller finish.")
+
+        self.logger.info("Please check results," \
+                    "Then press any key to continue!")
+        screenInput()
+
+        assert 1 == 1
 
     @pytest.fixture(scope="function")
     def setup_delSFCIWithVNFIOnAServer(self):
@@ -53,7 +61,7 @@ class TestAddSFCIClass(TestP4ControllerBase):
         screenInput()
 
         self.logger.info("Deploying SFCI to P4 controller.")
-        self.exerciseAddSFCAndSFCI()
+        self.exerciseAddSFCAndSFCI(jointTestMode=ENABLE_JOINT_TEST)
         self.logger.info("Deploying SFCI to P4 controller finish.")
 
         yield
@@ -66,15 +74,19 @@ class TestAddSFCIClass(TestP4ControllerBase):
                                             setup_delSFCIWithVNFIOnAServer):
         # exercise
         self.logger.info("Deleting SFCI to P4 controller.")
-        self.exerciseDelSFCAndSFCI()
+        self.exerciseDelSFCAndSFCI(jointTestMode=ENABLE_JOINT_TEST)
         self.logger.info("Deleting SFCI to P4 controller finish.")
+
+        self.logger.info("Please check results," \
+                    "Then press any key to continue!")
+        screenInput()
 
         yield
         # teardown
         self.clearQueue()
         self.killAllModule()
 
-    def exerciseDelSFCAndSFCI(self):
+    def exerciseDelSFCAndSFCI(self, jointTestMode=False):
         for idx in [0,1,2]:
             self.logger.info("test idx {0}".format(idx))
             # exercise
@@ -84,10 +96,9 @@ class TestAddSFCIClass(TestP4ControllerBase):
                                                 self.delSFCICmd)
 
             # verify
-            # self.verifyTurbonetRecvDelRouteEntryCmd(self.sfciList[idx])
-            # self.verifyTurbonetRecvDelClassifierEntryCmd(self.sfcList[idx])
-            self.verifyTurbonetRecvDelSFCICmd(self.sfciList[idx], self.sfcList[idx])
-            self.verifyDelSFCICmdRply()
+            if not jointTestMode:
+                self.verifyTurbonetRecvDelSFCICmd(self.sfciList[idx], self.sfcList[idx])
+                self.verifyDelSFCICmdRply()
 
             # exercise
             self.delSFCCmd = self.mediator.genCMDDelSFC(self.sfcList[idx],
@@ -95,7 +106,8 @@ class TestAddSFCIClass(TestP4ControllerBase):
             self.sendCmd(P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD,
                                                 self.delSFCCmd)
 
-            self.verifyDelSFCCmdRply()
+            if not jointTestMode:
+                self.verifyDelSFCCmdRply()
 
     def verifyTurbonetRecvDelSFCICmd(self, sfc, sfci):
         # type: (SFC, SFCI) -> None

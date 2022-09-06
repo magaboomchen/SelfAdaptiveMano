@@ -65,6 +65,13 @@ class TestAddSFCIClass(TestSimulatorBase):
                     serverBasedClassifier=self.serverBasedClassifier)
             self.sfciList.append(sfci)
 
+        sfc = self.genBiDirectionSFC(classifier, sfcLength=sfcLength)
+        self.sfcList.append(sfc)
+        sfci = self.genBiDirection10BackupServerNFVISFCI(
+                            sfcLength=sfcLength,
+                serverBasedClassifier=self.serverBasedClassifier)
+        self.sfciList.append(sfci)
+
         self.sP.runPythonScript(simulator.__file__)
         sleep(1)
         yield
@@ -76,7 +83,7 @@ class TestAddSFCIClass(TestSimulatorBase):
     # @pytest.mark.skip(reason='Skip temporarily')
     def test_addOneSFCIWithVNFIOnAServer(self,
                                         setup_addOneSFCIWithVNFIOnAServer):
-        for idx in [0,1,2]:
+        for idx in [0,1,2,3]:
             self.logger.info("test idx {0}".format(idx))
             # exercise
             self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfcList[idx])
