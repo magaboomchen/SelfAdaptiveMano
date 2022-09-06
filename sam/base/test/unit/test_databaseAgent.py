@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
-import logging
 
 from sam.base.pickleIO import PickleIO
 from sam.base.databaseAgent import DatabaseAgent
@@ -75,7 +74,7 @@ class TestDatabaseAgentClass(object):
         assert results[0][:-2] == (1, 'Mac', 'Mohan', 10, 'M', 2000.0,
             str(self.REQUEST_UUID))
         assert self._decodePickle2Object(results[0][7]) == self.testObject
-        assert type(uuid.UUID(results[0][6])) == type(uuid.uuid1())
+        assert type(uuid.UUID(results[0][6])) == type(uuid.UUID)
 
     def test_update2(self):
         request = {"requestID":1}
@@ -86,7 +85,7 @@ class TestDatabaseAgentClass(object):
         assert results[0][:-2] == (1, 'Mac', 'Mohan', 10, 'M', 2000.0,
             str(self.REQUEST_UUID))
         assert self._decodePickle2Object(results[0][7]) == self.testObject
-        assert type(uuid.UUID(results[0][6])) == type(uuid.uuid1())
+        assert type(uuid.UUID(results[0][6])) == type(UUID)
 
     def test_update3(self):
         request = {"requestID":1}
@@ -97,7 +96,7 @@ class TestDatabaseAgentClass(object):
         assert results[0][:-2] == (1, 'Mac', 'Mohan', 10, 'M', 2000.0,
             str(self.REQUEST_UUID))
         assert self._decodePickle2Object(results[0][7]) == request
-        assert type(uuid.UUID(results[0][6])) == type(uuid.uuid1())
+        assert type(uuid.UUID(results[0][6])) == type(UUID)
 
     def test_update4(self):
         request = {"requestID":1}
@@ -106,7 +105,7 @@ class TestDatabaseAgentClass(object):
         assert results[0][:-2] == (1, 'Mike', 'Mohan', 10, 'M', 2000.0,
             str(self.REQUEST_UUID))
         assert self._decodePickle2Object(results[0][7]) == request
-        assert type(uuid.UUID(results[0][6])) == type(uuid.uuid1())
+        assert type(uuid.UUID(results[0][6])) == type(UUID)
 
     def test_delete(self):
         self.dbA.delete("Request", " SEX = 'M'")

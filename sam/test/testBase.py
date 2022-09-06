@@ -485,6 +485,7 @@ class TestBase(object):
         self.tmpMessageAgent.startMsgReceiverRPCServer(ip, port)
 
     def recvCmdRplyByRPC(self, ip, port):
+        # type: (str, int) -> CommandReply
         while True:
             msg = self.tmpMessageAgent.getMsg("{0}:{1}".format(ip, port))
             msgType = msg.getMessageType()

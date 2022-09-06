@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from typing import Any, Dict
+from typing import Any, Dict, Union
+from uuid import UUID
 
 REQUEST_STATE_INITIAL = "REQUEST_STATE_INITIAL"
 REQUEST_STATE_IN_PROCESSING = "REQUEST_STATE_IN_PROCESSING"
@@ -20,17 +21,22 @@ REQUEST_TYPE_UPDATE_SFC_STATE = "REQUEST_TYPE_UPDATE_SFC_STATE"
 
 
 class Request(object):
-    def __init__(self, userID, requestID, requestType, requestSrcQueue=None,
-            requestSource=None, requestState=REQUEST_STATE_INITIAL,
-            attributes=None):
+    def __init__(self, userID,      # type: int
+                requestID,          # type: UUID
+                requestType,        # type: Union[REQUEST_TYPE_GET_LINK_INFO, REQUEST_TYPE_GET_DCN_INFO]
+                requestSrcQueue=None,   # type: str
+                requestSource=None, # type: Dict[str, Any]
+                requestState=REQUEST_STATE_INITIAL, # type: Union[REQUEST_STATE_INITIAL, REQUEST_STATE_SUCCESSFUL]
+                attributes=None     # type: Dict[str, Any]
+            ):
         self.userID =  userID # 0 is root
-        self.requestID = requestID # uuid1()
+        self.requestID = requestID
         self.requestType = requestType
         self.requestSrcQueue = requestSrcQueue
-        self.requestSource = requestSource  # type: Dict[str, Any]
+        self.requestSource = requestSource
         # e.g. {"srcIP": "10.0.0.1", "srcPort": 50001}
         self.requestState = requestState
-        self.attributes = attributes    # type: Dict[str, Any]
+        self.attributes = attributes
         # e.g. {'sfc':sfc, 'error':error}
 
     def __str__(self):
@@ -44,7 +50,10 @@ class Request(object):
 
 
 class Reply(object):
-    def __init__(self, requestID, requestState, attributes=None):
+    def __init__(self, requestID,   # type: UUID
+                requestState,       # type: Union[REQUEST_STATE_INITIAL, REQUEST_STATE_SUCCESSFUL]
+                attributes=None     # type: Dict[str, Any]
+            ):
         self.requestID = requestID
         self.requestState = requestState
         self.attributes = attributes

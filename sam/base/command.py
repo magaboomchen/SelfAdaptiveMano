@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import uuid
+from uuid import UUID
 from typing import Any, Dict, Union
 
 CMD_STATE_WAITING = "CMD_STATE_WAITING"
@@ -39,9 +39,10 @@ CMD_TYPE_DEL_CLASSIFIER_ENTRY = "CMD_TYPE_DEL_CLASSIFIER"
 # abnormal detector
 CMD_TYPE_ABNORMAL_DETECTOR_QUERY = "CMD_TYPE_ABNORMAL_DETECTOR_QUERY"
 
+
 class Command(object):
     def __init__(self, cmdType, cmdID, attributes=None):
-        # type: (Union[CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_DEL_SFC], uuid.uuid1, Dict[str, Any]) -> None
+        # type: (Union[CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, CMD_TYPE_DEL_SFCI, CMD_TYPE_DEL_SFC], UUID, Dict[str, Any]) -> None
         self.cmdType = cmdType
         self.cmdID = cmdID
         if attributes == None:
@@ -61,7 +62,7 @@ class Command(object):
 
 class CommandReply(object):
     def __init__(self, cmdID, cmdState, attributes=None):
-        # type: (uuid.uuid1, Union[CMD_STATE_WAITING, CMD_STATE_PROCESSING, CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL], Dict[str, Any]) -> None
+        # type: (UUID, Union[CMD_STATE_WAITING, CMD_STATE_PROCESSING, CMD_STATE_SUCCESSFUL, CMD_STATE_FAIL], Dict[str, Any]) -> None
         self.cmdID = cmdID
         self.cmdState = cmdState
         if attributes == None:

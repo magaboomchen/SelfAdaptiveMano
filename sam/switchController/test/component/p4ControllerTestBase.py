@@ -306,36 +306,36 @@ class TestP4ControllerBase(IntTestBaseClass):
 
     def verifyTurbonetRecvAddSFCICmd(self, sfc, sfci):
         # type: (SFC, SFCI) -> None
-        cmdNum = len(sfc.directions) * 2
+        addClassifierRouteCmdNum = len(sfc.directions) * 2
 
         pFPDict = sfci.forwardingPathSet.primaryForwardingPath
-        maxCmdCnt = 0
+        addNSHRouteCmdNum = 0
         for pathIdx in [DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET]:
             if pathIdx in pFPDict:
                 pFP = pFPDict[pathIdx]
-                for segPath in pFP:
+                for stageIdx, segPath in enumerate(pFP):
                     if len(segPath) == 2:
                         continue
                     for idx, (stageNum, nodeID) in enumerate(segPath):
                         if (self.isSwitchID(nodeID) 
                                 and idx != 0 
                                 and idx != len(segPath)-1):
-                            maxCmdCnt += 1
+                            addNSHRouteCmdNum += 1
 
         self.turbonetControllerStub.recvCmd(
             [CMD_TYPE_ADD_CLASSIFIER_ENTRY, CMD_TYPE_ADD_NSH_ROUTE], 
-            [cmdNum, maxCmdCnt])
+            [addClassifierRouteCmdNum, addNSHRouteCmdNum])
 
     def verifyTurbonetRecvAddClassifierEntryCmd(self, sfc):
         # type: (SFC) -> None
-        cmdNum = len(sfc.directions) * 2
+        addClassifierRouteCmdNum = len(sfc.directions) * 2
         self.turbonetControllerStub.recvCmd(
-            [CMD_TYPE_ADD_CLASSIFIER_ENTRY], cmdNum)
+            [CMD_TYPE_ADD_CLASSIFIER_ENTRY], addClassifierRouteCmdNum)
 
     def verifyTurbonetRecvAddRouteEntryCmd(self, sfci):
         # type: (SFCI) -> None
         pFPDict = sfci.forwardingPathSet.primaryForwardingPath
-        maxCmdCnt = 0
+        addNSHRouteCmdNum = 0
         for pathIdx in [DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET]:
             if pathIdx in pFPDict:
                 pFP = pFPDict[pathIdx]
@@ -346,9 +346,9 @@ class TestP4ControllerBase(IntTestBaseClass):
                         if (self.isSwitchID(nodeID) 
                                 and idx != 0 
                                 and idx != len(segPath)-1):
-                            maxCmdCnt += 1
+                            addNSHRouteCmdNum += 1
         self.turbonetControllerStub.recvCmd(
-            [CMD_TYPE_ADD_NSH_ROUTE], maxCmdCnt)
+            [CMD_TYPE_ADD_NSH_ROUTE], addNSHRouteCmdNum)
 
     def isSwitchID(self, nodeID):
         # type: (int) -> bool

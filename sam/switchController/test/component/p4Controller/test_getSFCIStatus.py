@@ -66,7 +66,7 @@ class TestGetSFCIStatusClass(TestP4ControllerBase):
         assert "sfcisDict" in cmdRply.attributes
         assert type(cmdRply.attributes["sfcisDict"]) == dict
         assert len(cmdRply.attributes["sfcisDict"]) >= 0
-        assert cmdRply.cmdStatus == CMD_STATE_SUCCESSFUL
+        assert cmdRply.cmdState == CMD_STATE_SUCCESSFUL
         assert cmdRply.attributes['zone'] == TURBONET_ZONE
         sfcisDict = cmdRply.attributes["sfcisDict"] # type: Dict[int, SFCI]
         for sfciID,sfci in sfcisDict.items():
