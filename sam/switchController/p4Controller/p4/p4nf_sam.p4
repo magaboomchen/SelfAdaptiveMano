@@ -403,8 +403,8 @@ control SwitchIngress(
                 ig_intr_dprsr_md.drop_ctl = 1;
             }
             else if(ig_intr_dprsr_md.drop_ctl == 0) {
-                hdr.nsh_h.service_index = hdr.nsh_h.service_index - MINUS_ONE;
                 CounterEgress.apply();
+                hdr.nsh_h.service_index = hdr.nsh_h.service_index - MINUS_ONE;
             }
         }
         else if(hdr.icmp_h.isValid() && hdr.icmp_h.icmp_type == ICMP_ECHO_REQUEST && hdr.ipv4_h.isValid() && hdr.ipv4_h.dst_addr == NF_ADDR) {

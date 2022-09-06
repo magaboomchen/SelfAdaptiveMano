@@ -1,5 +1,8 @@
 import bfrt_grpc.client as client
 
+PRI_MN_ENTRY = 0
+PRI_MN = 1
+
 class P4Agent:
 
     def __init__(self, _addrwithport):
@@ -25,9 +28,24 @@ class P4Agent:
                 client.DataTuple('$PORT_ENABLE', bool_val=True)
             ])]
         )
+        self._set_loopback_port(136)
+        self._set_loopback_port(144)
+        self._set_loopback_port(152)
+        self._set_loopback_port(160)
+        self._set_loopback_port(168)
+        self._set_loopback_port(176)
+        self._set_loopback_port(184)
+        self._set_loopback_port(60)
+        self._set_loopback_port(52)
+        self.res_spi = 0
+        self.res_si = 0
+        self.res_src = 0
+        self.res_dst = 0
+    
+    def _set_loopback_port(self, _portnum):
         self.port_table.entry_add(
             self.target,
-            [self.port_table.make_key([client.KeyTuple('$DEV_PORT', 136)])],
+            [self.port_table.make_key([client.KeyTuple('$DEV_PORT', _portnum)])],
             [self.port_table.make_data([
                 client.DataTuple('$SPEED', str_val="BF_SPEED_100G"),
                 client.DataTuple('$FEC', str_val="BF_FEC_TYP_NONE")
@@ -35,17 +53,13 @@ class P4Agent:
         )
         self.port_table.entry_mod(
             self.target,
-            [self.port_table.make_key([client.KeyTuple('$DEV_PORT', 136)])],
+            [self.port_table.make_key([client.KeyTuple('$DEV_PORT', _portnum)])],
             [self.port_table.make_data([
                 client.DataTuple('$LOOPBACK_MODE', str_val="BF_LPBK_MAC_NEAR"),
                 client.DataTuple('$AUTO_NEGOTIATION', 2),
                 client.DataTuple('$PORT_ENABLE', bool_val=True)
             ])]
         )
-        self.res_spi = 0
-        self.res_si = 0
-        self.res_src = 0
-        self.res_dst = 0
 
     def addMonitorv4(self, _service_path_index, _service_index):
         monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv4')
@@ -57,7 +71,8 @@ class P4Agent:
                 client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
                 client.KeyTuple('hdr.nsh_h.service_index', _service_index),
                 client.KeyTuple('hdr.ipv4_h.dst_addr', '0.0.0.0', '0.0.0.0'),
-                client.KeyTuple('hdr.ipv4_h.src_addr', '0.0.0.0', '0.0.0.0')
+                client.KeyTuple('hdr.ipv4_h.src_addr', '0.0.0.0', '0.0.0.0'),
+                client.KeyTuple("$MATCH_PRIORITY", PRI_MN)
             ])],
             [monitortable.make_data([], 'SwitchIngress.hit_digest_v4')]
         )
@@ -72,7 +87,8 @@ class P4Agent:
                 client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
                 client.KeyTuple('hdr.nsh_h.service_index', _service_index),
                 client.KeyTuple('hdr.ipv6_h.dst_addr', '::', '::'),
-                client.KeyTuple('hdr.ipv6_h.src_addr', '::', '::')
+                client.KeyTuple('hdr.ipv6_h.src_addr', '::', '::'),
+                client.KeyTuple("$MATCH_PRIORITY", PRI_MN)
             ])],
             [monitortable.make_data([], 'SwitchIngress.hit_digest_v6')]
         )
@@ -189,7 +205,7 @@ class P4Agent:
                 client.KeyTuple('hdr.nsh_h.service_index', _service_index),
                 client.KeyTuple("hdr.ipv4_h.src_addr", _src_addr, _src_mask),
                 client.KeyTuple("hdr.ipv4_h.dst_addr", _dst_addr, _dst_mask),
-                client.KeyTuple("hdr.ipv4_h.nxt_hdr", _nxt_hdr, 255),
+                client.KeyTuple("hdr.ipv4_h.next_hdr", _nxt_hdr, 255),
                 client.KeyTuple("$MATCH_PRIORITY", _priority)
             ])],
             [statelessfw.make_data([], actionname)]
@@ -209,7 +225,7 @@ class P4Agent:
                 client.KeyTuple('hdr.nsh_h.service_index', _service_index),
                 client.KeyTuple("hdr.ipv4_h.src_addr", _src_addr, _src_mask),
                 client.KeyTuple("hdr.ipv4_h.dst_addr", _dst_addr, _dst_mask),
-                client.KeyTuple("hdr.ipv4_h.nxt_hdr", _nxt_hdr, 255),
+                client.KeyTuple("hdr.ipv4_h.next_hdr", _nxt_hdr, 255),
                 client.KeyTuple("$MATCH_PRIORITY", _priority)
             ])]
         )
@@ -228,7 +244,7 @@ class P4Agent:
                 client.KeyTuple('hdr.nsh_h.service_index', _service_index),
                 client.KeyTuple("hdr.ipv6_h.src_addr", _src_addr, _src_mask),
                 client.KeyTuple("hdr.ipv6_h.dst_addr", _dst_addr, _dst_mask),
-                client.KeyTuple("hdr.ipv6_h.nxt_hdr", _nxt_hdr, 255),
+                client.KeyTuple("hdr.ipv6_h.next_hdr", _nxt_hdr, 255),
                 client.KeyTuple("$MATCH_PRIORITY", _priority)
             ])],
             [statelessfw.make_data([], actionname)]
@@ -248,26 +264,76 @@ class P4Agent:
                 client.KeyTuple('hdr.nsh_h.service_index', _service_index),
                 client.KeyTuple("hdr.ipv6_h.src_addr", _src_addr, _src_mask),
                 client.KeyTuple("hdr.ipv6_h.dst_addr", _dst_addr, _dst_mask),
-                client.KeyTuple("hdr.ipv6_h.nxt_hdr", _nxt_hdr, 255),
+                client.KeyTuple("hdr.ipv6_h.next_hdr", _nxt_hdr, 255),
                 client.KeyTuple("$MATCH_PRIORITY", _priority)
             ])]
         )
 
     def queryMonitorv4(self, _service_path_index, _service_index, _src_addr, _dst_addr):
         monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv4')
-        monitortable.info.key_field_annotation_add('hdr.ipv4_h.src_addr', 'ipv4')
-        monitortable.info.key_field_annotation_add('hdr.ipv4_h.dst_addr', 'ipv4')
-        pass
+        #monitortable.info.key_field_annotation_add('hdr.ipv4_h.src_addr', 'ipv4')
+        #monitortable.info.key_field_annotation_add('hdr.ipv4_h.dst_addr', 'ipv4')
+        resp = monitortable.entry_get(
+            self.target,
+            [monitortable.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index),
+                client.KeyTuple('hdr.ipv4_h.dst_addr', _dst_addr, ((1 << 32) - 1)),
+                client.KeyTuple('hdr.ipv4_h.src_addr', _src_addr, ((1 << 32) - 1)),
+                client.KeyTuple("$MATCH_PRIORITY", PRI_MN_ENTRY)
+            ])], {"from_hw": True},
+            monitortable.make_data([client.DataTuple("$COUNTER_SPEC_BYTES"), client.DataTuple("$COUNTER_SPEC_PKTS")], 'SwitchIngress.hit_monitor_v4', get=True)
+        )
+        data_dict = next(resp)[0].to_dict()
+        pktcnt = data_dict["$COUNTER_SPEC_PKTS"]
+        bytecnt = data_dict["$COUNTER_SPEC_BYTES"]
+        return pktcnt, bytecnt
 
     def queryMonitorv6(self, _service_path_index, _service_index, _src_addr, _dst_addr):
         monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv6')
-        monitortable.info.key_field_annotation_add('hdr.ipv6_h.src_addr', 'ipv6')
-        monitortable.info.key_field_annotation_add('hdr.ipv6_h.dst_addr', 'ipv6')
-        pass
+        #monitortable.info.key_field_annotation_add('hdr.ipv6_h.src_addr', 'ipv6')
+        #monitortable.info.key_field_annotation_add('hdr.ipv6_h.dst_addr', 'ipv6')
+        resp = monitortable.entry_get(
+            self.target,
+            [monitortable.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index),
+                client.KeyTuple('hdr.ipv6_h.dst_addr', _dst_addr, ((1 << 128) - 1)),
+                client.KeyTuple('hdr.ipv6_h.src_addr', _src_addr, ((1 << 128) - 1)),
+                client.KeyTuple("$MATCH_PRIORITY", PRI_MN_ENTRY)
+            ])], {"from_hw": True},
+            monitortable.make_data([client.DataTuple("$COUNTER_SPEC_BYTES"), client.DataTuple("$COUNTER_SPEC_PKTS")], 'SwitchIngress.hit_monitor_v6', get=True)
+        )
+        data_dict = next(resp)[0].to_dict()
+        pktcnt = data_dict["$COUNTER_SPEC_PKTS"]
+        bytecnt = data_dict["$COUNTER_SPEC_BYTES"]
+        return pktcnt, bytecnt
     
     def queryIOamount(self, _service_path_index, _service_index):
         tableingress = self.bfrtinfo.table_get('SwitchIngress.CounterIngress')
+        resp = tableingress.entry_get(
+            self.target,
+            [tableingress.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index)
+            ])], {"from_hw": True},
+            tableingress.make_data([client.DataTuple("$COUNTER_SPEC_BYTES"), client.DataTuple("$COUNTER_SPEC_PKTS")], 'SwitchIngress.hit_ingress', get=True)
+        )
+        data_dict = next(resp)[0].to_dict()
+        ipkt = data_dict["$COUNTER_SPEC_PKTS"]
+        ibyte = data_dict["$COUNTER_SPEC_BYTES"]
         tableegress = self.bfrtinfo.table_get('SwitchIngress.CounterEgress')
+        resp = tableegress.entry_get(
+            self.target,
+            [tableegress.make_key([
+                client.KeyTuple('hdr.nsh_h.service_path_index', _service_path_index),
+                client.KeyTuple('hdr.nsh_h.service_index', _service_index)
+            ])], {"from_hw": True},
+            tableegress.make_data([client.DataTuple("$COUNTER_SPEC_BYTES"), client.DataTuple("$COUNTER_SPEC_PKTS")], 'SwitchIngress.hit_egress', get=True)
+        )
+        data_dict = next(resp)[0].to_dict()
+        epkt = data_dict["$COUNTER_SPEC_PKTS"]
+        ebyte = data_dict["$COUNTER_SPEC_BYTES"]
         return ipkt, ibyte, epkt, ebyte
     
     def waitForDigenst(self):
@@ -288,6 +354,12 @@ class P4Agent:
         print(self.res_src)
         print(self.res_dst)
         return True
+    
+    def addMonitorEntry(self):
+        if self.res_src >= (1 << 32) or self.res_dst >= (1 << 32):
+            self.addMonitorEntryv4()
+        else:
+            self.addMonitorEntryv6()
 
     def addMonitorEntryv4(self):
         monitortable = self.bfrtinfo.table_get('SwitchIngress.FlowMonitorv4')
@@ -297,7 +369,8 @@ class P4Agent:
                 client.KeyTuple('hdr.nsh_h.service_path_index', self.res_spi),
                 client.KeyTuple('hdr.nsh_h.service_index', self.res_si),
                 client.KeyTuple('hdr.ipv4_h.dst_addr', self.res_dst, ((1 << 32) - 1)),
-                client.KeyTuple('hdr.ipv4_h.src_addr', self.res_src, ((1 << 32) - 1))
+                client.KeyTuple('hdr.ipv4_h.src_addr', self.res_src, ((1 << 32) - 1)),
+                client.KeyTuple("$MATCH_PRIORITY", PRI_MN_ENTRY)
             ])],
             [monitortable.make_data([], 'SwitchIngress.hit_monitor_v4')]
         )
@@ -310,7 +383,8 @@ class P4Agent:
                 client.KeyTuple('hdr.nsh_h.service_path_index', self.res_spi),
                 client.KeyTuple('hdr.nsh_h.service_index', self.res_si),
                 client.KeyTuple('hdr.ipv6_h.dst_addr', self.res_dst, ((1 << 128) - 1)),
-                client.KeyTuple('hdr.ipv6_h.src_addr', self.res_src, ((1 << 128) - 1))
+                client.KeyTuple('hdr.ipv6_h.src_addr', self.res_src, ((1 << 128) - 1)),
+                client.KeyTuple("$MATCH_PRIORITY", PRI_MN_ENTRY)
             ])],
             [monitortable.make_data([], 'SwitchIngress.hit_monitor_v6')]
         )
