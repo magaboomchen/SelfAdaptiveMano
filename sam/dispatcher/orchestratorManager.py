@@ -213,7 +213,8 @@ class OrchestratorManager(object):
             if sfc.sfcUUID in oInfo["sfcDict"]:
                 return orchName
         else:
-            raise ValueError("Can't find orchestrator instance.")
+            # raise ValueError("Can't find orchestrator instance.")
+            return None
 
     def _assignSFC2Orchestrator(self, sfc, orchName):
         self.orchestratorDict[orchName]["sfcDict"][sfc.sfcUUID] = sfc

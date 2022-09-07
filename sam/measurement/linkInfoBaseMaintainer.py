@@ -91,6 +91,8 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
         self._links = links
 
     def updateLinksByZone(self, links, zoneName):
+        if zoneName not in self._links.keys():
+            self._links[zoneName] = {}
         self._links[zoneName] = links
 
     def updateLinkState(self, linkID, zoneName, state):
@@ -100,6 +102,7 @@ class LinkInfoBaseMaintainer(XInfoBaseMaintainer):
         return self._links
 
     def getLinksByZone(self, zoneName, pruneInactiveLinks=False):
+        # type: (str, bool) -> Dict[Tuple[int,int], Dict[str, Any]]
         if pruneInactiveLinks:
             links = {}
             for linkID, linkInfoDict in self._links[zoneName].items():

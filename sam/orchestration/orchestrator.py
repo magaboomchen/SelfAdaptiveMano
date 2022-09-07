@@ -11,7 +11,7 @@ import math
 
 from sam.base.link import Link
 from sam.base.sfc import SFC, SFCI
-from sam.base.sfcConstant import STATE_IN_PROCESSING, STATE_INACTIVE, STATE_INIT_FAILED, STATE_UNDELETED
+from sam.base.sfcConstant import STATE_IN_PROCESSING, STATE_INIT_FAILED, STATE_UNDELETED
 from sam.base.messageAgent import SAMMessage, MessageAgent, \
     MEDIATOR_QUEUE, ORCHESTRATOR_QUEUE, MSG_TYPE_ORCHESTRATOR_CMD
 from sam.base.request import REQUEST_STATE_IN_PROCESSING, REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_DEL_SFCI, \
@@ -20,7 +20,7 @@ from sam.base.command import CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, \
     CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
     CMD_TYPE_PUT_ORCHESTRATION_STATE, CMD_TYPE_GET_ORCHESTRATION_STATE, \
     CMD_TYPE_TURN_ORCHESTRATION_ON, CMD_TYPE_TURN_ORCHESTRATION_OFF, \
-    CMD_TYPE_KILL_ORCHESTRATION, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI, CommandReply
+    CMD_TYPE_KILL_ORCHESTRATION, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI, Command, CommandReply
 from sam.base.commandMaintainer import CommandMaintainer
 from sam.orchestration.argParser import ArgParser
 from sam.base.request import REQUEST_TYPE_ADD_SFCI
@@ -230,7 +230,8 @@ class Orchestrator(object):
         return True
 
     def processAllAddSFCIRequests(self):
-        self.logger.debug("Batch time out.")
+        self.logger.debug("Request Batch time out.")
+        self.requestCnt = 0
         if self._requestBatchQueue.qsize() > 0 and self.runningState == True:
             self.logger.info("Timeout process - self._requestBatchQueue.qsize():{0}".format(self._requestBatchQueue.qsize()))
             self.requestCnt += self._requestBatchQueue.qsize()
@@ -305,6 +306,7 @@ class Orchestrator(object):
             pass
 
     def _commandHandler(self, cmd):
+        # type: (Command) -> None
         try:
             self.logger.info("Get a command reply")
             if cmd.cmdType == CMD_TYPE_PUT_ORCHESTRATION_STATE:
@@ -338,6 +340,7 @@ class Orchestrator(object):
             pass
 
     def _pruneDib(self, dib):
+        # type: (DCNInfoBaseMaintainer) -> DCNInfoBaseMaintainer
         # For fast orchestration, we need lower down topology scale
         # zoneNameList = dib.getAllZone()
         # self.logger.info("zoneNameList: {0}".format(zoneNameList))
@@ -350,8 +353,6 @@ class Orchestrator(object):
         delLinkCandidateDict = {}
         linksInfo = dib.getLinksByZone(self.zoneName)
         for linkID in linksInfo.keys():
-            srcID = linkID[0]
-            dstID = linkID[1]
             link = linksInfo[linkID]['link']
             for idx, nodeID in enumerate(linkID):
                 if dib.isServerID(nodeID):
@@ -371,7 +372,7 @@ class Orchestrator(object):
                         delSwitchCandidateDict[nodeID] = 1
                         delLinkCandidateDict[linkID] = 1
                         # dib.delLink(link, self.zoneName)
-                        break
+                        # break
 
         # prune servers
         for serverID in delServerCandidateDict.keys():
@@ -390,18 +391,26 @@ class Orchestrator(object):
 
     def _prepareSubZoneSwitchesIdxInfo(self):
         if self.topoType == "fat-tree":
-            coreSwitchNum = math.pow(self.podNum/2, 2)
-            aggSwitchNum = self.podNum * self.podNum / 2
-            coreSwitchPerPod = math.floor(coreSwitchNum/self.podNum)
+            coreSwitchNum = int(math.pow(self.podNum/2, 2))
+            aggSwitchNum = int(self.podNum * self.podNum / 2)
+            coreSwitchPerPod = int(math.floor(coreSwitchNum/self.podNum))
             # get core switch range
-            self.minCoreSwitchIdx = self.minPodIdx * coreSwitchPerPod
-            self.maxCoreSwitchIdx = self.minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1
+            self.minCoreSwitchIdx = int(self.minPodIdx * coreSwitchPerPod)
+            self.maxCoreSwitchIdx = int(self.minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1)
+            podNumInSubZone = self.maxCoreSwitchIdx - self.minCoreSwitchIdx + 1
+            startCoreSwitchIDx = int(self.minCoreSwitchIdx / podNumInSubZone)
+            coreSwitchRange = range(startCoreSwitchIDx, coreSwitchNum, podNumInSubZone)
+            self.coreSwitchIdxList = list(coreSwitchRange)
+            self.logger.warning("self.coreSwitchIdxList is {0}".format(self.coreSwitchIdxList))
+            self.logger.warning("self.minPodIdx {1}; self.maxPodIdx {0}".format(self.minPodIdx, self.maxPodIdx))
+            self.logger.warning("coreSwitchPerPod {0}".format(coreSwitchPerPod))
+            self.logger.warning("self.minCoreSwitchIdx {0}; self.maxCoreSwitchIdx {1} ".format(self.minCoreSwitchIdx, self.maxCoreSwitchIdx))
             # get agg switch range
-            self.minAggSwitchIdx = coreSwitchNum + self.minPodIdx * self.podNum / 2
-            self.maxAggSwitchIdx = self.minAggSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1
+            self.minAggSwitchIdx = int(coreSwitchNum + self.minPodIdx * self.podNum / 2)
+            self.maxAggSwitchIdx = int(self.minAggSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1)
             # get tor switch range
-            self.minTorSwitchIdx = coreSwitchNum + aggSwitchNum + self.minPodIdx * self.podNum / 2
-            self.maxTorSwitchIdx = self.minTorSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1
+            self.minTorSwitchIdx = int(coreSwitchNum + aggSwitchNum + self.minPodIdx * self.podNum / 2)
+            self.maxTorSwitchIdx = int(self.minTorSwitchIdx + self.podNum / 2 * (self.maxPodIdx - self.minPodIdx + 1) - 1)
         elif self.topoType == "testbed_sw1":
             return True
         else:
@@ -409,7 +418,8 @@ class Orchestrator(object):
 
     def isSwitchInSubTopologyZone(self, switchID):
         if self.topoType == "fat-tree":
-            if (switchID >= self.minCoreSwitchIdx and switchID <= self.maxCoreSwitchIdx) \
+            # switchID >= self.minCoreSwitchIdx and switchID <= self.maxCoreSwitchIdx) \
+            if switchID in self.coreSwitchIdxList \
                     or (switchID >= self.minAggSwitchIdx and switchID <= self.maxAggSwitchIdx) \
                     or (switchID >= self.minTorSwitchIdx and switchID <= self.maxTorSwitchIdx):
                 return True
@@ -425,17 +435,17 @@ class Orchestrator(object):
             switchIDList = equipmentDict["switchIDList"]
             for switchID in switchIDList:
                 if self._dib.hasSwitch(switchID, self.zoneName):
-                    self._dib.updateSwitchState(switchID, self.zoneName, state = STATE_INACTIVE)
+                    self._dib.updateSwitchState(switchID, self.zoneName, state = False)
 
             serverIDList = equipmentDict["serverIDList"]
             for serverID in serverIDList:
                 if self._dib.hasServer(serverID, self.zoneName):
-                    self._dib.updateServerState(serverID, self.zoneName, state = STATE_INACTIVE)
+                    self._dib.updateServerState(serverID, self.zoneName, state = False)
 
             linkIDList = equipmentDict["linkIDList"]
             for linkID in linkIDList:
                 if self._dib.hasLink(linkID[0], linkID[1], self.zoneName):
-                    self._dib.updateLinkState(linkID, self.zoneName, state = STATE_INACTIVE)
+                    self._dib.updateLinkState(linkID, self.zoneName, state = False)
 
 
 if __name__=="__main__":

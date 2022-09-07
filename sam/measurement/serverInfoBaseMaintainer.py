@@ -3,6 +3,7 @@
 
 from typing import Dict, Union, Any
 
+from sam.base.server import Server
 from sam.base.xibMaintainer import XInfoBaseMaintainer
 from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE
 
@@ -36,6 +37,7 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
         self.isServerInfoInDB = True
 
     def hasServer(self, serverID, zoneName):
+        # type: (int, Union[SIMULATOR_ZONE, TURBONET_ZONE]) -> None
         if self.isServerInfoInDB:
             results = self.dbA.query("Server", " SERVER_ID ",
                         " SERVER_ID = '{0}' AND ZONE_NAME = '{1}'".format(
@@ -51,6 +53,7 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
                 return False
 
     def addServer(self, server, zoneName):
+        # type: (Server, Union[SIMULATOR_ZONE, TURBONET_ZONE]) -> None
         if self.isServerInfoInDB:
             if not self.hasServer(server.getServerID(), zoneName):
                 self.dbA.insert("Server",
@@ -74,6 +77,7 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
             self._servers[zoneName][serverID] = {'server':server, 'Active':True, 'timestamp':None, 'Status':None}
 
     def delServer(self, serverID, zoneName):
+        # type: (int, Union[SIMULATOR_ZONE, TURBONET_ZONE]) -> None
         if self.isServerInfoInDB:
             if self.hasServer(serverID, zoneName):
                 self.dbA.delete("Server",
@@ -99,6 +103,8 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
         self._servers = servers
 
     def updateServersByZone(self, servers, zoneName):
+        if zoneName not in self._servers.keys():
+            self._servers[zoneName] = {}
         self._servers[zoneName] = servers
 
     def updateServerState(self, serverID, zoneName, state):
@@ -127,6 +133,10 @@ class ServerInfoBaseMaintainer(XInfoBaseMaintainer):
                 return True
         else:
             return False
+
+    def isServerActive(self, serverID, zoneName):
+        # type: (int, str) -> bool
+        return self._servers[zoneName][serverID]['active']
 
     def reserveServerResources(self, serverID, reservedCores, reservedMemory,
             reservedBandwidth, zoneName):

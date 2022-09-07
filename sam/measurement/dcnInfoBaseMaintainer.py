@@ -2,10 +2,9 @@
 # -*- coding: UTF-8 -*-
 
 from sam.base.link import Link
-from sam.base.socketConverter import SocketConverter
-from sam.base.loggerConfigurator import LoggerConfigurator
-from sam.base.server import SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI, Server
 from sam.base.switch import Switch
+from sam.base.socketConverter import SocketConverter
+from sam.base.server import SERVER_TYPE_CLASSIFIER, SERVER_TYPE_NFVI, Server
 from sam.measurement.serverInfoBaseMaintainer import ServerInfoBaseMaintainer
 from sam.measurement.sfciInfoBaseMaintainer import SFCIInfoBaseMaintainer
 from sam.measurement.switchInfoBaseMaintainer import SwitchInfoBaseMaintainer
@@ -224,6 +223,14 @@ class DCNInfoBaseMaintainer(ServerInfoBaseMaintainer,
                 return server
         else:
             raise ValueError("Find classifier of switchID {0} failed".format(switch.switchID))
+
+    def isNodeActive(self, nodeID, zoneName):
+        # type: (int, str) -> bool
+        if self.isServerID(nodeID):
+            return self.isServerActive(nodeID, zoneName)
+        elif self.isSwitchID(nodeID):
+            return self.isSwitchActive(nodeID, zoneName)
+        return True
 
     def __str__(self):
         string = "{0}\n".format(self.__class__)

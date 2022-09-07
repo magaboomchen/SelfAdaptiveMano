@@ -103,6 +103,8 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
         self._switches = switches
 
     def updateSwitchesByZone(self, switches, zoneName):
+        if zoneName not in self._switches.keys():
+            self._switches[zoneName] = {}
         self._switches[zoneName] = switches
 
     def updateSwitchState(self, switchID, zoneName, state):
@@ -125,7 +127,9 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
         switchList = []
         for switchID in self._switches[zoneName]:
             switch = self._switches[zoneName][switchID]["switch"]
-            if switch.switchType == switchType:
+            switchActive = self._switches[zoneName][switchID]['Active']
+            if (switch.switchType == switchType
+                    and switchActive):
                 switchList.append(switch)
         return switchList
 
@@ -136,6 +140,10 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
                 return True
         else:
             return False
+
+    def isSwitchActive(self, switchID, zoneName):
+        # type: (int, str) -> bool
+        return self._switches[zoneName][switchID]['Active']
 
     def getSwitch(self, switchID, zoneName):
         # type: (int, str) -> Switch

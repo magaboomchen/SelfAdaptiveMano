@@ -158,7 +158,7 @@ class TestAddSFCClass(IntTestBaseClass):
             self.sendRequest(REGULATOR_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
+                        "Then press andy key to exit!")
         screenInput()
 
     def getAllSwitchIDFromSFCI(self, sfci):

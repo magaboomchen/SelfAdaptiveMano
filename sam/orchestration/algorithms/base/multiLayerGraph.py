@@ -32,9 +32,12 @@ class MultiLayerGraph(object):
         self.enablePreferredDeviceSelection = enablePreferredDeviceSelection
         self.pM = PerformanceModel()
 
-    def loadInstance4dibAndRequest(self, dib, request, weightType,
-                                    connectingLinkWeightType=WEIGHT_TYPE_CONST):
-        self._dib = dib # type: DCNInfoBaseMaintainer
+    def loadInstance4dibAndRequest(self, dib,   # type: DCNInfoBaseMaintainer
+                                    request,
+                                    weightType,
+                                    connectingLinkWeightType=WEIGHT_TYPE_CONST
+                                ):
+        self._dib = dib 
         self.request = request
         self.sfc = request.attributes['sfc']    # type: SFC
         self.sfcLength = self.sfc.getSFCLength()    # type: int
@@ -61,8 +64,8 @@ class MultiLayerGraph(object):
             self.abandonNodeIDList.append(nodeID)
 
     def addAbandonLinkIDs(self, linkIDList):
-        for link in linkIDList:
-            self.abandonLinkIDList = self.abandonLinkIDList + linkIDList
+        for linkID in linkIDList:
+            self.abandonLinkIDList = self.abandonLinkIDList.append(linkID)
 
     def addAbandonLinks(self, linkList):
         for link in linkList:
@@ -83,55 +86,62 @@ class MultiLayerGraph(object):
         self.multiLayerGraph = mLG
 
     def genOneLayer(self, stage, capacityAwareFlag=True):
-        G = nx.DiGraph()
+        graph = nx.DiGraph()
         edgeList = []
 
         expectedBandwidth = self._getExpectedBandwidth(stage)
         expectedTCAM = self._getExpectedTCAM(stage)
 
-        linksInfoDict = self._dib.getLinksByZone(self.zoneName)
+        linksInfoDict = self._dib.getLinksByZone(self.zoneName, pruneInactiveLinks=True)
         for key, linkInfoDict in linksInfoDict.items():
-            link = linkInfoDict['link']
-            srcLayerNodeID = self._genLayerNodeID(link.srcID, stage)
-            dstLayerNodeID = self._genLayerNodeID(link.dstID, stage)
+            link = linkInfoDict['link'] # type: Link
+            srcNodeID = link.srcID
+            dstNodeID = link.dstID
+            if (self._dib.isServerID(srcNodeID) 
+                    or self._dib.isServerID(dstNodeID)):
+                continue
+            if not (self._dib.isSwitchActive(srcNodeID, self.zoneName) 
+                        and self._dib.isSwitchActive(dstNodeID, self.zoneName)):
+                self.logger.warning(" link {0}-{1} inactive ".format(srcNodeID, dstNodeID))
+                continue
+            srcLayerNodeID = self._genLayerNodeID(srcNodeID, stage)
+            dstLayerNodeID = self._genLayerNodeID(dstNodeID, stage)
             weight = self.getLinkWeight(link)
             # self.logger.debug(
             #     "resource link:{0}, node1:{1}, node2:{2}".format(
             #         self._dib.hasEnoughLinkResource(link, expectedBandwidth),
-            #         self._dib.hasEnoughSwitchResource(link.srcID, expectedTCAM),
-            #         self._dib.hasEnoughSwitchResource(link.dstID, expectedTCAM)
+            #         self._dib.hasEnoughSwitchResource(srcNodeID, expectedTCAM),
+            #         self._dib.hasEnoughSwitchResource(dstNodeID, expectedTCAM)
             #     ))
-            if (self._dib.isServerID(link.srcID) 
-                    or self._dib.isServerID(link.dstID)):
-                continue
             if ((self._dib.hasEnoughLinkResource(link, expectedBandwidth,
                     self.zoneName) 
-                and self._dib.hasEnoughSwitchResource(link.srcID,
+                and self._dib.hasEnoughSwitchResource(srcNodeID,
                     expectedTCAM, self.zoneName)
-                and self._dib.hasEnoughSwitchResource(link.dstID,
+                and self._dib.hasEnoughSwitchResource(dstNodeID,
                     expectedTCAM, self.zoneName)
                 ) or (  not capacityAwareFlag  )):
                 if not self._isAbandonLink(link):
                     edgeList.append((srcLayerNodeID, dstLayerNodeID, weight))
+                    self.logger.info(" add edge {0}-{1} to edgeList. ".format(srcLayerNodeID, dstLayerNodeID))
             else:
                 self.logger.warning(
                     "Link {0}->{1} hasn't enough resource.".format(
-                        link.srcID, link.dstID
+                        srcNodeID, dstNodeID
                     ))
-        G.add_weighted_edges_from(edgeList)
+        graph.add_weighted_edges_from(edgeList)
 
-        # self.logger.debug("A layer graph nodes:{0}".format(G.nodes))
-        # self.logger.debug("A layer graph edges:{0}".format(G.edges))
-        # self.logger.debug("edges number:{0}".format(len(G.edges)))
+        # self.logger.debug("A layer graph nodes:{0}".format(graph.nodes))
+        # self.logger.debug("A layer graph edges:{0}".format(graph.edges))
+        # self.logger.debug("edges number:{0}".format(len(graph.edges)))
 
-        connectionFlag = nx.is_weakly_connected(copy.deepcopy(G))
+        connectionFlag = nx.is_weakly_connected(copy.deepcopy(graph))
         if connectionFlag == False:
             self.logger.debug("is_connected:{0}".format(connectionFlag))
-            # nx.draw(G, with_labels=True)
+            # nx.draw(graph, with_labels=True)
             # plt.savefig("./temp.png")
             # plt.show()
 
-        return G
+        return graph
 
     def _getExpectedBandwidth(self, stageNum):
         if self.sfc.isFixedResourceQuota():

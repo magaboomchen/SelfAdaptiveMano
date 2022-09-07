@@ -284,10 +284,12 @@ class SFCScalingProcessor(object):
         # type: (SFC) -> None
         deltaSFCINum = abs(self.getDeltaSFCINum(sfc))
         self.logger.warning("scaling out deltaSFCINum {0}".format(deltaSFCINum))
-        for _ in range(deltaSFCINum):
-            sfciID = self.sfciIDAllocator.getDeletedStateSFCIID(sfc)
-            if sfciID == None:
+        sfciIDList = self.sfciIDAllocator.getDeletedStateSFCIIDList(sfc)
+        for idx in range(deltaSFCINum):
+            if idx >= len(sfciIDList):
                 sfciID = self.sfciIDAllocator.getAvaSFCIID()
+            else:
+                sfciID = sfciIDList[idx]
             sfci = SFCI(sfciID)
             zoneName = self._oib.getSFCZone4DB(sfc.sfcUUID)
             req = self._genAddSFCIRequest(sfc, sfci, zoneName)

@@ -1,12 +1,14 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+from typing import Dict, Union
+
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL
-from sam.base.messageAgent import MessageAgent, SAMMessage, \
+from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE, MessageAgent, SAMMessage, \
                                     DISPATCHER_QUEUE, MSG_TYPE_REQUEST
 from sam.base.pickleIO import PickleIO
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
-    REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFC
+    REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFC, Request
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.dispatcher.argParser import ArgParser
 from sam.dispatcher.orchestratorManager import OrchestratorManager
@@ -19,7 +21,7 @@ class Dispatcher(object):
     def __init__(self, parallelMode=True):
         self.parallelMode = parallelMode
         self.autoScale = AUTO_SCALE
-        self.oMDict = {}
+        self.oMDict = {}    # type: Dict[Union[SIMULATOR_ZONE, TURBONET_ZONE], OrchestratorManager]
 
         self.pIO = PickleIO()
 
@@ -103,7 +105,7 @@ class Dispatcher(object):
             pass
 
     def _requestHandler(self, request):
-        # TODO: dispatch requests to different orchestrator instances
+        # type: (Request) -> None
         self.logger.info("Get a request {0}".format(request.requestType))
         try:
             if request.requestType == REQUEST_TYPE_ADD_SFC:
@@ -111,7 +113,9 @@ class Dispatcher(object):
                 zoneName = request.attributes["zone"]
                 # assign different SFC to different orchestrator in round robin mode, and
                 # record which SFC has been mapped in which orchestrator instances.
-                orchName = self.oMDict[zoneName]._selectOrchInRoundRobin()
+                orchName = self.oMDict[zoneName]._getOrchestratorNameBySFC(sfc)
+                if orchName == None:
+                    orchName = self.oMDict[zoneName]._selectOrchInRoundRobin()
                 self.logger.warning("assign SFC to orchName:{0}".format(orchName))
                 self.oMDict[zoneName]._assignSFC2Orchestrator(sfc, orchName)
                 self._sendRequest2Orchestrator(request, orchName)   # we dispatch add request previously

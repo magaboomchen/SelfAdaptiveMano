@@ -537,19 +537,24 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
                             self.pIO.obj2Pickle(sfc)
                         )
             self.dbA.insert("SFC", fields, dataTuple)
+        else:
+            self.updateSFC2DB(sfc, state=state)
 
     @reConnectionDecorator
     def updateSFC2DB(self, sfc, sfciIDList=None, state=STATE_IN_PROCESSING):
         # type: (SFC, List[int], str) -> None
         if self.hasSFC(sfc.sfcUUID):
-            self.dbA.update("`SFCI`", 
-                " `ZONE_NAME` = ('{0}'), `SFCIID_LIST` = ('{1}')," \
-                " `STATE` = ('{2}'), `PICKLE` = ('{3}') ".format(
-                            sfc.attributes["zone"],
-                            self.pIO.obj2Pickle(sfciIDList),
-                            state,
-                            self.pIO.obj2Pickle(sfc)
-                ),
+            fieldsValues = " `PICKLE` = ('{0}') ".format(
+                                    self.pIO.obj2Pickle(sfc).decode()
+                                )
+
+            if sfciIDList != None:
+                fieldsValues += ", `SFCIID_LIST` = ('{0}')".format(self.pIO.obj2Pickle(sfciIDList))
+            if state != None:
+                fieldsValues += ", `STATE` = ('{0}')".format(state)
+
+            self.dbA.update("`SFC`", 
+                fieldsValues,
                 " `SFC_UUID` = ('{0}') ".format(
                     sfc.sfcUUID)
                 )

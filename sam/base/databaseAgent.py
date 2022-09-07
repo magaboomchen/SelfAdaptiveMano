@@ -97,7 +97,7 @@ class DatabaseAgent(object):
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex)
             self.db.rollback()
-            raise ValueError("insert sql failed")
+            raise ValueError("insert sql failed, sql is {0}".format(sqlInsertQuery))
 
     def query(self, tableName, fields, condition=None):
         sql = """SELECT {0} FROM {1} """.format(
@@ -122,7 +122,7 @@ class DatabaseAgent(object):
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex)
             self.db.rollback()
-            raise ValueError("update sql failed")
+            raise ValueError("update sql failed, sql is {0}".format(sql))
 
     def delete(self, tableName, condition):
         sql = "DELETE FROM {0} WHERE {1}".format(tableName, condition)
@@ -133,7 +133,7 @@ class DatabaseAgent(object):
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex)
             self.db.rollback()
-            raise ValueError("delete sql failed")
+            raise ValueError("delete sql failed, sql is {0}".format(sql))
 
     def disconnect(self):
         self.db.close()

@@ -84,7 +84,11 @@ class RecoveryTaskMaintainer(object):
         self.taskDict[recoveryTaskType][sfcUUID][sfciID].reqDict[reqType] = req
 
     def getRequestFromTask(self, sfcUUID, recoveryTaskType, sfciID, reqType):
-        return self.taskDict[recoveryTaskType][sfcUUID][sfciID].reqDict[reqType]
+        reqDict = self.taskDict[recoveryTaskType][sfcUUID][sfciID].reqDict
+        if reqType in reqDict.keys():
+            return reqDict[reqType]
+        else:
+            return None
 
     def clearRedundantTasks(self):
         recoveryTaskType = RECOVERY_TASK_TYPE_SFCI

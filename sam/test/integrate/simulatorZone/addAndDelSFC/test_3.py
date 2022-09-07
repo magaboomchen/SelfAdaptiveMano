@@ -15,12 +15,14 @@ Usage of this unit test:
 '''
 
 import uuid
+import time
 from typing import Tuple
 
 import pytest
 
 from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 from sam.base.compatibility import screenInput
+from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.messageAgent import MSG_TYPE_REGULATOR_CMD, \
                                     REGULATOR_QUEUE, SIMULATOR_ZONE
 from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
@@ -93,6 +95,8 @@ class TestAddSFCClass(IntTestBaseClass):
                         "Then press andy key to continue!")
         screenInput()
 
+        time.sleep(5)
+
         # exercise
         for idx, sfci in enumerate(self.sfciList):
             sfc = self.getSFCFromDB(self.sfcList[idx].sfcUUID)
@@ -119,59 +123,65 @@ class TestAddSFCClass(IntTestBaseClass):
         screenInput()
 
         # exercise
-        while True:
-            inputContent = screenInput("Please input abnormal type: \n"\
-                                        "switch, server, link.\n"\
-                                        "Please press 'quit' to quit.")
-            if inputContent == "switch":
-                switchIDList = []
-                for sfci in self.sfciList:
-                    updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
-                    switchIDList.extend(self.getAllSwitchIDFromSFCI(updatedSFCI))
-                self.logger.info("Please input abnormal switchID from "
-                                    "candidate switch list {0}".format(switchIDList))
-                abnSwitchID = int(screenInput())
-                self.logger.info("Please input abnormal serverID to "
-                                    " simulator: switch {0} down ".format(abnSwitchID))
-                cmd = self.genAbnormalSwitchHandleCommand(abnSwitchID)
-            elif inputContent == "server":
-                serverIDList = []
-                for sfci in self.sfciList:
-                    updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
-                    serverIDList.extend(self.getAllServerIDFromSFCI(updatedSFCI))
-                self.logger.info("Please input abnormal serverID from "
-                                    "candidate server list {0}".format(serverIDList))
-                abnServerID = int(screenInput())
-                self.logger.info("Please input abnormal serverID to "
-                                    " simulator: server {0} down ".format(abnServerID))
-                cmd = self.genAbnormalServerHandleCommand(abnServerID)
-            elif inputContent == "link":
-                linkIDList = []
-                for sfci in self.sfciList:
-                    updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
-                    linkIDList.extend(self.getAllLinkIDFromSFCI(updatedSFCI))
-                self.logger.info("Please input abnormal linkID from "
-                                    "candidate link list {0}".format(linkIDList))
-                srcNodeID = int(screenInput("srcNodeID:"))
-                dstNodeID = int(screenInput("dstNodeID:"))
-                abnLinkID = (srcNodeID, dstNodeID)
-                self.logger.info("Please input abnormal linkID to "
-                                    " simulator: link {0} {1} down ".format(
-                                                    abnLinkID[0], abnLinkID[1]))
-                screenInput()
-                cmd = self.genAbnormalLinkHandleCommand(abnLinkID)
-            elif inputContent == "quit":
-                break
-            else:
-                self.logger.info("Unknown abnormal type")
+        try:
+            while True:
+                inputContent = screenInput("Please input abnormal type: \n"\
+                                            "switch, server, link.\n"\
+                                            "Please press 'quit' to quit.")
+                if inputContent == "switch":
+                    switchIDList = []
+                    for sfci in self.sfciList:
+                        updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
+                        switchIDList.extend(self.getAllSwitchIDFromSFCI(updatedSFCI))
+                    self.logger.info("Please input abnormal switchID from "
+                                        "candidate switch list {0}".format(switchIDList))
+                    abnSwitchID = int(screenInput())
+                    self.logger.info("Please input abnormal serverID to "
+                                        " simulator: switch {0} down ".format(abnSwitchID))
+                    cmd = self.genAbnormalSwitchHandleCommand(abnSwitchID)
+                elif inputContent == "server":
+                    serverIDList = []
+                    for sfci in self.sfciList:
+                        updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
+                        serverIDList.extend(self.getAllServerIDFromSFCI(updatedSFCI))
+                    self.logger.info("Please input abnormal serverID from "
+                                        "candidate server list {0}".format(serverIDList))
+                    abnServerID = int(screenInput())
+                    self.logger.info("Please input abnormal serverID to "
+                                        " simulator: server {0} down ".format(abnServerID))
+                    cmd = self.genAbnormalServerHandleCommand(abnServerID)
+                elif inputContent == "link":
+                    linkIDList = []
+                    for sfci in self.sfciList:
+                        updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
+                        linkIDList.extend(self.getAllLinkIDFromSFCI(updatedSFCI))
+                    self.logger.info("Please input abnormal linkID from "
+                                        "candidate link list {0}".format(linkIDList))
+                    srcNodeID = int(screenInput("srcNodeID:"))
+                    dstNodeID = int(screenInput("dstNodeID:"))
+                    abnLinkID = (srcNodeID, dstNodeID)
+                    self.logger.info("Please input abnormal linkID to "
+                                        " simulator: link {0} {1} down ".format(
+                                                        abnLinkID[0], abnLinkID[1]))
+                    screenInput()
+                    cmd = self.genAbnormalLinkHandleCommand(abnLinkID)
+                elif inputContent == "quit":
+                    break
+                else:
+                    self.logger.info("Unknown abnormal type")
 
-            self.setMessageAgentListenSocket(ABNORMAL_DETECTOR_IP, 
-                                                ABNORMAL_DETECTOR_PORT)
-            self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
+                self.setMessageAgentListenSocket(ABNORMAL_DETECTOR_IP, 
+                                                    ABNORMAL_DETECTOR_PORT)
+                self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
 
-        self.logger.info("Please check regulator if affected SFCI recovered?"\
-                        "Then press andy key to continue!")
-        screenInput()
+            self.logger.info("Please check regulator if affected SFCI recovered?"\
+                            "Then press andy key to continue!")
+            screenInput()
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex, 
+                "Regualtor command handler")
+        finally:
+            pass
 
         # setup
         for idx, sfc in enumerate(self.sfcList):
@@ -212,7 +222,7 @@ class TestAddSFCClass(IntTestBaseClass):
             self.sendRequest(REGULATOR_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
+                        "Then press andy key to exit!")
         screenInput()
 
     def getAllSwitchIDFromSFCI(self, sfci):

@@ -31,8 +31,8 @@ class Measurer(object):
         self.logger = logConfigur.getLogger()
 
         self._dib = DCNInfoBaseMaintainer()
-        self._dib.enableDataBase("localhost", "dbAgent",
-            "123")
+        # self._dib.enableDataBase("localhost", "dbAgent",
+        #     "123")
         self._dashib = DashboardInfoBaseMaintainer("localhost", "dbAgent",
             "123", reInitialTable=False)
 

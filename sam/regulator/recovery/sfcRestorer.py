@@ -2,11 +2,14 @@
 # -*- coding: UTF-8 -*-
 
 from typing import Dict, List
-from sam.base.request import REQUEST_TYPE_ADD_SFCI
-from sam.base.requestGenerator import RequestGenerator
+from sam.base.pickleIO import PickleIO
 
+from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI
+from sam.base.requestGenerator import RequestGenerator
 from sam.base.sfc import SFC, SFCI
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.dispatcher.config import ZONE_INFO_LIST
+from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.regulator.config import MAX_RETRY_NUM
 from sam.regulator.recovery.noticeAnalyzer import NoticeAnalyzer
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
@@ -40,9 +43,35 @@ class SFCRestorer(object):
         self.logger = logConfigur.getLogger()
         self._messageAgent = msgAgent
         self._oib = oib
+        self._dib = DCNInfoBaseMaintainer()
         self.rTM = RecoveryTaskMaintainer()
         self.nA = NoticeAnalyzer(oib)
         self.rG = RequestGenerator()
+
+        self.pIO = PickleIO()
+        self.loadDib()
+
+    def loadDib(self):
+        for zoneInfo in ZONE_INFO_LIST:
+            topologyDict = self.loadTopoFromPickleFile(zoneInfo)
+            zoneName = zoneInfo["zone"]
+            self.updateDib(topologyDict, zoneName)
+
+    def loadTopoFromPickleFile(self, zoneInfo):
+        topoFilePath = zoneInfo["info"]["topoFilePath"]
+        self.logger.info("Loading topo file")
+        topologyDict = self.pIO.readPickleFile(topoFilePath)
+        self.logger.info("Loading topo file successfully.")
+        return topologyDict
+
+    def updateDib(self, topologyDict, zoneName):
+        self._dib.updateServersByZone(topologyDict["servers"],
+                                        zoneName)
+        self._dib.updateSwitchesByZone(topologyDict["switches"],
+                                        zoneName)
+        self._dib.updateLinksByZone(topologyDict["links"],
+                                        zoneName)
+        self.logger.info("update dib successfully!")
 
     def handle(self, cmd):
         # type: (Command) -> None
@@ -118,7 +147,8 @@ class SFCRestorer(object):
                 self.logger.debug("sfciState is {0}".format(sfciState))
                 if sfciState == STATE_DELETED:
                     if recoveryTaskType == RECOVERY_TASK_TYPE_SFCI:
-                        req = self.rG.genAddSFCIRequest(sfc, sfci, zoneName)
+                        sfciID = sfci.sfciID
+                        req = self.rG.genAddSFCIRequest(sfc, SFCI(sfciID), zoneName)
                         self.rTM.addRequest2Task(sfcUUID, recoveryTaskType, sfciID, req)
                         self._sendRequest2Dispatcher(req)
                         self.rTM.updateRecoveryTask(sfcUUID, sfciID, recoveryTaskType,
@@ -139,17 +169,55 @@ class SFCRestorer(object):
             elif recoveryTaskState == RECOVERY_TASK_STATE_WAITING_TO_DELETE_SFC:
                 pass    # Do nothing
             elif recoveryTaskState == RECOVERY_TASK_STATE_DELETING_SFC:
+                self.logger.warning("sfcState is {0}".format(sfcState))
                 if sfcState == STATE_DELETED:
-                    req = self.rG.genAddSFCRequest(sfc, zoneName)
-                    self.rTM.addRequest2Task(sfcUUID, recoveryTaskType, sfciID, req)
-                    self._sendRequest2Dispatcher(req)
+                    self.logger.warning("sfcState == STATE_DELETED")
+                    for idx, direction in enumerate(sfc.directions):
+                        sfc.directions[idx]['ingress'] = None
+                        sfc.directions[idx]['egress'] = None
+
+                        source = direction['source']
+                        nodeIP = source['IPv4']
+                        if nodeIP == "*":
+                            source["node"] = None
+                        else:
+                            server = self._dib.getServerByIP(nodeIP, zoneName)
+                            if server == None:
+                                source['node'] = None
+
+                        destination = direction['destination']
+                        nodeIP = destination['IPv4']
+                        if nodeIP == "*":
+                            destination["node"] = None
+                        else:
+                            server = self._dib.getServerByIP(nodeIP, zoneName)
+                            if server == None:
+                                destination['node'] = None
+
+                    req = self.rTM.getRequestFromTask(sfcUUID, recoveryTaskType, sfciID, REQUEST_TYPE_ADD_SFC)
+                    sendReqFlag = False
+                    if req == None:
+                        sendReqFlag = True
+                    else:
+                        self._oib.getRequestRetryCnt(req)
+                        # use request retry to add SFC again
+                        if req > MAX_RETRY_NUM:
+                            sendReqFlag = True
+                    self.logger.warning("sendReqFlag {0}".format(sendReqFlag))
+                    if sendReqFlag:
+                        req = self.rG.genAddSFCRequest(sfc, zoneName)
+                        self.logger.warning("req is {0}".format(req))
+                        self.rTM.addRequest2Task(sfcUUID, recoveryTaskType, sfciID, req)
+                        self._sendRequest2Dispatcher(req)
                 elif sfcState == STATE_UNDELETED:
+                    self.logger.warning("sfcState == STATE_UNDELETED")
                     pass
                     # Old Design: check whether exceed max retry number, then back to last state
                     # self.rTM.updateRecoveryTask(sfcUUID, sfciID, recoveryTaskType,
                     #             recoveryTaskState=RECOVERY_TASK_STATE_DELETING_SFCI)
                     # New Design: all failed requests must be processed by retry mechanism or in manual
                 elif sfcState == STATE_ACTIVE:
+                    self.logger.warning("sfcState == STATE_ACTIVE")
                     if sfc.isAutoScaling():
                         # use scaling functions to add SFCI
                         self.rTM.updateRecoveryTask(sfcUUID, sfciID, recoveryTaskType,
@@ -157,17 +225,20 @@ class SFCRestorer(object):
                     else:
                         sfciIDList = self.rTM.getSFCIIDListOfATask(sfcUUID, recoveryTaskType)
                         for sfciID in sfciIDList:
-                            newSFCI = self._oib.getSFCI4DB(sfciID)
-                            req = self.rG.genAddSFCIRequest(sfc, newSFCI, zoneName)
+                            # newSFCI = self._oib.getSFCI4DB(sfciID)
+                            req = self.rG.genAddSFCIRequest(sfc, SFCI(sfciID), zoneName)
                             self.rTM.addRequest2Task(sfcUUID, recoveryTaskType, sfciID, req)
                             self._sendRequest2Dispatcher(req)
                             self.rTM.updateRecoveryTask(sfcUUID, sfciID, recoveryTaskType,
                                         recoveryTaskState=RECOVERY_TASK_STATE_ADDING_SFCI)
                 elif sfcState == STATE_RECOVER_MODE:
+                    self.logger.warning("sfcState == STATE_RECOVER_MODE")
                     pass    # Do nothing
                 elif sfcState == STATE_INIT_FAILED:
+                    self.logger.warning("sfcState == STATE_INIT_FAILED")
                     pass    # use request retry to add SFC again
                 elif sfcState == STATE_SCALING_OUT_MODE:
+                    self.logger.warning("sfcState == STATE_SCALING_OUT_MODE")
                     pass    # Do nothing
                 else:
                     raise ValueError("Unexpected SFC state {0} during SFC recovery.".format(sfcState))
@@ -182,8 +253,8 @@ class SFCRestorer(object):
                     req = self.rTM.getRequestFromTask(sfcUUID, recoveryTaskType, sfciID, REQUEST_TYPE_ADD_SFCI)
                     self._oib.getRequestRetryCnt(req)
                     if req > MAX_RETRY_NUM:
-                        newSFCI = self._oib.getSFCI4DB(sfciID)
-                        req = self.rG.genAddSFCIRequest(sfc, newSFCI, zoneName)
+                        # newSFCI = self._oib.getSFCI4DB(sfciID)
+                        req = self.rG.genAddSFCIRequest(sfc, SFCI(sfciID), zoneName)
                         self.rTM.addRequest2Task(sfcUUID, recoveryTaskType, sfciID, req)
                         self._sendRequest2Dispatcher(req)
                 elif sfciState == STATE_IN_PROCESSING:

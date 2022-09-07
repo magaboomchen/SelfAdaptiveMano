@@ -8,19 +8,23 @@ To add more mapping algorithms, you need add code in following functions:
 * YOUR_MAPPING_ALGOTIYHM()
 '''
 
+from logging import Logger
 import sys
+
 if sys.version > '3':
     import queue as Queue
 else:
     import Queue
 import uuid
 import copy
-from typing import List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
+from sam.base.sfc import SFC, SFCI
 from sam.base.slo import SLO
 from sam.base.vnf import VNFI
 from sam.base.switch import Switch
 from sam.base.server import Server
+from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE
 from sam.base.sfcConstant import SFC_DIRECTION_0, SFC_DIRECTION_1
 from sam.base.path import DIRECTION0_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, \
                             ForwardingPathSet, \
@@ -48,9 +52,15 @@ from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 
 
 class OSFCAdder(object):
-    def __init__(self, dib, logger, podNum=None, minPodIdx=None,
-                    maxPodIdx=None, topoType="fat-tree", zoneName=None):
-        self._dib = dib # type: DCNInfoBaseMaintainer
+    def __init__(self, dib, # type: DCNInfoBaseMaintainer
+                    logger, # type: Logger
+                    podNum=None,    # type: Union[None, int]
+                    minPodIdx=None,    # type: Union[None, int]
+                    maxPodIdx=None,    # type: Union[None, int]
+                    topoType="fat-tree",    # type: str
+                    zoneName=None    # type: Union[SIMULATOR_ZONE, TURBONET_ZONE]
+                ):
+        self._dib = dib 
         self.logger = logger
         self._via = VNFIIDAssigner()
         self._sc = SocketConverter()
@@ -59,7 +69,7 @@ class OSFCAdder(object):
         self.podNum = podNum
         self.minPodIdx = minPodIdx
         self.maxPodIdx = maxPodIdx
-        
+
         self.isNetPackInit = False
 
     def genAddSFCCmd(self, request):
@@ -103,32 +113,32 @@ class OSFCAdder(object):
             if source['node'] == None:
                 nodeIP = source['IPv4']
                 if nodeIP == "*":
-                    dcnGatewaySwitch = self._selectDCNGateWaySwitch()
+                    dcnGatewaySwitch = self._selectActiveDCNGateWaySwitch()
                     source['node'] = dcnGatewaySwitch
                 else:
                     source['node'] = self._dib.getServerByIP(nodeIP, self.zoneName)
                     if source['node'] == None:
-                        dcnGatewaySwitch = self._selectDCNGateWaySwitch()
+                        dcnGatewaySwitch = self._selectActiveDCNGateWaySwitch()
                         source['node'] = dcnGatewaySwitch
             direction['ingress'] = self._selectClassifierByNode(source['node'])
 
             destination = direction['destination']
-            if  destination['node'] == None:
+            if destination['node'] == None:
                 nodeIP = destination['IPv4']
                 if nodeIP == "*":
-                    dcnGatewaySwitch = self._selectDCNGateWaySwitch()
+                    dcnGatewaySwitch = self._selectActiveDCNGateWaySwitch()
                     destination['node'] = dcnGatewaySwitch
                 else:
                     destination['node'] = self._dib.getServerByIP(nodeIP, self.zoneName)
                     if destination['node'] == None:
-                        dcnGatewaySwitch = self._selectDCNGateWaySwitch()
+                        dcnGatewaySwitch = self._selectActiveDCNGateWaySwitch()
                         destination['node'] = dcnGatewaySwitch
             direction['egress'] = self._selectClassifierByNode(destination['node'])
         if len(self.sfc.directions) == 2:
             self.mirrorDirectionsInfo()
         self.logger.info("_mapIngressEgress finish!")
 
-    def _selectDCNGateWaySwitch(self):
+    def _selectActiveDCNGateWaySwitch(self):
         return self._dib.randomSelectDCNGateWaySwitch(self.zoneName)
 
     def _selectClassifierByNode(self, node):
@@ -268,7 +278,8 @@ class OSFCAdder(object):
         return reqCmdTupleList
 
     def _divRequest(self, requestBatchQueue):
-        requestDict = {}
+        # type: (Queue.Queue) -> Dict[str, List[Request]]
+        requestDict = {}    # type: Dict[str, List[Request]]
         while not requestBatchQueue.empty():
             request = copy.deepcopy(requestBatchQueue.get())
             # self.logger.debug(request)
@@ -409,15 +420,17 @@ class OSFCAdder(object):
         for rIndex in range(len(requestBatchList)):
             request = requestBatchList[rIndex]
             sfc = request.attributes['sfc']
-            zoneName = sfc.attributes['zone']
-            sfci = request.attributes['sfci']
+            zoneName = sfc.attributes['zone']   # type: SFC
+            sfci = request.attributes['sfci']   # type: SFCI
             sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
             sfci.sloRealTimeValue = SLO()
             self.logger.info("before trans, forwardingPathSet is {0}".format(sfci.forwardingPathSet))
             self.logger.warning("before sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
-            if sfci.vnfiSequence in [None,[]]:
-                sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
-                                                        sfci.forwardingPathSet)
+            # if sfci.vnfiSequence in [None,[]]:
+            #     sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
+            #                                             sfci.forwardingPathSet)
+            sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
+                                                    sfci.forwardingPathSet)
             self.logger.warning("after sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
             cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
                 'sfc':sfc, 'sfci':sfci, 'zone':zoneName
