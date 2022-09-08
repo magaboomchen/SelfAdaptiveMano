@@ -85,30 +85,36 @@ class Orchestrator(object):
         self.logger.info("startOrchestrator")
         self.batchLastTime = time.time()
         while True:
-            msg = self._messageAgent.getMsg(self.orchInstanceQueueName)
-            msgType = msg.getMessageType()
-            if msgType == None:
-                if self.recvKillCommand:
-                    break
-            else:
-                body = msg.getbody()
-                if self._messageAgent.isRequest(body):
-                    if self.runningState == True:
-                        self._requestHandler(body)
-                    else:
-                        self.requestWaitingQueue.put(body)
-                elif self._messageAgent.isCommandReply(body):
-                    self._commandReplyHandler(body)
-                elif self._messageAgent.isCommand(body):
-                    self._commandHandler(body)
+            try:
+                msg = self._messageAgent.getMsg(self.orchInstanceQueueName)
+                msgType = msg.getMessageType()
+                if msgType == None:
+                    if self.recvKillCommand:
+                        break
                 else:
-                    self.logger.error("Unknown massage body:{0}".format(body))
-            currentTime = time.time()
-            if currentTime - self.batchLastTime > self.batchTimeout:
-                # self.logger.debug("self.batchLastTime: {0}, currentTime: {1}".format(self.batchLastTime, currentTime))
-                self.processAllAddSFCIRequests()
-                self.batchLastTime = time.time()
-            self.processAllWaitingRequest()
+                    body = msg.getbody()
+                    if self._messageAgent.isRequest(body):
+                        if self.runningState == True:
+                            self._requestHandler(body)
+                        else:
+                            self.requestWaitingQueue.put(body)
+                    elif self._messageAgent.isCommandReply(body):
+                        self._commandReplyHandler(body)
+                    elif self._messageAgent.isCommand(body):
+                        self._commandHandler(body)
+                    else:
+                        self.logger.error("Unknown massage body:{0}".format(body))
+                currentTime = time.time()
+                if currentTime - self.batchLastTime > self.batchTimeout:
+                    # self.logger.debug("self.batchLastTime: {0}, currentTime: {1}".format(self.batchLastTime, currentTime))
+                    self.processAllAddSFCIRequests()
+                    self.batchLastTime = time.time()
+                self.processAllWaitingRequest()
+            except Exception as ex:
+                ExceptionProcessor(self.logger).logException(ex, 
+                    "Orchestrator handler")
+            finally:
+                pass
 
     def processAllWaitingRequest(self):
         if self.runningState == True:
@@ -244,22 +250,28 @@ class Orchestrator(object):
             orchStopTime = time.time()
             orchTime = orchStopTime - orchStartTime
             self.logger.info("After mapping, there are {0} request in queue".format(self._requestBatchQueue.qsize()))
+            # self.logger.info("reqCmdTupleList is {0}".format(reqCmdTupleList))
             for (request, cmd) in reqCmdTupleList:
-                sfci = cmd.attributes['sfci']   # type: SFCI
-                sfciID = sfci.sfciID
-                if self._oib.isAddSFCIValidState(sfciID):
-                    cmd.attributes['source'] = self.orchInstanceQueueName
-                    self._cm.addCmd(cmd)
-                    self.sendCmd(cmd)
-                    reqState = REQUEST_STATE_IN_PROCESSING
-                    sfciState = STATE_IN_PROCESSING
+                if cmd != None:
+                    sfci = cmd.attributes['sfci']   # type: SFCI
+                    sfciID = sfci.sfciID
+                    self.logger.info("sfciID is {0}".format(sfciID))
+                    if self._oib.isAddSFCIValidState(sfciID):
+                        cmd.attributes['source'] = self.orchInstanceQueueName
+                        self._cm.addCmd(cmd)
+                        self.sendCmd(cmd)
+                        reqState = REQUEST_STATE_IN_PROCESSING
+                        sfciState = STATE_IN_PROCESSING
+                    else:
+                        self.logger.warning("Invalid add SFCI state")
+                        reqState = REQUEST_STATE_FAILED
+                        sfciState = STATE_INIT_FAILED
                 else:
-                    self.logger.warning("Invalid add SFCI state")
                     reqState = REQUEST_STATE_FAILED
                     sfciState = STATE_INIT_FAILED
                 if ENABLE_OIB:
-                    self.logger.info("sfciID is {0}".format(sfciID))
-                    self._oib.addSFCIRequestHandler(request, cmd, reqState, sfciState, orchTime)
+                    self._oib.addSFCIRequestHandler(request, cmd, reqState,
+                                                        sfciState, orchTime)
             self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
             self.logger.info("Batch process finish")
             self.batchLastTime = time.time()

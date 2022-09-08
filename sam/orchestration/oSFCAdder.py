@@ -374,7 +374,8 @@ class OSFCAdder(object):
         mMLPSFC = MMLPSFC(self._dib, requestBatchList)
         forwardingPathSetsDict = mMLPSFC.mapSFCI()
         for key,fpsd in forwardingPathSetsDict.items():
-            fpsd.mappingType = MAPPING_TYPE_MMLPSFC
+            if fpsd != None:
+                fpsd.mappingType = MAPPING_TYPE_MMLPSFC
         return forwardingPathSetsDict
 
     def interferenceAware(self, requestBatchList):
@@ -422,19 +423,22 @@ class OSFCAdder(object):
             sfc = request.attributes['sfc']
             zoneName = sfc.attributes['zone']   # type: SFC
             sfci = request.attributes['sfci']   # type: SFCI
-            sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
-            sfci.sloRealTimeValue = SLO()
-            self.logger.info("before trans, forwardingPathSet is {0}".format(sfci.forwardingPathSet))
-            self.logger.warning("before sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
-            # if sfci.vnfiSequence in [None,[]]:
-            #     sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
-            #                                             sfci.forwardingPathSet)
-            sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
-                                                    sfci.forwardingPathSet)
-            self.logger.warning("after sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
-            cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
-                'sfc':sfc, 'sfci':sfci, 'zone':zoneName
-            })
+            if forwardingPathSetsDict[rIndex] != None:
+                sfci.forwardingPathSet = forwardingPathSetsDict[rIndex]
+                sfci.sloRealTimeValue = SLO()
+                self.logger.info("before trans, forwardingPathSet is {0}".format(sfci.forwardingPathSet))
+                self.logger.warning("before sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
+                # if sfci.vnfiSequence in [None,[]]:
+                #     sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
+                #                                             sfci.forwardingPathSet)
+                sfci.vnfiSequence = self._getVNFISeqFromForwardingPathSet(sfc,
+                                                        sfci.forwardingPathSet)
+                self.logger.warning("after sfci.vnfiSequence: {0}".format(sfci.vnfiSequence))
+                cmd = Command(CMD_TYPE_ADD_SFCI, uuid.uuid1(), attributes={
+                    'sfc':sfc, 'sfci':sfci, 'zone':zoneName
+                })
+            else:
+                cmd = None
             reqCmdTupleList.append((request, cmd))
         return reqCmdTupleList
 

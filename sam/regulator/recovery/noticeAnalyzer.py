@@ -33,8 +33,9 @@ class NoticeAnalyzer(object):
     def _getAffectedSFCIAndSFCList(self, zoneName, detectionDict):
         affectedSFCITupleList = []
         sfciTupleList = self.getAllSFCIsFromDB()
+        self.logger.debug("sfciTupleList is {0}".format(sfciTupleList))
         for sfciTuple in sfciTupleList:
-            # self.logger.debug("sfciTuple is {0}".format(sfciTuple))
+            self.logger.debug("sfciTuple is {0}".format(sfciTuple))
             sfciZoneName = sfciTuple[6]
             # (SFCIID, SFC_UUID, VNFI_LIST, STATE, PICKLE, ORCHESTRATION_TIME, ZONE_NAME)
             sfcUUID = sfciTuple[1]
@@ -60,6 +61,7 @@ class NoticeAnalyzer(object):
                                 if self.isNodeIDInDetectionDict(nodeID, detectionDict):
                                     influenced = True
                                     if self.isNodeTheClassifier(nodeID, sfc.directions):
+                                        self.logger.debug("nodeID is {0}, sfc.directions is {1}".format(nodeID, sfc.directions))
                                         classifierInfluenced = True
                             self.logger.debug("segPath is {0}".format(segPath))
                             for idx in range(len(segPath)-1):

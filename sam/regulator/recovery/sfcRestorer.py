@@ -98,6 +98,7 @@ class SFCRestorer(object):
         # type: (Command) -> None
         self.logger.info("Get CMD_TYPE_HANDLE_FAILURE_ABNORMAL!")
         allZoneDetectionDict = cmd.attributes["allZoneDetectionDict"]   # type: Dict[str, Dict]
+        self.logger.info("allZoneDetectionDict is {0}".format(allZoneDetectionDict))
         self._sendCmd2Dispatcher(cmd)
         affectedSFCITupleList = self.nA.getAffectedSFCITupleList(allZoneDetectionDict)
         for sfciID, sfc, recoveryTaskState, recoveryTaskType in affectedSFCITupleList:
@@ -169,9 +170,9 @@ class SFCRestorer(object):
             elif recoveryTaskState == RECOVERY_TASK_STATE_WAITING_TO_DELETE_SFC:
                 pass    # Do nothing
             elif recoveryTaskState == RECOVERY_TASK_STATE_DELETING_SFC:
-                self.logger.warning("sfcState is {0}".format(sfcState))
+                self.logger.info("sfcState is {0}".format(sfcState))
                 if sfcState == STATE_DELETED:
-                    self.logger.warning("sfcState == STATE_DELETED")
+                    self.logger.info("sfcState == STATE_DELETED")
                     for idx, direction in enumerate(sfc.directions):
                         sfc.directions[idx]['ingress'] = None
                         sfc.directions[idx]['egress'] = None
@@ -199,25 +200,25 @@ class SFCRestorer(object):
                     if req == None:
                         sendReqFlag = True
                     else:
-                        self._oib.getRequestRetryCnt(req)
+                        retryNum = self._oib.getRequestRetryCnt(req.requestID)
                         # use request retry to add SFC again
-                        if req > MAX_RETRY_NUM:
+                        if retryNum > MAX_RETRY_NUM:
                             sendReqFlag = True
-                    self.logger.warning("sendReqFlag {0}".format(sendReqFlag))
+                    self.logger.info("sendReqFlag {0}".format(sendReqFlag))
                     if sendReqFlag:
                         req = self.rG.genAddSFCRequest(sfc, zoneName)
-                        self.logger.warning("req is {0}".format(req))
+                        self.logger.info("req is {0}".format(req))
                         self.rTM.addRequest2Task(sfcUUID, recoveryTaskType, sfciID, req)
                         self._sendRequest2Dispatcher(req)
                 elif sfcState == STATE_UNDELETED:
-                    self.logger.warning("sfcState == STATE_UNDELETED")
+                    self.logger.info("sfcState == STATE_UNDELETED")
                     pass
                     # Old Design: check whether exceed max retry number, then back to last state
                     # self.rTM.updateRecoveryTask(sfcUUID, sfciID, recoveryTaskType,
                     #             recoveryTaskState=RECOVERY_TASK_STATE_DELETING_SFCI)
                     # New Design: all failed requests must be processed by retry mechanism or in manual
                 elif sfcState == STATE_ACTIVE:
-                    self.logger.warning("sfcState == STATE_ACTIVE")
+                    self.logger.info("sfcState == STATE_ACTIVE")
                     if sfc.isAutoScaling():
                         # use scaling functions to add SFCI
                         self.rTM.updateRecoveryTask(sfcUUID, sfciID, recoveryTaskType,
@@ -232,13 +233,13 @@ class SFCRestorer(object):
                             self.rTM.updateRecoveryTask(sfcUUID, sfciID, recoveryTaskType,
                                         recoveryTaskState=RECOVERY_TASK_STATE_ADDING_SFCI)
                 elif sfcState == STATE_RECOVER_MODE:
-                    self.logger.warning("sfcState == STATE_RECOVER_MODE")
+                    self.logger.info("sfcState == STATE_RECOVER_MODE")
                     pass    # Do nothing
                 elif sfcState == STATE_INIT_FAILED:
-                    self.logger.warning("sfcState == STATE_INIT_FAILED")
+                    self.logger.info("sfcState == STATE_INIT_FAILED")
                     pass    # use request retry to add SFC again
                 elif sfcState == STATE_SCALING_OUT_MODE:
-                    self.logger.warning("sfcState == STATE_SCALING_OUT_MODE")
+                    self.logger.info("sfcState == STATE_SCALING_OUT_MODE")
                     pass    # Do nothing
                 else:
                     raise ValueError("Unexpected SFC state {0} during SFC recovery.".format(sfcState))
@@ -249,15 +250,22 @@ class SFCRestorer(object):
                     if self.rTM.isAllSFCIRecovered(sfcUUID, recoveryTaskType):
                         self._oib.updateSFCState(sfcUUID, STATE_ACTIVE)
                 elif sfciState == STATE_INIT_FAILED:
+                    pass
+                    # Old design: retry here
+                    # req = self.rTM.getRequestFromTask(sfcUUID, recoveryTaskType, sfciID, REQUEST_TYPE_ADD_SFCI)
+                    # retryNum = self._oib.getRequestRetryCnt(req.requestID)
+                    # self.logger.info("retryNum is {0}".format(retryNum))
+                    # if retryNum > MAX_RETRY_NUM:
+                    #     # newSFCI = self._oib.getSFCI4DB(sfciID)
+                    #     req = self.rG.genAddSFCIRequest(sfc, SFCI(sfciID), zoneName)
+                    #     self.rTM.addRequest2Task(sfcUUID, recoveryTaskType, sfciID, req)
+                    #     self._sendRequest2Dispatcher(req)
+                    pass
+                    # New design: use regulator main program's retry function
                     # use request retry to add SFC again
-                    req = self.rTM.getRequestFromTask(sfcUUID, recoveryTaskType, sfciID, REQUEST_TYPE_ADD_SFCI)
-                    self._oib.getRequestRetryCnt(req)
-                    if req > MAX_RETRY_NUM:
-                        # newSFCI = self._oib.getSFCI4DB(sfciID)
-                        req = self.rG.genAddSFCIRequest(sfc, SFCI(sfciID), zoneName)
-                        self.rTM.addRequest2Task(sfcUUID, recoveryTaskType, sfciID, req)
-                        self._sendRequest2Dispatcher(req)
                 elif sfciState == STATE_IN_PROCESSING:
+                    pass    # Do nothing
+                elif sfciState == STATE_DELETED:
                     pass    # Do nothing
             elif recoveryTaskState == RECOVERY_TASK_STATE_FINISH:
                 self.rTM.deleteRecoveryTask(sfcUUID, sfciID, recoveryTaskType)

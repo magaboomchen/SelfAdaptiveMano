@@ -3,7 +3,7 @@
 
 from uuid import UUID
 from functools import wraps
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from sam.base.sfc import SFC, SFCI
 from sam.base.sfcConstant import STATE_IN_PROCESSING, STATE_ACTIVE, \
@@ -158,6 +158,9 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         requestTupleList = []
         for requestTuple in results: 
             reqResList = list(requestTuple)
+            reqResList[0] = UUID(reqResList[0])
+            reqResList[2] = UUID(reqResList[2])
+            reqResList[4] = UUID(reqResList[4])
             reqResList[-2] = self._decodePickle2Object(reqResList[-2])
             transedReqTuple = tuple(reqResList)
             requestTupleList.append(transedReqTuple)
@@ -203,6 +206,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         sfcTupleList = []
         for sfciTuple in results:
             sfciResList = list(sfciTuple)
+            sfciResList[1] = UUID(sfciResList[1])
             sfciResList[2] = self._decodePickle2Object(sfciResList[2])
             sfciResList[4] = self._decodePickle2Object(sfciResList[4])
             transedSFCITuple = tuple(sfciResList)
@@ -290,6 +294,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         sfciTupleList = []
         for sfciTuple in results:
             sfciResList = list(sfciTuple)
+            sfciResList[1] = UUID(sfciResList[1])
             sfciResList[4] = self._decodePickle2Object(sfciResList[4])
             transedSFCITuple = tuple(sfciResList)
             sfciTupleList.append(transedSFCITuple)
@@ -300,7 +305,7 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         sfciTupleList = self.getAllSFCI()
         totalVNFIList = []
         for sfciTuple in sfciTupleList:
-            sfci = self.pIO.pickle2Obj(sfciTuple[-2])
+            sfci = self.pIO.pickle2Obj(sfciTuple[-2])   # type: SFCI
             vnfiList = sfci.vnfiSequence
             totalVNFIList.extend(vnfiList)
             # print("vnfiList:", vnfiList)
@@ -340,23 +345,34 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
     @reConnectionDecorator
     def addSFCIRequestHandler(self, request, cmd, requestState, 
                                 sfciState, orchTime):
-        # type: (Request, Command, str, str, float) -> None
+        # type: (Request, Union[Command, None], str, str, float) -> None
         request.requestState = requestState
 
-        sfc = cmd.attributes['sfc']
-        zoneName = sfc.attributes["zone"]
-        sfci = cmd.attributes['sfci']
-        if self.hasSFCI(sfci.sfciID):
-            sfciState = self.getSFCIState(sfci.sfciID)
-            if sfciState in [STATE_DELETED, STATE_INIT_FAILED]:
-                self.updateSFCI2DB(sfci, sfc.sfcUUID, zoneName, 
-                                    STATE_IN_PROCESSING)
+        if cmd != None:
+            sfc = cmd.attributes['sfc']
+            zoneName = sfc.attributes["zone"]
+            sfci = cmd.attributes['sfci']
+            if self.hasSFCI(sfci.sfciID):
+                sfciState = self.getSFCIState(sfci.sfciID)
+                if sfciState in [STATE_DELETED, STATE_INIT_FAILED]:
+                    self.updateSFCI2DB(sfci, sfc.sfcUUID, zoneName, 
+                                        STATE_IN_PROCESSING)
+                else:
+                    request.requestState = REQUEST_STATE_FAILED
             else:
-                request.requestState = REQUEST_STATE_FAILED
-        else:
-            self.addSFCI2DB(sfci, sfc.sfcUUID, zoneName, orchTime=orchTime)
+                self.addSFCI2DB(sfci, sfc.sfcUUID, zoneName, orchTime=orchTime)
 
-        self.addCmdInfo2Request(request, cmd)
+            self.addCmdInfo2Request(request, cmd)
+        else:
+            sfc = request.attributes["sfc"]
+            sfcUUID = sfc.sfcUUID
+            sfci = request.attributes["sfci"]
+            sfciID = sfci.sfciID
+            if self.hasRequest(request.requestID):
+                self.updateRequest(request, sfcUUID)
+            else:
+                self.addRequest(request, sfcUUID)
+            self.updateSFCIState(sfciID, sfciState)
 
     def isDelSFCIValidState(self, sfciID):
         # type: (SFCI.sfciID) -> bool

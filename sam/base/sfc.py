@@ -93,7 +93,7 @@ class SFC(object):
             self.attributes = {}
         else:
             self.attributes = attributes  # {"zone":ZONENAME}   # TODO: MAY BE refactor to a data structure, not a dict
-        self.directions = directions    # TODO: MAY BE refactor to a data structure, not a dict
+        self.directions = directions    # type: List[Dict[str, Any]]
         # directions' data structure
         # [
         # {
@@ -137,6 +137,7 @@ class SFC(object):
         # 'destination': same as source above
         # }
         # ]
+        # TODO: MAY BE refactor direction to a data structure, not a dict
 
     def getSFCLength(self):
         return len(self.vNFTypeSequence)
