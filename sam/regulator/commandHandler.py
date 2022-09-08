@@ -3,7 +3,7 @@
 
 from logging import Logger
 
-from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
+from sam.base.command import CMD_TYPE_FAILURE_ABNORMAL_RESUME, CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.messageAgent import MessageAgent
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
@@ -24,6 +24,8 @@ class CommandHandler(object):
             self.logger.info("Get a command reply")
             if cmd.cmdType == CMD_TYPE_HANDLE_FAILURE_ABNORMAL:
                 self.sfcRestorer.failureAbnormalHandler(cmd)
+            elif cmd.cmdType == CMD_TYPE_FAILURE_ABNORMAL_RESUME:
+                self.sfcRestorer.resumeHandler(cmd)
             else:
                 pass
         except Exception as ex:

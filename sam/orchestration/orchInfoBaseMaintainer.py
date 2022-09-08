@@ -158,9 +158,12 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         requestTupleList = []
         for requestTuple in results: 
             reqResList = list(requestTuple)
-            reqResList[0] = UUID(reqResList[0])
-            reqResList[2] = UUID(reqResList[2])
-            reqResList[4] = UUID(reqResList[4])
+            if type(reqResList[0]) == str:
+                reqResList[0] = UUID(reqResList[0])
+            if type(reqResList[2]) == str:
+                reqResList[2] = UUID(reqResList[2])
+            if type(reqResList[4]) == str:
+                reqResList[4] = UUID(reqResList[4])
             reqResList[-2] = self._decodePickle2Object(reqResList[-2])
             transedReqTuple = tuple(reqResList)
             requestTupleList.append(transedReqTuple)
@@ -206,7 +209,8 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         sfcTupleList = []
         for sfciTuple in results:
             sfciResList = list(sfciTuple)
-            sfciResList[1] = UUID(sfciResList[1])
+            if type(sfciResList[1]) == str:
+                sfciResList[1] = UUID(sfciResList[1])
             sfciResList[2] = self._decodePickle2Object(sfciResList[2])
             sfciResList[4] = self._decodePickle2Object(sfciResList[4])
             transedSFCITuple = tuple(sfciResList)
@@ -294,7 +298,8 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         sfciTupleList = []
         for sfciTuple in results:
             sfciResList = list(sfciTuple)
-            sfciResList[1] = UUID(sfciResList[1])
+            if type(sfciResList[1]) == str:
+                sfciResList[1] = UUID(sfciResList[1])
             sfciResList[4] = self._decodePickle2Object(sfciResList[4])
             transedSFCITuple = tuple(sfciResList)
             sfciTupleList.append(transedSFCITuple)
@@ -692,6 +697,15 @@ class OrchInfoBaseMaintainer(XInfoBaseMaintainer):
         for sfciID in sfciIDList:
             sfciState = self.getSFCIState(sfciID)
             if sfciState != STATE_DELETED:
+                return False
+        return True
+
+    @reConnectionDecorator
+    def isAllSFCIDeletedOrInitFailed(self, sfcUUID):
+        sfciIDList = self.getSFCIIDListOfASFC4DB(sfcUUID)
+        for sfciID in sfciIDList:
+            sfciState = self.getSFCIState(sfciID)
+            if sfciState not in [STATE_DELETED, STATE_INIT_FAILED]:
                 return False
         return True
 

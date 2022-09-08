@@ -270,9 +270,13 @@ class Orchestrator(object):
                     reqState = REQUEST_STATE_FAILED
                     sfciState = STATE_INIT_FAILED
                 if ENABLE_OIB:
+                    self.logger.info("Request:{0}, request's state:{1}".format(
+                                                                request, reqState))
                     self._oib.addSFCIRequestHandler(request, cmd, reqState,
-                                                        sfciState, orchTime)
-            self.logger.warning("{0}'s self.requestCnt: {1}".format(self.orchInstanceQueueName, self.requestCnt))
+                                                    sfciState, orchTime)
+            self.logger.warning("{0}'s self.requestCnt: {1}".format(
+                                self.orchInstanceQueueName,
+                                self.requestCnt))
             self.logger.info("Batch process finish")
             self.batchLastTime = time.time()
 

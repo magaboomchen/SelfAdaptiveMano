@@ -29,7 +29,10 @@ from sam.base.shellProcessor import ShellProcessor
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.regulator import regulatorRequestSender
 from sam.regulator.argParser import ArgParser
-from sam.regulator.config import ENABLE_REQUEST_RETRY, MAX_RETRY_NUM, \
+from sam.regulator.config import DEBUG_MODE_LOG_TIMESLOT, DEBUG_MODE, \
+                                    ENABLE_REQUEST_RETRY, \
+                                    GLOBAL_DETECTION_SCAN_TIMEOUT, \
+                                    MAX_RETRY_NUM, \
                                     FAILURE_REQUEST_RETRY_TIMEOUT
 from sam.regulator.replyHandler import ReplyHandler
 from sam.regulator.commandHandler import CommandHandler
@@ -52,7 +55,8 @@ class Regulator(object):
         self._messageAgent.startMsgReceiverRPCServer(REGULATOR_IP,
                                                     REGULATOR_PORT)
         self.enableRetryFailureRequest = ENABLE_REQUEST_RETRY
-        self.prevTimestamp = time.time()
+        self.prevRequestRetryTimestamp = time.time()
+        self.prevDetectionDictTimestamp = time.time()
         self.cmdHandler = CommandHandler(self.logger, self._messageAgent,
                                             self._oib)
         self.replyHandler = ReplyHandler(self.logger, self._messageAgent,
@@ -82,9 +86,9 @@ class Regulator(object):
 
     def retryFailureRequestRoutine(self):
         currTimestamp = time.time()
-        deltTimestamp = currTimestamp - self.prevTimestamp
+        deltTimestamp = currTimestamp - self.prevRequestRetryTimestamp
         if deltTimestamp > FAILURE_REQUEST_RETRY_TIMEOUT:
-            self.prevTimestamp = time.time()
+            self.prevRequestRetryTimestamp = time.time()
             if self.enableRetryFailureRequest:
                 self.retryFailureRequests()
 
@@ -99,7 +103,7 @@ class Regulator(object):
                 requestType = requestTuple[1]
                 request = requestTuple[6]
                 retryCnt = requestTuple[7]
-                if retryCnt > MAX_RETRY_NUM:
+                if retryCnt >= MAX_RETRY_NUM:
                     self.logger.warning(" failed request {0} exceeds" \
                                         " max retry number".format(requestUUID))
                     continue
@@ -143,7 +147,13 @@ class Regulator(object):
                 self.replyHandler.handle(body)
             else:
                 self.logger.error("Unknown massage body:{0}".format(body))
-        time.sleep(1)
+        if DEBUG_MODE:
+            time.sleep(DEBUG_MODE_LOG_TIMESLOT)
+        currTimestamp = time.time()
+        deltTimestamp = currTimestamp - self.prevDetectionDictTimestamp
+        if deltTimestamp > GLOBAL_DETECTION_SCAN_TIMEOUT:
+            self.prevDetectionDictTimestamp = time.time()
+            self.cmdHandler.sfcRestorer.processAllDetectionNotice()
         self.cmdHandler.sfcRestorer.processAllRecoveryTasks()
         self.replyHandler.sfcScalingProcessor.processAllScalingTasks()
         self.requestHandler.processAllRequestTask()

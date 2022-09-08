@@ -39,7 +39,7 @@ python ./regulator.py
 ```
 sudo mysql
 use Orchestrator;
-select REQUEST_TYPE,SFC_UUID,STATE from Request;
+select REQUEST_TYPE,SFC_UUID,STATE,RETRY_CNT from Request;
 select ZONE_NAME,SFC_UUID,SFCIID_LIST,STATE from SFC;
 select ZONE_NAME,SFCIID,SFC_UUID,STATE,ORCHESTRATION_TIME from SFCI;
 ```

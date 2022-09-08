@@ -11,6 +11,7 @@ from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.dispatcher.config import ZONE_INFO_LIST
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.regulator.config import MAX_RETRY_NUM
+from sam.regulator.recovery.detectionDataMaintainer import DetectionDataMaintainer
 from sam.regulator.recovery.noticeAnalyzer import NoticeAnalyzer
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.regulator.recovery.recoveryTaskMaintainer import RecoveryTaskMaintainer
@@ -25,7 +26,7 @@ from sam.base.sfcConstant import STATE_ACTIVE, STATE_DELETED, STATE_IN_PROCESSIN
                                     STATE_UNDELETED
 from sam.regulator.recovery.recoveryTask import RECOVERY_TASK_STATE_ADDING_SFCI, \
                                                 RECOVERY_TASK_STATE_DELETING_SFC, \
-                                                RECOVERY_TASK_STATE_DELETING_SFCI, RECOVERY_TASK_STATE_FINISH, \
+                                                RECOVERY_TASK_STATE_DELETING_SFCI, RECOVERY_TASK_STATE_FAILED, RECOVERY_TASK_STATE_FINISH, \
                                                 RECOVERY_TASK_STATE_READY, \
                                                 RECOVERY_TASK_STATE_WAITING, \
                                                 RECOVERY_TASK_STATE_WAITING_TO_DELETE_SFC, \
@@ -45,8 +46,9 @@ class SFCRestorer(object):
         self._oib = oib
         self._dib = DCNInfoBaseMaintainer()
         self.rTM = RecoveryTaskMaintainer()
-        self.nA = NoticeAnalyzer(oib)
+        self.nA = NoticeAnalyzer(oib, self.rTM)
         self.rG = RequestGenerator()
+        self.dM = DetectionDataMaintainer()
 
         self.pIO = PickleIO()
         self.loadDib()
@@ -91,15 +93,21 @@ class SFCRestorer(object):
 
     def resumeHandler(self, cmd):
         # type: (Command) -> None
-        self.logger.info("Get CMD_TYPE_FAILURE_ABNORMAL_RESUME!")
-        self._sendCmd2Dispatcher(cmd)
-
-    def failureAbnormalHandler(self, cmd):
-        # type: (Command) -> None
-        self.logger.info("Get CMD_TYPE_HANDLE_FAILURE_ABNORMAL!")
         allZoneDetectionDict = cmd.attributes["allZoneDetectionDict"]   # type: Dict[str, Dict]
         self.logger.info("allZoneDetectionDict is {0}".format(allZoneDetectionDict))
         self._sendCmd2Dispatcher(cmd)
+        self.dM.processResumeData(allZoneDetectionDict)
+
+    def failureAbnormalHandler(self, cmd):
+        # type: (Command) -> None
+        allZoneDetectionDict = cmd.attributes["allZoneDetectionDict"]   # type: Dict[str, Dict]
+        self.logger.info("allZoneDetectionDict is {0}".format(allZoneDetectionDict))
+        self._sendCmd2Dispatcher(cmd)
+        allZoneDetectionDict = self.dM.deleteDuplicateData(allZoneDetectionDict)
+        self.dM.addDetectionDict(allZoneDetectionDict)
+        self.handleDetectionDict(allZoneDetectionDict)
+
+    def handleDetectionDict(self, allZoneDetectionDict):
         affectedSFCITupleList = self.nA.getAffectedSFCITupleList(allZoneDetectionDict)
         for sfciID, sfc, recoveryTaskState, recoveryTaskType in affectedSFCITupleList:
             sfcUUID = sfc.sfcUUID
@@ -112,6 +120,10 @@ class SFCRestorer(object):
                     self.rTM.addWaitingRecoveryTask(sfcUUID, sfciID,
                                                     recoveryTaskType,
                                                     recoveryTaskState)
+
+    def processAllDetectionNotice(self):
+        allZoneDetectionDict = self.dM.getAllZoneDetectionDict()
+        self.handleDetectionDict(allZoneDetectionDict)
 
     def processAllRecoveryTasks(self):
         self.rTM.clearTimeOutTasks()
@@ -146,7 +158,7 @@ class SFCRestorer(object):
                         pass
             elif recoveryTaskState == RECOVERY_TASK_STATE_DELETING_SFCI:
                 self.logger.debug("sfciState is {0}".format(sfciState))
-                if sfciState == STATE_DELETED:
+                if sfciState in [STATE_DELETED, STATE_INIT_FAILED]:
                     if recoveryTaskType == RECOVERY_TASK_TYPE_SFCI:
                         sfciID = sfci.sfciID
                         req = self.rG.genAddSFCIRequest(sfc, SFCI(sfciID), zoneName)
@@ -157,7 +169,7 @@ class SFCRestorer(object):
                     elif recoveryTaskType == RECOVERY_TASK_TYPE_SFC:
                         self.rTM.updateRecoveryTask(sfcUUID, sfciID, recoveryTaskType,
                                 recoveryTaskState=RECOVERY_TASK_STATE_WAITING_TO_DELETE_SFC)
-                        if self._oib.isAllSFCIDeleted(sfcUUID):
+                        if self._oib.isAllSFCIDeletedOrInitFailed(sfcUUID):
                             req = self.rG.genDelSFCRequest(sfc, zoneName)
                             self.rTM.addRequest2Task(sfcUUID, recoveryTaskType, sfciID, req)
                             self._sendRequest2Dispatcher(req)
@@ -269,6 +281,8 @@ class SFCRestorer(object):
                     pass    # Do nothing
             elif recoveryTaskState == RECOVERY_TASK_STATE_FINISH:
                 self.rTM.deleteRecoveryTask(sfcUUID, sfciID, recoveryTaskType)
+            elif recoveryTaskState == RECOVERY_TASK_STATE_FAILED:
+                pass
             else:
                 raise ValueError("Unknown task state {0}".format(recoveryTaskState))
 

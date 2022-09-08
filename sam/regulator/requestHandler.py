@@ -30,7 +30,7 @@ class RequestHandler(object):
             REQUEST_TYPE_ADD_SFCI: {},
             REQUEST_TYPE_DEL_SFCI: {},
             REQUEST_TYPE_DEL_SFC: {}
-        }    # type: Dict[Request.requestType, Dict[Request.requestID, Tuple[Request, time.time()]]]
+        }    # type: Dict[Request.requestType, Dict[Request.requestID, Tuple[Request, float]]]
 
     def handle(self, request):
         # type: (Request) -> None

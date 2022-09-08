@@ -12,7 +12,7 @@ nohup python ./mediator.py &
 
 cd ~/Projects/SelfAdaptiveMano
 rm -rf log
-nohup python ./sam/simulator/simulator.py &
+# nohup python ./sam/simulator/simulator.py &
 
 
 cd ~/Projects/SelfAdaptiveMano/sam/measurement

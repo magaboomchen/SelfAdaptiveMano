@@ -5,14 +5,25 @@ import datetime
 from uuid import UUID
 from typing import Dict, List, Tuple, Union
 
+from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.sfcConstant import STATE_ACTIVE, STATE_DELETED, STATE_IN_PROCESSING, STATE_INACTIVE, STATE_INIT_FAILED, STATE_UNDELETED
+from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
 from sam.regulator.config import RECOVERY_TASK_TIMEOUT
-from sam.regulator.recovery.recoveryTask import RECOVERY_TASK_STATE_READY, \
+from sam.regulator.recovery.recoveryTask import RECOVERY_TASK_STATE_ADDING_SFCI, RECOVERY_TASK_STATE_DELETING_SFCI, RECOVERY_TASK_STATE_FAILED, RECOVERY_TASK_STATE_READY, \
         RECOVERY_TASK_STATE_WAITING, RecoveryTask, RECOVERY_TASK_TYPE_SFC, \
         RECOVERY_TASK_TYPE_SFCI
 
 
 class RecoveryTaskMaintainer(object):
     def __init__(self):
+        logConfigur = LoggerConfigurator(__name__, './log',
+            'RecoveryTaskMaintainer.log',
+            level='debug')
+        self.logger = logConfigur.getLogger()
+
+        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent", "123",
+                                            False)
+
         sfcRecoveryTaskDict = {}   # type: Dict[UUID, Dict[int, RecoveryTask]]
         sfciRecoveryTaskDict = {}  # type: Dict[UUID, Dict[int, RecoveryTask]]
         self.taskDict = {
@@ -79,6 +90,15 @@ class RecoveryTaskMaintainer(object):
                     recoveryTasksTupleList.append((sfcUUID, recoveryTaskType, sfciID, task.recoveryTaskState))
         return recoveryTasksTupleList
 
+    def getRecoveryTaskState(self, sfcUUID, recoveryTaskType, sfciID):
+        # type: (UUID, str, int) -> Union[RECOVERY_TASK_STATE_READY, RECOVERY_TASK_STATE_FAILED]
+        if sfcUUID in self.taskDict[recoveryTaskType].keys():
+            if sfciID in self.taskDict[recoveryTaskType][sfcUUID].keys():
+                task = self.taskDict[recoveryTaskType][sfcUUID][sfciID]
+                return task.recoveryTaskState
+        else:
+            return None
+
     def addRequest2Task(self, sfcUUID, recoveryTaskType, sfciID, req):
         reqType = req.requestType
         self.taskDict[recoveryTaskType][sfcUUID][sfciID].reqDict[reqType] = req
@@ -96,15 +116,34 @@ class RecoveryTaskMaintainer(object):
             for sfciID, task in list(self.taskDict[recoveryTaskType][sfcUUID].items()):
                 if sfcUUID in self.taskDict[RECOVERY_TASK_TYPE_SFC]:
                     task = self.taskDict[RECOVERY_TASK_TYPE_SFCI][sfcUUID][sfciID]
+                    task = self.migrateSFCITask2SFCTask(task)
                     self.taskDict[RECOVERY_TASK_TYPE_SFC][sfcUUID][sfciID] = task
                     del self.taskDict[RECOVERY_TASK_TYPE_SFCI][sfcUUID][sfciID]
+
+    def migrateSFCITask2SFCTask(self, task):
+        # type: (RecoveryTask) -> RecoveryTask
+        sfciID = task.sfciID
+        sfciState = self._oib.getSFCIState(sfciID)
+        if sfciState == STATE_ACTIVE:
+            task.recoveryTaskState = RECOVERY_TASK_STATE_WAITING
+        elif sfciState in [STATE_INACTIVE, STATE_UNDELETED]:
+            task.recoveryTaskState = RECOVERY_TASK_STATE_READY
+        elif sfciState in [STATE_DELETED, STATE_INIT_FAILED, STATE_IN_PROCESSING]:
+            task.recoveryTaskState = RECOVERY_TASK_STATE_DELETING_SFCI
+        else:
+            raise ValueError("Unknown sfci state {0}".format(sfciState))
+        task.timestamp = datetime.datetime.now()
+        return task
 
     def clearTimeOutTasks(self):
         for recoveryTaskType in [RECOVERY_TASK_TYPE_SFC, RECOVERY_TASK_TYPE_SFCI]:
             for sfcUUID in list(self.taskDict[recoveryTaskType].keys()):
                 for sfciID, task in list(self.taskDict[recoveryTaskType][sfcUUID].items()):
-                    if task.timestamp.timestamp() - datetime.datetime.now().timestamp() > RECOVERY_TASK_TIMEOUT:
-                        del self.taskDict[recoveryTaskType][sfcUUID][sfciID]
+                    elaspe = datetime.datetime.now().timestamp() - task.timestamp.timestamp()
+                    self.logger.info("time elasp is {0}".format(elaspe))
+                    taskState = self.taskDict[recoveryTaskType][sfcUUID][sfciID].recoveryTaskState
+                    if elaspe > RECOVERY_TASK_TIMEOUT and taskState != RECOVERY_TASK_STATE_FAILED:
+                        self.taskDict[recoveryTaskType][sfcUUID][sfciID].recoveryTaskState = RECOVERY_TASK_STATE_FAILED
 
     def loadWaitingTasks(self):
         for recoveryTaskType in [RECOVERY_TASK_TYPE_SFCI, RECOVERY_TASK_TYPE_SFC]:
