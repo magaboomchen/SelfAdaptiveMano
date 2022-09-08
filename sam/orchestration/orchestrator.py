@@ -448,20 +448,26 @@ class Orchestrator(object):
 
     def _updateEquipmentState(self, detectionDict):
         for caseType, equipmentDict in detectionDict.items():
+            if caseType in ["failure", "abnormal"]:
+                state = False
+            elif caseType in ["resume"]:
+                state = True
+            else:
+                raise ValueError("Unknown caseType {0}".format(caseType))
             switchIDList = equipmentDict["switchIDList"]
             for switchID in switchIDList:
                 if self._dib.hasSwitch(switchID, self.zoneName):
-                    self._dib.updateSwitchState(switchID, self.zoneName, state = False)
+                    self._dib.updateSwitchState(switchID, self.zoneName, state = state)
 
             serverIDList = equipmentDict["serverIDList"]
             for serverID in serverIDList:
                 if self._dib.hasServer(serverID, self.zoneName):
-                    self._dib.updateServerState(serverID, self.zoneName, state = False)
+                    self._dib.updateServerState(serverID, self.zoneName, state = state)
 
             linkIDList = equipmentDict["linkIDList"]
             for linkID in linkIDList:
                 if self._dib.hasLink(linkID[0], linkID[1], self.zoneName):
-                    self._dib.updateLinkState(linkID, self.zoneName, state = False)
+                    self._dib.updateLinkState(linkID, self.zoneName, state = state)
 
 
 if __name__=="__main__":

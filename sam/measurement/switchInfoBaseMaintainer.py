@@ -123,6 +123,13 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
         else:
             return self._switches[zoneName]
 
+    def getInactiveSwitchesByZone(self, zoneName):
+        switches = {}
+        for switchID, switchInfoDict in self._switches[zoneName].items():
+            if not switchInfoDict['Active']:
+                switches[switchID] = switchInfoDict
+        return switches
+
     def getSpecificTypeOfSwitchByZone(self, zoneName, switchType):
         switchList = []
         for switchID in self._switches[zoneName]:

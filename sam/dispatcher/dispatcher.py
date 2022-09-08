@@ -3,8 +3,10 @@
 
 from typing import Dict, Union
 
-from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL
-from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE, MessageAgent, SAMMessage, \
+from sam.base.command import CMD_TYPE_FAILURE_ABNORMAL_RESUME, \
+                                CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
+from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE, MessageAgent, \
+                                    SAMMessage, \
                                     DISPATCHER_QUEUE, MSG_TYPE_REQUEST
 from sam.base.pickleIO import PickleIO
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
@@ -113,24 +115,27 @@ class Dispatcher(object):
                 zoneName = request.attributes["zone"]
                 # assign different SFC to different orchestrator in round robin mode, and
                 # record which SFC has been mapped in which orchestrator instances.
-                orchName = self.oMDict[zoneName]._getOrchestratorNameBySFC(sfc)
+                oM = self.oMDict[zoneName]
+                orchName = oM._getOrchestratorNameBySFC(sfc)
                 if orchName == None:
-                    orchName = self.oMDict[zoneName]._selectOrchInRoundRobin()
+                    orchName = oM._selectOrchInRoundRobin()
                 self.logger.warning("assign SFC to orchName:{0}".format(orchName))
-                self.oMDict[zoneName]._assignSFC2Orchestrator(sfc, orchName)
+                oM._assignSFC2Orchestrator(sfc, orchName)
                 self._sendRequest2Orchestrator(request, orchName)   # we dispatch add request previously
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
                 sfc = request.attributes["sfc"]
                 sfci = request.attributes["sfci"]
                 zoneName = request.attributes["zone"]
-                orchName = self.oMDict[zoneName]._getOrchestratorNameBySFC(sfc)
+                oM = self.oMDict[zoneName]
+                orchName = oM._getOrchestratorNameBySFC(sfc)
                 self.logger.warning("assign SFC to orchName:{0}".format(orchName))
-                self.oMDict[zoneName]._assignSFCI2Orchestrator(sfci, orchName)
+                oM._assignSFCI2Orchestrator(sfci, orchName)
                 self._sendRequest2Orchestrator(request, orchName)
             elif request.requestType in [REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_DEL_SFC]:
                 sfc = request.attributes["sfc"]
                 zoneName = request.attributes["zone"]
-                orchName = self.oMDict[zoneName]._getOrchestratorNameBySFC(sfc)
+                oM = self.oMDict[zoneName]
+                orchName = oM._getOrchestratorNameBySFC(sfc)
                 self._sendRequest2Orchestrator(request, orchName)
             else:
                 self.logger.warning(
@@ -143,23 +148,27 @@ class Dispatcher(object):
             pass
 
     def _sendRequest2Orchestrator(self, request, orchName):
+        # type: (Request, str) -> None
         queueName = "ORCHESTRATOR_QUEUE_{0}".format(orchName)
         msg = SAMMessage(MSG_TYPE_REQUEST, request)
         self._messageAgent.sendMsg(queueName, msg)
 
     def _commandReplyHandler(self, cmd):
+        # type: (Command) -> None
         raise ValueError("Unimplementation _commandReplyHandler")
 
     def _commandHandler(self, cmd):
+        # type: (Command) -> None
         try:
             self.logger.info("Get a command reply")
             cmdID = cmd.cmdID
-            if cmd.cmdType == CMD_TYPE_HANDLE_FAILURE_ABNORMAL:
-                self.logger.info("Get CMD_TYPE_HANDLE_FAILURE_ABNORMAL!")
+            if cmd.cmdType in [CMD_TYPE_HANDLE_FAILURE_ABNORMAL,
+                                CMD_TYPE_FAILURE_ABNORMAL_RESUME]:
+                self.logger.info("Get {0}".format(cmd.cmdType))
                 allZoneDetectionDict = cmd.attributes["allZoneDetectionDict"]
                 for zoneName, detectionDict in allZoneDetectionDict.items():
                     oM = self.oMDict[zoneName]
-                    orchestratorDict = self.oMDict[zoneName].getOrchestratorDict()
+                    orchestratorDict = oM.getOrchestratorDict()
                     for orchName, orchInfoDict in orchestratorDict.items():
                         oM.updateEquipmentState2Orchestrator(orchName, detectionDict)
             else:
@@ -169,6 +178,7 @@ class Dispatcher(object):
                 "Regualtor command handler")
         finally:
             pass
+
 
 if __name__ == "__main__":
     argParser = ArgParser()

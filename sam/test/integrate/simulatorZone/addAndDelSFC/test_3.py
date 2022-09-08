@@ -16,11 +16,11 @@ Usage of this unit test:
 
 import uuid
 import time
-from typing import Tuple
+from typing import Tuple, Union
 
 import pytest
 
-from sam.base.command import CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
+from sam.base.command import CMD_TYPE_FAILURE_ABNORMAL_RESUME, CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
 from sam.base.compatibility import screenInput
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.messageAgent import MSG_TYPE_REGULATOR_CMD, \
@@ -66,14 +66,14 @@ class TestAddSFCClass(IntTestBaseClass):
         rM = sfc5.routingMorphic
         sfci5 = self.genSFCITemplate(rM)
 
-        # self.sfcList = [sfc1, sfc2, sfc3, sfc4, sfc5]
-        # self.sfciList = [sfci1, sfci2, sfci3, sfci4, sfci5]
+        self.sfcList = [sfc1, sfc2, sfc3, sfc4, sfc5]
+        self.sfciList = [sfci1, sfci2, sfci3, sfci4, sfci5]
 
         # self.sfcList = [sfc2, sfc3, sfc4, sfc5]
         # self.sfciList = [sfci2, sfci3, sfci4, sfci5]
 
-        self.sfcList = [sfc2]
-        self.sfciList = [sfci2]
+        # self.sfcList = [sfc2]
+        # self.sfciList = [sfci2]
 
         yield
 
@@ -92,7 +92,7 @@ class TestAddSFCClass(IntTestBaseClass):
             self.sendRequest(REGULATOR_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         time.sleep(5)
@@ -119,13 +119,16 @@ class TestAddSFCClass(IntTestBaseClass):
                         break
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         # exercise
         try:
             while True:
-                inputContent = screenInput("Please input abnormal type: \n"\
+                caseType = screenInput("Please input caseType: \n"\
+                                            "failure, abnormal, resume.\n")
+
+                inputContent = screenInput("Please input equipment type: \n"\
                                             "switch, server, link.\n"\
                                             "Please press 'quit' to quit.")
                 if inputContent == "switch":
@@ -136,9 +139,9 @@ class TestAddSFCClass(IntTestBaseClass):
                     self.logger.info("Please input abnormal switchID from "
                                         "candidate switch list {0}".format(switchIDList))
                     abnSwitchID = int(screenInput())
-                    self.logger.info("Please input abnormal serverID to "
+                    self.logger.info("Please input abnormal switchID to "
                                         " simulator: switch {0} down ".format(abnSwitchID))
-                    cmd = self.genAbnormalSwitchHandleCommand(abnSwitchID)
+                    cmd = self.genDetectionDictHandlerCommand(caseType, "switchIDList", abnSwitchID)
                 elif inputContent == "server":
                     serverIDList = []
                     for sfci in self.sfciList:
@@ -149,7 +152,7 @@ class TestAddSFCClass(IntTestBaseClass):
                     abnServerID = int(screenInput())
                     self.logger.info("Please input abnormal serverID to "
                                         " simulator: server {0} down ".format(abnServerID))
-                    cmd = self.genAbnormalServerHandleCommand(abnServerID)
+                    cmd = self.genDetectionDictHandlerCommand(caseType, "serverIDList", abnServerID)
                 elif inputContent == "link":
                     linkIDList = []
                     for sfci in self.sfciList:
@@ -164,7 +167,7 @@ class TestAddSFCClass(IntTestBaseClass):
                                         " simulator: link {0} {1} down ".format(
                                                         abnLinkID[0], abnLinkID[1]))
                     screenInput()
-                    cmd = self.genAbnormalLinkHandleCommand(abnLinkID)
+                    cmd = self.genDetectionDictHandlerCommand(caseType, "linkIDList", abnLinkID)
                 elif inputContent == "quit":
                     break
                 else:
@@ -175,7 +178,7 @@ class TestAddSFCClass(IntTestBaseClass):
                 self.sendCmdByRPC(REGULATOR_IP, REGULATOR_PORT, MSG_TYPE_REGULATOR_CMD, cmd)
 
             self.logger.info("Please check regulator if affected SFCI recovered?"\
-                            "Then press andy key to continue!")
+                            "Then press any key to continue!")
             screenInput()
         except Exception as ex:
             ExceptionProcessor(self.logger).logException(ex, 
@@ -195,7 +198,7 @@ class TestAddSFCClass(IntTestBaseClass):
 
         self.logger.info("Please check if regulator recvs requests? "\
                         "And SFC state turn to STATE_MANUAL? " \
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         # exercise
@@ -209,7 +212,7 @@ class TestAddSFCClass(IntTestBaseClass):
             self.sendRequest(REGULATOR_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         # exercise
@@ -222,7 +225,7 @@ class TestAddSFCClass(IntTestBaseClass):
             self.sendRequest(REGULATOR_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to exit!")
+                        "Then press any key to exit!")
         screenInput()
 
     def getAllSwitchIDFromSFCI(self, sfci):
@@ -279,7 +282,8 @@ class TestAddSFCClass(IntTestBaseClass):
     def isSwitchID(self, nodeID):
         return nodeID <= 10000
 
-    def genAbnormalServerHandleCommand(self, serverID):
+    def genDetectionDictHandlerCommand(self, caseType, equipmentListType, equipmentID):
+        # type: (str, str, Union[int, Tuple[int,int]]) -> Command
         detectionDict = {
             "failure":{
                 "switchIDList":[],
@@ -288,53 +292,65 @@ class TestAddSFCClass(IntTestBaseClass):
             },
             "abnormal":{
                 "switchIDList":[],
-                "serverIDList":[serverID],
+                "serverIDList":[],
+                "linkIDList":[]
+            },
+            "resume":{
+                "switchIDList":[],
+                "serverIDList":[],
                 "linkIDList":[]
             }
         }
+        detectionDict[caseType][equipmentListType].append(equipmentID)
         allZoneDetectionDict={SIMULATOR_ZONE: detectionDict}
         attr = {
             "allZoneDetectionDict": allZoneDetectionDict
         }
-        cmd = Command(CMD_TYPE_HANDLE_FAILURE_ABNORMAL, uuid.uuid1(), attributes=attr)
+        if caseType in ["failure", "abnormal"]:
+            cmdType = CMD_TYPE_HANDLE_FAILURE_ABNORMAL
+        elif caseType in ["resume"]:
+            cmdType = CMD_TYPE_FAILURE_ABNORMAL_RESUME
+        else:
+            raise ValueError("Unknown caseType {0}".format(caseType))
+        cmd = Command(cmdType, uuid.uuid1(), attributes=attr)
         return cmd
 
-    def genAbnormalSwitchHandleCommand(self, switchID):
-        detectionDict = {
-            "failure":{
-                "switchIDList":[],
-                "serverIDList":[],
-                "linkIDList":[]
-            },
-            "abnormal":{
-                "switchIDList":[switchID],
-                "serverIDList":[],
-                "linkIDList":[]
-            }
-        }
-        allZoneDetectionDict={SIMULATOR_ZONE: detectionDict}
-        attr = {
-            "allZoneDetectionDict": allZoneDetectionDict
-        }
-        cmd = Command(CMD_TYPE_HANDLE_FAILURE_ABNORMAL, uuid.uuid1(), attributes=attr)
-        return cmd
+    # def genAbnormalSwitchHandleCommand(self, switchID):
+    #     detectionDict = {
+    #         "failure":{
+    #             "switchIDList":[],
+    #             "serverIDList":[],
+    #             "linkIDList":[]
+    #         },
+    #         "abnormal":{
+    #             "switchIDList":[switchID],
+    #             "serverIDList":[],
+    #             "linkIDList":[]
+    #         }
+    #     }
+    #     allZoneDetectionDict={SIMULATOR_ZONE: detectionDict}
+    #     attr = {
+    #         "allZoneDetectionDict": allZoneDetectionDict
+    #     }
+    #     cmd = Command(CMD_TYPE_HANDLE_FAILURE_ABNORMAL, uuid.uuid1(), attributes=attr)
+    #     return cmd
 
-    def genAbnormalLinkHandleCommand(self, linkID):
-        detectionDict = {
-            "failure":{
-                "switchIDList":[],
-                "serverIDList":[],
-                "linkIDList":[]
-            },
-            "abnormal":{
-                "switchIDList":[],
-                "serverIDList":[],
-                "linkIDList":[linkID]
-            }
-        }
-        allZoneDetectionDict={SIMULATOR_ZONE: detectionDict}
-        attr = {
-            "allZoneDetectionDict": allZoneDetectionDict
-        }
-        cmd = Command(CMD_TYPE_HANDLE_FAILURE_ABNORMAL, uuid.uuid1(), attributes=attr)
-        return cmd
+    # def genAbnormalLinkHandleCommand(self, linkID):
+    #     detectionDict = {
+    #         "failure":{
+    #             "switchIDList":[],
+    #             "serverIDList":[],
+    #             "linkIDList":[]
+    #         },
+    #         "abnormal":{
+    #             "switchIDList":[],
+    #             "serverIDList":[],
+    #             "linkIDList":[linkID]
+    #         }
+    #     }
+    #     allZoneDetectionDict={SIMULATOR_ZONE: detectionDict}
+    #     attr = {
+    #         "allZoneDetectionDict": allZoneDetectionDict
+    #     }
+    #     cmd = Command(CMD_TYPE_HANDLE_FAILURE_ABNORMAL, uuid.uuid1(), attributes=attr)
+    #     return cmd

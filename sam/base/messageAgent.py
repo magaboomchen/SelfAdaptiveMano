@@ -99,6 +99,7 @@ Use case 3 - elastic orchestrator(regulator):
 
 """
 
+from json.encoder import INFINITY
 from packaging import version
 import sys
 if sys.version >= '3':
@@ -384,8 +385,8 @@ class MessageAgent(object):
                     self._publisherConnection.close()
                 break
 
-    def sendMsgByRPC(self, dstIP, dstPort, message):
-        # type: (str, int, SAMMessage) -> None
+    def sendMsgByRPC(self, dstIP, dstPort, message, maxRetryNum=INFINITY):
+        # type: (str, int, SAMMessage, int) -> None
         if self.listenIP == None or self.listenPort == None:
             raise ValueError("Unset listen IP and port.")
         self.logger.debug("gRPC send to dstIP {0}, dstPort {1}".format(dstIP, dstPort))
@@ -446,6 +447,8 @@ class MessageAgent(object):
             finally:
                 time.sleep(MESSAGE_AGENT_GRPC_RETRY_WAIT_TIME)
                 cnt = cnt + 1
+                if cnt > maxRetryNum:
+                    break
 
         self.gRPCChannel.close()
 

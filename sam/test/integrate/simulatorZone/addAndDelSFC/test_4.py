@@ -85,7 +85,7 @@ class TestAddSFCClass(IntTestBaseClass):
             self.sendRequest(REGULATOR_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         # exercise
@@ -110,13 +110,13 @@ class TestAddSFCClass(IntTestBaseClass):
                         break
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         # exercise
         screenInput("Please input large traffic to sfci.\n")
         self.logger.info("Please check regulator if affected SFCI scaling up?"\
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         # setup
@@ -131,7 +131,7 @@ class TestAddSFCClass(IntTestBaseClass):
 
         self.logger.info("Please check if regulator recvs requests? "\
                         "And SFC state turn to STATE_MANUAL? " \
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         # exercise
@@ -145,7 +145,7 @@ class TestAddSFCClass(IntTestBaseClass):
             self.sendRequest(REGULATOR_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         # exercise
@@ -158,7 +158,7 @@ class TestAddSFCClass(IntTestBaseClass):
             self.sendRequest(REGULATOR_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to exit!")
+                        "Then press any key to exit!")
         screenInput()
 
     def getAllSwitchIDFromSFCI(self, sfci):

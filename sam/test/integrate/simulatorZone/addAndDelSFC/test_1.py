@@ -48,7 +48,7 @@ class TestAddSFCClass(IntTestBaseClass):
         self.sendRequest(DISPATCHER_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         # exercise
@@ -64,7 +64,7 @@ class TestAddSFCClass(IntTestBaseClass):
             self.sendRequest(DISPATCHER_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         # exercise
@@ -77,7 +77,7 @@ class TestAddSFCClass(IntTestBaseClass):
         self.sendRequest(DISPATCHER_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         rq = Request(uuid.uuid1(), uuid.uuid1(), REQUEST_TYPE_UPDATE_SFC_STATE,
@@ -90,7 +90,7 @@ class TestAddSFCClass(IntTestBaseClass):
 
         self.logger.info("Please check if regulator recvs requests? "\
                         "And SFC state turn to STATE_MANUAL? " \
-                        "Then press andy key to continue!")
+                        "Then press any key to continue!")
         screenInput()
 
         # exercise
@@ -102,5 +102,5 @@ class TestAddSFCClass(IntTestBaseClass):
         self.sendRequest(DISPATCHER_QUEUE, rq)
 
         self.logger.info("Please check orchestrator if recv a command reply?"\
-                        "Then press andy key to exit!")
+                        "Then press any key to exit!")
         screenInput()

@@ -3,10 +3,11 @@
 
 import ctypes
 import inspect
-from typing import Union
+from typing import Dict, Union
 
 from sam.base.link import Link
 from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET
+from sam.base.sfc import SFCI
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.messageAgent import  PUFFER_ZONE, SIMULATOR_ZONE, TURBONET_ZONE, \
                                 SAMMessage, MessageAgent, \
@@ -147,6 +148,8 @@ class Measurer(object):
         for key,value in cmdRply.attributes.items():
             if key == 'switches':
                 self._dib.updateSwitchesByZone(value, zoneName)
+                # inactiveSwitches = self._dib.getInactiveSwitchesByZone(zoneName)
+                # self.logger.info("inactiveSwitches is {0}".format(inactiveSwitches))
             elif key == 'links':
                 self._dib.updateLinksByZone(value, zoneName)
             elif key == 'servers':
@@ -159,9 +162,19 @@ class Measurer(object):
             elif key == 'source':
                 pass
             elif key == 'sfcisDict':
+                self.logSFCIsDict(value)
                 self._dib.updateSFCIsByZone(value, zoneName)
             else:
                 self.logger.error("Unknown attributes:{0}".format(key))
+
+    def logSFCIsDict(self, sfcisDict):
+        # type: (Dict[int, SFCI]) -> None
+        for sfciID, sfci in sfcisDict.items():
+            self.logger.debug("sfciID is {0}".format(sfciID))
+            vnfiSeq = sfci.vnfiSequence
+            for vnfis in vnfiSeq:
+                for vnfi in vnfis:
+                    self.logger.debug("vnfis status {0}".format(vnfi.vnfiStatus))
 
     def _cmdRplyHandler4TurbonetZone(self, cmdRply, zoneName):
         # type: (CommandReply, Union[SIMULATOR_ZONE, TURBONET_ZONE]) -> None
