@@ -143,6 +143,7 @@ class SFC(object):
         return len(self.vNFTypeSequence)
 
     def getSFCTrafficDemand(self):
+        # type: (None) -> int
         return self.slo.throughput
 
     def getSFCLatencyBound(self):

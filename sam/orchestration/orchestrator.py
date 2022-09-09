@@ -11,16 +11,24 @@ import math
 
 from sam.base.link import Link
 from sam.base.sfc import SFC, SFCI
-from sam.base.sfcConstant import STATE_IN_PROCESSING, STATE_INIT_FAILED, STATE_UNDELETED
-from sam.base.messageAgent import SAMMessage, MessageAgent, \
-    MEDIATOR_QUEUE, ORCHESTRATOR_QUEUE, MSG_TYPE_ORCHESTRATOR_CMD
-from sam.base.request import REQUEST_STATE_IN_PROCESSING, REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_DEL_SFCI, \
-    REQUEST_TYPE_DEL_SFC, REQUEST_STATE_FAILED, Request
+from sam.base.sfcConstant import STATE_IN_PROCESSING, STATE_INIT_FAILED, \
+                                    STATE_UNDELETED
+from sam.base.messageAgent import MSG_TYPE_MEDIATOR_CMD, MSG_TYPE_REGULATOR_CMD, \
+                                    REGULATOR_QUEUE, SAMMessage, MessageAgent, \
+                                    MEDIATOR_QUEUE, ORCHESTRATOR_QUEUE
+from sam.base.request import REQUEST_STATE_IN_PROCESSING, REQUEST_TYPE_ADD_SFC, \
+                                REQUEST_TYPE_DEL_SFCI, Request, \
+                                REQUEST_TYPE_DEL_SFC, REQUEST_STATE_FAILED
 from sam.base.command import CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, \
-    CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
-    CMD_TYPE_PUT_ORCHESTRATION_STATE, CMD_TYPE_GET_ORCHESTRATION_STATE, \
-    CMD_TYPE_TURN_ORCHESTRATION_ON, CMD_TYPE_TURN_ORCHESTRATION_OFF, \
-    CMD_TYPE_KILL_ORCHESTRATION, CMD_TYPE_DEL_SFC, CMD_TYPE_DEL_SFCI, Command, CommandReply
+                            CMD_TYPE_ADD_SFC, CMD_TYPE_ADD_SFCI, \
+                            CMD_TYPE_PUT_ORCHESTRATION_STATE, \
+                            CMD_TYPE_GET_ORCHESTRATION_STATE, \
+                            CMD_TYPE_TURN_ORCHESTRATION_ON, \
+                            CMD_TYPE_TURN_ORCHESTRATION_OFF, \
+                            CMD_TYPE_KILL_ORCHESTRATION, CMD_TYPE_DEL_SFC, \
+                            CMD_TYPE_DEL_SFCI, \
+                            Command, CommandReply
+from sam.orchestration.runtimeState.runtimeStateProcessor import RuntimeStateProcessor
 from sam.base.commandMaintainer import CommandMaintainer
 from sam.orchestration.argParser import ArgParser
 from sam.base.request import REQUEST_TYPE_ADD_SFCI
@@ -78,6 +86,8 @@ class Orchestrator(object):
         self.requestCnt = 0
         self.requestWaitingQueue = Queue.Queue()
 
+        self.rSP = RuntimeStateProcessor(orchestrationName, self._dib, self.zoneName)
+
     def setRunningState(self, runningState):
         self.runningState = runningState
 
@@ -133,7 +143,7 @@ class Orchestrator(object):
                     # self._odir.getDCNInfo()
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
-                    self.sendCmd(cmd)
+                    self.sendCmd(MSG_TYPE_MEDIATOR_CMD, cmd, MEDIATOR_QUEUE)
                     reqState = REQUEST_STATE_IN_PROCESSING
                     sfcState = STATE_IN_PROCESSING
                 else:
@@ -167,7 +177,7 @@ class Orchestrator(object):
                             ingress.switchID
                         ))
                     self._cm.addCmd(cmd)
-                    self.sendCmd(cmd)
+                    self.sendCmd(MSG_TYPE_MEDIATOR_CMD, cmd, MEDIATOR_QUEUE)
                     reqState = REQUEST_STATE_IN_PROCESSING
                     sfciState = STATE_IN_PROCESSING
                 else:
@@ -182,7 +192,7 @@ class Orchestrator(object):
                 if self._oib.isDelSFCValidState(sfc.sfcUUID):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     self._cm.addCmd(cmd)
-                    self.sendCmd(cmd)
+                    self.sendCmd(MSG_TYPE_MEDIATOR_CMD, cmd, MEDIATOR_QUEUE)
                     reqState = REQUEST_STATE_IN_PROCESSING
                     sfcState = STATE_IN_PROCESSING
                 else:
@@ -259,7 +269,7 @@ class Orchestrator(object):
                     if self._oib.isAddSFCIValidState(sfciID):
                         cmd.attributes['source'] = self.orchInstanceQueueName
                         self._cm.addCmd(cmd)
-                        self.sendCmd(cmd)
+                        self.sendCmd(MSG_TYPE_MEDIATOR_CMD, cmd, MEDIATOR_QUEUE)
                         reqState = REQUEST_STATE_IN_PROCESSING
                         sfciState = STATE_IN_PROCESSING
                     else:
@@ -280,9 +290,9 @@ class Orchestrator(object):
             self.logger.info("Batch process finish")
             self.batchLastTime = time.time()
 
-    def sendCmd(self, cmd):
-        msg = SAMMessage(MSG_TYPE_ORCHESTRATOR_CMD, cmd)
-        self._messageAgent.sendMsg(MEDIATOR_QUEUE, msg)
+    def sendCmd(self, msgType, cmd, queueName):
+        msg = SAMMessage(msgType, cmd)
+        self._messageAgent.sendMsg(queueName, msg)
 
     def _commandReplyHandler(self, cmdRply):
         # type: (CommandReply) -> None
@@ -299,7 +309,7 @@ class Orchestrator(object):
             self._cm.changeCmdState(cmdID, state)
             self._cm.addCmdRply(cmdID, cmdRply)
             cmdType = self._cm.getCmdType(cmdID)
-            self.logger.info("Command:{0}, cmdType:{1}, state:{2}".format(
+            self.logger.info("CommandID:{0}, cmdType:{1}, state:{2}".format(
                 cmdID, cmdType, state))
 
             # find the request by sfcUUID in cmd
@@ -324,16 +334,18 @@ class Orchestrator(object):
     def _commandHandler(self, cmd):
         # type: (Command) -> None
         try:
-            self.logger.info("Get a command reply")
+            self.logger.info("Get a command")
             if cmd.cmdType == CMD_TYPE_PUT_ORCHESTRATION_STATE:
                 self.logger.info("Get dib from dispatcher!")
                 newDib = self._pruneDib(cmd.attributes["dib"])
                 self._dib.updateByNewDib(newDib)
+                self.rSP.updateByNewDib(newDib)
+                self.rSP.transDib2Graph()
                 if DEFAULT_MAPPING_TYPE == "MAPPING_TYPE_NETPACK":
                     self._osa.initNetPack()
                 # self._osa.nPInstance.updateServerSets(self.podNum, self.minPodIdx, self.maxPodIdx)
             elif cmd.cmdType == CMD_TYPE_GET_ORCHESTRATION_STATE:
-                raise ValueError("Unimplemented cmd type handler CMD_TYPE_GET_ORCHESTRATION_STATE")
+                raise ValueError("Unimplemented cmd type handler {0}".format(cmd.cmdType))
             elif cmd.cmdType == CMD_TYPE_TURN_ORCHESTRATION_ON:
                 self.logger.info("turn on")
                 self.runningState = True
@@ -346,7 +358,13 @@ class Orchestrator(object):
             elif cmd.cmdType == CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE:
                 self.logger.info("update equipment state")
                 detectionDict = cmd.attributes["detectionDict"]
-                self._updateEquipmentState(detectionDict)
+                isEquipmentUpdated = self.rSP.updateEquipmentState(detectionDict)
+                runtimeState = self.rSP.computeRuntimeState()
+                self.logger.debug("runtimeState is {0}".format(runtimeState))
+                if isEquipmentUpdated:
+                    cmdID = cmd.cmdID
+                    cmdRply = self.rSP.genFailureAbnormalDetectionNoticeCmdRply(cmdID, runtimeState)
+                    self.sendCmd(MSG_TYPE_REGULATOR_CMD, cmdRply, REGULATOR_QUEUE)
             else:
                 pass
         except Exception as ex:
@@ -413,9 +431,10 @@ class Orchestrator(object):
             # get core switch range
             self.minCoreSwitchIdx = int(self.minPodIdx * coreSwitchPerPod)
             self.maxCoreSwitchIdx = int(self.minCoreSwitchIdx + coreSwitchPerPod * (self.maxPodIdx - self.minPodIdx + 1) - 1)
-            podNumInSubZone = self.maxCoreSwitchIdx - self.minCoreSwitchIdx + 1
-            startCoreSwitchIDx = int(self.minCoreSwitchIdx / podNumInSubZone)
-            coreSwitchRange = range(startCoreSwitchIDx, coreSwitchNum, podNumInSubZone)
+            podNumInSubZone = self.maxPodIdx - self.minPodIdx + 1
+            zoneNum = int(self.podNum / podNumInSubZone)
+            startCoreSwitchIDx = int(self.minPodIdx)
+            coreSwitchRange = range(startCoreSwitchIDx, coreSwitchNum, zoneNum)
             self.coreSwitchIdxList = list(coreSwitchRange)
             self.logger.warning("self.coreSwitchIdxList is {0}".format(self.coreSwitchIdxList))
             self.logger.warning("self.minPodIdx {1}; self.maxPodIdx {0}".format(self.minPodIdx, self.maxPodIdx))
@@ -445,29 +464,6 @@ class Orchestrator(object):
             return True
         else:
             raise ValueError("Unimplementation topo type")
-
-    def _updateEquipmentState(self, detectionDict):
-        for caseType, equipmentDict in detectionDict.items():
-            if caseType in ["failure", "abnormal"]:
-                state = False
-            elif caseType in ["resume"]:
-                state = True
-            else:
-                raise ValueError("Unknown caseType {0}".format(caseType))
-            switchIDList = equipmentDict["switchIDList"]
-            for switchID in switchIDList:
-                if self._dib.hasSwitch(switchID, self.zoneName):
-                    self._dib.updateSwitchState(switchID, self.zoneName, state = state)
-
-            serverIDList = equipmentDict["serverIDList"]
-            for serverID in serverIDList:
-                if self._dib.hasServer(serverID, self.zoneName):
-                    self._dib.updateServerState(serverID, self.zoneName, state = state)
-
-            linkIDList = equipmentDict["linkIDList"]
-            for linkID in linkIDList:
-                if self._dib.hasLink(linkID[0], linkID[1], self.zoneName):
-                    self._dib.updateLinkState(linkID, self.zoneName, state = state)
 
 
 if __name__=="__main__":

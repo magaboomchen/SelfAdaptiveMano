@@ -139,7 +139,11 @@ class OSFCAdder(object):
         self.logger.info("_mapIngressEgress finish!")
 
     def _selectActiveDCNGateWaySwitch(self):
-        return self._dib.randomSelectDCNGateWaySwitch(self.zoneName)
+        switch = self._dib.randomSelectDCNGateWaySwitch(self.zoneName)
+        if switch == None:
+            raise ValueError("No active dcn gateway at all.")
+        else:
+            return switch
 
     def _selectClassifierByNode(self, node):
         # type: (Union[Switch, Server]) -> Union[Switch, Server]

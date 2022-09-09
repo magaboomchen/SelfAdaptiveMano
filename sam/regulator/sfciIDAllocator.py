@@ -28,15 +28,15 @@ class SFCIDAllocator(SourceAllocator):
     def freeSFCID(self, sfciID):
         return self.freeSource(sfciID, 1)
 
-    def getDeletedStateSFCIIDList(self, sfc):
+    def getDeletedOrInitFailedStateSFCIIDList(self, sfc):
         # type: (SFC) -> Union[int, None]
         # get deleted sfci for this sfc
         sfciIDList = self._oib.getSFCIIDListOfASFC4DB(sfc.sfcUUID)
         deledtedSFCIIDList = []
         for sfciID in sfciIDList:
             sfciState = self._oib.getSFCIState(sfciID)
-            if sfciState == STATE_DELETED:
-                self._oib.updateSFCIState(sfciID, STATE_INIT_FAILED) 
+            if sfciState in [STATE_DELETED, STATE_INIT_FAILED]:
+                # self._oib.updateSFCIState(sfciID, STATE_INIT_FAILED) 
                 deledtedSFCIIDList.append(sfciID)
         return deledtedSFCIIDList
 

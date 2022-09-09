@@ -2,22 +2,28 @@
 # -*- coding: UTF-8 -*-
 
 import copy
+from typing import List
 
-from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET, MAPPING_TYPE_MMLPSFC, ForwardingPathSet
+from sam.base.path import DIRECTION0_PATHID_OFFSET, DIRECTION1_PATHID_OFFSET, \
+                            MAPPING_TYPE_MMLPSFC, ForwardingPathSet
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.base.request import Request
 from sam.base.sfc import SFC
+from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.orchestration.algorithms.base.multiLayerGraph import MultiLayerGraph, \
     WEIGHT_TYPE_DELAY_MODEL
 from sam.orchestration.algorithms.base.performanceModel import PerformanceModel
 from sam.orchestration.algorithms.base.mappingAlgorithmBase import MappingAlgorithmBase
 from sam.orchestration.algorithms.base.pathServerFiller import PathServerFiller
-from sam.orchestration.oConfig import ENABLE_INGRESS_EGRESS_GENERATION, ENABLE_PREFERRED_DEVICE_SELECTION
+from sam.orchestration.oConfig import ENABLE_INGRESS_EGRESS_GENERATION, \
+                                        ENABLE_PREFERRED_DEVICE_SELECTION
 
 
 class MMLPSFC(MappingAlgorithmBase, PathServerFiller):
-    def __init__(self, dib, requestList):
+    def __init__(self, dib,        # type: DCNInfoBaseMaintainer
+                    requestList    # type: List[Request]
+                ):
         super(MMLPSFC, self).__init__()
         self._dib = copy.deepcopy(dib)
         self._initDib = copy.deepcopy(dib)

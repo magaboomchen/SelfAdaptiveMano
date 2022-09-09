@@ -93,7 +93,10 @@ class NoticeAnalyzer(object):
                             pass
                         else:
                             continue
-                    self.logger.debug("affected sfcUUID is {0}; sfciID is {1}".format(sfc.sfcUUID, sfci.sfciID))
+                    self.logger.debug("affected sfcUUID is {0}; " \
+                                        "sfciID is {1}; " \
+                                        "recoveryTaskType is {2}" \
+                                        " ".format(sfc.sfcUUID, sfci.sfciID, recoveryTaskType))
                     affectedSFCITupleList.append((sfci.sfciID, sfc, recoveryTaskState, recoveryTaskType))
             else:
                 self.logger.debug("zoneName is {0}, sfciZoneName is {1}".format(zoneName, sfciZoneName))

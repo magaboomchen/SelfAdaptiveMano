@@ -3,6 +3,8 @@
 
 import copy
 
+from sam.base.request import Request
+from sam.base.sfc import SFC
 from sam.base.switch import Switch
 from sam.base.server import Server
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -16,10 +18,12 @@ class MappingAlgorithmBase(object):
         self.logger = logConfigur.getLogger()
 
     def getSFC4Request(self, request):
+        # type: (Request) -> SFC
         sfc = request.attributes['sfc']
         return sfc
 
     def getIngSwitchID4Request(self, request):
+        # type: (Request) -> int
         sfc = request.attributes['sfc']
         ingID = sfc.directions[0]['ingress'].getServerID()
         ingSwitch = self._dib.getConnectedSwitch(ingID, self.zoneName)
@@ -27,7 +31,8 @@ class MappingAlgorithmBase(object):
         return ingSwitchID
 
     def getEgSwitchID4Request(self, request):
-        sfc = request.attributes['sfc']
+        # type: (Request) -> int
+        sfc = request.attributes['sfc'] # type: SFC
         egID = sfc.directions[0]['egress'].getServerID()
         egSwitch = self._dib.getConnectedSwitch(egID, self.zoneName)
         egSwitchID = egSwitch.switchID

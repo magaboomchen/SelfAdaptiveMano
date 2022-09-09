@@ -4,7 +4,8 @@
 from typing import Dict, Union
 
 from sam.base.command import CMD_TYPE_FAILURE_ABNORMAL_RESUME, \
-                                CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command
+                                CMD_TYPE_HANDLE_FAILURE_ABNORMAL, Command, CommandReply
+from sam.base.commandMaintainer import CommandMaintainer
 from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE, MessageAgent, \
                                     SAMMessage, \
                                     DISPATCHER_QUEUE, MSG_TYPE_REQUEST
@@ -13,7 +14,7 @@ from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
     REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFC, Request
 from sam.base.loggerConfigurator import LoggerConfigurator
 from sam.dispatcher.argParser import ArgParser
-from sam.dispatcher.orchestratorManager import OrchestratorManager
+from sam.dispatcher.orchestratorManager.orchestratorManager import OrchestratorManager
 from sam.dispatcher.config import AUTO_SCALE, RE_INIT_TABLE, ZONE_INFO_LIST
 from sam.base.exceptionProcessor import ExceptionProcessor
 from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
@@ -35,6 +36,8 @@ class Dispatcher(object):
         self.dispatcherQueueName = DISPATCHER_QUEUE
         self._messageAgent = MessageAgent(self.logger)
         self._messageAgent.startRecvMsg(self.dispatcherQueueName)
+
+        self._cm = CommandMaintainer()
 
     def startDispatcher(self):
         # raise ValueError("Haven't implement")
@@ -116,26 +119,32 @@ class Dispatcher(object):
                 # assign different SFC to different orchestrator in round robin mode, and
                 # record which SFC has been mapped in which orchestrator instances.
                 oM = self.oMDict[zoneName]
-                orchName = oM._getOrchestratorNameBySFC(sfc)
+                orchName = oM.getOrchestratorNameBySFC(sfc)
                 if orchName == None:
-                    orchName = oM._selectOrchInRoundRobin()
+                    orchName = oM.selectOrchInRoundRobin()
+                    if orchName == None:
+                        raise ValueError("Unavailable orchestrator.")
+                else:
+                    if not oM.isOrchestratorValidRuntimeState(orchName):
+                        if oM.isAllSFCIsOfASFCAreDeletedOrInitFailed(orchName, sfc.sfcUUID):
+                            orchName = oM.selectOrchInRoundRobin()
                 self.logger.warning("assign SFC to orchName:{0}".format(orchName))
-                oM._assignSFC2Orchestrator(sfc, orchName)
+                oM.assignSFC2Orchestrator(sfc, orchName)
                 self._sendRequest2Orchestrator(request, orchName)   # we dispatch add request previously
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
                 sfc = request.attributes["sfc"]
                 sfci = request.attributes["sfci"]
                 zoneName = request.attributes["zone"]
                 oM = self.oMDict[zoneName]
-                orchName = oM._getOrchestratorNameBySFC(sfc)
+                orchName = oM.getOrchestratorNameBySFC(sfc)
                 self.logger.warning("assign SFC to orchName:{0}".format(orchName))
-                oM._assignSFCI2Orchestrator(sfci, orchName)
+                oM.assignSFCI2Orchestrator(sfc.sfcUUID, sfci, orchName)
                 self._sendRequest2Orchestrator(request, orchName)
             elif request.requestType in [REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_DEL_SFC]:
                 sfc = request.attributes["sfc"]
                 zoneName = request.attributes["zone"]
                 oM = self.oMDict[zoneName]
-                orchName = oM._getOrchestratorNameBySFC(sfc)
+                orchName = oM.getOrchestratorNameBySFC(sfc)
                 self._sendRequest2Orchestrator(request, orchName)
             else:
                 self.logger.warning(
@@ -153,24 +162,51 @@ class Dispatcher(object):
         msg = SAMMessage(MSG_TYPE_REQUEST, request)
         self._messageAgent.sendMsg(queueName, msg)
 
-    def _commandReplyHandler(self, cmd):
-        # type: (Command) -> None
-        raise ValueError("Unimplementation _commandReplyHandler")
+    def _commandReplyHandler(self, cmdRply):
+        # type: (CommandReply) -> None
+        try:
+            self.logger.info("Get a command reply")
+            # update cmd state
+            cmdID = cmdRply.cmdID
+            state = cmdRply.cmdState
+            if not self._cm.hasCmd(cmdID):
+                self.logger.error(
+                        "Unknown command reply, cmdID:{0}".format(cmdID)
+                    )
+                return 
+            self._cm.changeCmdState(cmdID, state)
+            self._cm.addCmdRply(cmdID, cmdRply)
+            cmdType = self._cm.getCmdType(cmdID)
+            self.logger.info("Command:{0}, cmdType:{1}, state:{2}".format(
+                cmdID, cmdType, state))
+
+            zoneName = cmdRply.attributes['zoneName']
+            runtimeState = cmdRply.attributes['runtimeState']
+            orchestrationName = cmdRply.attributes['orchestrationName']
+            oM = self.oMDict[zoneName]
+            oM.setOrchestratorRuntimeState(orchestrationName, runtimeState)
+
+            self._cm.delCmdwithChildCmd(cmdID)
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex, 
+                "Dispatcher commandReply handler")
+        finally:
+            pass
 
     def _commandHandler(self, cmd):
         # type: (Command) -> None
         try:
-            self.logger.info("Get a command reply")
-            cmdID = cmd.cmdID
+            self.logger.info("Get a command.")
             if cmd.cmdType in [CMD_TYPE_HANDLE_FAILURE_ABNORMAL,
                                 CMD_TYPE_FAILURE_ABNORMAL_RESUME]:
                 self.logger.info("Get {0}".format(cmd.cmdType))
-                allZoneDetectionDict = cmd.attributes["allZoneDetectionDict"]
+                allZoneDetectionDict = cmd.attributes["allZoneDetectionDict"]   # type: Dict
                 for zoneName, detectionDict in allZoneDetectionDict.items():
                     oM = self.oMDict[zoneName]
                     orchestratorDict = oM.getOrchestratorDict()
                     for orchName, orchInfoDict in orchestratorDict.items():
                         oM.updateEquipmentState2Orchestrator(orchName, detectionDict)
+                        self._cm.addCmd(cmd)
             else:
                 pass
         except Exception as ex:

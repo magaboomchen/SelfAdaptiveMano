@@ -284,7 +284,7 @@ class SFCScalingProcessor(object):
         # type: (SFC) -> None
         deltaSFCINum = abs(self.getDeltaSFCINum(sfc))
         self.logger.warning("scaling out deltaSFCINum {0}".format(deltaSFCINum))
-        sfciIDList = self.sfciIDAllocator.getDeletedStateSFCIIDList(sfc)
+        sfciIDList = self.sfciIDAllocator.getDeletedOrInitFailedStateSFCIIDList(sfc)
         for idx in range(deltaSFCINum):
             if idx >= len(sfciIDList):
                 sfciID = self.sfciIDAllocator.getAvaSFCIID()

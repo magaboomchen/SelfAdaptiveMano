@@ -229,8 +229,11 @@ class SwitchInfoBaseMaintainer(XInfoBaseMaintainer):
     def randomSelectDCNGateWaySwitch(self, zoneName):
         switchList = self.getSpecificTypeOfSwitchByZone(zoneName,
                                             SWITCH_TYPE_DCNGATEWAY)
-        rndIdx = random.randint(0, len(switchList)-1)
-        return switchList[rndIdx]
+        if len(switchList) >= 1:
+            rndIdx = random.randint(0, len(switchList)-1)
+            return switchList[rndIdx]
+        else:
+            return None
 
     # def getDCNGateway(self):
     #     dcnGateway = None

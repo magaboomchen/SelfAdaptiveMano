@@ -70,6 +70,8 @@ class RecoveryTaskMaintainer(object):
                 del self.taskDict[recoveryTaskType][sfcUUID][sfciID]
             else:
                 del self.taskDict[recoveryTaskType][sfcUUID]
+            if len(self.taskDict[recoveryTaskType][sfcUUID].keys()) == 0:
+                del self.taskDict[recoveryTaskType][sfcUUID]
 
     def isAllSFCIRecovered(self, sfcUUID, recoveryTaskType):
         # type: (UUID, Union[RECOVERY_TASK_TYPE_SFCI, RECOVERY_TASK_TYPE_SFC]) -> bool
@@ -115,6 +117,7 @@ class RecoveryTaskMaintainer(object):
         for sfcUUID in list(self.taskDict[recoveryTaskType].keys()):
             for sfciID, task in list(self.taskDict[recoveryTaskType][sfcUUID].items()):
                 if sfcUUID in self.taskDict[RECOVERY_TASK_TYPE_SFC]:
+                    self.logger.info("clearRedundantTasks for sfcUUID {0}".format(sfcUUID))
                     task = self.taskDict[RECOVERY_TASK_TYPE_SFCI][sfcUUID][sfciID]
                     task = self.migrateSFCITask2SFCTask(task)
                     self.taskDict[RECOVERY_TASK_TYPE_SFC][sfcUUID][sfciID] = task

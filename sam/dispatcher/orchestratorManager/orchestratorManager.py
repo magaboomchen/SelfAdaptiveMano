@@ -5,6 +5,7 @@ import uuid
 import time
 import math
 import numpy as np
+from typing import Any, Dict, Union
 
 import psutil
 
@@ -14,6 +15,9 @@ from sam.base.command import CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, \
                 Command, CMD_TYPE_PUT_ORCHESTRATION_STATE, \
                 CMD_TYPE_TURN_ORCHESTRATION_ON, CMD_TYPE_KILL_ORCHESTRATION
 from sam.base.pickleIO import PickleIO
+from sam.base.sfc import SFC, SFCI
+from sam.base.sfcConstant import STATE_DELETED, STATE_INIT_FAILED
+from sam.dispatcher.orchestratorManager.orchestratorInfoMaintainer import OrchestratorInfoMaintainer
 from sam.orchestration import orchestrator
 from sam.base.shellProcessor import ShellProcessor
 from sam.base.loggerConfigurator import LoggerConfigurator
@@ -22,6 +26,8 @@ from sam.dispatcher.config import CONSTANT_ORCHESTRATOR_NUM, TIME_BUDGET, \
 from sam.orchestration.oConfig import BATCH_SIZE, MAX_SFC_LENGTH
 from sam.measurement.dcnInfoBaseMaintainer import DCNInfoBaseMaintainer
 from sam.base.exceptionProcessor import ExceptionProcessor
+from sam.orchestration.orchInfoBaseMaintainer import OrchInfoBaseMaintainer
+from sam.orchestration.runtimeState.runtimeState import RuntimeState
 
 
 class OrchestratorManager(object):
@@ -30,7 +36,7 @@ class OrchestratorManager(object):
         self._dib = DCNInfoBaseMaintainer()
         self.pIO = PickleIO()
 
-        self.orchestratorDict = {}  # {"name": {"oPid":pPid, "oInfoDict":oInfoDict, "dib":dib, "liveness":True, "cpuUtilList":[], "memoryUtilList":[]}}
+        self.oInfoMaintainerDict = {}  # type: Dict[str, OrchestratorInfoMaintainer]
         self.zoneName = zoneName
         self.podNum = podNum
         self.topoType = topoType
@@ -46,34 +52,42 @@ class OrchestratorManager(object):
 
         self._messageAgent = MessageAgent(self.logger)
 
+        self._oib = OrchInfoBaseMaintainer("localhost", "dbAgent",
+                                            "123", False)
+
     def addOrchInstance(self, oInfoDictName, oPid, oInfoDict):
-        self.orchestratorDict[oInfoDictName] = {
-                                "oPid": oPid,
-                                "oInfoDict": oInfoDict,
-                                "dib":None, "liveness":True,
-                                "sfcDict":{}, "sfciDict":{},
-                                "cpuUtilList":[], "memoryUtilList":[],
-                                "totalCPUUtilList":[]
-                            }
+        self.oInfoMaintainerDict[oInfoDictName] = OrchestratorInfoMaintainer(
+                                                                oInfoDictName,
+                                                                oPid,
+                                                                oInfoDict,
+                                                                None,
+                                                                True
+                                                            )
 
     def getOrchInstanceNum(self):
-        return len(self.orchestratorDict)
+        return len(self.oInfoMaintainerDict)
 
-    def _selectOrchInRoundRobin(self):
-        candidateOrchList = sorted(self.orchestratorDict.keys())
-        orchName = candidateOrchList[self.roundRobinCounter%len(candidateOrchList)]
-        self.roundRobinCounter = (self.roundRobinCounter + 1)%self.getOrchInstanceNum()
-        return orchName
+    def selectOrchInRoundRobin(self):
+        candidateOrchList = sorted(self.oInfoMaintainerDict.keys())
+        cnt = 0
+        while True:
+            orchName = candidateOrchList[self.roundRobinCounter%len(candidateOrchList)]
+            self.roundRobinCounter = (self.roundRobinCounter + 1)%self.getOrchInstanceNum()
+            cnt += 1
+            if self.isOrchestratorValidRuntimeState(orchName):
+                return orchName
+            if cnt > self.getOrchInstanceNum():
+                return None
 
     def getOrchestratorDict(self):
-        return self.orchestratorDict
+        return self.oInfoMaintainerDict
 
     def assignSFC2OrchInstance(self, addSFCIRequests):
-        candidateOrchList = self.orchestratorDict.keys()
+        candidateOrchList = self.oInfoMaintainerDict.keys()
         for idx,addSFCIReq in enumerate(addSFCIRequests):
-            sfc = addSFCIReq.attributes['sfc']
+            sfc = addSFCIReq.attributes['sfc']  # type: SFC
             orchName = candidateOrchList[idx%len(candidateOrchList)]
-            self.orchestratorDict[orchName]["sfcDict"][sfc.sfcUUID] = sfc
+            self.oInfoMaintainerDict[orchName].sfcDict[sfc.sfcUUID] = sfc
 
     def _updateDib(self, topologyDict, zoneName):
         self._dib.updateServersByZone(topologyDict["servers"],
@@ -208,21 +222,46 @@ class OrchestratorManager(object):
             else:
                 pass
 
-    def _getOrchestratorNameBySFC(self, sfc):
-        for orchName, oInfo in self.orchestratorDict.items():
-            if sfc.sfcUUID in oInfo["sfcDict"]:
+    def setOrchestratorRuntimeState(self, orchestratorName, runtimeState):
+        # type: (str, RuntimeState) -> None
+        oIM = self.oInfoMaintainerDict[orchestratorName]
+        oIM.runtimeState = runtimeState
+
+    def getOrchestratorNameBySFC(self, sfc):
+        # type: (SFC) -> Union[str, None]
+        for orchName, oInfoMaintainer in self.oInfoMaintainerDict.items():
+            if sfc.sfcUUID in oInfoMaintainer.sfcDict:
                 return orchName
         else:
             # raise ValueError("Can't find orchestrator instance.")
             return None
 
-    def _assignSFC2Orchestrator(self, sfc, orchName):
-        self.orchestratorDict[orchName]["sfcDict"][sfc.sfcUUID] = sfc
+    def isOrchestratorValidRuntimeState(self, orchName):
+        # type: (str) -> bool
+        return self.oInfoMaintainerDict[orchName].runtimeState.isValidRuntimeState()
 
-    def _assignSFCI2Orchestrator(self, sfci, orchName):
-        self.orchestratorDict[orchName]["sfciDict"][sfci.sfciID] = sfci
+    def assignSFC2Orchestrator(self, sfc, orchName):
+        # type: (SFC, str) -> None
+        self.oInfoMaintainerDict[orchName].sfcDict[sfc.sfcUUID] = sfc
+
+    def assignSFCI2Orchestrator(self, sfcUUID, sfci, orchName):
+        # type: (SFC, SFCI, str) -> None
+        if sfcUUID not in self.oInfoMaintainerDict[orchName].sfciDict.keys():
+            self.oInfoMaintainerDict[orchName].sfciDict[sfcUUID] = {}
+        self.oInfoMaintainerDict[orchName].sfciDict[sfcUUID][sfci.sfciID] = sfci
+
+    def isAllSFCIsOfASFCAreDeletedOrInitFailed(self, orchName, sfcUUID):
+        # type: (str, SFC) -> bool
+        sfciDict = self.oInfoMaintainerDict[orchName].sfciDict[sfcUUID]
+        for sfciID in sfciDict.keys():
+            sfciState = self._oib.getSFCIState(sfciID)
+            if sfciState not in [STATE_DELETED, STATE_INIT_FAILED]:
+                return False
+        else:
+            return True
 
     def _computeOrchestratorInstanceMaxPodNum(self, msgCnt):
+        # type: (int) -> int
         if not self.parallelMode:
             return self.podNum
         if self.podNum == 4:
@@ -241,6 +280,7 @@ class OrchestratorManager(object):
         return max(int(maxPodNumPerOrchstratorInstance),1)
 
     def _computeOrchestratorInstanceMaxOrchNum(self, msgCnt):
+        # type: (int) -> int
         if not self.parallelMode:
             return 1
         if self.podNum == 4:
@@ -255,6 +295,7 @@ class OrchestratorManager(object):
         return int(minOrchestratorNum)
 
     def __computeMinOrchestratorNum(self, switchNum, msgCnt):
+        # type: (int, int) -> int
         if self.constantOrchestratorNum == -1:
             # load regressor
             regr = self.loadRegressor()
@@ -289,12 +330,12 @@ class OrchestratorManager(object):
         targetInstanceNumber = len(oInfoList)
         # compare existed instance number and targetInstanceNumber
         scaleAction = None
-        if len(self.orchestratorDict) < targetInstanceNumber:
+        if len(self.oInfoMaintainerDict) < targetInstanceNumber:
             scaleAction = "scale-out"
             # For scale-out, generate existed instance new podIdx(If there are no existed instance, then this part is None); generate new instance podIdx;
-            self.orchestratorDict = {}  # {"idx": orchestratorInfo}
+            self.oInfoMaintainerDict = {}  # {"idx": orchestratorInfo}
             # orchestratorInfo = {"dib":dib,"minPodIdx":minPodIdx, "maxPodIdx":maxPodIdx}
-        elif len(self.orchestratorDict) > targetInstanceNumber:
+        elif len(self.oInfoMaintainerDict) > targetInstanceNumber:
             scaleAction = "scale-in"
             # For scale-in, generate existed instance new podIdx; generate delete which existed instance;
 
@@ -319,7 +360,7 @@ class OrchestratorManager(object):
         return self.sP.getPythonScriptProcessPid(commandLine)
 
     def killAllOrchestratorInstances(self):
-        for orchName in self.orchestratorDict.keys():
+        for orchName in self.oInfoMaintainerDict.keys():
             self.turnOffOrchestrationInstance(orchName)
 
     def __getOrchestratorFilePath(self):
@@ -329,6 +370,7 @@ class OrchestratorManager(object):
         return directoryPath + '/orchestrator.py'
 
     def getFileDirectory(self, filePath):
+        # type: (str) -> str
         index = filePath.rfind('/')
         directoryPath = filePath[0:index]
         return directoryPath
@@ -348,16 +390,16 @@ class OrchestratorManager(object):
         # TODO: future works: auto orchestrator scaling
 
     def _recordOrchUtilization(self):
-        for orchName in self.orchestratorDict.keys():
+        for orchName in self.oInfoMaintainerDict.keys():
             cpuUtil, totalCPUUtil, memoryUtil = self._getOrchUtilization(orchName)
             self.logger.info("cpuUtil:{0}, totalCPUUtil:{1}, memoryUtil:{2}".format(cpuUtil, totalCPUUtil, memoryUtil))
-            self.orchestratorDict[orchName]["cpuUtilList"].append(cpuUtil)
-            self.orchestratorDict[orchName]["totalCPUUtilList"].append(totalCPUUtil)
-            self.orchestratorDict[orchName]["memoryUtilList"].append(memoryUtil)
+            self.oInfoMaintainerDict[orchName].cpuUtilList.append(cpuUtil)
+            self.oInfoMaintainerDict[orchName].totalCPUUtilList.append(totalCPUUtil)
+            self.oInfoMaintainerDict[orchName].memoryUtilList.append(memoryUtil)
 
     def _getOrchUtilization(self, orchName):
         try:
-            oPid = self.orchestratorDict[orchName]["oPid"]
+            oPid = self.oInfoMaintainerDict[orchName].oPid
             cpuUtil, memoryUtil = self.sP.getProcessCPUAndMemoryUtilization(oPid)
             totalCPUUtil = psutil.cpu_percent(1)
         except Exception as ex:
