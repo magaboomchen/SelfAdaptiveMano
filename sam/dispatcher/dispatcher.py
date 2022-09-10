@@ -13,6 +13,7 @@ from sam.base.pickleIO import PickleIO
 from sam.base.request import REQUEST_TYPE_ADD_SFC, REQUEST_TYPE_ADD_SFCI, \
     REQUEST_TYPE_DEL_SFCI, REQUEST_TYPE_DEL_SFC, REQUEST_TYPE_DEL_SFC, Request
 from sam.base.loggerConfigurator import LoggerConfigurator
+from sam.base.sfc import SFC
 from sam.dispatcher.argParser import ArgParser
 from sam.dispatcher.orchestratorManager.orchestratorManager import OrchestratorManager
 from sam.dispatcher.config import AUTO_SCALE, RE_INIT_TABLE, ZONE_INFO_LIST
@@ -114,7 +115,7 @@ class Dispatcher(object):
         self.logger.info("Get a request {0}".format(request.requestType))
         try:
             if request.requestType == REQUEST_TYPE_ADD_SFC:
-                sfc = request.attributes["sfc"]
+                sfc = request.attributes["sfc"] # type: SFC
                 zoneName = request.attributes["zone"]
                 # assign different SFC to different orchestrator in round robin mode, and
                 # record which SFC has been mapped in which orchestrator instances.
@@ -124,12 +125,20 @@ class Dispatcher(object):
                     orchName = oM.selectOrchInRoundRobin()
                     if orchName == None:
                         raise ValueError("Unavailable orchestrator.")
+                    else:
+                        oM.assignSFC2Orchestrator(sfc, orchName)
                 else:
                     if not oM.isOrchestratorValidRuntimeState(orchName):
+                        self.logger.info("Need to migrate SFC to other orchestrator")
                         if oM.isAllSFCIsOfASFCAreDeletedOrInitFailed(orchName, sfc.sfcUUID):
+                            oM.removeSFCFromOrchestrator(orchName, sfc.sfcUUID)
                             orchName = oM.selectOrchInRoundRobin()
+                            self.logger.info("migrate SFC to new orchestrator {0}".format(orchName))
+                            if orchName == None:
+                                raise ValueError("Unavailable orchestrator.")
+                            else:
+                                oM.assignSFC2Orchestrator(sfc, orchName)
                 self.logger.warning("assign SFC to orchName:{0}".format(orchName))
-                oM.assignSFC2Orchestrator(sfc, orchName)
                 self._sendRequest2Orchestrator(request, orchName)   # we dispatch add request previously
             elif request.requestType == REQUEST_TYPE_ADD_SFCI:
                 sfc = request.attributes["sfc"]
@@ -177,7 +186,7 @@ class Dispatcher(object):
             self._cm.changeCmdState(cmdID, state)
             self._cm.addCmdRply(cmdID, cmdRply)
             cmdType = self._cm.getCmdType(cmdID)
-            self.logger.info("Command:{0}, cmdType:{1}, state:{2}".format(
+            self.logger.info("CommandID:{0}, cmdType:{1}, state:{2}".format(
                 cmdID, cmdType, state))
 
             zoneName = cmdRply.attributes['zoneName']
@@ -205,8 +214,10 @@ class Dispatcher(object):
                     oM = self.oMDict[zoneName]
                     orchestratorDict = oM.getOrchestratorDict()
                     for orchName, orchInfoDict in orchestratorDict.items():
-                        oM.updateEquipmentState2Orchestrator(orchName, detectionDict)
-                        self._cm.addCmd(cmd)
+                        childCmd = oM.genUpdateEquipmentStateCmd(detectionDict)
+                        self._cm.addCmd(childCmd)
+                        queueName = "ORCHESTRATOR_QUEUE_{0}".format(orchName)
+                        oM.sendCmd(childCmd, queueName)
             else:
                 pass
         except Exception as ex:

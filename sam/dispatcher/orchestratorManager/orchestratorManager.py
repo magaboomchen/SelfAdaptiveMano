@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import uuid
+from uuid import UUID
 import time
 import math
 import numpy as np
@@ -106,11 +107,10 @@ class OrchestratorManager(object):
         queueName = "ORCHESTRATOR_QUEUE_{0}".format(orchestratorName)
         self.sendCmd(cmd, queueName)
 
-    def updateEquipmentState2Orchestrator(self, orchestratorName, detectionDict):
+    def genUpdateEquipmentStateCmd(self, detectionDict):
         cmd = Command(CMD_TYPE_ORCHESTRATION_UPDATE_EQUIPMENT_STATE, uuid.uuid1(),
                         attributes={"detectionDict":detectionDict})
-        queueName = "ORCHESTRATOR_QUEUE_{0}".format(orchestratorName)
-        self.sendCmd(cmd, queueName)
+        return cmd
 
     def turnOnOrchestrator(self, orchestratorName):
         cmd = Command(CMD_TYPE_TURN_ORCHESTRATION_ON, uuid.uuid1(),
@@ -235,6 +235,11 @@ class OrchestratorManager(object):
         else:
             # raise ValueError("Can't find orchestrator instance.")
             return None
+
+    def removeSFCFromOrchestrator(self, orchName, sfcUUID):
+        # type: (str, UUID) -> None
+        if sfcUUID in self.oInfoMaintainerDict[orchName].sfcDict:
+            del self.oInfoMaintainerDict[orchName].sfcDict[sfcUUID]
 
     def isOrchestratorValidRuntimeState(self, orchName):
         # type: (str) -> bool

@@ -13,7 +13,7 @@ from sam.base.link import Link
 from sam.base.sfc import SFC, SFCI
 from sam.base.sfcConstant import STATE_IN_PROCESSING, STATE_INIT_FAILED, \
                                     STATE_UNDELETED
-from sam.base.messageAgent import MSG_TYPE_MEDIATOR_CMD, MSG_TYPE_REGULATOR_CMD, \
+from sam.base.messageAgent import DISPATCHER_QUEUE, MSG_TYPE_DISPATCHER_CMD, MSG_TYPE_MEDIATOR_CMD, MSG_TYPE_REGULATOR_CMD, \
                                     REGULATOR_QUEUE, SAMMessage, MessageAgent, \
                                     MEDIATOR_QUEUE, ORCHESTRATOR_QUEUE
 from sam.base.request import REQUEST_STATE_IN_PROCESSING, REQUEST_TYPE_ADD_SFC, \
@@ -164,17 +164,17 @@ class Orchestrator(object):
                         self.processAllAddSFCIRequests()
             elif request.requestType == REQUEST_TYPE_DEL_SFCI:
                 cmd = self._osd.genDelSFCICmd(request)
-                sfci = cmd.attributes['sfci']
+                sfci = cmd.attributes['sfci']   # type: SFCI
                 if self._oib.isDelSFCIValidState(sfci.sfciID):
                     cmd.attributes['source'] = self.orchInstanceQueueName
                     ingress = cmd.attributes['sfc'].directions[0]['ingress']
                     if type(ingress) == Server:
                         self.logger.debug("orchestrator classifier's serverID: {0}".format(
-                            ingress.getServerID()
+                            ingress.getNodeID()
                         ))
                     elif type(ingress) == Switch:
                         self.logger.debug("orchestrator classifier's switchID: {0}".format(
-                            ingress.switchID
+                            ingress.getNodeID()
                         ))
                     self._cm.addCmd(cmd)
                     self.sendCmd(MSG_TYPE_MEDIATOR_CMD, cmd, MEDIATOR_QUEUE)
@@ -340,7 +340,7 @@ class Orchestrator(object):
                 newDib = self._pruneDib(cmd.attributes["dib"])
                 self._dib.updateByNewDib(newDib)
                 self.rSP.updateByNewDib(newDib)
-                self.rSP.transDib2Graph()
+                # self.rSP.transDib2Graph()
                 if DEFAULT_MAPPING_TYPE == "MAPPING_TYPE_NETPACK":
                     self._osa.initNetPack()
                 # self._osa.nPInstance.updateServerSets(self.podNum, self.minPodIdx, self.maxPodIdx)
@@ -360,11 +360,11 @@ class Orchestrator(object):
                 detectionDict = cmd.attributes["detectionDict"]
                 isEquipmentUpdated = self.rSP.updateEquipmentState(detectionDict)
                 runtimeState = self.rSP.computeRuntimeState()
-                self.logger.debug("runtimeState is {0}".format(runtimeState))
+                self.logger.info("runtimeState is {0}".format(runtimeState))
                 if isEquipmentUpdated:
                     cmdID = cmd.cmdID
                     cmdRply = self.rSP.genFailureAbnormalDetectionNoticeCmdRply(cmdID, runtimeState)
-                    self.sendCmd(MSG_TYPE_REGULATOR_CMD, cmdRply, REGULATOR_QUEUE)
+                    self.sendCmd(MSG_TYPE_DISPATCHER_CMD, cmdRply, DISPATCHER_QUEUE)
             else:
                 pass
         except Exception as ex:

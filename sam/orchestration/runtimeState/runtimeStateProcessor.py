@@ -6,7 +6,7 @@ from typing import Dict, Union
 
 import networkx as nx
 
-from sam.base.command import CMD_STATE_SUCCESSFUL, CMD_TYPE_ORCHESTRATION_MANAGER_UPDATE_STATE, Command, CommandReply
+from sam.base.command import CMD_STATE_SUCCESSFUL, CommandReply
 from sam.base.link import Link
 from sam.base.messageAgent import SIMULATOR_ZONE, TURBONET_ZONE
 from sam.base.switch import SWITCH_TYPE_DCNGATEWAY
@@ -58,8 +58,8 @@ class RuntimeStateProcessor(object):
         # connection detection
         self.transDib2Graph()
         isGraphConnected = nx.is_weakly_connected(copy.deepcopy(self.graph))
-        self.runtimeState.setDisconnectionState(isGraphConnected)
-        
+        self.runtimeState.setDisconnectionState(not isGraphConnected)
+
         # classifier liveness
         switchList = self._dib.getSpecificTypeOfSwitchByZone(self.zoneName, SWITCH_TYPE_DCNGATEWAY)
         if len(switchList) == 0:
@@ -71,6 +71,7 @@ class RuntimeStateProcessor(object):
         pass
         # TODO: why we copy dib in MMLPSFC algorithm?
         # 80% resource water line
+        return self.runtimeState
 
     def transDib2Graph(self):
         self.graph = nx.DiGraph()

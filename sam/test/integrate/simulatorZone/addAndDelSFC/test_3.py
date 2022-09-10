@@ -9,6 +9,7 @@ The work flow:
         * [error] server 14481 down
         * [error] switch 421 down
         * [error] link 928 421 down
+        * [error] switch  0 32 64 96 128 160 192 224
 
 Usage of this unit test:
     python -m pytest ./test_3.py -s --disable-warnings
@@ -16,7 +17,7 @@ Usage of this unit test:
 
 import uuid
 import time
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 
 import pytest
 
@@ -138,21 +139,23 @@ class TestAddSFCClass(IntTestBaseClass):
                         switchIDList.extend(self.getAllSwitchIDFromSFCI(updatedSFCI))
                     self.logger.info("Please input abnormal switchID from "
                                         "candidate switch list {0}".format(switchIDList))
-                    abnSwitchID = int(screenInput())
-                    self.logger.info("Please input abnormal switchID to "
-                                        " simulator: switch {0} down ".format(abnSwitchID))
-                    cmd = self.genDetectionDictHandlerCommand(caseType, "switchIDList", abnSwitchID)
+                    # abnSwitchID = int(screenInput())
+                    abnSwitchIDList = list(map(int,input("\nEnter the switchID list: ").strip().split()))
+                    self.logger.info("Please input abnormal switchID list to "
+                                        " simulator: switch list {0} down ".format(abnSwitchIDList))
+                    cmd = self.genDetectionDictHandlerCommand(caseType, "switchIDList", abnSwitchIDList)
                 elif inputContent == "server":
                     serverIDList = []
                     for sfci in self.sfciList:
                         updatedSFCI = self.getSFCIFromDB(sfci.sfciID)
                         serverIDList.extend(self.getAllServerIDFromSFCI(updatedSFCI))
-                    self.logger.info("Please input abnormal serverID from "
+                    self.logger.info("Please input abnormal serverID list from "
                                         "candidate server list {0}".format(serverIDList))
-                    abnServerID = int(screenInput())
-                    self.logger.info("Please input abnormal serverID to "
-                                        " simulator: server {0} down ".format(abnServerID))
-                    cmd = self.genDetectionDictHandlerCommand(caseType, "serverIDList", abnServerID)
+                    # abnServerID = int(screenInput())
+                    abnServerIDList = list(map(int,input("\nEnter the serverID list: ").strip().split()))
+                    self.logger.info("Please input abnormal serverID list to "
+                                        " simulator: server list {0} down ".format(abnServerIDList))
+                    cmd = self.genDetectionDictHandlerCommand(caseType, "serverIDList", abnServerIDList)
                 elif inputContent == "link":
                     linkIDList = []
                     for sfci in self.sfciList:
@@ -282,8 +285,8 @@ class TestAddSFCClass(IntTestBaseClass):
     def isSwitchID(self, nodeID):
         return nodeID <= 10000
 
-    def genDetectionDictHandlerCommand(self, caseType, equipmentListType, equipmentID):
-        # type: (str, str, Union[int, Tuple[int,int]]) -> Command
+    def genDetectionDictHandlerCommand(self, caseType, equipmentListType, equipmentIDList):
+        # type: (str, str, List[Union[int, Tuple[int,int]]]) -> Command
         detectionDict = {
             "failure":{
                 "switchIDList":[],
@@ -301,7 +304,8 @@ class TestAddSFCClass(IntTestBaseClass):
                 "linkIDList":[]
             }
         }
-        detectionDict[caseType][equipmentListType].append(equipmentID)
+        for equipmentID in equipmentIDList:
+            detectionDict[caseType][equipmentListType].append(equipmentID)
         allZoneDetectionDict={SIMULATOR_ZONE: detectionDict}
         attr = {
             "allZoneDetectionDict": allZoneDetectionDict
@@ -314,43 +318,3 @@ class TestAddSFCClass(IntTestBaseClass):
             raise ValueError("Unknown caseType {0}".format(caseType))
         cmd = Command(cmdType, uuid.uuid1(), attributes=attr)
         return cmd
-
-    # def genAbnormalSwitchHandleCommand(self, switchID):
-    #     detectionDict = {
-    #         "failure":{
-    #             "switchIDList":[],
-    #             "serverIDList":[],
-    #             "linkIDList":[]
-    #         },
-    #         "abnormal":{
-    #             "switchIDList":[switchID],
-    #             "serverIDList":[],
-    #             "linkIDList":[]
-    #         }
-    #     }
-    #     allZoneDetectionDict={SIMULATOR_ZONE: detectionDict}
-    #     attr = {
-    #         "allZoneDetectionDict": allZoneDetectionDict
-    #     }
-    #     cmd = Command(CMD_TYPE_HANDLE_FAILURE_ABNORMAL, uuid.uuid1(), attributes=attr)
-    #     return cmd
-
-    # def genAbnormalLinkHandleCommand(self, linkID):
-    #     detectionDict = {
-    #         "failure":{
-    #             "switchIDList":[],
-    #             "serverIDList":[],
-    #             "linkIDList":[]
-    #         },
-    #         "abnormal":{
-    #             "switchIDList":[],
-    #             "serverIDList":[],
-    #             "linkIDList":[linkID]
-    #         }
-    #     }
-    #     allZoneDetectionDict={SIMULATOR_ZONE: detectionDict}
-    #     attr = {
-    #         "allZoneDetectionDict": allZoneDetectionDict
-    #     }
-    #     cmd = Command(CMD_TYPE_HANDLE_FAILURE_ABNORMAL, uuid.uuid1(), attributes=attr)
-    #     return cmd

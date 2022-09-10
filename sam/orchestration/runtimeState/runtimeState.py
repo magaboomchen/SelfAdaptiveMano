@@ -33,3 +33,12 @@ class RuntimeState(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
+
+    def __repr__(self):
+        return str(self)
