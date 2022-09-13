@@ -12,12 +12,12 @@ BIND_OTHER_DRIVER = 3
 
 
 class DPDKConfigurator(object):
-    def __init__(self, NICPCIAddress):
+    def __init__(self, nicPCIAddress):
         logConfigur = LoggerConfigurator(__name__, './log',
             'dpdkConfigurator.log', level='info')
         self.logger = logConfigur.getLogger()
-        self.logger.info('Config DPDK nic: ' + NICPCIAddress )
-        self._NICPCIAddress = NICPCIAddress
+        self.logger.info('Config DPDK nic: ' + nicPCIAddress )
+        self._NICPCIAddress = nicPCIAddress
         self.configDPDK()
 
     def configDPDK(self):

@@ -3,6 +3,7 @@
 
 import uuid
 from typing import List, Tuple, Union
+from sam.base.compatibility import screenInput
 
 from sam.base.sfc import SFC, SFCI
 from sam.orchestration.algorithms.base.pathServerFiller import PathServerFiller
@@ -84,73 +85,6 @@ class TestP4ControllerBase(IntTestBaseClass):
         self.sfcList = [sfc1, sfc3, sfc4, sfc6]
         self.sfciList = [sfci1, sfci3, sfci4, sfci6]
 
-    # def genUniDirection10BackupP4NFVISFCI(
-    #         self, sfc, mappedVNFISeq=True, routingMorphic=None):
-    #     if mappedVNFISeq:
-    #         # vnfiSequence = self.gen10BackupP4VNFISequence(sfcLength)
-    #         vnfiSequence = self.gen10BackupP4ServerVNFISequence(sfc)
-    #     else:
-    #         vnfiSequence = None
-    #     fPS = self.genUniDirection10BackupP4ServerBasedForwardingPathSet(
-    #                                                     sfc, vnfiSequence)
-    #     return SFCI(self.assignSFCIID(), vnfiSequence, None,
-    #                 # self.genUniDirection10BackupP4BasedForwardingPathSet(
-    #                 #     sfcLength),
-    #                 fPS,
-    #                 routingMorphic)
-
-    # def gen10BackupP4VNFISequence(self, sfcLength=1):
-    #     # type: (int) -> List[List[VNFI]]
-    #     # hard-code function
-    #     vnfiSequence = []
-    #     for index in range(sfcLength):
-    #         vnfiSequence.append([])
-    #         for iN in range(1):
-    #             switch = Switch(SWITCH_SFF1_SWITCHID, SWITCH_TYPE_NPOP,
-    #                             SWITCH_SFF1_LANIP, programmable=True)
-    #             vnfi = VNFI(
-    #                 VNF_TYPE_RATELIMITER, vnfType=VNF_TYPE_RATELIMITER,
-    #                 vnfiID=uuid.uuid1(),
-    #                 config=RateLimiterConfig(maxMbps=100),
-    #                 node=switch)
-    #             vnfiSequence[index].append(vnfi)
-    #     return vnfiSequence
-
-    # def genUniDirection10BackupP4BasedForwardingPathSet(self, sfciLength=1):
-    #     # type: (int) -> ForwardingPathSet
-    #     # please ref /sam/base/path.py
-    #     # This function generate a sfc forwarding path for sfc "ingress->L2Forwarding->egress"
-    #     # The primary forwarding path has two stage, the first stage is "ingress->L2Forwarding",
-    #     # the second stage is "L2Forwarding->egress".
-    #     # Each stage is a list of layeredNodeIDTuple which format is (stageIndex, nodeID)
-    #     if sfciLength == 1:
-    #         d0FP = [
-    #             # (stageIndex, nodeID)
-    #             [(0, 0), (0, 8), (0, 16), (0, SWITCH_SFF1_SWITCHID)],
-    #             # Note that may be a serverID ocurred in path!
-    #             [(1, SWITCH_SFF1_SWITCHID), (1, 16), (1, 8), (1, 0)]
-    #         ]
-    #     elif sfciLength == 2:
-    #         d0FP = [
-    #             [(0, 0), (0, 8), (0, 16), (0, SWITCH_SFF1_SWITCHID)],
-    #             [(1, SWITCH_SFF1_SWITCHID), (1, SWITCH_SFF1_SWITCHID)],
-    #             [(2, SWITCH_SFF1_SWITCHID), (2, 16), (2, 8), (2, 0)]
-    #         ]
-    #     elif sfciLength == 3:
-    #         d0FP = [
-    #             [(0, 0), (0, 8), (0, 16), (0, SWITCH_SFF1_SWITCHID)],
-    #             [(1, SWITCH_SFF1_SWITCHID), (1, SWITCH_SFF1_SWITCHID)],
-    #             [(2, SWITCH_SFF1_SWITCHID), (2, SWITCH_SFF1_SWITCHID)],
-    #             [(3, SWITCH_SFF1_SWITCHID), (3, 16), (3, 8), (3, 0)]
-    #         ]
-    #     else:
-    #         raise ValueError("Unimplement sfci length!")
-    #     primaryForwardingPath = {DIRECTION0_PATHID_OFFSET: d0FP}
-    #     mappingType = MAPPING_TYPE_MMLPSFC  # This is your mapping algorithm type
-    #     backupForwardingPath = {}   # you don't need to care about backupForwardingPath
-    #     return ForwardingPathSet(primaryForwardingPath, mappingType,
-    #                              backupForwardingPath)
-
     def genUniDirection10BackupP4ServerNFVISFCI(
             self, sfc, mappedVNFISeq=True, routingMorphic=None):
         # type: (SFC, bool, RoutingMorphic) -> SFCI
@@ -200,13 +134,13 @@ class TestP4ControllerBase(IntTestBaseClass):
         # the second stage is "L2Forwarding->egress".
         # Each stage is a list of layeredNodeIDTuple which format is (stageIndex, nodeID)
         d0FP = []
-        for idx, vnf in enumerate(sfc.vnfSequence):
+        for idx in range(len(sfc.vnfSequence)+1):
             if idx == 0:
                 srcNodeID = 0
                 dstNode = vnfiSequence[idx][0].node
                 dstNodeID = self.getNodeID(dstNode)
-            elif idx == len(sfc.vnfSequence)-1:
-                srcNode = vnfiSequence[idx-1][0].node
+            elif idx == len(sfc.vnfSequence):
+                srcNode = vnfiSequence[-1][0].node
                 srcNodeID = self.getNodeID(srcNode)
                 dstNodeID = 0
             else:
@@ -267,7 +201,7 @@ class TestP4ControllerBase(IntTestBaseClass):
                 (stageNum, 6),
                 (stageNum, 14),
                 (stageNum, SFF1_SERVERID)]
-        elif srcNodeID == SWITCH_SFF1_SWITCHID and dstNodeID == SFF1_SERVERID:
+        elif srcNodeID == SFF1_SERVERID and dstNodeID == SWITCH_SFF1_SWITCHID:
             segPath = [
                 (stageNum, SFF1_SERVERID),
                 (stageNum, 14),
@@ -281,7 +215,7 @@ class TestP4ControllerBase(IntTestBaseClass):
         return segPath
 
     def exerciseAddSFCAndSFCI(self, jointTestMode=False):
-        for idx in [0, 1, 2]:
+        for idx in [0, 1, 2, 3]:
             self.logger.info("test idx {0}".format(idx))
             # exercise
             self.addSFCCmd = self.mediator.genCMDAddSFC(self.sfcList[idx])
@@ -293,6 +227,8 @@ class TestP4ControllerBase(IntTestBaseClass):
             # exercise
             self.addSFCICmd = self.mediator.genCMDAddSFCI(self.sfcList[idx],
                                                           self.sfciList[idx])
+            # self.logger.debug("addSFCICmd is {0}".format(self.addSFCICmd))
+            # screenInput()
             self.sendCmd(P4CONTROLLER_QUEUE, MSG_TYPE_P4CONTROLLER_CMD,
                          self.addSFCICmd)
 

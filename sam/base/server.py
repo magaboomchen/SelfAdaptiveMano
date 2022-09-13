@@ -73,6 +73,10 @@ class Server(object):
     def getServerType(self):
         return self._serverType
 
+    def updateControlNICIP(self):
+        ifName = self._controlIfName
+        self._serverControlNICIP = self._ifSet[ifName]["IP"][0]
+
     def updateControlNICMAC(self):
         self._serverControlNICMAC \
             = self._getHwAddrInKernel(self._controlIfName).lower()

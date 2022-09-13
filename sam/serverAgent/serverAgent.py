@@ -12,7 +12,7 @@ from sam.serverAgent.dockerConfigurator import DockerConfigurator
 from sam.serverAgent.dpdkConfigurator import DPDKConfigurator
 from sam.base.server import Server
 from sam.base.messageAgent import SAMMessage, MessageAgent, \
-                    SERVER_MANAGER_QUEUE, MSG_TYPE_SERVER_REPLY
+                                    MSG_TYPE_SERVER_REPLY
 from sam.base.loggerConfigurator import LoggerConfigurator
 
 HEAT_BEAT_TIME = 10
@@ -22,7 +22,7 @@ class ServerAgent(object):
     def __init__(self,controlNICName,   # type: str
                     serverType,         # type: str
                     datapathNICIP,      # type: str
-                    NICPCIAddress,      # type: str
+                    nicPCIAddress,      # type: str
                     serverID            # type: int
                     ):
         logConfigur = LoggerConfigurator(__name__, './log',
@@ -39,11 +39,12 @@ class ServerAgent(object):
         self._server.setServerID(serverID)
         self._server.updateControlNICMAC()
         self._server.updateIfSet()
+        self._server.updateControlNICIP()
 
         self.grpcUrl = self._server.getControlNICIP() + ":10514"
         self.bS = BessStarter(self.grpcUrl)
         self.bS.killBessd() # must kill bessd first
-        DPDKConfigurator(NICPCIAddress)
+        DPDKConfigurator(nicPCIAddress)
         self._server.updateDataPathNICMAC() # Then we can guarantee huge page
         self.bS.startBESSD()
 
@@ -66,7 +67,7 @@ class ServerAgent(object):
 
 if __name__=="__main__":
     argParser = ArgParser()
-    NICPCIAddress = argParser.getArgs()['nicPciAddress']   # example: 0000:00:08.0
+    nicPCIAddress = argParser.getArgs()['nicPciAddress']   # example: 0000:00:08.0
     controllNICName = argParser.getArgs()['controllNicName']   # example: ens3
     serverType = argParser.getArgs()['serverType']   # example: nfvi, classifier
     datapathNICIP = argParser.getArgs()['datapathNicIP']   # example: 2.2.0.38
@@ -75,6 +76,6 @@ if __name__=="__main__":
     serverAgent = ServerAgent(controllNICName,
                                 serverType,
                                 datapathNICIP,
-                                NICPCIAddress,
+                                nicPCIAddress,
                                 serverID)
     serverAgent.run()

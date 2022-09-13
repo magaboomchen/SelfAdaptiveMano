@@ -32,3 +32,12 @@ class P4Match(object):
                         # None: don't care this field
         self.dstMask = dstMask
         self.nsh = nsh  # SPI+SI
+
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
+
+    def __repr__(self):
+        return str(self)

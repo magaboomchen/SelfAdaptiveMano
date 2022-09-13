@@ -264,7 +264,7 @@ class MessageAgent(object):
             self.rabbitMqServerUser = str(json_string["RABBITMQSERVERUSER"])
             self.rabbitMqServerPasswd = str(json_string["RABBITMQSERVERPASSWD"])
             self.logger.info(
-                "messageAgentConf:\nServer:{0}\nUser:{1}\nPasswd:{2}".format(
+                "rabbimqConf -> Server:{0}, User:{1}, Passwd:{2}\n".format(
                     self.rabbitMqServerIP, self.rabbitMqServerUser,
                     self.rabbitMqServerPasswd))
 

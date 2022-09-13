@@ -22,6 +22,15 @@ class FieldValuePair(object):
         self.field = field
         self.value = value
 
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
+
+    def __repr__(self):
+        return str(self)
+
 
 class P4Action(object):
     def __init__(self,
@@ -32,3 +41,12 @@ class P4Action(object):
         self.actionType = actionType
         self.nextNodeID = nextNodeID
         self.newFieldValueList = newFieldValueList
+
+    def __str__(self):
+        string = "{0}\n".format(self.__class__)
+        for key,values in self.__dict__.items():
+            string = string + "{0}:{1}\n".format(key, values)
+        return string
+
+    def __repr__(self):
+        return str(self)
