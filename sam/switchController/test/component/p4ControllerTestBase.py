@@ -40,7 +40,7 @@ class TestP4ControllerBase(IntTestBaseClass):
     MAXSFCIID = 0
     sfciCounter = 0
 
-    def common_setup(self):
+    def common_setup(self, enable_joint_test=False):
         logConfigur = LoggerConfigurator(__name__, './log',
                                          'testP4ControllerBase.log',
                                          level='debug')
@@ -53,7 +53,10 @@ class TestP4ControllerBase(IntTestBaseClass):
         self.killAllModule()
         self.mediator = MediatorStub()
         self.measurer = MeasurementStub()
-        self.turbonetControllerStub = TurbonetControllerStub()
+        if not enable_joint_test:
+            self.turbonetControllerStub = TurbonetControllerStub()
+        else:
+            self.turbonetControllerStub = None
 
         self.sfcList = []
         self.sfciList = []

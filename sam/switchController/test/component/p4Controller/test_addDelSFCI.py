@@ -28,7 +28,7 @@ ENABLE_JOINT_TEST = True
 class TestAddSFCIClass(TestP4ControllerBase):
     @pytest.fixture(scope="function")
     def setup_addSFCIWithP4VNFIOnASwitch(self):
-        self.common_setup()
+        self.common_setup(ENABLE_JOINT_TEST)
 
         self.logger.info("Please start P4Controller," \
                     "Then press any key to continue!")
@@ -54,7 +54,7 @@ class TestAddSFCIClass(TestP4ControllerBase):
 
     @pytest.fixture(scope="function")
     def setup_delSFCIWithVNFIOnAServer(self):
-        self.common_setup()
+        self.common_setup(ENABLE_JOINT_TEST)
 
         self.logger.info("Please start P4Controller," \
                     "Then press any key to continue!")
