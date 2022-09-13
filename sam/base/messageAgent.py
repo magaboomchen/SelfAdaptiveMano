@@ -293,25 +293,32 @@ class MessageAgent(object):
 
     def sendMsg(self, dstQueueName, message):
         self.logger.debug("MessageAgent ready to send msg")
-        while True:
-            try:
+        try:
+            while True:
                 self._publisherConnection = self._connectRabbitMQServer()
-                channel = self._publisherConnection.channel()
-                channel.queue_declare(queue=dstQueueName, durable=True)
-                channel.basic_publish(exchange='', routing_key=dstQueueName,
-                    body=self._encodeMessage(message),
-                    properties=pika.BasicProperties(delivery_mode = 2)
-                    # make message persistent
-                    )
-                self.logger.debug(" [x] Sent ")
-                channel.close()
-            except Exception as ex:
-                ExceptionProcessor(self.logger).logException(ex,
-                    "MessageAgent sendMsg failed")
-            finally:
                 if self._publisherConnection.is_open:
-                    self._publisherConnection.close()
-                break
+                    channel = self._publisherConnection.channel()
+                    if channel.is_open:
+                        channel.queue_declare(queue=dstQueueName, durable=True)
+                        channel.basic_publish(exchange='', routing_key=dstQueueName,
+                            body=self._encodeMessage(message),
+                            properties=pika.BasicProperties(delivery_mode = 2)
+                            # make message persistent
+                            )
+                        self.logger.debug(" [x] Sent ")
+                        channel.close()
+                        break
+                    else:
+                        self.logger.warning("Rabbitmq channel is not open!")
+                else:
+                    self.logger.warning("Rabbitmq connection is not open!")
+                time.sleep(1)
+        except Exception as ex:
+            ExceptionProcessor(self.logger).logException(ex,
+                "MessageAgent sendMsg failed")
+        finally:
+            if self._publisherConnection.is_open:
+                self._publisherConnection.close()
 
     def startRecvMsg(self, srcQueueName):
         self.logger.debug("MessageAgent.startRecvMsg() on queue {0}".format(srcQueueName))
